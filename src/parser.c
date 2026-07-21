@@ -705,6 +705,8 @@ void quad_reset(module *m)
 		m->quad_query = NULL;
 	}
 
+	m->quad_recorded = false;
+
 	m->quad_num_vars = 0;
 	m->in_quad = false;
 }
@@ -726,7 +728,8 @@ static bool is_answer_description(parser *p, const cell *c)
 			|| !strcmp(name, "system_error")
 			|| !strcmp(name, "ad_infinitum")
 			|| !strcmp(name, "sto")
-			|| !strcmp(name, "unexpected");
+			|| !strcmp(name, "unexpected")
+			|| !strcmp(name, "inattendue");
 
 	if (c->arity == 2) {
 		if (!strcmp(name, "="))
@@ -903,7 +906,7 @@ static bool quads(parser *p, cell *d)
 		return false;
 
 	if ((d->val_off == g_quad_s) && (d->arity == 1)) {
-		if (m->quad_query)
+		if (m->quad_query && !m->quad_recorded)
 			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
 
 		quad_reset(m);
@@ -927,16 +930,20 @@ static bool quads(parser *p, cell *d)
 		return false;
 
 	if (!is_answer_description(p, d)) {
-		if (m->quad_query)
+		if (m->quad_query && !m->quad_recorded)
 			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
 
 		quad_reset(m);
 		return false;
 	}
 
+	// A quad may carry more than one answer description, and all of
+	// them have to hold. Keep the query so each following description
+	// is recorded against it, rather than discarding all but the first.
+
 	if (m->quad_query) {
 		quad_record(p, d);
-		quad_reset(m);
+		m->quad_recorded = true;
 		m->in_quad = true;		// keep consuming answer-shaped terms
 	}
 
@@ -4264,7 +4271,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 						p->end_of_term = true;
 						p->end_of_file = true;
 
-						if (p->m->quad_query)
+						if (p->m->quad_query && !p->m->quad_recorded)
 							fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(p->m, p->m->filename), p->m->quad_line_num);
 
 						quad_reset(p->m);

@@ -80,6 +80,17 @@ loop :- loop.
 ?- X = 1, Y = 2.
    X = 1, Y = 2.
 
+% a quad may carry several answer descriptions; all must hold
+
+?- X = 1.
+   X = 2, unexpected.
+   X = 1.
+
+% 'inattendue' is a synonym for 'unexpected'
+
+?- X = 1.
+   X = 2, inattendue.
+
 % a deliberately failing quad, to test reporting
 
 ?- member(X, [1,2]).

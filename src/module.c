@@ -922,6 +922,16 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 		    )
 			return true;
 
+		// This one does exist, but is preloaded at startup and is
+		// include-style, with no module declaration of its own, so the
+		// find_module() above can never match it. Falling through to
+		// the loader below would re-parse the file into the current
+		// module in the middle of a running query, which silently
+		// fails and takes the calling goal with it.
+
+		if (!strcmp(name, "iso_ext") && (cur_m == cur_m->pl->user_m))
+			return true;
+
 		for (library *lib = g_libs; lib->name; lib++) {
 			if (strcmp(lib->name, name))
 				continue;

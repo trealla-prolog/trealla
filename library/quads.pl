@@ -41,8 +41,11 @@
 
   Alternative acceptable outcomes are separated by (|)/2.
 
-  An answer description annotated with 'unexpected' describes an
-  answer that must *not* occur:
+  A quad may carry more than one answer description; all of them
+  must hold.
+
+  An answer description annotated with 'unexpected' (or its synonym
+  'inattendue') describes an answer that must *not* occur:
 
       ?- X = 1.
          X = 2, unexpected.
@@ -135,7 +138,7 @@ strip_unexpected(Sol, Sol1, F) :-
 drop_unexpected([], [], false).
 drop_unexpected([I|T], Kept, F) :-
 	drop_unexpected(T, Kept0, F0),
-	(	I == unexpected
+	(	( I == unexpected ; I == inattendue )
 	->	Kept = Kept0, F = true
 	;	Kept = [I|Kept0], F = F0
 	).

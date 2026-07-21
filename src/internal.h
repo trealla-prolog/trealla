@@ -873,6 +873,7 @@ struct module_ {
 	unsigned quad_num_vars;				// number of vars in quad_query
 	unsigned quad_line_num;				// line the pending quad query started on
 	bool in_quad:1;						// consuming answer-description terms after '?- Query'
+	bool quad_recorded:1;				// at least one answer description seen for quad_query
 	bool user_ops:1;
 	bool prebuilt:1;
 	bool make_public:1;
