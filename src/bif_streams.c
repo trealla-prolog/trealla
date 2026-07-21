@@ -1248,9 +1248,22 @@ bool stream_close(query *q, int n)
 	str->is_active = false;
 
 	if (!ok)
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "system_error", strerror(errno));
 
 	return true;
+}
+
+// There is no io_error class in 7.12.2. An output failure on a stream
+// that has gone away -- the far end of a pipe closing, say -- is a
+// stream that no longer exists, so report it as such, as other systems
+// do (#948).
+
+bool throw_stream_gone(query *q, stream *str)
+{
+	cell tmp;
+	make_int(&tmp, str->idx);
+	tmp.flags |= FLAG_INT_STREAM;
+	return throw_error(q, &tmp, q->st.cur_ctx, "existence_error", "stream");
 }
 
 bool bif_iso_close_1(query *q)
@@ -1358,11 +1371,11 @@ static bool bif_iso_flush_output_0(query *q)
 	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 
-	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+	if (ferror(str->fp_out)) {
 		clearerr(str->fp_out);
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 	}
 
 	return true;
@@ -1380,11 +1393,11 @@ static bool bif_iso_flush_output_1(query *q)
 	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
-		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 
-	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+	if (ferror(str->fp_out)) {
 		clearerr(str->fp_out);
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 	}
 
 	return true;
@@ -1402,11 +1415,11 @@ static bool bif_iso_nl_0(query *q)
 	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 
-	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+	if (ferror(str->fp_out)) {
 		clearerr(str->fp_out);
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 	}
 
 	return true;
@@ -1428,11 +1441,11 @@ static bool bif_iso_nl_1(query *q)
 	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
-		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 
-	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+	if (ferror(str->fp_out)) {
 		clearerr(str->fp_out);
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		return throw_stream_gone(q, str);
 	}
 
 	return true;
@@ -2407,9 +2420,9 @@ static bool bif_iso_write_term_2(query *q)
 		start(q2);
 		query_destroy(q2);
 		clear_write_options(q);
-		if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+		if (ferror(str->fp_out)) {
 			clearerr(str->fp_out);
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+			return throw_stream_gone(q, str);
 		}
 
 		return true;
@@ -2489,9 +2502,9 @@ static bool bif_iso_write_term_3(query *q)
 		start(q2);
 		query_destroy(q2);
 		clear_write_options(q);
-		if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+		if (ferror(str->fp_out)) {
 			clearerr(str->fp_out);
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+			return throw_stream_gone(q, str);
 		}
 
 		return true;
@@ -2708,7 +2721,7 @@ static bool bif_iso_get_char_1(query *q)
 		fprintf(str->fp_out, "%s", PROMPT);
 
 		if (fflush(str->fp_out))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "system_error", strerror(errno));
 	}
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
@@ -2786,7 +2799,7 @@ static bool bif_iso_get_char_2(query *q)
 		fprintf(str->fp_out, "%s", PROMPT);
 
 		if (fflush(str->fp_out))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "system_error", strerror(errno));
 	}
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);

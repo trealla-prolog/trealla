@@ -748,9 +748,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			int saveq = q->quoted;
 			bool canonical = false, quoted = false;
 			q->numbervars = true;
-
-			if (ch != 'q')
-				q->double_quotes = true;
+			q->double_quotes = true;
 
 			if (ch == 'k') {
 				canonical = true;
@@ -894,9 +892,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 			if (!tmpbuf_free) {
 				if (feof(str->fp) || ferror(str->fp)) {
+					// An output error must raise, not print to stderr
+					// and fail silently...
 					TPL_free(tmpbuf);
-					fprintf(stderr, "Error: end of file on write\n");
-					return false;
+					return throw_stream_gone(q, str);
 				}
 			}
 
@@ -906,7 +905,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		}
 
 		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+			return throw_stream_gone(q, str);
 	} else if (is_compound(str)
 		&& ((CMP_STRING_TO_CSTR(q, str, "atom")
 		&& CMP_STRING_TO_CSTR(q, str, "chars")
@@ -941,9 +940,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 			if (!tmpbuf_free) {
 				if (feof(str->fp) || ferror(str->fp)) {
+					// An output error must raise, not print to stderr
+					// and fail silently...
 					TPL_free(tmpbuf);
-					fprintf(stderr, "Error: end of file on write\n");
-					return false;
+					return throw_stream_gone(q, str);
 				}
 			}
 
@@ -953,7 +953,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		}
 
 		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+			return throw_stream_gone(q, str);
 	} else {
 		TPL_free(tmpbuf);
 		return throw_error(q, str, str_ctx, "domain_error", "stream_or_alias");

@@ -94,6 +94,7 @@ bool do_post_unify_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
 bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx);
 bool stream_close(query *q, int n);
+bool throw_stream_gone(query *q, stream *str);
 void leave_predicate(query *q, predicate *pr, bool is_final);
 void drop_choice(query *q);
 
