@@ -1049,7 +1049,16 @@ static bool bif_iso_open_4(query *q)
 	}
 
 	struct stat st = {0};
-	stat(str->filename, &st);
+	bool statted = !stat(str->filename, &st);
+
+	// A directory can be handed to fopen() in read mode on POSIX: it
+	// succeeds and only the subsequent reads fail with EISDIR. Catch
+	// it here so open/4 reports it like any other unopenable sink...
+
+	if (statted && S_ISDIR(st.st_mode)) {
+		str->is_active = false;
+		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
+	}
 
 	if (!S_ISREG(st.st_mode) && !bom_specified) {
 		bom_specified = true;
