@@ -1,6 +1,7 @@
 :- pragma(builtins, [once(true)]).
 :- use_module(library(error)).
 :- use_module(library(lists)).
+:- use_module(library(iso_ext)).
 :- use_module(library(gensym)).
 
 :- help(term_variables(+term,-list,?tail), [iso(false)]).
