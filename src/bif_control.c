@@ -1193,7 +1193,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_cstring(tmp+num_cells++, expected);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
 		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
-		make_cstring(tmp+num_cells++, C_STR(q, c));
+		make_atom(tmp+num_cells++, new_atom(q->pl, C_STR(q, c)));
 		make_int(tmp+num_cells++, c->arity);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
 		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
