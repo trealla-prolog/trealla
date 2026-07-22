@@ -170,3 +170,11 @@ memberchk(E, List) :-
 	).
 
 :- help(memberchk(?term,?term), [iso(false), desc('Is element a member of the list.')]).
+
+:- help(variant(+term,+term), [iso(false)]).
+
+variant(X,Y) :-
+	\+ \+ ( copy_term(X,XC),
+		subsumes_term(XC,Y),
+		subsumes_term(Y,XC)
+	).
