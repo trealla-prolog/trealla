@@ -81,6 +81,13 @@ call_det(G, Det) :-
 	'$get_level'(L2),
 	(L1 = L2 -> Det = true; Det = false).
 
+goal_expansion(call_det(G, Det), Goal) :-
+	nonvar(G),
+	!,
+	Goal = ('$get_level'(L1), call(G), '$get_level'(L2), (L1 = L2 -> Det = true; Det = false)),
+	true.
+goal_expansion(call_det(G, V), call_det(G, V)).
+
 :- meta_predicate(findall(?,0,-,?)).
 :- help(findall(+term,:callable,-list,+list), [iso(false)]).
 

@@ -2626,15 +2626,15 @@ module *module_create(prolog *pl, const char *name)
 		return m;
 	}
 
-	//set_discontiguous_in_db(m, "term_expansion", 2);
-	//set_discontiguous_in_db(m, "goal_expansion", 2);
+	set_discontiguous_in_db(m, "term_expansion", 2);
+	set_discontiguous_in_db(m, "goal_expansion", 2);
 
-	//set_multifile_in_db(m, "term_expansion", 2);
-	//set_multifile_in_db(m, "goal_expansion", 2);
+	set_multifile_in_db(m, "term_expansion", 2);
+	set_multifile_in_db(m, "goal_expansion", 2);
 	set_multifile_in_db(m, "$directive", 1);
 
-	//set_dynamic_in_db(m, "term_expansion", 2);
-	//set_dynamic_in_db(m, "goal_expansion", 2);
+	set_dynamic_in_db(m, "term_expansion", 2);
+	set_dynamic_in_db(m, "goal_expansion", 2);
 	set_dynamic_in_db(m, "$directive", 1);
 
 	init_lock(&m->guard);
