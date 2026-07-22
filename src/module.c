@@ -2112,7 +2112,7 @@ static void run_initialization_goals(parser *p)
 	p->is_consulting = false;
 	p->is_command = true;
 	SB(src);
-	SB_sprintf(src, "forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_); format('Error: ~w~n', [__G_])))", p->m->name);
+	SB_sprintf(src, "sys_forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_); format('Error: ~w~n', [__G_])))", p->m->name);
 
 	if (run(p, SB_cstr(src), false, NULL, 0))
 		p->pl->status = false;

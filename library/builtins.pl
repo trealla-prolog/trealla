@@ -857,3 +857,9 @@ variant(X,Y) :-
 	).
 
 :-op(700, xfx, '=@=').
+
+:- meta_predicate(sys_forall(0,0)).
+
+sys_forall(Cond, Action) :-
+	\+ (Cond, \+ Action).
+
