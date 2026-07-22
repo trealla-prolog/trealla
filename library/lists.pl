@@ -388,8 +388,6 @@ perm_(List, [First|Perm]) :-
 
 :- help(permutation(?list,?list), [iso(false)]).
 
-:- use_module(library(gensym)).
-
 maplist(G, L) :-
 	maplist_(L, G).
 

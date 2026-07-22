@@ -1,6 +1,7 @@
 :- pragma(builtins, [once(true)]).
 :- use_module(library(error)).
 :- use_module(library(lists)).
+:- use_module(library(gensym)).
 
 % Blackboard predicates. The raw ops ('$bb_put' etc) store a flat
 % copy of a term, dropping variable attributes. These wrappers use
@@ -57,7 +58,6 @@ bb_update(K, O, N) :-
 '$bb_call_goal'([]) :- !.
 '$bb_call_goal'([G|Gs]) :- !, '$bb_call_goals'([G|Gs]).
 '$bb_call_goal'(G) :- call(G).
-
 
 goal_expansion(maplist(G, L1), Goal) :-
 	nonvar(G), !,
