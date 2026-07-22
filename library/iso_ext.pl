@@ -67,7 +67,7 @@ succ(I, S) :-
 
 :- help(cfor(+evaluable,+evaluable,-var), [iso(false),desc('C-style for loop')]).
 
-cfor(I0,J0,K) :-
+cfor(I0, J0, K) :-
 	I is I0,
 	J is J0,
 	between(I, J, K).
@@ -113,7 +113,7 @@ time_out(Goal, TimeMs, Result) :-
 
 :- help(variant(+term,+term), [iso(false)]).
 
-variant(X,Y) :-
+variant(X, Y) :-
 	\+ \+ ( copy_term(X,XC),
 		subsumes_term(XC,Y),
 		subsumes_term(Y,XC)
