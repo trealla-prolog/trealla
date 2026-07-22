@@ -1,5 +1,5 @@
 :- module(lists, [
-		member/2,
+		member/2, memberchk/2,
 		select/3, selectchk/3,
 		append/2, append/3,
 		subtract/3, union/3, intersection/3, is_set/1,
@@ -13,6 +13,14 @@
 		maplist/2, maplist/3, maplist/4, maplist/5, maplist/6, maplist/7, maplist/8,
 		tasklist/2, tasklist/3, tasklist/4, tasklist/5, tasklist/6, tasklist/7, tasklist/8
 	]).
+
+memberchk(E, List) :-
+	'$memberchk'(E, List, Tail),
+	(   nonvar(Tail) ->  true
+	;   Tail = [_|_], memberchk(E, Tail)
+	).
+
+:- help(memberchk(?term,?term), [iso(false), desc('Is element a member of the list.')]).
 
 reverse(Xs, Ys) :-
 	(	nonvar(Xs) -> reverse_(Xs, Ys, [], Xs)

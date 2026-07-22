@@ -111,12 +111,6 @@ time_out(Goal, TimeMs, Result) :-
 	;	('$alarm'(0, Timer), fail)
 	).
 
-:- help(not(:callable), [iso(false),deprecated(true)]).
-:- meta_predicate(not(0)).
-
-not(X) :- X, !, fail.
-not(_).
-
 :- help(term_variables(+term,-list,?tail), [iso(false)]).
 
 term_variables(P1, P2, P3) :-
@@ -162,14 +156,6 @@ length_addendum([_|Xs], N, M) :-
     length_addendum(Xs, N, M1).
 
 :- help(length(?term,?integer), [iso(false), desc('Number of elements in list.')]).
-
-memberchk(E, List) :-
-	'$memberchk'(E, List, Tail),
-	(   nonvar(Tail) ->  true
-	;   Tail = [_|_], memberchk(E, Tail)
-	).
-
-:- help(memberchk(?term,?term), [iso(false), desc('Is element a member of the list.')]).
 
 :- help(variant(+term,+term), [iso(false)]).
 
