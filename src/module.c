@@ -2628,6 +2628,7 @@ module *module_create(prolog *pl, const char *name)
 
 	set_discontiguous_in_db(m, "term_expansion", 2);
 	set_discontiguous_in_db(m, "goal_expansion", 2);
+	set_discontiguous_in_db(m, "$directive", 1);
 
 	set_multifile_in_db(m, "term_expansion", 2);
 	set_multifile_in_db(m, "goal_expansion", 2);
