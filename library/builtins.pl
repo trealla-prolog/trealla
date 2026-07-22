@@ -1,8 +1,13 @@
 :- pragma(builtins, [once(true)]).
 :- use_module(library(error)).
 :- use_module(library(lists)).
-:- use_module(library(iso_ext)).
 :- use_module(library(gensym)).
+
+:- help(term_variables(+term,-list,?tail), [iso(false)]).
+
+term_variables(P1, P2, P3) :-
+	term_variables(P1, P4),
+	append(P4, P3, P2).
 
 length(Xs0, N) :-
    '$skip_max_list'(M, N, Xs0,Xs),

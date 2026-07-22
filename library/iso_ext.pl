@@ -111,12 +111,6 @@ time_out(Goal, TimeMs, Result) :-
 	;	('$alarm'(0, Timer), fail)
 	).
 
-:- help(term_variables(+term,-list,?tail), [iso(false)]).
-
-term_variables(P1, P2, P3) :-
-	term_variables(P1, P4),
-	append(P4, P3, P2).
-
 :- help(variant(+term,+term), [iso(false)]).
 
 variant(X,Y) :-

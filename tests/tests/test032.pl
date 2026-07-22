@@ -1,4 +1,5 @@
-:-initialization(main).
+:- use_module(library(iso_ext)).
+:- initialization(main).
 
 equal(3,1+2).
 equal(24,6*4).

@@ -1,4 +1,5 @@
-:-initialization(main).
+:- use_module(library(iso_ext)).
+:- initialization(main).
 
 fill(0, []).
 fill(Len, [L|T]) :-

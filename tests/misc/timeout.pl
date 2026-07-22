@@ -1,3 +1,5 @@
+:- use_module(library(iso_ext)).
+
 :- initialization((main2,main5,main6,main7)).
 
 main2 :-
