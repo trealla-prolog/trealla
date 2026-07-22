@@ -8,24 +8,6 @@ subsumes_term(General, Specific) :-
 		SVs1 == SVs2
 	).
 
-:- help(variant(+term,+term), [iso(false)]).
-
-variant(X,Y) :-
-	\+ \+ ( copy_term(X,XC),
-		subsumes_term(XC,Y),
-		subsumes_term(Y,XC)
-	).
-
-:- help('=@='(+term,+term), [iso(false)]).
-
-'=@='(X,Y) :-
-	\+ \+ ( copy_term(X,XC),
-		subsumes_term(XC,Y),
-		subsumes_term(Y,XC)
-	).
-
-:-op(700,xfx,=@=).
-
 :- meta_predicate(countall(0,?)).
 :- help(countall(:callable,?integer), [iso(true)]).
 

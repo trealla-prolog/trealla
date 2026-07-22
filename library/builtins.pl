@@ -839,3 +839,21 @@ thread_join(Tid, Status) :-
 	'$thread_join'(Tid, Status).
 
 :- help(thread_join(+thread,-term), [iso(false)]).
+
+:- help(variant(+term,+term), [iso(false)]).
+
+variant(X,Y) :-
+	\+ \+ ( copy_term(X,XC),
+		subsumes_term(XC,Y),
+		subsumes_term(Y,XC)
+	).
+
+:- help('=@='(+term,+term), [iso(false)]).
+
+'=@='(X,Y) :-
+	\+ \+ ( copy_term(X,XC),
+		subsumes_term(XC,Y),
+		subsumes_term(Y,XC)
+	).
+
+:-op(700, xfx, '=@=').
