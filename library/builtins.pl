@@ -1,6 +1,7 @@
 :- pragma(builtins, [once(true)]).
 :- use_module(library(error)).
 :- use_module(library(lists)).
+:- use_module(library(iso_ext)).
 :- use_module(library(gensym)).
 
 % Blackboard predicates. The raw ops ('$bb_put' etc) store a flat

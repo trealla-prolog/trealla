@@ -831,7 +831,7 @@ prolog *pl_create()
 
 	// Load some common libraries...
 
-	const char *bootstrap[] = {"builtins", "iso_ext", "dcgs", NULL};
+	const char *bootstrap[] = {"builtins", "dcgs", NULL};
 
 	for (int i = 0; bootstrap[i]; i++) {
 		bool found = false;
