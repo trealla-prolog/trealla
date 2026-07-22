@@ -1,7 +1,6 @@
 :- pragma(builtins, [once(true)]).
 :- use_module(library(error)).
 :- use_module(library(lists)).
-:- use_module(library(iso_ext)).
 
 % Blackboard predicates. The raw ops ('$bb_put' etc) store a flat
 % copy of a term, dropping variable attributes. These wrappers use
