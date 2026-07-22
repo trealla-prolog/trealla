@@ -1,3 +1,5 @@
+:- use_module(library(dcgs)).
+
 :- initialization(main).
 :- set_prolog_flag(double_quotes, codes).
 

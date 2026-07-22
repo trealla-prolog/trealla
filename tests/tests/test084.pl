@@ -1,3 +1,5 @@
+:- use_module(library(dcgs)).
+
 :-initialization(main).
 
 :- op(700, xfx, rplus).

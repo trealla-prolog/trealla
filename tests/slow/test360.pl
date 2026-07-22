@@ -1,6 +1,7 @@
-:- use_module(library(clpb)).
 :- use_module(library(lists)).
 :- use_module(library(iso_ext)).
+:- use_module(library(dcgs)).
+:- use_module(library(clpb)).
 :- initialization(main).
 
 % Issue #360: reduced harness from Triska's CLP(B) consistency test.
