@@ -358,15 +358,58 @@ static bool bif_bb_update_3(query *q)
 	return true;
 }
 
+static bool bif_sys_bb_is_live_1(query *q)
+{
+	GET_FIRST_ARG(p1,nonvar);
+
+	if (is_compound(p1) &&
+		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		return throw_error(q, p1, p1_ctx, "type_error", "callable");
+
+	module *m;
+	char tmpbuf[1024];
+
+	if (is_compound(p1)) {
+		cell *p1_m = p1 + 1;
+		p1 = p1_m + p1_m->num_cells;
+
+		if (!is_atom(p1_m) || !is_smallint_or_atom(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		m = find_module(q->pl, C_STR(q, p1_m));
+
+		if (!m)
+			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
+	} else
+		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
+
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+
+	const char *key = tmpbuf;
+	cell *val;
+	bool live = false;
+
+	prolog_lock(q->pl);
+
+	if (sl_get(q->st.m->keyval, key, (void*)&val))
+		live = (val->flags & FLAG_LIVE) ? true : false;
+
+	prolog_unlock(q->pl);
+	return live;
+}
+
 builtins g_bboard_bifs[] =
 {
 	{"bb_b_put", 2, bif_bb_b_put_2, ":atom,+term", false, false, BLAH},
 
 	{"$bb_put", 2, bif_bb_put_2, ":atom,+term", false, false, BLAH},
 	{"$bb_get", 2, bif_bb_get_2, ":atom,?term", false, false, BLAH},
-
 	{"$bb_update", 3, bif_bb_update_3, ":atom,?term,?term", false, false, BLAH},
 	{"$bb_delete", 2, bif_bb_delete_2, ":atom,?term", false, false, BLAH},
+	{"$bb_is_live", 1, bif_sys_bb_is_live_1, ":atom", false, false, BLAH},
 
 	{0}
 };
