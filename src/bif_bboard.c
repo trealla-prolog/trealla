@@ -196,15 +196,6 @@ static bool bif_bb_get_2(query *q)
 
 	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.cur_ctx, 1);
 
-	if (is_var(p2) && is_var(tmp)) {
-		const frame *f = GET_FRAME(is_ref(tmp)?tmp->val_ctx:q->st.cur_ctx);
-		const slot *e = get_slot(q, f, tmp->var_num);
-		const frame *f2 = GET_FRAME(p2_ctx);
-		slot *e2 = get_slot(q, f2, p2->var_num);
-		*e2 = *e;
-		return true;
-	}
-
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
 
@@ -256,17 +247,6 @@ static bool bif_bb_delete_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.cur_ctx, 1);
-
-	if (is_var(p2) && is_var(tmp)) {
-		const frame *f = GET_FRAME(is_ref(tmp)?tmp->val_ctx:q->st.cur_ctx);
-		const slot *e = get_slot(q, f, tmp->var_num);
-		const frame *f2 = GET_FRAME(p2_ctx);
-		slot *e2 = get_slot(q, f2, p2->var_num);
-		*e2 = *e;
-		bool ok = sl_del(q->st.m->keyval, key);
-		prolog_unlock(q->pl);
-		return ok;
-	}
 
 	if (!unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
 		prolog_unlock(q->pl);
@@ -403,7 +383,7 @@ static bool bif_sys_bb_is_live_1(query *q)
 
 builtins g_bboard_bifs[] =
 {
-	{"bb_b_put", 2, bif_bb_b_put_2, ":atom,+term", false, false, BLAH},
+	{"$bb_b_put", 2, bif_bb_b_put_2, ":atom,+term", false, false, BLAH},
 
 	{"$bb_put", 2, bif_bb_put_2, ":atom,+term", false, false, BLAH},
 	{"$bb_get", 2, bif_bb_get_2, ":atom,?term", false, false, BLAH},

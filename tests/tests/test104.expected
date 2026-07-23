@@ -5,7 +5,7 @@ sharing_preserved
 dif_blocks
 dif_allows
 plain_ok
-freeze:freeze(_16,true)
+true
 deleted
-freeze:freeze(_20,true)
+true
 freeze:freeze(_22,true)

@@ -57,21 +57,24 @@ length_addendum([_|Xs], N, M) :-
 % dif/2, clp(Z) domains) survive the blackboard. Terms without
 % attributed variables take the raw path unchanged.
 
+bb_b_put(K, T) :-
+	'$bb_b_put'(K, '$bb'(T)).
+
 bb_put(K, T) :-
 	term_variables(T, Vs),
 	(	'$bb_any_attributed'(Vs) ->
 		copy_term(T, T2, Gs),
 		(	Gs == [] ->
-			'$bb_put'(K, T)
-		;	'$bb_put'(K, '$bb_attv'(T2, Gs))
+			'$bb_put'(K, '$bb'(T))
+		;	'$bb_put'(K, '$bb'('$bb_attv'(T2, Gs)))
 		)
-	;	'$bb_put'(K, T)
+	;	'$bb_put'(K, '$bb'(T))
 	).
 
 bb_get(K, T) :-
     (	'$bb_is_live'(K) ->
-		'$bb_get'(K, T)
-    ;	'$bb_get'(K, V), '$bb_rehydrate'(V, T)
+		'$bb_get'(K, '$bb'(T))
+    ;	'$bb_get'(K, '$bb'(V)), '$bb_rehydrate'(V, T)
     ).
 
 bb_delete(K, T) :-
