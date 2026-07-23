@@ -2080,7 +2080,7 @@ static bool bif_sys_duplicate_term_2(query *q)
 
 static bool bif_iso_copy_term_2(query *q)
 {
-	return do_copy_term(q, false);
+	return do_copy_term(q, true);
 }
 
 static bool bif_iso_copy_term_nat_2(query *q)
