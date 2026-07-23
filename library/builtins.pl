@@ -78,13 +78,17 @@ bb_get(K, T) :-
     ).
 
 bb_delete(K, T) :-
-	'$bb_get'(K, V),
-	'$bb_rehydrate'(V, T),
+    (	'$bb_is_live'(K) ->
+		'$bb_get'(K, '$bb'(T))
+	;	'$bb_get'(K, '$bb'(V)), '$bb_rehydrate'(V, T)
+	),
 	'$bb_delete'(K, _).
 
 bb_update(K, O, N) :-
-	'$bb_get'(K, V),
-	'$bb_rehydrate'(V, O),
+    (	'$bb_is_live'(K) ->
+		'$bb_get'(K, '$bb'(O))
+	;	'$bb_get'(K, '$bb'(V)), '$bb_rehydrate'(V, O)
+	),
 	bb_put(K, N).
 
 '$bb_any_attributed'([V|Vs]) :-
