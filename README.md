@@ -19,7 +19,7 @@ and using a plain old Makefile.
 	Pre-emptive multi-threading
 	Attributed variables: freeze/2 dif/2, when/2
 	Constraint libraries: CLP(B), CLP(Z)
-	Blackboarding primitives: bb_put, bb_b_put/2, bb_get/2
+	Blackboarding primitives
 	Sockets library
 	...
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
@@ -613,8 +613,19 @@ extension:
 	bb_b_put/2					# bb_b_put(:atom, +term)
 
 Note: attributes are preserved across bb_put/bb_get like Scryer
-and SWI Prologs (and SICStus?). But note: *bb_put/2* ensures copies
-of attributed variables, *bb_b_put/2* ensures live references.
+and SWI Prologs. But note: *bb_put/2* ensures copies of attributed
+variables, *bb_b_put/2* ensures live references:
+```console
+	✗ tpl -q
+	?- freeze(V1,writeln(hello(V1))), bb_put(key,V1), bb_get(key,V2), V1=99, V2=98.
+	hello(99)
+	hello(98)
+	   V1 = 99, V2 = 98.
+	?- freeze(V1,writeln(hello(V1))), bb_b_put(key,V1), bb_get(key,V2), V2=99.
+	hello(99)
+	   V1 = 99, V2 = 99.
+	?-
+```
 
 
 Crypto functions
