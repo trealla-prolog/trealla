@@ -197,7 +197,7 @@ static bool bif_bb_get_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.cur_ctx, 1);
 
 	if (is_var(p2) && is_var(tmp)) {
-		const frame *f = GET_FRAME(q->st.cur_ctx);
+		const frame *f = GET_FRAME(is_ref(tmp)?tmp->val_ctx:q->st.cur_ctx);
 		const slot *e = get_slot(q, f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
 		slot *e2 = get_slot(q, f2, p2->var_num);
@@ -258,7 +258,7 @@ static bool bif_bb_delete_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.cur_ctx, 1);
 
 	if (is_var(p2) && is_var(tmp)) {
-		const frame *f = GET_FRAME(q->st.cur_ctx);
+		const frame *f = GET_FRAME(is_ref(tmp)?tmp->val_ctx:q->st.cur_ctx);
 		const slot *e = get_slot(q, f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
 		slot *e2 = get_slot(q, f2, p2->var_num);
