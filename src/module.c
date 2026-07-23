@@ -415,6 +415,21 @@ bool find_goal_expansion(module *m, cell *c)
 	return false;
 }
 
+// Like find_goal_expansion but ignores a module's wildcard (var-headed)
+// goal_expansion. Used to decide whether to run the expansion query in
+// user_m: only redirect when user has a SPECIFIC hook for this functor,
+// so a wildcard user:goal_expansion (eg. clpz) does not hijack every goal.
+
+bool find_goal_expansion_specific(module *m, cell *c)
+{
+	for (pi *g = m->gex_head; g; g = g->next) {
+		if ((g->key.val_off == c->val_off) && (g->key.arity == c->arity))
+			return true;
+	}
+
+	return false;
+}
+
 bool search_goal_expansion(module *m, cell *c)
 {
 	if (find_goal_expansion(m, c))

@@ -2548,7 +2548,15 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	//printf("*** [%s] goal_expansion %s/%u, p->is_command=%d\n", p->m->name, C_STR(p, goal), goal->arity, p->is_command);
 
-	query *q = query_create(p->m);
+	// Scryer-compatible: user:goal_expansion/2 is registered in `user`, but
+	// each module has its own (empty) goal_expansion/2 that shadows it. When
+	// the hook lives only in `user`, run the expansion query in user_m so the
+	// unqualified call resolves it (no need to export goal_expansion/2).
+	module *exp_m = p->m;
+	if (!find_goal_expansion(p->m, goal) && p->pl->user_m && find_goal_expansion_specific(p->pl->user_m, goal))
+		exp_m = p->pl->user_m;
+
+	query *q = query_create(exp_m);
 	check_error(q);
 	q->trace = false;
 	q->varnames = true;
@@ -2569,7 +2577,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	//printf("+++ goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 	p->pl->in_goal_expansion = true;
 	const unsigned num_vars_before = p->cl->num_vars;
-	parser *p2 = parser_create(p->m);
+	parser *p2 = parser_create(exp_m);
 	check_error(p2, query_destroy(q));
 	q->top = p2;
 	p2->cl->num_vars = p->cl->num_vars;

@@ -28,6 +28,7 @@ predicate *find_predicate(module *m, cell *c);
 predicate *search_predicate(module *m, cell *c);
 predicate *create_predicate(module *m, cell *c, bool *created);
 bool find_goal_expansion(module *m, cell *c);
+bool find_goal_expansion_specific(module *m, cell *c);
 bool search_goal_expansion(module *m, cell *c);
 void create_goal_expansion(module *m, cell *c);
 bool needs_quoting(module *m, const char *src, int srclen);
