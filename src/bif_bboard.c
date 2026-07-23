@@ -189,7 +189,7 @@ static bool bif_bb_get_2(query *q)
 	prolog_unlock(q->pl);
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
-	cell *tmp = p2->flags & FLAG_LIVE ?
+	cell *tmp = val->flags & FLAG_LIVE ?
 		bb_import_term_to_heap(q, val, p2_ctx) :
 		import_term(q, val, q->st.cur_ctx);
 	CHECKED(tmp);
