@@ -265,11 +265,8 @@ call_residue_vars(G, Ls) :-
 	'$list_attributed'(Mark, Ls0),
 	sort(Ls0, Ls).
 
-duplicate_term_(Term, Copy) :-
-	'$duplicate_term'(Term, Copy).
-
 copy_term(Term, Copy, Gs) :-
-	duplicate_term_(Term, Copy),
+	copy_term(Term, Copy),
 	term_attributed_variables_(Copy, Vs),
 	collect_goals_(Vs, [], Gs).
 
@@ -835,7 +832,7 @@ option(Opt, Options) :-
 	memberchk(Opt, Options).
 
 findnsols(P1,P2,P3,P4) :-
-	copy_term(f(P2,P3),f(P2b,P3b)),
+	copy_term(f(P2,P3), f(P2b,P3b)),
 	'$findnsols'(P1,P2b,P3b,P4).
 
 :- help(findnsols(+integer,+term,+callable,?list), [iso(false)]).

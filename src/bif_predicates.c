@@ -2073,11 +2073,6 @@ static bool do_copy_term(query *q, bool copy_attrs)
 	return unify(q, p2x, p2x_ctx, tmp, q->st.cur_ctx);
 }
 
-static bool bif_sys_duplicate_term_2(query *q)
-{
-	return do_copy_term(q, true);
-}
-
 static bool bif_iso_copy_term_2(query *q)
 {
 	return do_copy_term(q, true);
@@ -6410,6 +6405,7 @@ builtins g_other_bifs[] =
 	{"module_help", 2, bif_module_help_2, "+atom,+predicate_indicator", false, false, BLAH},
 	{"module_help", 1, bif_module_help_1, "+atom", false, false, BLAH},
 
+	{"duplicate_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
 	{"string_codes", 2, bif_string_codes_2, "+string,-list", false, false, BLAH},
 	{"term_singletons", 2, bif_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"string", 1, bif_string_1, "+term", false, false, BLAH},
@@ -6458,7 +6454,6 @@ builtins g_other_bifs[] =
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
 #endif
 
-	{"$duplicate_term", 2, bif_sys_duplicate_term_2, "+term,?term", true, false, BLAH},
 	{"$clone_term", 2, bif_sys_clone_term_2, "+term,?term", false, false, BLAH},
 	{"$module", 1, bif_sys_module_1, "?atom", false, false, BLAH},
 	{"$modules", 1, bif_sys_modules_1, "-list", false, false, BLAH},
