@@ -331,6 +331,27 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 		if (from && (c->var_num == from->var_num) && (c->val_ctx == from_ctx)) {
 			c->var_num = to->var_num;
 			c->val_ctx = to_ctx;
+
+			// BUGFIX: the replacement fast-path must still carry over
+			// attributes from the source variable onto the target.
+
+			if (copy_attrs && !c->tmp_attrs) {
+				const frame *f = GET_FRAME(from_ctx);
+				const slot *e = get_slot(q, f, from->var_num);
+				cell *attrs = e->c.val_attrs;
+
+				if (attrs) {
+					cell *save_tmp_heap = q->tmp_heap;
+					pl_idx save_tmp_hp = q->tmphp;
+					q->tmp_heap = NULL;
+					cell *tmp = copy_term_to_heap(q, attrs, q->st.cur_ctx, false);
+					CHECKED(tmp);
+					c->tmp_attrs = tmp;
+					TPL_free(q->tmp_heap);
+					q->tmp_heap = save_tmp_heap;
+					q->tmphp = save_tmp_hp;
+				}
+			}
 		} else {
 			const frame *f = GET_FRAME(c->val_ctx);
 			const slot *e = get_slot(q, f, c->var_num);
