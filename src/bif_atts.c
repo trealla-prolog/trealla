@@ -471,12 +471,56 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	return true;
 }
 
+static bool bif_sys_bb_is_live_1(query *q)
+{
+	GET_FIRST_ARG(p1,nonvar);
+
+	if (is_compound(p1) &&
+		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		return throw_error(q, p1, p1_ctx, "type_error", "callable");
+
+	module *m;
+	char tmpbuf[1024];
+
+	if (is_compound(p1)) {
+		cell *p1_m = p1 + 1;
+		p1 = p1_m + p1_m->num_cells;
+
+		if (!is_atom(p1_m) || !is_smallint_or_atom(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		m = find_module(q->pl, C_STR(q, p1_m));
+
+		if (!m)
+			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
+	} else
+		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
+
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+
+	const char *key = tmpbuf;
+	cell *val;
+	bool live = false;
+
+	prolog_lock(q->pl);
+
+	if (sl_get(q->st.m->keyval, key, (void*)&val))
+		live = (val->flags & FLAG_LIVE) ? true : false;
+
+	prolog_unlock(q->pl);
+	return live;
+}
+
 builtins g_atts_bifs[] =
 {
 	{"attribute", 3, bif_attribute_3, "?atom,+atom,+integer", false, false, BLAH},
 	{"put_atts", 2, bif_put_atts_2, "@variable,+term", false, false, BLAH},
 	{"get_atts", 2, bif_get_atts_2, "@variable,-term", false, false, BLAH},
 
+	{"$bb_is_live", 1, bif_sys_bb_is_live_1, ":atom", false, false, BLAH},
 	{"$list_attributed", 2, bif_sys_list_attributed_2, "+integer,-list", false, false, BLAH},
 	{"$unattributed_var", 1, bif_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, bif_sys_attributed_var_1, "@variable", false, false, BLAH},

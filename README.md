@@ -613,7 +613,8 @@ extension:
 	bb_b_put/2					# bb_b_put(:atom, +term)
 
 Note: attributes are preserved across bb_put/bb_get like Scryer
-and SWI Prologs (and SICStus?).
+and SWI Prologs (and SICStus?). But note: *bb_put/2* ensures copies
+of attributed variables, *bb_b_put/2* ensures live references.
 
 
 Crypto functions

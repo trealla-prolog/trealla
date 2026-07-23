@@ -69,8 +69,10 @@ bb_put(K, T) :-
 	).
 
 bb_get(K, T) :-
-	'$bb_get'(K, V),
-	'$bb_rehydrate'(V, T).
+    (	'$bb_is_live'(K) ->
+		'$bb_get'(K, T)
+    ;	'$bb_get'(K, V), '$bb_rehydrate'(V, T)
+    ).
 
 bb_delete(K, T) :-
 	'$bb_get'(K, V),
