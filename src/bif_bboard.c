@@ -59,7 +59,7 @@ static bool bif_bb_b_put_2(query *q)
 	CHECKED(undo_on_backtrack(q, key, UNDO_BBOARD));
 
 	prolog_lock(q->pl);
-	sl_set(q->st.m->keyval, key, val);
+	sl_set(m->keyval, key, val);
 	prolog_unlock(q->pl);
 
 	return true;
@@ -116,13 +116,13 @@ static bool bif_bb_put_2(query *q)
 
 	prolog_lock(q->pl);
 
-	while (sl_del(q->st.m->keyval, key1))
+	while (sl_del(m->keyval, key1))
 		;
 
-	while (sl_del(q->st.m->keyval, key2))
+	while (sl_del(m->keyval, key2))
 		;
 
-	sl_app(q->st.m->keyval, key2, val);
+	sl_app(m->keyval, key2, val);
 	prolog_unlock(q->pl);
 
 	return true;
@@ -172,7 +172,7 @@ static bool bif_bb_get_2(query *q)
 
 	prolog_lock(q->pl);
 
-	if (!sl_get(q->st.m->keyval, key, (void*)&val)) {
+	if (!sl_get(m->keyval, key, (void*)&val)) {
 		if (is_atom(p1))
 			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
 		else
@@ -180,7 +180,7 @@ static bool bif_bb_get_2(query *q)
 
 		key = tmpbuf;
 
-		if (!sl_get(q->st.m->keyval, key, (void*)&val)) {
+		if (!sl_get(m->keyval, key, (void*)&val)) {
 			prolog_unlock(q->pl);
 			return false;
 		}
@@ -234,7 +234,7 @@ static bool bif_bb_delete_2(query *q)
 
 	prolog_lock(q->pl);
 
-	if (!sl_get(q->st.m->keyval, key, (void*)&val)) {
+	if (!sl_get(m->keyval, key, (void*)&val)) {
 		prolog_unlock(q->pl);
 		return false;
 	}
@@ -253,10 +253,10 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
-	bool ok = sl_del(q->st.m->keyval, key);
+	bool ok = sl_del(m->keyval, key);
 
 	if (ok) {
-		while (sl_del(q->st.m->keyval, key))
+		while (sl_del(m->keyval, key))
 			;
 	}
 
@@ -299,7 +299,7 @@ static bool bif_bb_update_3(query *q)
 
 	prolog_lock(q->pl);
 
-	if (!sl_get(q->st.m->keyval, key, (void*)&val)) {
+	if (!sl_get(m->keyval, key, (void*)&val)) {
 		prolog_unlock(q->pl);
 		return false;
 	}
@@ -328,10 +328,10 @@ static bool bif_bb_update_3(query *q)
 	CHECKED(value, prolog_unlock(q->pl));
 	dup_cells(value, tmp, tmp->num_cells);
 
-	while (sl_del(q->st.m->keyval, key))
+	while (sl_del(m->keyval, key))
 		;
 
-	sl_app(q->st.m->keyval, key, value);
+	sl_app(m->keyval, key, value);
 
 	prolog_unlock(q->pl);
 
@@ -374,7 +374,7 @@ static bool bif_sys_bb_is_live_1(query *q)
 
 	prolog_lock(q->pl);
 
-	if (sl_get(q->st.m->keyval, key, (void*)&val))
+	if (sl_get(m->keyval, key, (void*)&val))
 		live = (val->flags & FLAG_LIVE) ? true : false;
 
 	prolog_unlock(q->pl);
