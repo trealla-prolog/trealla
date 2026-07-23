@@ -187,12 +187,12 @@ static bool bif_bb_get_2(query *q)
 	}
 
 	prolog_unlock(q->pl);
-	GET_FIRST_ARG(p1x,nonvar);
-	GET_NEXT_ARG(p2,any);
 	cell *tmp = val->flags & FLAG_LIVE ?
-		bb_import_term_to_heap(q, val, p2_ctx) :
+		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
 		import_term(q, val, q->st.cur_ctx);
 	CHECKED(tmp);
+	GET_FIRST_ARG(p1x,nonvar);
+	GET_NEXT_ARG(p2,any);
 
 	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.cur_ctx, 1);
 
@@ -248,12 +248,12 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
-	GET_FIRST_ARG(p1x,nonvar);
-	GET_NEXT_ARG(p2,any);
 	cell *tmp = val->flags & FLAG_LIVE ?
-		bb_import_term_to_heap(q, val, p2->val_ctx) :
+		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
 		import_term(q, val, q->st.cur_ctx);
 	CHECKED(tmp, prolog_unlock(q->pl));
+	GET_FIRST_ARG(p1x,nonvar);
+	GET_NEXT_ARG(p2,any);
 
 	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.cur_ctx, 1);
 
@@ -324,15 +324,15 @@ static bool bif_bb_update_3(query *q)
 		return false;
 	}
 
-	GET_FIRST_ARG(p1x,nonvar);
-	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,any);
 	q->noderef = true;
 	cell *tmp = val->flags & FLAG_LIVE ?
-		bb_import_term_to_heap(q, val, p2->val_ctx) :
+		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
 		import_term(q, val, q->st.cur_ctx);
 	q->noderef = false;
 	CHECKED(tmp, prolog_unlock(q->pl));
+	GET_FIRST_ARG(p1x,nonvar);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
 
 	if (DO_DUMP) DUMP_TERM2("bb_update", tmpbuf, p2, p2_ctx, 1);
 
