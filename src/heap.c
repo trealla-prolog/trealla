@@ -354,9 +354,18 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 			}
 		} else {
 			const frame *f = GET_FRAME(c->val_ctx);
-			const slot *e = get_slot(q, f, c->var_num);
-			cell *attrs = copy_attrs && c->tmp_attrs ? c->tmp_attrs : e->c.val_attrs;
+			// NB. get_ordered_slot_num is pure arithmetic (no deref), so
+			// it is safe even when c->val_ctx names a long-dead frame, as
+			// happens when rebasing an imported (detached) term image.
+			// Only consult the slot itself when attributes are wanted:
+			// dereferencing a dead frame's slot is undefined.
 			const size_t slot_nbr = get_ordered_slot_num(q, f, c->var_num);
+			cell *attrs = NULL;
+
+			if (copy_attrs) {
+				const slot *e = get_slot(q, f, c->var_num);
+				attrs = c->tmp_attrs ? c->tmp_attrs : e->c.val_attrs;
+			}
 			int var_num;
 
 			if ((var_num = accum_slot(q, slot_nbr, q->varno)) == -1) {

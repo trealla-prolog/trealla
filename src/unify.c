@@ -547,6 +547,38 @@ static const struct dispatch g_disp[] =
 static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
 {
 	if (is_var(p1) && is_var(p2)) {
+		// Var-var with exactly one side attributed: bind the plain var
+		// to the attributed one so the attributes remain visible on the
+		// surviving root (SICStus attvar semantics - no hook fires for
+		// attvar/plain-var unification). If the attributed var lives in
+		// a younger frame, pin that frame against recovery.
+		const slot *e1 = get_slot(q, GET_FRAME(p1_ctx), p1->var_num);
+		const slot *e2 = get_slot(q, GET_FRAME(p2_ctx), p2->var_num);
+		bool a1 = !is_ref(&e1->c) && e1->c.val_attrs != NULL;
+		bool a2 = !is_ref(&e2->c) && e2->c.val_attrs != NULL;
+
+		if (a1 && !a2) {
+			set_var(q, p2, p2_ctx, p1, p1_ctx);
+
+			if (p1_ctx > p2_ctx) {
+				frame *fa = GET_FRAME(p1_ctx);
+				fa->no_recov = true;
+			}
+
+			return true;
+		}
+
+		if (a2 && !a1) {
+			set_var(q, p1, p1_ctx, p2, p2_ctx);
+
+			if (p2_ctx > p1_ctx) {
+				frame *fa = GET_FRAME(p2_ctx);
+				fa->no_recov = true;
+			}
+
+			return true;
+		}
+
 		if (p2_ctx > p1_ctx)
 			set_var(q, p2, p2_ctx, p1, p1_ctx);
 		else if (p2_ctx < p1_ctx)

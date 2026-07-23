@@ -709,11 +709,127 @@ static bool find_reset_handler(query *q)
 	return false;
 }
 
+// Collect every pending goal from the shift point up to (but excluding)
+// the reset barrier, appending each as a (cell*, ctx) pair. Two passes:
+// pass==0 just counts (goals + total goal cells), pass==1 fills the arrays.
+
+// Scan a run of goals starting at c (in ctx cc), appending each until the
+// clause end. Stops early (and sets *hit) at the reset's $drop_barrier
+// instruction, which marks the boundary of the captured continuation.
+
+static void scan_cont_segment(query *q, cell *c, pl_ctx cc, int pass,
+	cell **goals, pl_ctx *ctxs, unsigned *pn, unsigned *ptotal, bool *hit)
+{
+	while (c && !is_end(c)) {
+		if (is_interned(c) && (c->val_off == g_sys_drop_barrier_s)) {
+			*hit = true;
+			return;
+		}
+
+		if (pass) { goals[*pn] = c; ctxs[*pn] = cc; }
+		*ptotal += c->num_cells;
+		(*pn)++;
+		c += c->num_cells;
+	}
+}
+
+// Collect every pending goal from the shift point up to (but excluding)
+// the nearest reset barrier. The barrier is recognised by the $drop_barrier
+// instruction that reset/3 installs after its goal. Two passes: pass==0
+// counts, pass==1 fills the arrays.
+
+static unsigned collect_cont_goals(query *q, int pass,
+	cell **goals, pl_ctx *ctxs, unsigned *out_total_cells)
+{
+	unsigned n = 0, total = 0;
+	bool hit = false;
+
+	// Segment 0: the rest of the shift's own clause body.
+	scan_cont_segment(q, q->st.instr + q->st.instr->num_cells, q->st.cur_ctx,
+		pass, goals, ctxs, &n, &total, &hit);
+
+	// Walk up the frame chain; each frame contributes its caller's goals
+	// *after* the call that entered it (f->instr points at the call site).
+	pl_ctx f_ctx = q->st.cur_ctx;
+
+	while (!hit) {
+		const frame *f = GET_FRAME(f_ctx);
+
+		if (f->prev == (pl_ctx)CTX_NUL)
+			break;
+
+		if (f->instr)
+			scan_cont_segment(q, f->instr + f->instr->num_cells, f->prev,
+				pass, goals, ctxs, &n, &total, &hit);
+
+		if (f->prev == f_ctx)
+			break;
+
+		f_ctx = f->prev;
+	}
+
+	if (out_total_cells) *out_total_cells = total;
+	return n;
+}
+
 static bool bif_shift_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	q->ball = p1;
 	q->ball_ctx = p1_ctx;
+
+	bool have_barrier = q->st.cp != 0;
+
+	if (have_barrier) {
+		unsigned total_cells = 0;
+		unsigned n = collect_cont_goals(q, 0, NULL, NULL, &total_cells);
+
+		if (n == 0) {
+			// Empty continuation.
+			cell *tmp2 = alloc_heap(q, 2);
+			make_instr(tmp2, g_cont_s, NULL, 1, 1);
+			make_atom(tmp2+1, g_true_s);
+			q->cont = tmp2;
+			q->cont_ctx = q->st.cur_ctx;
+			return find_reset_handler(q);
+		}
+
+		cell **goals = TPL_malloc(sizeof(cell*) * n);
+		pl_ctx *ctxs = TPL_malloc(sizeof(pl_ctx) * n);
+		CHECKED(goals); CHECKED(ctxs);
+		collect_cont_goals(q, 1, goals, ctxs, NULL);
+
+		// Right-nested conjunction: (n-1) comma cells + total goal cells,
+		// wrapped in cont(...). If n==1 there are no commas.
+		unsigned conj_cells = total_cells + (n - 1);
+		cell *tmp2 = alloc_heap(q, 1 + conj_cells);
+
+		if (!tmp2) { TPL_free(goals); TPL_free(ctxs); return false; }
+
+		make_instr(tmp2, g_cont_s, NULL, 1, conj_cells);
+		cell *dst = tmp2 + 1;
+
+		for (unsigned i = 0; i < n; i++) {
+			if (i < n - 1) {
+				// remaining cells after this comma header
+				unsigned rest = 0;
+				for (unsigned j = i; j < n; j++) rest += goals[j]->num_cells;
+				rest += (n - 1 - i);	// remaining comma cells
+				make_instr(dst, g_conjunction_s, bif_iso_conjunction_2, 2, rest);
+				SET_OP(dst, OP_XFY);
+				dst++;
+			}
+
+			dst += copy_cells_by_ref(dst, goals[i], ctxs[i], goals[i]->num_cells);
+		}
+
+		TPL_free(goals); TPL_free(ctxs);
+		q->cont = tmp2;
+		q->cont_ctx = q->st.cur_ctx;
+		return find_reset_handler(q);
+	}
+
+	// Fallback: original single-clause capture.
 	cell *next = q->st.instr + q->st.instr->num_cells;
 	cell *tmp2 = alloc_heap(q, 1+next->num_cells);
 	make_instr(tmp2, g_cont_s, NULL, 1, next->num_cells);

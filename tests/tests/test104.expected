@@ -1,11 +1,11 @@
-freeze:freeze(_5,true)
+freeze:freeze(_66,true)
 fired
-freeze:freeze(_7,(write(fired),nl))
+freeze:freeze(_156,(write(fired),nl))
 sharing_preserved
 dif_blocks
 dif_allows
 plain_ok
-freeze:freeze(_16,true)
+freeze:freeze(_615,true)
 deleted
-freeze:freeze(_20,true)
-freeze:freeze(_22,true)
+freeze:freeze(_745,true)
+freeze:freeze(_870,true)

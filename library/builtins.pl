@@ -63,12 +63,44 @@ bb_b_put(K, T) :-
 bb_put(K, T) :-
 	term_variables(T, Vs),
 	(	'$bb_any_attributed'(Vs) ->
-		copy_term(T, T2, Gs),
+		'$bb_atts_goals'(T, Gs),
 		(	Gs == [] ->
 			'$bb_put'(K, '$bb'(T))
-		;	'$bb_put'(K, '$bb'('$bb_attv'(T2, Gs)))
+		;	'$bb_put'(K, '$bb'('$bb_attv'(T, Gs)))
 		)
 	;	'$bb_put'(K, '$bb'(T))
+	).
+
+% Residualize the RAW attributes of every attributed variable reachable
+% from T, including variables only reachable through other variables'
+% attribute values (attvar graphs may be cyclic through attributes, eg.
+% doubly-linked lists; flattening to put_atts/2 goals over shared vars
+% linearizes such cycles). Unlike attribute_goals//1-based residualization
+% this needs no cooperation from the attribute-owning module, so modules
+% with projection/removal-style attribute_goals//1 hooks (eg. library
+% tabling ported from Scryer) survive the blackboard round-trip.
+
+'$bb_atts_goals'(T, Gs) :-
+	term_variables(T, Vs),
+	'$bb_atts_goals_'(Vs, [], _, Gs, []).
+
+'$bb_atts_goals_'([], Seen, Seen, Gs, Gs).
+'$bb_atts_goals_'([V|Vs], Seen0, Seen, Gs0, Gs) :-
+	(	'$bb_var_seen'(V, Seen0) ->
+		'$bb_atts_goals_'(Vs, Seen0, Seen, Gs0, Gs)
+	;	(	'$attributed_var'(V), get_atts(V, Atts), Atts \== [] ->
+			Gs0 = [put_atts(V, Atts)|Gs1],
+			term_variables(Atts, NewVs),
+			'$bb_atts_goals_'(NewVs, [V|Seen0], Seen1, Gs1, Gs2),
+			'$bb_atts_goals_'(Vs, Seen1, Seen, Gs2, Gs)
+		;	'$bb_atts_goals_'(Vs, [V|Seen0], Seen, Gs0, Gs)
+		)
+	).
+
+'$bb_var_seen'(V, [H|T]) :-
+	(	V == H ->
+		true
+	;	'$bb_var_seen'(V, T)
 	).
 
 bb_get(K, T) :-
@@ -99,6 +131,11 @@ bb_update(K, O, N) :-
 
 '$bb_rehydrate'(V, T) :-
 	(	nonvar(V), V = '$bb_attv'(T2, Gs) ->
+		% Attach the attributes first, then unify with the caller's term.
+		% Unifying afterwards is what fires verify_attributes/3 hooks when
+		% the caller passed a bound term (eg. bb_get(k, 1) waking a frozen
+		% goal). Attributes surviving var-var unification is guaranteed by
+		% the attvar-aware binding order in unify_internal().
 		'$bb_call_goals'(Gs),
 		T = T2
 	;	T = V
@@ -863,4 +900,3 @@ thread_join(Tid, Status) :-
 
 sys_forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
-
