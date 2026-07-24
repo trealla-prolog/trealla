@@ -2075,10 +2075,15 @@ static bool do_copy_term(query *q, bool copy_attrs)
 
 static bool bif_iso_copy_term_2(query *q)
 {
+	return do_copy_term(q, false);
+}
+
+static bool bif_duplicate_term_2(query *q)
+{
 	return do_copy_term(q, true);
 }
 
-static bool bif_iso_copy_term_nat_2(query *q)
+static bool bif_copy_term_nat_2(query *q)
 {
 	return do_copy_term(q, false);
 }
@@ -6360,7 +6365,6 @@ builtins g_iso_bifs[] =
 	{"arg", 3, bif_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
 	{"functor", 3, bif_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
 	{"copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
-	{"copy_term_nat", 2, bif_iso_copy_term_nat_2, "+term,?term", false, false, BLAH},
 	{"term_variables", 2, bif_iso_term_variables_2, "+term,-list", true, false, BLAH},
 	{"atom_length", 2, bif_iso_atom_length_2, "?list,?integer", true, false, BLAH},
 	{"atom_concat", 3, bif_iso_atom_concat_3, "+atom,+atom,?atom", true, false, BLAH},
@@ -6449,6 +6453,9 @@ builtins g_other_bifs[] =
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
 	{"can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
+
+	{"duplicate_term", 2, bif_duplicate_term_2, "+term,?term", false, false, BLAH},
+	{"copy_term_nat", 2, bif_copy_term_nat_2, "+term,?term", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
