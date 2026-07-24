@@ -917,6 +917,7 @@ struct prolog_ {
 	bool trace:1;
 	bool in_goal_expansion:1;
 	bool global_bb:1;
+	bool tabling:1;			// tabling flag: enabled by default
 };
 
 extern pl_idx g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;

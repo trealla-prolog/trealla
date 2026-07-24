@@ -726,6 +726,24 @@ static void scan_cont_segment(query *q, cell *c, pl_ctx cc, int pass,
 			return;
 		}
 
+		// Compiled if-then-else: a suspension inside a then-branch sees
+		// the jump-over-the-else in its pending goals. Follow the jump
+		// (its operand is the cell distance from the jump cell itself
+		// to the landing cell) instead of capturing it as a goal.
+
+		if (is_interned(c) && (c->val_off == g_sys_jump_s) && (c->arity == 1)) {
+			c += get_smallint(c+1);
+			continue;
+		}
+
+		// The landing cell of an if-then-else is a bare true/0: harmless
+		// to capture, skip it to keep continuations tidy.
+
+		if (is_interned(c) && (c->val_off == g_true_s) && !c->arity && c->bif_ptr) {
+			c += c->num_cells;
+			continue;
+		}
+
 		if (pass) { goals[*pn] = c; ctxs[*pn] = cc; }
 		*ptotal += c->num_cells;
 		(*pn)++;
@@ -785,10 +803,12 @@ static bool bif_shift_1(query *q)
 		unsigned n = collect_cont_goals(q, 0, NULL, NULL, &total_cells);
 
 		if (n == 0) {
-			// Empty continuation.
+			// Empty continuation. NB. must be an executable true/0
+			// instruction (with its builtin resolved), not a bare atom:
+			// fabricated cells bypass the compiler's builtin lookup.
 			cell *tmp2 = alloc_heap(q, 2);
 			make_instr(tmp2, g_cont_s, NULL, 1, 1);
-			make_atom(tmp2+1, g_true_s);
+			make_instr(tmp2+1, g_true_s, bif_iso_true_0, 0, 0);
 			q->cont = tmp2;
 			q->cont_ctx = q->st.cur_ctx;
 			return find_reset_handler(q);

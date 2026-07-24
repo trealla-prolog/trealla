@@ -2401,6 +2401,10 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, q->pl->global_bb ? g_true_s : g_false_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "tabling")) {
+		cell tmp;
+		make_atom(&tmp, q->pl->tabling ? g_true_s : g_false_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 #if USE_THREADS
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
 		cell tmp;
@@ -2706,6 +2710,14 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 			q->pl->global_bb = true;
 		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
 			q->pl->global_bb = false;
+		else {
+			return flag_value_error(q, p1, p2);
+		}
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "tabling")) {
+		if (!CMP_STRING_TO_CSTR(q, p2, "true") || !CMP_STRING_TO_CSTR(q, p2, "on"))
+			q->pl->tabling = true;
+		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
+			q->pl->tabling = false;
 		else {
 			return flag_value_error(q, p1, p2);
 		}
