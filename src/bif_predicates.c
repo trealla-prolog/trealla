@@ -6466,6 +6466,7 @@ builtins g_other_bifs[] =
 	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
 	{"duplicate_term", 2, bif_duplicate_term_2, "+term,?term", false, false, BLAH},
+	{"copy_term_with_attributes", 2, bif_duplicate_term_2, "+term,?term", false, false, BLAH},
 	{"copy_term_nat", 2, bif_copy_term_nat_2, "+term,?term", false, false, BLAH},
 
 #if USE_OPENSSL
