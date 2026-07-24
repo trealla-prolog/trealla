@@ -238,7 +238,7 @@ call_residue_vars(G, Ls) :-
 	sort(Ls0, Ls).
 
 copy_term(Term, Copy, Gs) :-
-	copy_term(Term, Copy),
+	duplicate_term(Term, Copy),
 	term_attributed_variables_(Copy, Vs),
 	collect_goals_(Vs, [], Gs).
 
