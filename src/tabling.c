@@ -25,10 +25,24 @@
 
 typedef struct tnode_ {
 	cell key;
-	struct tnode_ *child, *sibling;
-	void *value;			// table handle later; unused by the tests
+	struct tnode_ *child, *sibling;	// all children, insertion-linked
+	struct tnode_ *hnext;		// hash-bucket chain (when indexed)
+	struct thash_ *index;		// hash over THIS node's children, or NULL
+	unsigned nchildren;
+	void *value;			// table handle; unused by the tests
 	bool is_leaf;
 } tnode;
+
+// Above this many children a node's child list gets a hash index:
+// linear sibling scans are quadratic for flat key spaces (a tabled
+// fib(N,_) puts every distinct N at the same level).
+
+#define TRIE_INDEX_THRESHOLD 16
+
+typedef struct thash_ {
+	tnode **buckets;
+	unsigned nbuckets, count;
+} thash;
 
 // ---------------------------------------------------------------------
 // Key comparison. Keys are single canonical cells: TAG_VAR cells carry a
@@ -87,6 +101,108 @@ static bool key_eq(query *q, const cell *a, const cell *b)
 	}
 }
 
+// Hash consistent with key_eq: atomish keys (interned atoms and plain
+// cstrings) hash their TEXT so both representations collide correctly.
+
+static unsigned key_hash(query *q, const cell *c)
+{
+	if (is_var(c))
+		return 0x9e3779b9u ^ c->var_num;
+
+	if (key_is_atomish(c) || (is_cstring(c) && is_string(c))) {
+		const char *p = C_STR(q, c);
+		size_t len = C_STRLEN(q, c);
+		unsigned h = 2166136261u;
+
+		for (size_t i = 0; i < len; i++)
+			h = (h ^ (unsigned char)p[i]) * 16777619u;
+
+		return is_string(c) ? h ^ 0x51175117u : h;
+	}
+
+	if (is_interned(c))
+		return (unsigned)c->val_off * 33u + c->arity;
+
+	switch (c->tag) {
+	case TAG_INT:
+		if (is_bigint(c)) {
+			mp_int z = &c->val_bigint->ival;
+			unsigned h = 0x811c9dc5u;
+
+			for (mp_size i = 0; i < MP_USED(z); i++)
+				h = (h ^ (unsigned)MP_DIGITS(z)[i]) * 16777619u;
+
+			return h;
+		}
+
+		return (unsigned)(c->val_int ^ (c->val_int >> 32));
+	case TAG_FLOAT: {
+		union { double d; uint64_t u; } u = { .d = c->val_float };
+		return (unsigned)(u.u ^ (u.u >> 32));
+	}
+	case TAG_RATIONAL: {
+		mp_rat r = &c->val_bigint->irat;
+		unsigned h = 0x811c9dc5u;
+
+		for (mp_size i = 0; i < MP_USED(&r->num); i++)
+			h = (h ^ (unsigned)MP_DIGITS(&r->num)[i]) * 16777619u;
+
+		for (mp_size i = 0; i < MP_USED(&r->den); i++)
+			h = (h ^ (unsigned)MP_DIGITS(&r->den)[i]) * 16777619u;
+
+		return h;
+	}
+	default:
+		return 0;
+	}
+}
+
+static void thash_insert(thash *h, tnode *n, unsigned hv)
+{
+	unsigned b = hv % h->nbuckets;
+	n->hnext = h->buckets[b];
+	h->buckets[b] = n;
+	h->count++;
+}
+
+static bool thash_grow(query *q, thash *h)
+{
+	unsigned nb = h->nbuckets * 2;
+	tnode **nbk = calloc(nb, sizeof(tnode*));
+	if (!nbk) return false;
+	tnode **old = h->buckets;
+	unsigned oldn = h->nbuckets;
+	h->buckets = nbk;
+	h->nbuckets = nb;
+	h->count = 0;
+
+	for (unsigned i = 0; i < oldn; i++) {
+		for (tnode *n = old[i]; n; ) {
+			tnode *next = n->hnext;
+			thash_insert(h, n, key_hash(q, &n->key));
+			n = next;
+		}
+	}
+
+	free(old);
+	return true;
+}
+
+static bool trie_index_children(query *q, tnode *parent)
+{
+	thash *h = calloc(1, sizeof(thash));
+	if (!h) return false;
+	h->nbuckets = 64;
+	h->buckets = calloc(h->nbuckets, sizeof(tnode*));
+	if (!h->buckets) { free(h); return false; }
+
+	for (tnode *n = parent->child; n; n = n->sibling)
+		thash_insert(h, n, key_hash(q, &n->key));
+
+	parent->index = h;
+	return true;
+}
+
 // ---------------------------------------------------------------------
 // Walk state: canonical variable numbering + trie cursor.
 
@@ -139,12 +255,25 @@ static int twalk_var_num(twalk *w, pl_ctx ctx, unsigned var_num)
 
 static bool trie_step(twalk *w, const cell *key)
 {
-	tnode **slot = w->node ? &w->node->child : w->root;
+	tnode *parent = w->node;
+	tnode **slot = parent ? &parent->child : w->root;
+	thash *h = parent ? parent->index : NULL;
 
-	for (tnode *n = *slot; n; n = n->sibling) {
-		if (key_eq(w->q, &n->key, key)) {
-			w->node = n;
-			return true;
+	if (h) {
+		unsigned hv = key_hash(w->q, key);
+
+		for (tnode *n = h->buckets[hv % h->nbuckets]; n; n = n->hnext) {
+			if (key_eq(w->q, &n->key, key)) {
+				w->node = n;
+				return true;
+			}
+		}
+	} else {
+		for (tnode *n = *slot; n; n = n->sibling) {
+			if (key_eq(w->q, &n->key, key)) {
+				w->node = n;
+				return true;
+			}
 		}
 	}
 
@@ -159,6 +288,21 @@ static bool trie_step(twalk *w, const cell *key)
 	*slot = n;
 	w->node = n;
 	w->created_any = true;
+
+	if (parent) {
+		parent->nchildren++;
+
+		if (h) {
+			if (h->count >= h->nbuckets - h->nbuckets/4) {
+				if (!thash_grow(w->q, h)) { w->oom = true; return false; }
+			}
+
+			thash_insert(h, n, key_hash(w->q, key));
+		} else if (parent->nchildren > TRIE_INDEX_THRESHOLD) {
+			if (!trie_index_children(w->q, parent)) { w->oom = true; return false; }
+		}
+	}
+
 	return true;
 }
 
@@ -252,6 +396,12 @@ static void trie_free(tnode *n)
 	while (n) {
 		tnode *sib = n->sibling;
 		trie_free(n->child);
+
+		if (n->index) {
+			free(n->index->buckets);
+			free(n->index);
+		}
+
 		unshare_cell(&n->key);
 		free(n);
 		n = sib;
