@@ -384,7 +384,8 @@ Non-standard predicates
 	partial_string/3            # partial_string(+string,-String,-Var)
 	if/3, (*->)/2               # soft-cut
 	call_det/2					# call_det(+call,?boolean)
-	copy_term_nat/2             # doesn't copy attrs (opposite to copy_term/2)
+	copy_term_nat/2             # doesn't copy attrs (same as copy_term/2)
+	duplicate_term/2            # does copy attrs (opposite to copy_term/2)
 	unifiable/3                 # unifiable(+term1,+term2,-Goals)
 	?=/2                        # ?=(+term1,+term2)
 	term_expansion/2
