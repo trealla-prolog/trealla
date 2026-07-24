@@ -30,3 +30,8 @@ test2 :-
     fib(40,F),
     F =:= 165580141,
     write('fib(40)='), write(F), write(' PASSED'), nl.
+
+test3 :-
+    fib(100,F),
+    F =:= 573147844013817084101,
+    write('fib(100)='), write(F), write(' PASSED'), nl.
