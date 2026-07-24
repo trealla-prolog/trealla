@@ -1442,6 +1442,124 @@ mp_result mp_int_to_uint(mp_int z, mp_usmall *out) {
   return MP_OK;
 }
 
+/* -- Fast divide-and-conquer radix conversion for large values -------------
+   The classic loop extracts one radix digit per full-length division,
+   costing O(n_digits * n_words).  Instead we recursively split the value
+   by powers radix^(k*2^i), where radix^k is the largest power of the
+   radix fitting in a single mp_digit.  Leaves fit in an mp_word and are
+   converted with native integer arithmetic. */
+
+#define MP_TO_STR_MAX_LEVELS 64
+
+static mp_digit s_maxradixpow(mp_size radix, int *k_out) {
+  mp_digit p = 1;
+  int k = 0;
+  while (p <= MP_DIGIT_MAX / radix) {
+    p *= (mp_digit)radix;
+    ++k;
+  }
+  *k_out = k;
+  return p;
+}
+
+/* Emit v in the given radix, zero-padded to at least `pad` chars. */
+static void s_emit_word(mp_word v, mp_size radix, int pad, char **strp) {
+  char tmp[2 * MP_DIGIT_BIT + 2];
+  int n = 0;
+  char *s = *strp;
+
+  do {
+    tmp[n++] = s_val2ch((int)(v % radix), 1);
+    v /= radix;
+  } while (v != 0);
+  while (n < pad) tmp[n++] = s_val2ch(0, 1);
+  while (n > 0) *s++ = tmp[--n];
+  *strp = s;
+}
+
+/* Requires 0 <= x < pow[level]^2, where pow[i] = radix^(k*2^i) and
+   dig[i] = k*2^i.  Writes the digits of x, zero-padded to `pad`. */
+static mp_result s_to_str_rec(mp_int x, mp_size radix, mpz_t *pow,
+                              const int *dig, int level, int pad,
+                              char **strp) {
+  if (CMPZ(x) == 0) { /* all zeros; skip pointless division */
+    char *s = *strp;
+    while (pad-- > 0) *s++ = s_val2ch(0, 1);
+    *strp = s;
+    return MP_OK;
+  }
+
+  if (level == 0) { /* x < radix^2k, fits in an mp_word */
+    mp_word v = MP_DIGITS(x)[0];
+    if (MP_USED(x) > 1) v |= (mp_word)MP_DIGITS(x)[1] << MP_DIGIT_BIT;
+    s_emit_word(v, radix, pad, strp);
+    return MP_OK;
+  } else {
+    mpz_t q, r;
+    mp_result res;
+    int lowdig = dig[level];
+
+    if ((res = mp_int_init(&q)) != MP_OK) return res;
+    if ((res = mp_int_init(&r)) != MP_OK) {
+      mp_int_clear(&q);
+      return res;
+    }
+    res = mp_int_div(x, &pow[level], &q, &r);
+    if (res == MP_OK) {
+      if (pad == 0 && CMPZ(&q) == 0) {
+        /* Still in the leading-digit region: stay minimal width. */
+        res = s_to_str_rec(&r, radix, pow, dig, level - 1, 0, strp);
+      } else {
+        res = s_to_str_rec(&q, radix, pow, dig, level - 1,
+                           (pad > lowdig) ? pad - lowdig : 0, strp);
+        if (res == MP_OK)
+          res = s_to_str_rec(&r, radix, pow, dig, level - 1, lowdig, strp);
+      }
+    }
+    mp_int_clear(&q);
+    mp_int_clear(&r);
+    return res;
+  }
+}
+
+/* Requires z > 0 and a buffer large enough for all digits of z. */
+static mp_result s_to_str_fast(mp_int z, mp_size radix, char **strp) {
+  mpz_t pow[MP_TO_STR_MAX_LEVELS];
+  int dig[MP_TO_STR_MAX_LEVELS];
+  int k, top, count, i;
+  mp_result res;
+  mp_digit p0 = s_maxradixpow(radix, &k);
+
+  if ((res = mp_int_init(&pow[0])) != MP_OK) return res;
+  count = 1;
+  if ((res = mp_int_set_uvalue(&pow[0], (mp_usmall)p0)) != MP_OK)
+    goto CLEANUP;
+  dig[0] = k;
+
+  /* Square up until pow[top]^2 > z; pow[top+1] doubles as the tester. */
+  for (;;) {
+    if (count == MP_TO_STR_MAX_LEVELS) {
+      res = MP_RANGE;
+      goto CLEANUP;
+    }
+    if ((res = mp_int_init(&pow[count])) != MP_OK) goto CLEANUP;
+    ++count;
+    if ((res = mp_int_sqr(&pow[count - 2], &pow[count - 1])) != MP_OK)
+      goto CLEANUP;
+    dig[count - 1] = dig[count - 2] * 2;
+    if (mp_int_compare_unsigned(z, &pow[count - 1]) < 0) {
+      top = count - 2;
+      break;
+    }
+  }
+
+  res = s_to_str_rec(z, radix, pow, dig, top, 0, strp);
+
+CLEANUP:
+  for (i = 0; i < count; i++) mp_int_clear(&pow[i]);
+  return res;
+}
+
 mp_result mp_int_to_string(mp_int z, mp_size radix, char *str, int limit) {
   assert(z != NULL && str != NULL && limit >= 2);
   assert(radix >= MP_MIN_RADIX && radix <= MP_MAX_RADIX);
@@ -1461,6 +1579,17 @@ mp_result mp_int_to_string(mp_int z, mp_size radix, char *str, int limit) {
       --limit;
     }
     h = str;
+
+    /* Large value whose buffer is known to be big enough: use the
+       divide-and-conquer conversion instead of digit-at-a-time. */
+    if (MP_USED(&tmp) > 4 && s_outlen(z, radix) < limit) {
+      if ((res = mp_int_abs(&tmp, &tmp)) == MP_OK)
+        res = s_to_str_fast(&tmp, radix, &str);
+      mp_int_clear(&tmp);
+      if (res != MP_OK) return res;
+      *str = '\0';
+      return MP_OK;
+    }
 
     /* Generate digits in reverse order until finished or limit reached */
     for (/* */; limit > 0; --limit) {
@@ -1504,6 +1633,70 @@ mp_result mp_int_string_len(mp_int z, mp_size radix) {
 }
 
 /* Read zero-terminated string into z */
+/* -- Fast divide-and-conquer string reading for large values ---------------
+   The classic loop does one full-length multiply-by-radix per character,
+   costing O(n_chars * n_words).  Instead, parse k-char chunks (radix^k
+   being the largest radix power fitting in one mp_digit) into an array of
+   small values, then combine adjacent pairs bottom-up with full bignum
+   multiplications by radix^(k*2^i).  With Karatsuba multiplication the
+   total cost is roughly one full-size multiply. */
+
+static mp_result s_read_fast(mp_int z, mp_size radix, const char *str,
+                             int nd) {
+  int k, j, m, first;
+  mp_digit p0 = s_maxradixpow(radix, &k);
+  mp_result res = MP_OK;
+  mpz_t P;
+
+  m = (nd + k - 1) / k;
+  first = nd - (m - 1) * k; /* leftmost chunk may be short */
+
+  mpz_t *v = malloc((size_t)m * sizeof(mpz_t));
+  if (v == NULL) return MP_MEMORY;
+
+  for (j = 0; j < m; j++) {
+    int cnt = (j == 0) ? first : k;
+    mp_word acc = 0;
+    while (cnt-- > 0) acc = acc * radix + (mp_word)s_ch2val(*str++, radix);
+    if ((res = mp_int_init_uvalue(&v[j], (mp_usmall)acc)) != MP_OK) {
+      while (--j >= 0) mp_int_clear(&v[j]);
+      free(v);
+      return res;
+    }
+  }
+
+  if ((res = mp_int_init_uvalue(&P, (mp_usmall)p0)) != MP_OK) goto CLEANUP;
+
+  /* Combine pairs from the right; an odd leftmost element passes through. */
+  while (m > 1) {
+    int ofs = m % 2;
+
+    for (j = 0; j < m / 2; j++) {
+      int hi = ofs + 2 * j, lo = hi + 1;
+
+      if ((res = mp_int_mul(&v[hi], &P, &v[hi])) != MP_OK) goto CLEANUP;
+      if ((res = mp_int_add(&v[hi], &v[lo], &v[hi])) != MP_OK) goto CLEANUP;
+      mp_int_clear(&v[lo]);
+      if (ofs + j != hi) { /* shallow move, fixing up the self-pointer */
+        v[ofs + j] = v[hi];
+        if (v[hi].digits == &v[hi].single)
+          v[ofs + j].digits = &v[ofs + j].single;
+      }
+    }
+    m = ofs + m / 2;
+    if (m > 1 && (res = mp_int_sqr(&P, &P)) != MP_OK) goto CLEANUP;
+  }
+
+  res = mp_int_copy(&v[0], z);
+
+CLEANUP:
+  /* On success or failure, v[0..m-1] are the still-live elements. */
+  for (j = 0; j < m; j++) mp_int_clear(&v[j]);
+  free(v);
+  mp_int_clear(&P);
+  return res;
+}
+
 mp_result mp_int_read_string(mp_int z, mp_size radix, const char *str) {
   return mp_int_read_cstring(z, radix, str, NULL);
 }
@@ -1539,10 +1732,22 @@ mp_result mp_int_read_cstring(mp_int z, mp_size radix, const char *str,
   z->used = 1;
   z->digits[0] = 0;
 
-  while (*str != '\0' && ((ch = s_ch2val(*str, radix)) >= 0)) {
-    s_dmul(z, (mp_digit)radix);
-    s_dadd(z, (mp_digit)ch);
-    ++str;
+  /* Count the run of valid digit characters. */
+  int nd = 0;
+  while (str[nd] != '\0' && s_ch2val(str[nd], radix) >= 0) ++nd;
+
+  if (nd > 64) { /* Large value: use divide-and-conquer conversion. */
+    mp_sign sign = z->sign;
+    mp_result res = s_read_fast(z, radix, str, nd);
+    if (res != MP_OK) return res;
+    z->sign = sign;
+    str += nd;
+  } else {
+    while (*str != '\0' && ((ch = s_ch2val(*str, radix)) >= 0)) {
+      s_dmul(z, (mp_digit)radix);
+      s_dadd(z, (mp_digit)ch);
+      ++str;
+    }
   }
 
   CLAMP(z);
@@ -3045,4 +3250,3 @@ mp_result mp_int_set_double(mp_int a, double b)
 
 	return MP_OK;
 }
-
