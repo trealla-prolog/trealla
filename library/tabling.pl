@@ -74,9 +74,15 @@ activate(T, Wrapper, Worker) :-
 % worker records a dependency on the table it suspended on. dep/4 packs
 % SourceCall, continuation and target wrapper in ONE term so they keep
 % sharing variables through the image copy.
+%
+% Exceptions raised by a worker fail that producer branch, as in the
+% reference (Desouter) library. Eg. a worker calling setof/3 with its
+% output argument bound to a non-list: Trealla's ISO-strict setof
+% throws where lenient systems fail, and tabling must not surface a
+% difference.
 
 delim(T, Wrapper, Worker) :-
-	reset(Worker, Ball, Cont),
+	catch(reset(Worker, Ball, Cont), _, fail),
 	(  Cont == none ->
 	   '$tbl_add_answer'(T, Wrapper)
 	;  Cont = cont(C),
