@@ -2405,8 +2405,19 @@ static bool term_expansion(parser *p)
 	//if (h->val_off == g_term_expansion_s)
 	//	return false;
 
-	if (h->val_off == g_colon_s)
-		return false;
+	// Module-qualified heads: skip expansion for hook installations
+	// (M:term_expansion/M:goal_expansion clauses would otherwise feed
+	// back into the expander), but let ordinary M:Head clauses through -
+	// eg. clauses of tabled predicates need the rename expansion.
+
+	if (h->val_off == g_colon_s) {
+		cell *qh = h + 1;
+		qh = qh + qh->num_cells;
+
+		if (is_interned(qh) && ((qh->val_off == g_term_expansion_s)
+			|| !CMP_STRING_TO_CSTR(p, qh, "goal_expansion")))
+			return false;
+	}
 
 	query *q = query_create(m);
 	check_error(q);
