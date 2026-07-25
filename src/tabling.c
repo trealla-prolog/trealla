@@ -86,8 +86,16 @@ static bool key_eq(query *q, const cell *a, const cell *b)
 		if (is_bigint(b))
 			return mp_int_compare_value(&b->val_bigint->ival, a->val_int) == 0;
 		return a->val_int == b->val_int;
-	case TAG_FLOAT:
-		return a->val_float == b->val_float;
+	case TAG_FLOAT: {
+		// Bit compare, NOT ==: key_hash hashes the bit pattern, so C
+		// equality would merge 0.0/-0.0 (and never match NaN) while the
+		// hash separates them - an inconsistency that makes indexed
+		// lookups miss. Bitwise is also the right identity for a table
+		// key (variant, not arithmetic, equality).
+		union { double d; uint64_t u; } ua = { .d = a->val_float };
+		union { double d; uint64_t u; } ub = { .d = b->val_float };
+		return ua.u == ub.u;
+	}
 	case TAG_RATIONAL:
 		return mp_rat_compare(&a->val_bigint->irat, &b->val_bigint->irat) == 0;
 	case TAG_CSTR: {
@@ -215,6 +223,7 @@ typedef struct {
 	bool create;			// insert vs lookup
 	bool created_any;
 	bool oom;
+	bool attvar;			// hit an attributed variable
 } twalk;
 
 static void twalk_init(twalk *w, query *q, tnode **root, bool create)
@@ -315,6 +324,21 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 	ctx = w->q->latest_ctx;
 
 	if (is_var(c)) {
+		// Attributed variables cannot be represented in a call variant:
+		// the attributes are not part of the term, so two calls with
+		// different constraints would share a table. Reject rather than
+		// silently give wrong answers.
+		{
+			query *q = w->q;
+			const frame *f = GET_FRAME(ctx);
+			const slot *e = get_slot(q, f, c->var_num);
+
+			if (e->c.val_attrs) {
+				w->attvar = true;
+				return false;
+			}
+		}
+
 		int n = twalk_var_num(w, ctx, c->var_num);
 		if (n < 0) return false;
 		cell key = {0};
@@ -362,13 +386,14 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 // Full-term insert: returns leaf node, sets *existed when this exact
 // canonical term had been inserted before (the dedup signal).
 
-static tnode *trie_insert(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed)
+static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed, bool *attvar)
 {
 	twalk w;
 	twalk_init(&w, q, root, true);
 	bool ok = trie_walk(&w, c, ctx);
 	tnode *leaf = w.node;
 	bool fresh = w.created_any;
+	if (attvar) *attvar = w.attvar;
 	twalk_done(&w);
 
 	if (!ok || !leaf)
@@ -377,6 +402,11 @@ static tnode *trie_insert(query *q, tnode **root, cell *c, pl_ctx ctx, bool *exi
 	*existed = !fresh && leaf->is_leaf;
 	leaf->is_leaf = true;
 	return leaf;
+}
+
+static tnode *trie_insert(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed)
+{
+	return trie_insert_(q, root, c, ctx, existed, NULL);
 }
 
 // Full-term lookup: NULL when no such canonical path/leaf.
@@ -465,6 +495,24 @@ typedef struct table_ {
 	bool in_wl;
 	struct table_ *wl_next, *all_next, *fresh_next;
 } table;
+
+// Bumped by abolish; enumerations carry the generation they started in
+// and stop cleanly if the tables were pulled out from under them.
+
+// int64_t (not uint64_t) to match q->st.v2, where enumerations stash it.
+
+static int64_t g_generation = 1;
+
+// Non-zero while a leader is driving completion. abolish_all_tables/0
+// must not free tables that live frames are still enumerating.
+
+static unsigned g_in_use = 0;
+
+// Set when a worker raised an exception during the current leader's
+// fixpoint. Such a fixpoint may have gathered only part of the answers,
+// so its tables must NOT be cached as complete.
+
+static bool g_saw_exception = false;
 
 static tnode *g_variants = NULL;
 static table *g_all_tables = NULL, *g_wl_head = NULL, *g_fresh_head = NULL;
@@ -562,11 +610,15 @@ static bool bif_tbl_variant_table_3(query *q)
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 	tbl_intern_atoms(q);
-	bool existed = false;
-	tnode *leaf = trie_insert(q, &g_variants, p1, p1_ctx, &existed);
+	bool existed = false, attvar = false;
+	tnode *leaf = trie_insert_(q, &g_variants, p1, p1_ctx, &existed, &attvar);
 
-	if (!leaf)
+	if (!leaf) {
+		if (attvar)
+			return throw_error(q, p1, p1_ctx, "type_error", "free_variable");
+
 		return throw_error(q, p1, p1_ctx, "representation_error", "tabled_call");
+	}
 
 	table *t = leaf->value;
 
@@ -616,11 +668,15 @@ static bool bif_tbl_add_answer_2(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
-	bool existed = false;
-	tnode *leaf = trie_insert(q, &t->answers, p2, p2_ctx, &existed);
+	bool existed = false, attvar = false;
+	tnode *leaf = trie_insert_(q, &t->answers, p2, p2_ctx, &existed, &attvar);
 
-	if (!leaf)
+	if (!leaf) {
+		if (attvar)
+			return throw_error(q, p2, p2_ctx, "type_error", "free_variable");
+
 		return throw_error(q, p2, p2_ctx, "representation_error", "tabled_answer");
+	}
 
 	if (existed)
 		return false;
@@ -649,6 +705,12 @@ static bool bif_tbl_get_answer_2(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
+
+	// Stop cleanly if the tables were abolished under a live enumeration.
+
+	if (q->retry && (q->st.v2 != g_generation))
+		return false;
+
 	tbl_ans *a = q->retry ? (tbl_ans*)(size_t)q->st.v1 : t->first_ans;
 
 	if (!a)
@@ -656,6 +718,7 @@ static bool bif_tbl_get_answer_2(query *q)
 
 	if (a->next) {
 		q->st.v1 = (uint64_t)(size_t)a->next;
+		q->st.v2 = g_generation;
 		CHECKED(push_choice(q));
 	}
 
@@ -744,6 +807,10 @@ static bool bif_tbl_wkl_work_3(query *q)
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 	table *t = tbl_handle(p1);
+
+	if (q->retry && (q->st.v2 != g_generation))
+		return false;
+
 	tbl_pair *p = q->retry ? (tbl_pair*)(size_t)q->st.v1 : t->pending;
 
 	if (!p)
@@ -751,6 +818,7 @@ static bool bif_tbl_wkl_work_3(query *q)
 
 	if (p->next) {
 		q->st.v1 = (uint64_t)(size_t)p->next;
+		q->st.v2 = g_generation;
 		CHECKED(push_choice(q));
 	}
 
@@ -768,8 +836,25 @@ static bool bif_tbl_wkl_work_3(query *q)
 // Leader flag (the "scheduling component" of the Desouter driver).
 
 static bool bif_tbl_leader_0(query *q) { (void)q; return g_leader; }
-static bool bif_tbl_set_leader_0(query *q) { (void)q; g_leader = true; return true; }
-static bool bif_tbl_clear_leader_0(query *q) { (void)q; g_leader = false; return true; }
+
+static bool bif_tbl_set_leader_0(query *q)
+{
+	(void)q;
+	g_leader = true;
+	g_in_use++;
+	return true;
+}
+
+static bool bif_tbl_clear_leader_0(query *q)
+{
+	(void)q;
+	g_leader = false;
+
+	if (g_in_use)
+		g_in_use--;
+
+	return true;
+}
 
 // '$tbl_mark_all_complete' - complete every table created since the
 // leader started (the library's "newly created table identifiers").
@@ -783,16 +868,85 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 		t->status = TBL_COMPLETE;
 		t->fresh_next = NULL;
 		tbl_free_pending(t);
+
+		// A completed table never resumes consumers again: its
+		// suspensions (whole continuation images) are dead weight.
+		// Freeing here is a large win for many-table workloads.
+
+		for (tbl_susp *sp = t->first_susp; sp; ) {
+			tbl_susp *snext = sp->next;
+			tbl_image_free(sp->image);
+			free(sp);
+			sp = snext;
+		}
+
+		t->first_susp = t->last_susp = t->unproc_susp = NULL;
 		t = next;
 	}
 
 	g_fresh_head = NULL;
+	g_saw_exception = false;
+	return true;
+}
+
+// Roll back tables left ACTIVE by an aborted leader so a later call
+// re-computes them instead of suspending on a table nobody will finish.
+
+static bool bif_tbl_note_exception_0(query *q)
+{
+	(void)q;
+	g_saw_exception = true;
+	return true;
+}
+
+static bool bif_tbl_saw_exception_0(query *q)
+{
+	(void)q;
+	return g_saw_exception;
+}
+
+static bool bif_tbl_reset_incomplete_0(query *q)
+{
+	(void)q;
+
+	for (table *t = g_fresh_head; t; ) {
+		table *next = t->fresh_next;
+
+		if (t->status != TBL_COMPLETE) {
+			t->status = TBL_FRESH;
+			tbl_free_pending(t);
+
+			for (tbl_susp *sp = t->first_susp; sp; ) {
+				tbl_susp *snext = sp->next;
+				tbl_image_free(sp->image);
+				free(sp);
+				sp = snext;
+			}
+
+			t->first_susp = t->last_susp = t->unproc_susp = NULL;
+			t->unproc_ans = t->first_ans;
+			t->in_wl = false;
+		}
+
+		t->fresh_next = NULL;
+		t = next;
+	}
+
+	g_fresh_head = NULL;
+	g_wl_head = NULL;
+	g_saw_exception = false;
 	return true;
 }
 
 static bool bif_tbl_abolish_all_tables_0(query *q)
 {
-	(void)q;
+	// Freeing tables while a leader is driving completion (or while an
+	// enumeration frame is live) would leave dangling handles behind.
+
+	if (g_in_use)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "modify,table");
+
+	g_generation++;
 
 	for (table *t = g_all_tables; t; ) {
 		table *next = t->all_next;
@@ -804,6 +958,7 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 	g_variants = NULL;
 	g_all_tables = g_wl_head = g_fresh_head = NULL;
 	g_leader = false;
+	g_saw_exception = false;
 	return true;
 }
 
@@ -862,6 +1017,9 @@ builtins g_tabling_bifs[] =
 	{"$tbl_set_leader", 0, bif_tbl_set_leader_0, "", false, false, BLAH},
 	{"$tbl_clear_leader", 0, bif_tbl_clear_leader_0, "", false, false, BLAH},
 	{"$tbl_mark_all_complete", 0, bif_tbl_mark_all_complete_0, "", false, false, BLAH},
+	{"$tbl_reset_incomplete", 0, bif_tbl_reset_incomplete_0, "", false, false, BLAH},
+	{"$tbl_note_exception", 0, bif_tbl_note_exception_0, "", false, false, BLAH},
+	{"$tbl_saw_exception", 0, bif_tbl_saw_exception_0, "", false, false, BLAH},
 	{"$tbl_abolish_all_tables", 0, bif_tbl_abolish_all_tables_0, "", false, false, BLAH},
 
 	{"$trie_test_clear", 0, bif_sys_trie_test_clear_0, "", false, false, BLAH},

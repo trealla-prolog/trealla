@@ -53,12 +53,16 @@ run_follower_fresh(T, Wrapper, Worker) :-
 	activate(T, Wrapper, Worker),
 	shift(call_info(Wrapper, T)).
 
+% On an exception escaping the leader, tables created under it are left
+% half-built and marked active; without a rollback a later call would
+% suspend on a table nobody is going to complete (and silently fail).
+
 run_leader(T, Wrapper, Worker) :-
 	'$tbl_set_leader',
 	catch(( activate(T, Wrapper, Worker),
 	        completion
 	      ), Ball,
-	      ( '$tbl_clear_leader', throw(Ball) )),
+	      ( '$tbl_clear_leader', '$tbl_reset_incomplete', throw(Ball) )),
 	'$tbl_clear_leader',
 	'$tbl_get_answer'(T, Wrapper).
 
@@ -82,7 +86,7 @@ activate(T, Wrapper, Worker) :-
 % difference.
 
 delim(T, Wrapper, Worker) :-
-	catch(reset(Worker, Ball, Cont), _, fail),
+	catch(reset(Worker, Ball, Cont), _, ('$tbl_note_exception', fail)),
 	(  Cont == none ->
 	   '$tbl_add_answer'(T, Wrapper)
 	;  Cont = cont(C),
@@ -101,7 +105,14 @@ completion :-
 	   ;  true
 	   ),
 	   completion
-	;  '$tbl_mark_all_complete'
+	;  % A fixpoint in which some worker threw may have collected only
+	   % part of the answers; caching that as complete would make the
+	   % error permanent. Roll those tables back so a later call
+	   % recomputes instead.
+	   (  '$tbl_saw_exception' ->
+	      '$tbl_reset_incomplete'
+	   ;  '$tbl_mark_all_complete'
+	   )
 	).
 
 % --- (:- table f/N) directive + clause renaming ---
@@ -123,6 +134,13 @@ wrappers(Name//Arity) -->
 	{ atom(Name), integer(Arity), Arity >= 0, !,
 	  Arity2 is Arity + 2 },
 	wrappers(Name/Arity2).
+% Re-tabling an already-tabled predicate is a no-op rather than a
+% second wrapper (harmless but wasteful, and it would re-mark).
+wrappers(Name/Arity) -->
+	{ atom(Name), integer(Arity), Arity >= 0,
+	  functor(Test, Name, Arity),
+	  '$tabled'(Test), ! },
+	[].
 wrappers(Name/Arity) -->
 	{ atom(Name), integer(Arity), Arity >= 0, !,
 	  functor(Head, Name, Arity),
