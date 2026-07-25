@@ -116,6 +116,13 @@ rename_head(Head, NewHead) :-
 
 wrappers(Var) --> { var(Var), !, throw(error(instantiation_error, (table)/1)) }.
 wrappers((A,B)) --> !, wrappers(A), wrappers(B).
+% A DCG non-terminal Name//Arity tables the underlying Name/(Arity+2).
+% The clauses themselves reach the rename hook already DCG-translated,
+% so only the arity mapping is needed here.
+wrappers(Name//Arity) -->
+	{ atom(Name), integer(Arity), Arity >= 0, !,
+	  Arity2 is Arity + 2 },
+	wrappers(Name/Arity2).
 wrappers(Name/Arity) -->
 	{ atom(Name), integer(Arity), Arity >= 0, !,
 	  functor(Head, Name, Arity),
