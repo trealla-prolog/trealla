@@ -143,6 +143,22 @@ user:term_expansion((:- table Preds), Clauses) :-
 user:term_expansion((Head :- Body), (NewHead :- Body)) :-
 	nonvar(Head),
 	rename_head(Head, NewHead).
+% Module-qualified clause heads of tabled predicates (eg. user:q(a)).
+% The qualifier is STRIPPED from the renamed clause: M:Head clauses get
+% their bodies wrapped in a module-qualify barrier by the loader, and a
+% tabled call suspending under that barrier truncates the captured
+% continuation (same unsupported class as suspending in an if-then-else
+% condition). Stripping is exact when M is the loading module - the
+% overwhelmingly common case - and cross-module definition of tabled
+% predicates is unsupported regardless (table identity is not
+% module-keyed).
+user:term_expansion((M:Head :- Body), (NewHead :- Body)) :-
+	nonvar(M), nonvar(Head),
+	rename_head(Head, NewHead).
+user:term_expansion(M:Head, NewHead) :-
+	nonvar(M), nonvar(Head),
+	Head \= (_ :- _),
+	rename_head(Head, NewHead).
 user:term_expansion(Head, NewHead) :-
 	nonvar(Head),
 	Head \= (:- _), Head \= (_ :- _),
