@@ -493,8 +493,39 @@ typedef struct table_ {
 	tbl_pair *pending;		// materialized work for '$tbl_wkl_work'
 	int status;
 	bool in_wl;
+	unsigned scc;			// owning SCC id (0 = none yet)
 	struct table_ *wl_next, *all_next, *fresh_next;
 } table;
+
+// Strongly-connected-component stack.
+//
+// A fresh variant called underneath a running leader is COMPLETED in its
+// own nested SCC rather than suspending the consumer. That matters
+// because a consumer cannot always be suspended: a tabled call inside
+// findall/3 or setof/3 has its continuation buried in the collector's
+// C-level state, so a captured goal-list continuation cannot resume it.
+// Completing the subgoal avoids the suspension entirely, which is also
+// what SWI-Prolog does.
+//
+// Suspension is then needed only for a genuine cycle - a call to a
+// variant that is already ACTIVE (an ancestor). If such a suspension
+// targets a table belonging to an OUTER SCC, this SCC is not independent
+// after all: on pop its tables are merged into the parent (SCC merging)
+// and the parent finishes them.
+
+typedef struct {
+	unsigned id;
+	table *fresh_head;		// tables owned by this SCC
+	unsigned dep_min;		// smallest outer SCC id depended on (0 = none)
+} tscc;
+
+static tscc *g_scc = NULL;
+static unsigned g_scc_depth = 0, g_scc_max = 0, g_scc_next_id = 1;
+
+static unsigned tbl_scc_id(void)
+{
+	return g_scc_depth ? g_scc[g_scc_depth-1].id : 0;
+}
 
 // Bumped by abolish; enumerations carry the generation they started in
 // and stop cleanly if the tables were pulled out from under them.
@@ -628,8 +659,6 @@ static bool bif_tbl_variant_table_3(query *q)
 		t->status = TBL_FRESH;
 		t->all_next = g_all_tables;
 		g_all_tables = t;
-		t->fresh_next = g_fresh_head;
-		g_fresh_head = t;
 		leaf->value = t;
 	}
 
@@ -734,6 +763,17 @@ static bool bif_tbl_add_suspension_2(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
+
+	// Depending on a table owned by an outer SCC means this SCC cannot
+	// complete on its own (see the SCC comment above).
+
+	if (g_scc_depth && t->scc && (t->scc < tbl_scc_id())) {
+		tscc *top = &g_scc[g_scc_depth-1];
+
+		if (!top->dep_min || (t->scc < top->dep_min))
+			top->dep_min = t->scc;
+	}
+
 	tbl_susp *s = calloc(1, sizeof(tbl_susp));
 	CHECKED(s);
 	s->image = tbl_image(q, p2, p2_ctx);
@@ -756,12 +796,26 @@ static bool bif_tbl_add_suspension_2(query *q)
 static bool bif_tbl_pop_worklist_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	table *t = g_wl_head;
+
+	// Only drain tables owned by the SCC we are completing; work for
+	// outer SCCs is left for their own completion loops.
+
+	unsigned scc_id = tbl_scc_id();
+	table *t = g_wl_head, *prev = NULL;
+
+	while (t && (t->scc != scc_id)) {
+		prev = t;
+		t = t->wl_next;
+	}
 
 	if (!t)
 		return false;
 
-	g_wl_head = t->wl_next;
+	if (prev)
+		prev->wl_next = t->wl_next;
+	else
+		g_wl_head = t->wl_next;
+
 	t->wl_next = NULL;
 	t->in_wl = false;
 
@@ -835,25 +889,80 @@ static bool bif_tbl_wkl_work_3(query *q)
 
 // Leader flag (the "scheduling component" of the Desouter driver).
 
-static bool bif_tbl_leader_0(query *q) { (void)q; return g_leader; }
+static bool bif_tbl_leader_0(query *q) { (void)q; return g_scc_depth != 0; }
 
-static bool bif_tbl_set_leader_0(query *q)
+// '$tbl_push_scc'(+Handle): open a nested SCC owned by this table.
+
+static bool bif_tbl_push_scc_1(query *q)
 {
-	(void)q;
-	g_leader = true;
+	GET_FIRST_ARG(p1,integer);
+	table *t = tbl_handle(p1);
+
+	if (g_scc_depth >= g_scc_max) {
+		unsigned nmax = g_scc_max ? g_scc_max*2 : 64;
+		tscc *tmp = realloc(g_scc, sizeof(tscc)*nmax);
+		CHECKED(tmp);
+		g_scc = tmp;
+		g_scc_max = nmax;
+	}
+
+	tscc *top = &g_scc[g_scc_depth++];
+	top->id = g_scc_next_id++;
+	top->dep_min = 0;
+	top->fresh_head = t;
+	t->scc = top->id;
+	t->fresh_next = NULL;
 	g_in_use++;
 	return true;
 }
 
-static bool bif_tbl_clear_leader_0(query *q)
+// '$tbl_pop_scc'(-Escaped): close it. Escaped == true means this SCC
+// depends on an outer one, so its tables are merged into the parent
+// (which will complete them) instead of being completed here.
+
+static bool bif_tbl_pop_scc_1(query *q)
 {
-	(void)q;
-	g_leader = false;
+	GET_FIRST_ARG(p1,any);
+
+	if (!g_scc_depth)
+		return false;
+
+	tscc *top = &g_scc[--g_scc_depth];
 
 	if (g_in_use)
 		g_in_use--;
 
-	return true;
+	bool escaped = top->dep_min != 0;
+
+	if (escaped && g_scc_depth) {
+		tscc *parent = &g_scc[g_scc_depth-1];
+
+		// Merge: re-tag and hand our tables to the parent.
+
+		table *t = top->fresh_head, *last = NULL;
+
+		for (; t; t = t->fresh_next) {
+			t->scc = parent->id;
+			last = t;
+		}
+
+		if (last) {
+			last->fresh_next = parent->fresh_head;
+			parent->fresh_head = top->fresh_head;
+		}
+
+		// Still depending further out? Propagate.
+
+		if (top->dep_min < parent->id) {
+			if (!parent->dep_min || (top->dep_min < parent->dep_min))
+				parent->dep_min = top->dep_min;
+		}
+	}
+
+	top->fresh_head = NULL;
+	cell tmp;
+	make_atom(&tmp, escaped ? g_true_s : g_false_s);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
 // '$tbl_mark_all_complete' - complete every table created since the
@@ -863,7 +972,12 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 {
 	(void)q;
 
-	for (table *t = g_fresh_head; t; ) {
+	if (!g_scc_depth)
+		return true;
+
+	tscc *top = &g_scc[g_scc_depth-1];
+
+	for (table *t = top->fresh_head; t; ) {
 		table *next = t->fresh_next;
 		t->status = TBL_COMPLETE;
 		t->fresh_next = NULL;
@@ -884,7 +998,7 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 		t = next;
 	}
 
-	g_fresh_head = NULL;
+	top->fresh_head = NULL;
 	g_saw_exception = false;
 	return true;
 }
@@ -909,7 +1023,12 @@ static bool bif_tbl_reset_incomplete_0(query *q)
 {
 	(void)q;
 
-	for (table *t = g_fresh_head; t; ) {
+	if (!g_scc_depth)
+		return true;
+
+	tscc *rtop = &g_scc[g_scc_depth-1];
+
+	for (table *t = rtop->fresh_head; t; ) {
 		table *next = t->fresh_next;
 
 		if (t->status != TBL_COMPLETE) {
@@ -932,8 +1051,7 @@ static bool bif_tbl_reset_incomplete_0(query *q)
 		t = next;
 	}
 
-	g_fresh_head = NULL;
-	g_wl_head = NULL;
+	rtop->fresh_head = NULL;
 	g_saw_exception = false;
 	return true;
 }
@@ -958,6 +1076,7 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 	g_variants = NULL;
 	g_all_tables = g_wl_head = g_fresh_head = NULL;
 	g_leader = false;
+	g_scc_depth = 0;
 	g_saw_exception = false;
 	return true;
 }
@@ -1014,8 +1133,8 @@ builtins g_tabling_bifs[] =
 	{"$tbl_pop_worklist", 1, bif_tbl_pop_worklist_1, "-integer", false, false, BLAH},
 	{"$tbl_wkl_work", 3, bif_tbl_wkl_work_3, "+integer,-term,-term", false, false, BLAH},
 	{"$tbl_leader", 0, bif_tbl_leader_0, "", false, false, BLAH},
-	{"$tbl_set_leader", 0, bif_tbl_set_leader_0, "", false, false, BLAH},
-	{"$tbl_clear_leader", 0, bif_tbl_clear_leader_0, "", false, false, BLAH},
+	{"$tbl_push_scc", 1, bif_tbl_push_scc_1, "+integer", false, false, BLAH},
+	{"$tbl_pop_scc", 1, bif_tbl_pop_scc_1, "-atom", false, false, BLAH},
 	{"$tbl_mark_all_complete", 0, bif_tbl_mark_all_complete_0, "", false, false, BLAH},
 	{"$tbl_reset_incomplete", 0, bif_tbl_reset_incomplete_0, "", false, false, BLAH},
 	{"$tbl_note_exception", 0, bif_tbl_note_exception_0, "", false, false, BLAH},

@@ -43,27 +43,35 @@ start_tabling_(complete, T, Wrapper, _Worker) :-
 	'$tbl_get_answer'(T, Wrapper).
 start_tabling_(active, T, Wrapper, _Worker) :-
 	shift(call_info(Wrapper, T)).
-start_tabling_(fresh, T, Wrapper, Worker) :-
-	(  '$tbl_leader' ->
-	   run_follower_fresh(T, Wrapper, Worker)
-	;  run_leader(T, Wrapper, Worker)
-	).
-
-run_follower_fresh(T, Wrapper, Worker) :-
-	activate(T, Wrapper, Worker),
-	shift(call_info(Wrapper, T)).
-
-% On an exception escaping the leader, tables created under it are left
+% A fresh variant is COMPLETED in its own (possibly nested) SCC rather
+% than suspending the consumer. Suspension needs the consumer's
+% continuation to be capturable, which it is not when the tabled call
+% sits inside findall/3, setof/3 or any other collector holding state in
+% C. Completing the subgoal side-steps that entirely.
+%
+% If the SCC turns out to depend on an outer one (a genuine cycle across
+% the nesting) its tables are merged into the parent by '$tbl_pop_scc'
+% and the consumer suspends after all, deferring to the outer leader.
+%
+% On an exception escaping, tables created under this SCC are left
 % half-built and marked active; without a rollback a later call would
 % suspend on a table nobody is going to complete (and silently fail).
 
-run_leader(T, Wrapper, Worker) :-
-	'$tbl_set_leader',
+start_tabling_(fresh, T, Wrapper, Worker) :-
+	run_scc(T, Wrapper, Worker).
+
+run_scc(T, Wrapper, Worker) :-
+	'$tbl_push_scc'(T),
 	catch(( activate(T, Wrapper, Worker),
 	        completion
 	      ), Ball,
-	      ( '$tbl_clear_leader', '$tbl_reset_incomplete', throw(Ball) )),
-	'$tbl_clear_leader',
+	      ( '$tbl_reset_incomplete', '$tbl_pop_scc'(_), throw(Ball) )),
+	'$tbl_pop_scc'(Escaped),
+	run_scc_(Escaped, T, Wrapper).
+
+run_scc_(true, T, Wrapper) :-
+	shift(call_info(Wrapper, T)).
+run_scc_(false, T, Wrapper) :-
 	'$tbl_get_answer'(T, Wrapper).
 
 activate(T, Wrapper, Worker) :-
