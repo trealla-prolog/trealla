@@ -5426,8 +5426,14 @@ bool bif_iso_qualify_2(query *q)
 	CHECKED(tmp);
 	pl_idx num_cells = 0;
 
+	// Resolve the goal in the module it was qualified with, not in the
+	// caller. Looking it up in q->st.m pins the caller's predicate of
+	// the same name/arity, and the engine prefers a set 'match' over
+	// resolving the goal itself, so the qualification is lost whenever
+	// the calling module happens to define that name.
+
 	if (!is_builtin(p2))
-		tmp[num_cells].match = find_predicate(q->st.m, p2);
+		tmp[num_cells].match = search_predicate(m, p2);
 
 	num_cells += p2->num_cells;
 	make_instr(tmp+num_cells++, g_true_s, bif_iso_true_0, 0, 0); // see query fact matching
