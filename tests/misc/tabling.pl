@@ -288,6 +288,81 @@ test_generate :-
 	),
 	nl.
 
+% ---------------------------------------------------------------------
+% 12. Backtracking into a tabled call that creates a fresh variant each
+% time. Scryer issue #2701 panicked here (an internal heap index error
+% in its attributed-variable bookkeeping). Each member/2 solution makes
+% blink/3 a new call variant, so this exercises table creation under
+% backtracking and repeated enumeration of completed tables.
+
+:- table blink/3.
+
+blink(0, _, 1).
+blink(N, X, Xs) :-
+	N > 0,
+	N1 is N - 1,
+	blink(N1, X, Xs).
+
+test_backtrack_variants :-
+	findall(Xs, (member(X, [1,2,3,4,5]), blink(7, X, Xs)), L),
+	(	L == [1,1,1,1,1] ->
+		write('backtrack variants: ok')
+	;	write('backtrack variants: FAILED')
+	),
+	nl.
+
+% ---------------------------------------------------------------------
+% 13. Many thousands of distinct call variants (the real workload behind
+% issue #2701: Advent of Code 2024 day 11). Tabling is what makes this
+% tractable at all - untabled it is exponential. It is also the shape
+% that made a Scryer branch consume gigabytes, so it is worth keeping an
+% eye on: here it runs in a few hundredths of a second in single-digit
+% MB, which only holds while variant lookup stays O(1) (hash-indexed
+% trie children) and completed tables free their suspensions.
+
+:- table count/3.
+
+count(_, 0, 1).
+count(S, N, C) :-
+	N > 0,
+	N1 is N - 1,
+	step(S, N1, C).
+
+step(0, N1, C) :-
+	!,
+	count(1, N1, C).
+step(S, N1, C) :-
+	number_codes(S, Cs),
+	length(Cs, L),
+	L mod 2 =:= 0,
+	!,
+	H is L // 2,
+	length(Front, H),
+	append(Front, Back, Cs),
+	number_codes(A, Front),
+	number_codes(B, Back),
+	count(A, N1, C1),
+	count(B, N1, C2),
+	C is C1 + C2.
+step(S, N1, C) :-
+	S2 is S * 2024,
+	count(S2, N1, C).
+
+total(_, [], 0).
+total(Blinks, [S|Ss], Total) :-
+	count(S, Blinks, C),
+	total(Blinks, Ss, T0),
+	Total is T0 + C.
+
+test_many_variants :-
+	total(25, [125,17], T25),
+	total(75, [125,17], T75),
+	(	T25 =:= 55312, T75 =:= 65601038650482 ->
+		write('many variants: ok')
+	;	write('many variants: FAILED')
+	),
+	nl.
+
 main :-
 	test_findall,
 	test_setof,
@@ -300,4 +375,6 @@ main :-
 	test_order_independent,
 	test_sharing,
 	test_generate,
+	test_backtrack_variants,
+	test_many_variants,
 	test_flag.

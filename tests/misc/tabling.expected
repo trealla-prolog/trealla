@@ -9,5 +9,7 @@ variant answers: ok
 order independence: ok
 answer sharing: ok
 generate mode: ok
+backtrack variants: ok
+many variants: ok
 flag off: ok
 flag on: ok
