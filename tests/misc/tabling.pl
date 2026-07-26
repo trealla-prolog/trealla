@@ -1,5 +1,3 @@
-:- initialization(main).
-
 % Tabling regression tests.
 %
 % Each of these was a real bug found by running third-party programs
@@ -10,6 +8,8 @@
 
 :- use_module(library(tabling)).
 :- use_module(library(lists)).
+
+:- initialization(main).
 
 % ---------------------------------------------------------------------
 % 1. A tabled call inside findall/3.
