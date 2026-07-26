@@ -7,4 +7,13 @@ quads: FAILED tests/misc/quads.pl:103
 quads: FAILED tests/misc/quads.pl:108
    ?- user:(X=f(Y,Z),Y=Z).
    expected: X=f(Y,Y)
-quads: 26 run, 23 passed, 3 failed.
+quads: FAILED member_2, tests/misc/quads.pl:126
+   ?- user:member(X,[1,2]).
+   expected: X=1;X=99
+quads: MALFORMED hand_1, hand-written.pl:1
+   ?- user:(X=1).
+   not an answer: 1=X
+quads: MALFORMED hand_2, hand-written.pl:2
+   ?- user:(Y=1).
+   not an answer: Y=2
+quads: 33 run, 27 passed, 6 failed.

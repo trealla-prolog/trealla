@@ -1,0 +1,7 @@
+op(1200,fx)
+op(1200,xfx)
+(?-)/2: undefined
+quads: FAILED member_2, tests/issues/test1071.pl:12
+   ?- user:member(X,[1,2]).
+   expected: X=1;X=99
+quads: 2 run, 1 passed, 1 failed.

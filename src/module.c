@@ -26,6 +26,7 @@ static const op_table g_ops[] =
 	{":-", OP_FX, 1200},
 	{"-->", OP_XFX, 1200},
 	{"?-", OP_FX, 1200},
+	{"?-", OP_XFX, 1200},				// a quad labelled by a ground term
 	{"|", OP_XFY, 1105},
 	{";", OP_XFY, 1100},
 	{"->", OP_XFY, 1050},

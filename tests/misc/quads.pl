@@ -108,6 +108,35 @@ loop :- loop.
 ?- X = f(Y,Z), Y = Z.
    X = f(Y,Y).
 
+% a quad may be labelled with a ground term (issue #1071)
+
+member_1 ?- member(X, [1,2,3]).
+   X = 1
+;  X = 2
+;  X = 3.
+
+'a quoted label' ?- foo(X).
+   X = bar.
+
+label(with, args) ?- X = 1.
+   X = 1.
+
+% a labelled quad that fails, to test reporting
+
+member_2 ?- member(X, [1,2]).
+   X = 1
+;  X = 99.
+
+% An answer description must describe an answer *substitution*, so each
+% equation binds a variable and no variable is bound twice within one
+% answer (issue #1074). The parser rejects a malformed description when
+% the file is consulted, which aborts the load, so that case is
+% tests/issues/test1074.pl; a '$quad' fact can also be asserted by hand,
+% and library(quads) makes the same check on those.
+
 main :-
 	use_module(library(quads)),
+	assertz('$quad'(hand_1, (X=1), ['X'=X], (1 = X), 'hand-written.pl', 1)),
+	assertz('$quad'(hand_2, (Y=1), ['Y'=Y], (Y = 1, Y = 2), 'hand-written.pl', 2)),
+	assertz('$quad'(hand_3, (Z=1), ['Z'=Z], (Z = 1), 'hand-written.pl', 3)),
 	run_quads.

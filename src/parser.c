@@ -705,10 +705,37 @@ void quad_reset(module *m)
 		m->quad_query = NULL;
 	}
 
+	if (m->quad_name) {
+		cell *c = m->quad_name;
+		pl_idx num_cells = c->num_cells;
+
+		for (pl_idx i = 0; i < num_cells; i++, c++)
+			unshare_cell(c);
+
+		TPL_free(m->quad_name);
+		m->quad_name = NULL;
+	}
+
 	m->quad_recorded = false;
 
 	m->quad_num_vars = 0;
 	m->in_quad = false;
+}
+
+// A quad may be labelled: 'Name ?- Query.' names the query with a
+// ground term, so a report can say which quad it is (issue #1071).
+// The label carries no variables to share with the answer.
+
+static bool is_ground_term(const cell *c)
+{
+	pl_idx num_cells = c->num_cells;
+
+	for (pl_idx i = 0; i < num_cells; i++, c++) {
+		if (is_var(c))
+			return false;
+	}
+
+	return true;
 }
 
 // The shape of a toplevel answer, per the grammar in issue #1063
@@ -810,21 +837,30 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 	return ANSWER_NO;
 }
 
-// Build and assert '$quad'(Query, VarNames, AnswerDescription, File, Line).
+// Build and assert
+// '$quad'(Id, Query, VarNames, AnswerDescription, File, Line).
 // The query was read as one term and the answer description as another,
 // so their variables can only be related by name: VarNames is a list of
 // Name=Var pairs covering the named variables of both terms, and
 // library(quads) unifies same-named entries.
+//
+// Id is the label of 'Name ?- Query.' and an unbound variable when the
+// quad is written with the prefix operator, so 'this quad has no name'
+// needs no reserved atom.
 
 static void quad_record(parser *p, cell *ad)
 {
 	module *m = p->m;
 	cell *q = m->quad_query;
+	cell *id = m->quad_name;
 	pl_idx q_num_cells = q->num_cells;
 	pl_idx ad_num_cells = ad->num_cells;
+	pl_idx id_num_cells = id ? id->num_cells : 1;
 	unsigned q_num_vars = m->quad_num_vars;
 	unsigned ad_num_vars = p->cl->num_vars;
 	unsigned total_vars = q_num_vars + ad_num_vars;
+	unsigned id_var_num = total_vars;
+	if (!id) total_vars++;
 
 	// Collect the named variables of both terms (first occurrence
 	// each). Answer-description vars are renumbered +q_num_vars.
@@ -861,7 +897,7 @@ static void quad_record(parser *p, cell *ad)
 	// '$quad'/5 + Query + VarNames list + AnswerDescription + File + Line
 
 	pl_idx vn_num_cells = (4 * num_named) + 1;
-	pl_idx total = 1 + q_num_cells + vn_num_cells + ad_num_cells + 1 + 1;
+	pl_idx total = 1 + id_num_cells + q_num_cells + vn_num_cells + ad_num_cells + 1 + 1;
 	cell *tmp = TPL_calloc(total, sizeof(cell));
 
 	if (!tmp) {
@@ -874,9 +910,21 @@ static void quad_record(parser *p, cell *ad)
 	cell *dst = tmp;
 	dst->tag = TAG_INTERNED;
 	dst->val_off = g_sys_quad_s;
-	dst->arity = 5;
+	dst->arity = 6;
 	dst->num_cells = total;
 	dst++;
+
+	if (id) {
+		dup_cells(dst, id, id_num_cells);
+	} else {
+		dst->tag = TAG_VAR;
+		dst->var_num = id_var_num;
+		dst->val_off = g_anon_s;
+		dst->flags = FLAG_VAR_ANON;
+		dst->num_cells = 1;
+	}
+
+	dst += id_num_cells;
 
 	dup_cells(dst, q, q_num_cells);
 	dst += q_num_cells;
@@ -935,7 +983,7 @@ static void quad_record(parser *p, cell *ad)
 	// quad would make '$quad'/5 static and a later assertz/1 would raise
 	// a permission error.
 
-	set_dynamic_in_db(m, "$quad", 5);
+	set_dynamic_in_db(m, "$quad", 6);
 
 	if (assertz_to_db(m, total_vars, tmp, true) == NULL) {
 		fprintf(stderr, "Warning: could not record quad, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
@@ -960,12 +1008,26 @@ static bool quads(parser *p, cell *d)
 	if (!is_interned(d))
 		return false;
 
-	if ((d->val_off == g_quad_s) && (d->arity == 1)) {
+	// '?- Query.' or, labelled with a ground term, 'Name ?- Query.'
+
+	if ((d->val_off == g_quad_s) && ((d->arity == 1) || (d->arity == 2))) {
+		cell *id = (d->arity == 2) ? d + 1 : NULL;
+		cell *q = id ? id + id->num_cells : d + 1;
+
+		if (id && !is_ground_term(id)) {
+			if (!p->do_read_term)
+				printf("Error: quad identifier is not ground, %s:%d\n", get_loaded(m, m->filename), p->line_num);
+
+			p->error_desc = "non_ground_quad_identifier";
+			p->error = true;
+			quad_reset(m);
+			return true;
+		}
+
 		if (m->quad_query && !m->quad_recorded)
 			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
 
 		quad_reset(m);
-		cell *q = d + 1;
 		m->quad_query = TPL_malloc(sizeof(cell) * q->num_cells);
 
 		if (!m->quad_query) {
@@ -974,6 +1036,18 @@ static bool quads(parser *p, cell *d)
 		}
 
 		dup_cells(m->quad_query, q, q->num_cells);
+
+		if (id) {
+			m->quad_name = TPL_malloc(sizeof(cell) * id->num_cells);
+
+			if (!m->quad_name) {
+				p->error = true;
+				return true;
+			}
+
+			dup_cells(m->quad_name, id, id->num_cells);
+		}
+
 		m->quad_num_vars = p->cl->num_vars;
 		m->quad_line_num = p->line_num_start ? p->line_num_start : p->line_num;
 		m->in_quad = true;
@@ -2039,7 +2113,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			&& (GET_POOL(p, p->vartab.off[i])[0] != '_')) {
 			if (!p->pl->quiet
 				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1)
-				&& !((cl->cells->val_off == g_quad_s) && cl->cells->arity == 1)
+				&& !((cl->cells->val_off == g_quad_s) && ((cl->cells->arity == 1) || (cl->cells->arity == 2)))
 				&& !p->m->in_quad)
 				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", GET_POOL(p, p->vartab.off[i]), get_loaded(p->m, p->m->filename), p->line_num);
 		}

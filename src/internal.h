@@ -869,6 +869,7 @@ struct module_ {
 	bool ifs_blocked[MAX_IF_DEPTH];
 	bool ifs_done[MAX_IF_DEPTH];
 	cell *quad_query;					// pending '?- Query' awaiting its answer description
+	cell *quad_name;					// its identifier, for 'Name ?- Query', else NULL
 	unsigned quad_num_vars;				// number of vars in quad_query
 	unsigned quad_line_num;				// line the pending quad query started on
 	bool in_quad:1;						// consuming answer-description terms after '?- Query'

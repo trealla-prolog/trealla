@@ -28,6 +28,13 @@
       ;  X = 2
       ;  X = 3.
 
+  A quad may be labelled with a ground term, which reports name it:
+
+      member_1 ?- member(X, [1,2,3]).
+         X = 1
+      ;  X = 2
+      ;  X = 3.
+
       ?- fail.
          false.
 
@@ -84,14 +91,14 @@ run_quads_halt :-
 
 quad_list(M, Qs) :-
 	catch(
-		findall(q(Q, VNs, AD, F, L), M:'$quad'(Q, VNs, AD, F, L), Qs),
+		findall(q(Id, Q, VNs, AD, F, L), M:'$quad'(Id, Q, VNs, AD, F, L), Qs),
 		error(existence_error(_, _), _),
 		Qs = []
 	).
 
 run_list([], _, P, P, F, F).
-run_list([q(Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
-	( \+ \+ check_quad(M, Q, VNs, AD, File, Line) ->
+run_list([q(Id, Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
+	( \+ \+ check_quad(M, Id, Q, VNs, AD, File, Line) ->
 		P1 is P0 + 1, F1 = F0
 	;	P1 = P0, F1 is F0 + 1
 	),
@@ -101,15 +108,15 @@ run_list([q(Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 % matches. Same-named variables of the query term and the answer
 % description term are first unified via the VarNames list.
 
-check_quad(M, Q, VNs, AD, File, Line) :-
+check_quad(M, Id, Q, VNs, AD, File, Line) :-
 	(	malformed(AD, Bad)
-	->	report_malformed(M, Q, VNs, Bad, File, Line),
+	->	report(malformed, M, Id, Q, VNs, Bad, File, Line),
 		fail
 	;	alternatives(AD, Alts),
 		(	member(Alt, Alts),
 			\+ \+ check_alternative(M, Q, VNs, Alt)
 		->	true
-		;	report_failure(M, Q, VNs, AD, File, Line),
+		;	report(failed, M, Id, Q, VNs, AD, File, Line),
 			fail
 		)
 	).
@@ -166,12 +173,24 @@ lhs_item([I|T], V, Bad) :-
 	;	lhs_item(T, V, Bad)
 	).
 
-report_malformed(M, Q, VNs, Bad, File, Line) :-
+% A quad written 'Name ?- Query.' is identified by Name, which is
+% reported so a suite can be read without counting line numbers
+% (issue #1071). An unlabelled quad leaves Id unbound.
+
+report(Why, M, Id, Q, VNs, What, File, Line) :-
 	link_names(VNs),
-	write('quads: MALFORMED '), write(File), write(':'), write(Line), nl,
+	write('quads: '), write_why(Why), write(' '),
+	( var(Id) -> true ; write_term(Id, [quoted(true)]), write(', ') ),
+	write(File), write(':'), write(Line), nl,
 	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
-	write('   not an answer: '),
-	write_term(Bad, [variable_names(VNs), quoted(true)]), nl.
+	write('   '), write_what(Why), write(': '),
+	write_term(What, [variable_names(VNs), quoted(true)]), nl.
+
+write_why(failed) :- write('FAILED').
+write_why(malformed) :- write('MALFORMED').
+
+write_what(failed) :- write(expected).
+write_what(malformed) :- write('not an answer').
 
 % An answer description may carry the annotation 'unexpected',
 % meaning the answer it describes must *not* occur. It attaches to a
@@ -388,10 +407,3 @@ timeout_ball(B) :-
 	B = error(E, _),
 	nonvar(E),
 	functor(E, time_limit_exceeded, _).
-
-report_failure(M, Q, VNs, AD, File, Line) :-
-	link_names(VNs),
-	write('quads: FAILED '), write(File), write(':'), write(Line), nl,
-	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
-	write('   expected: '),
-	write_term(AD, [variable_names(VNs), quoted(true)]), nl.
