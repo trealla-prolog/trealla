@@ -1,8 +1,8 @@
 % Tabling regression tests.
 %
 % Each of these was a real bug found by running third-party programs
-% (SWI-Prolog samples, Logtalk's tabling example) against the native
-% tabling engine. They are cheap and cover the awkward corners:
+% (SWI-Prolog samples, Scryer bugs, Logtalk's tabling example) against
+% the native tabling engine. They are cheap and cover the awkward corners:
 % suspension vs completion, continuation capture across barriers, and
 % termination on cyclic call graphs.
 
