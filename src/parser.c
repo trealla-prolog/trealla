@@ -930,6 +930,13 @@ static void quad_record(parser *p, cell *ad)
 	TPL_free(vt);
 	TPL_free(seen);
 
+	// Quads are recorded as data, so a program can add or retract them
+	// the way it can any other data. Without this the first recorded
+	// quad would make '$quad'/5 static and a later assertz/1 would raise
+	// a permission error.
+
+	set_dynamic_in_db(m, "$quad", 5);
+
 	if (assertz_to_db(m, total_vars, tmp, true) == NULL) {
 		fprintf(stderr, "Warning: could not record quad, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
 		cell *c = tmp;

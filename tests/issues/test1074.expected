@@ -1,0 +1,16 @@
+quads: FAILED tests/misc/quads.pl:97
+   ?- user:member(X,[1,2]).
+   expected: X=1;X=99
+quads: FAILED tests/misc/quads.pl:103
+   ?- user:(X=1).
+   expected: X=1,unexpected
+quads: FAILED tests/misc/quads.pl:108
+   ?- user:(X=f(Y,Z),Y=Z).
+   expected: X=f(Y,Y)
+quads: MALFORMED hand-written.pl:1
+   ?- user:(X=1).
+   not an answer: 1=X
+quads: MALFORMED hand-written.pl:2
+   ?- user:(Y=1).
+   not an answer: Y=2
+quads: 29 run, 24 passed, 5 failed.
