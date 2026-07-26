@@ -746,6 +746,30 @@ void clear_property(module *m, const char *name, unsigned arity)
 		else {
 			predicate_delink(pr, save);
 
+			// The incremental path below CANNOT be enabled as it
+			// stands - tried, and it faults immediately. The index
+			// stores borrowed pointers into clause cells (see
+			// assert_commit: sl_app(pr->idx1, get_head(cl2->cl.cells),
+			// cl2)), and this loop frees clauses as it goes, so
+			// sl_rem()'s key comparisons walk into a clause freed on an
+			// earlier iteration.
+			//
+			// Removing every entry first and freeing afterwards is not
+			// enough either: sl_rem() finishes its descent with
+			// q = p->forward[0] and then only re-checks the KEY, never
+			// q->val == val, so with duplicate keys it removes the
+			// wrong node or none at all. index_cmpkey_() calls any pair
+			// involving a var - or anything that is not a small int -
+			// equal, so '$predicate_property'/3 keys collide wholesale.
+			// The entries then outlive their clauses and the next
+			// assert's sl_app() reads freed memory.
+			//
+			// Enabling this needs either an index that owns copies of
+			// its keys, or an sl_rem() that removes an exact
+			// (key, value) pair under duplicates. Until then dropping
+			// the whole index is the only safe move: sl_destroy() never
+			// compares keys, it just walks nodes and frees them.
+
 #if 0
 			cell *c = get_head(save->cl.cells);
 
