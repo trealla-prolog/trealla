@@ -343,9 +343,20 @@ static bool bif_iso_is_2(query *q)
 		mp_small tmp;
 		if (mp_int_to_int(&p2.val_bigint->ival, &tmp) != MP_RANGE) {
 			if (tmp != PL_INT_MIN) {
-				unshare_cell(&p2);
+				// The accumulator's bigint carries refcnt 0 (nobody
+				// owns it yet - see SET_ACCUM), so unshare_cell()
+				// wrapped the count to UINT_MAX rather than freeing,
+				// and q->accum's flags are already cleared by then, so
+				// the clr_accum() below could not release it either.
+				// Every bigint result that narrows to a small int
+				// leaked its bigint. Release it through the cell that
+				// still carries the flags.
+
+				clr_accum(&p2);
 				make_int(&p2, tmp);
 			}
+
+
 		}
 	}
 
