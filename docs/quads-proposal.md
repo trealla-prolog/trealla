@@ -89,7 +89,7 @@ static bool is_answer_description(module *m, cell *c)
             || !CMP_STRING_TO_CSTR2(m, c, "unexpected");
 
     if (c->arity == 2) {
-        if (!CMP_STRING_TO_CSTR2(m, c, "=")) return true;
+        if (!CMP_STRING_TO_CSTR2(m, c, "=")) return is_var(FIRST_ARG(c));
         if (!CMP_STRING_TO_CSTR2(m, c, ",")
          || !CMP_STRING_TO_CSTR2(m, c, ";")
          || !CMP_STRING_TO_CSTR2(m, c, "|"))
@@ -287,3 +287,89 @@ foo(bar).                 % must load; '?-'/1 must NOT exist
   answer terms too must be skipped while blocked (they are, same check).
 - `sto`/`unexpected`/`ad_infinitum` handling can be stubbed (treated as
   "any outcome accepted") in the first matcher version.
+
+## 6. Answer *substitutions* (issue #1074)
+
+A toplevel answer reports an answer substitution, which the shape check
+above did not enforce: any `=`/2 was accepted, so
+
+```prolog
+?- X = 1.
+   1 = X.               % not an answer substitution
+```
+
+was consumed as a description, and — since the matcher applied the
+equation with plain unification — bound `X` to 1 and *passed*. The same
+hole admits `X = 1, X = 2`, which binds one variable twice.
+
+Two properties are therefore required of every equation in a
+description: the left side is a variable, and no variable is bound twice
+within one answer. Alternatives separated by `;` or `|` are separate
+answers, so each starts with a fresh set of bound variables.
+
+Rejecting such a term by simply returning "not an answer description"
+would let it fall through to ordinary clause loading, where it surfaces
+as `permission error modifying user:(=)/2` — accurate but unhelpful.
+Nothing else could be meant by an equation directly after a query, so
+the recogniser distinguishes *not an answer description* from
+*malformed*, and the loader reports the latter the way it reports a
+syntax error:
+
+```
+Error: malformed answer description, file.pl:9
+```
+
+`library/quads.pl` repeats the check, since a `'$quad'` fact can also be
+asserted by hand, and reports a malformed description as such rather
+than running it as a test that would quietly pass.
+
+## 7. Labelled quads (issue #1071)
+
+A quad may be identified by a ground term, which requires `?-` to be an
+infix operator as well as a prefix one:
+
+```prolog
+member_1 ?- member(X, [1,2,3]).
+   X = 1
+;  X = 2
+;  X = 3.
+```
+
+`{"?-", OP_XFX, 1200}` joins the default table next to the existing
+prefix entry, exactly as `:-` is already both `xfx` and `fx`. Being an
+operator does not by itself make the term a quad: `quads()` accepts
+`?-`/2 alongside `?-`/1, taking the first argument as the label and the
+second as the query, so nothing is added to the database and the
+following answer description is still consumed rather than loaded as a
+clause.
+
+The label identifies a query, so it has to be ground; a variable there
+is reported the way a malformed answer description is:
+
+```
+Error: quad identifier is not ground, file.pl:4
+```
+
+Because the label is ground it shares no variables with the answer
+description, and the `VarNames` machinery is unaffected.
+
+### 7.1 Recording
+
+The recorded fact gains the label as its first argument:
+
+```prolog
+'$quad'(Id, Query, VarNames, AnswerDescription, File, Line).
+```
+
+`Id` is an unbound variable for a quad written with the prefix operator,
+so "this quad has no label" needs no reserved atom, and a report can
+test it with `var/1`. Reports name the quad when it has a label:
+
+```
+quads: FAILED member_2, tests/misc/quads.pl:126
+```
+
+One consequence of recording quads as data: the first quad in a file
+used to make `'$quad'/6` static, so a program could not add one of its
+own. `quad_record()` now declares it dynamic, which is what lets the
+library's own shape checking be tested on hand-written facts.
