@@ -152,25 +152,26 @@ static bool bif_findnsols_4(query *q)
 	// Retry takes the queue
 
 	pl_idx num_cells = queuen_used(q);
+	const pl_idx solns_cells = num_cells;
 	cell *solns = take_queuen(q);
 	drop_queuen(q);
 
 	// Now grab matching solutions with fresh variables for each...
 
-	CHECKED(init_tmp_heap(q), TPL_free(solns));
+	CHECKED(init_tmp_heap(q), free_solns(solns, solns_cells));
 
 	for (cell *c = solns; num_cells; num_cells -= c->num_cells, c += c->num_cells) {
 		cell *tmp = alloc_tmp(q, 1);
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
 		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, false);
 		q->noderef = false;
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 	}
 
-	TPL_free(solns);
 	cell *l = end_list(q);
+	free_solns(solns, solns_cells);
 	CHECKED(l);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
@@ -221,25 +222,26 @@ static bool bif_iso_findall_3(query *q)
 	// Retry takes the queue
 
 	pl_idx num_cells = queuen_used(q);
+	const pl_idx solns_cells = num_cells;
 	cell *solns = take_queuen(q);
 	drop_queuen(q);
 
 	// Now grab matching solutions with fresh variables for each...
 
-	CHECKED(init_tmp_heap(q), TPL_free(solns));
+	CHECKED(init_tmp_heap(q), free_solns(solns, solns_cells));
 
 	for (cell *c = solns; num_cells; num_cells -= c->num_cells, c += c->num_cells) {
 		cell *tmp = alloc_tmp(q, 1);
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
 		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, false);
 		q->noderef = false;
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 	}
 
-	TPL_free(solns);
 	cell *l = end_list(q);
+	free_solns(solns, solns_cells);
 	CHECKED(l);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
@@ -2406,6 +2408,10 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, q->pl->global_bb ? g_true_s : g_false_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "tabling")) {
+		cell tmp;
+		make_atom(&tmp, q->pl->tabling ? g_true_s : g_false_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 #if USE_THREADS
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
 		cell tmp;
@@ -2711,6 +2717,14 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 			q->pl->global_bb = true;
 		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
 			q->pl->global_bb = false;
+		else {
+			return flag_value_error(q, p1, p2);
+		}
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "tabling")) {
+		if (!CMP_STRING_TO_CSTR(q, p2, "true") || !CMP_STRING_TO_CSTR(q, p2, "on"))
+			q->pl->tabling = true;
+		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
+			q->pl->tabling = false;
 		else {
 			return flag_value_error(q, p1, p2);
 		}
@@ -6242,6 +6256,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
 #endif
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "global_bb", q->pl->global_bb?"true":"false");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "tabling", q->pl->tabling?"true":"false");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "verbose", q->pl->quiet?"false":"true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");

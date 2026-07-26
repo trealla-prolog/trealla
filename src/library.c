@@ -1,6 +1,8 @@
 #include "library.h"
 
 #ifdef EMBED
+extern unsigned char library_tabling_pl[];
+extern unsigned int library_tabling_pl_len;
 extern unsigned char library_builtins_pl[];
 extern unsigned int library_builtins_pl_len;
 extern unsigned char library_lists_pl[];
@@ -90,6 +92,7 @@ extern unsigned int main_pl_len;
 #endif
 
 library g_libs[] = {
+	 {"tabling", library_tabling_pl, &library_tabling_pl_len},
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
 	 {"aggregate", library_aggregate_pl, &library_aggregate_pl_len},
 	 {"arithmetic", library_arithmetic_pl, &library_arithmetic_pl_len},

@@ -917,6 +917,13 @@ struct prolog_ {
 	bool trace:1;
 	bool in_goal_expansion:1;
 	bool global_bb:1;
+	bool tabling:1;			// tabling flag: enabled by default
+
+	// Tabling state (tries, tables, worklists, SCC stack) lives here
+	// and not in statics, so two prolog instances in one process do
+	// not share tables. Opaque: owned and shaped by src/tabling.c.
+
+	void *tabling_state;
 };
 
 extern pl_idx g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
@@ -926,6 +933,7 @@ extern pl_idx g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
 extern pl_idx g_call_s, g_braces_s, g_plus_s, g_minus_s, g_post_unify_hook_s;
 extern pl_idx g_quad_s, g_sys_quad_s;
 extern bool do_erase(module *m, const char *str);
+extern void tabling_destroy(prolog *pl);
 
 extern unsigned g_cpu_count;
 

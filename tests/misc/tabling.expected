@@ -1,0 +1,17 @@
+findall: ok
+setof: ok
+call barrier: ok
+left recursion: ok
+mutual: ok
+cycle: ok
+fib: ok
+variant answers: ok
+order independence: ok
+answer sharing: ok
+generate mode: ok
+backtrack variants: ok
+many variants: ok
+threads: ok
+abolish_table: ok
+flag off: ok
+flag on: ok

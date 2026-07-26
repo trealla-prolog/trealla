@@ -126,6 +126,7 @@ SRCOBJECTS = tpl.o \
 	src/base64.o \
 	src/bif_atts.o \
 	src/bif_bboard.o \
+	src/tabling.o \
 	src/bif_control.o \
 	src/bif_csv.o \
 	src/bif_database.o \
@@ -197,6 +198,7 @@ LIBOBJECTS +=  \
 	library/quads.o \
 	library/reif.o \
 	library/si.o \
+	library/tabling.o \
 	library/sqlite3.o \
 	library/sockets.o \
 	library/time.o \

@@ -25,6 +25,7 @@ and using a plain old Makefile.
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
+	Variant tabling ##EXPERIMENTAL##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).

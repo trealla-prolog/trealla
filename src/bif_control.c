@@ -718,12 +718,46 @@ static bool find_reset_handler(query *q)
 // instruction, which marks the boundary of the captured continuation.
 
 static void scan_cont_segment(query *q, cell *c, pl_ctx cc, int pass,
-	cell **goals, pl_ctx *ctxs, unsigned *pn, unsigned *ptotal, bool *hit)
+	cell **goals, pl_ctx *ctxs, unsigned *pn, unsigned *ptotal, bool *hit,
+	pl_idx reset_cp)
 {
 	while (c && !is_end(c)) {
+		// $drop_barrier ends the captured continuation ONLY when it is
+		// the barrier planted by our own reset/3: its operand is the
+		// choice-point index of that reset. Barriers from call/1,
+		// catch/3, findall/3 etc. sit BETWEEN the shift and the reset
+		// (eg. a tabled call under call/1, as Logtalk's debug wrapper
+		// does) and must be skipped, not treated as the delimiter -
+		// otherwise the continuation is truncated and answers come back
+		// with unbound variables.
+
 		if (is_interned(c) && (c->val_off == g_sys_drop_barrier_s)) {
-			*hit = true;
-			return;
+			if ((c->arity == 1) && is_smallint(c+1)
+				&& (get_smallint(c+1) == (pl_int)reset_cp)) {
+				*hit = true;
+				return;
+			}
+
+			c += c->num_cells;
+			continue;
+		}
+
+		// Compiled if-then-else: a suspension inside a then-branch sees
+		// the jump-over-the-else in its pending goals. Follow the jump
+		// (its operand is the cell distance from the jump cell itself
+		// to the landing cell) instead of capturing it as a goal.
+
+		if (is_interned(c) && (c->val_off == g_sys_jump_s) && (c->arity == 1)) {
+			c += get_smallint(c+1);
+			continue;
+		}
+
+		// The landing cell of an if-then-else is a bare true/0: harmless
+		// to capture, skip it to keep continuations tidy.
+
+		if (is_interned(c) && (c->val_off == g_true_s) && !c->arity && c->bif_ptr) {
+			c += c->num_cells;
+			continue;
 		}
 
 		if (pass) { goals[*pn] = c; ctxs[*pn] = cc; }
@@ -739,14 +773,14 @@ static void scan_cont_segment(query *q, cell *c, pl_ctx cc, int pass,
 // counts, pass==1 fills the arrays.
 
 static unsigned collect_cont_goals(query *q, int pass,
-	cell **goals, pl_ctx *ctxs, unsigned *out_total_cells)
+	cell **goals, pl_ctx *ctxs, unsigned *out_total_cells, pl_idx reset_cp)
 {
 	unsigned n = 0, total = 0;
 	bool hit = false;
 
 	// Segment 0: the rest of the shift's own clause body.
 	scan_cont_segment(q, q->st.instr + q->st.instr->num_cells, q->st.cur_ctx,
-		pass, goals, ctxs, &n, &total, &hit);
+		pass, goals, ctxs, &n, &total, &hit, reset_cp);
 
 	// Walk up the frame chain; each frame contributes its caller's goals
 	// *after* the call that entered it (f->instr points at the call site).
@@ -760,7 +794,7 @@ static unsigned collect_cont_goals(query *q, int pass,
 
 		if (f->instr)
 			scan_cont_segment(q, f->instr + f->instr->num_cells, f->prev,
-				pass, goals, ctxs, &n, &total, &hit);
+				pass, goals, ctxs, &n, &total, &hit, reset_cp);
 
 		if (f->prev == f_ctx)
 			break;
@@ -778,17 +812,38 @@ static bool bif_shift_1(query *q)
 	q->ball = p1;
 	q->ball_ctx = p1_ctx;
 
-	bool have_barrier = q->st.cp != 0;
+	// Index of the nearest enclosing reset/3 choice point: reset planted
+	// a $drop_barrier carrying exactly this value.
+
+	pl_idx reset_cp = 0;
+	bool have_barrier = false;
+
+	if (q->st.cp) {
+		choice *ch = GET_CURR_CHOICE();
+
+		for (; ch; ch--) {
+			if (ch->reset) {
+				reset_cp = (pl_idx)(ch - q->choices);
+				have_barrier = true;
+				break;
+			}
+
+			if (ch == q->choices)
+				break;
+		}
+	}
 
 	if (have_barrier) {
 		unsigned total_cells = 0;
-		unsigned n = collect_cont_goals(q, 0, NULL, NULL, &total_cells);
+		unsigned n = collect_cont_goals(q, 0, NULL, NULL, &total_cells, reset_cp);
 
 		if (n == 0) {
-			// Empty continuation.
+			// Empty continuation. NB. must be an executable true/0
+			// instruction (with its builtin resolved), not a bare atom:
+			// fabricated cells bypass the compiler's builtin lookup.
 			cell *tmp2 = alloc_heap(q, 2);
 			make_instr(tmp2, g_cont_s, NULL, 1, 1);
-			make_atom(tmp2+1, g_true_s);
+			make_instr(tmp2+1, g_true_s, bif_iso_true_0, 0, 0);
 			q->cont = tmp2;
 			q->cont_ctx = q->st.cur_ctx;
 			return find_reset_handler(q);
@@ -797,7 +852,7 @@ static bool bif_shift_1(query *q)
 		cell **goals = TPL_malloc(sizeof(cell*) * n);
 		pl_ctx *ctxs = TPL_malloc(sizeof(pl_ctx) * n);
 		CHECKED(goals); CHECKED(ctxs);
-		collect_cont_goals(q, 1, goals, ctxs, NULL);
+		collect_cont_goals(q, 1, goals, ctxs, NULL, reset_cp);
 
 		// Right-nested conjunction: (n-1) comma cells + total goal cells,
 		// wrapped in cont(...). If n==1 there are no commas.

@@ -121,6 +121,26 @@ inline static cell *get_queuen(query *q)
 	return q->queue[q->st.qnum];
 }
 
+// findall/3 and findnsols/4 rebuild their result list from the queue
+// with end_list(), which dup_cells() - i.e. takes its OWN reference to
+// every managed blob. The queue's references (alloc_queuen ->
+// dup_cells) are then redundant and must be released, or the blob
+// outlives the query. Order matters: unshare only AFTER end_list() has
+// taken its refs, or the last one drops to zero and the list gets
+// built over freed strbufs.
+//
+// NB. not every queue works this way: bif_sys_list_1() converts with an
+// explicitly unsafe copy that TRANSFERS ownership to the new list, so
+// that path must keep freeing the buffer raw via drop_queuen().
+
+inline static void free_solns(cell *solns, pl_idx num_cells)
+{
+	for (cell *c = solns; num_cells--; c++)
+		unshare_cell(c);
+
+	TPL_free(solns);
+}
+
 inline static cell *take_queuen(query *q)
 {
 	cell *save = q->queue[q->st.qnum];
