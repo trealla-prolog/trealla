@@ -580,7 +580,7 @@ static void query_purge_dirty_list(query *q)
 		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
-static void trim_trail(query *q)
+static void trim_trail(query *q, bool reused)
 {
 	if (q->undo_hi_tp)
 		return;
@@ -598,6 +598,42 @@ static void trim_trail(query *q)
 
 		if (tr->val_ctx != q->st.cur_ctx)
 			break;
+
+		// After reuse_frame() these entries MUST go: it already
+		// unshared the old slot contents and moved the new frame's
+		// cells in by plain copy, so the reference now in the slot
+		// belongs to that transfer. Undoing against it would unshare
+		// somebody else's reference (double free).
+		//
+		// After push_frame() the frame is still live and its bindings
+		// still own what they hold. Dropping the entry there means
+		// nothing ever unshares a MANAGED cell unless the frame later
+		// gets recovered by trim_frame() - which only fires when the
+		// frame is topmost, has no_recov clear and no choices resume
+		// into it. When it does not fire, the blob leaks.
+
+		// Retaining an entry is only safe if the frame it names can
+		// never be recycled underneath it: trim_frame() lowers
+		// q->st.sp, a later frame reuses those slot indices, and a
+		// stale entry would then unshare a binding it does not own
+		// (double free). That is what trim_trail() is really for.
+		//
+		// A frame with no_recov set is exactly the case that cannot be
+		// recycled - set_var() marks it when a binding escapes to
+		// another frame - so its entries can be kept, and they must
+		// be: nothing else will ever unshare a MANAGED cell sitting in
+		// a frame that trim_frame() will never touch.
+
+		if (!reused) {
+			const frame *f = GET_FRAME(tr->val_ctx);
+
+			if (f->no_recov) {
+				const slot *e = get_slot(q, f, tr->var_num);
+
+				if (is_managed(&e->c))
+					break;
+			}
+		}
 
 		q->st.tp--;
 	}
@@ -776,7 +812,9 @@ static void commit_frame(query *q)
 	if (!q->st.dbe->owner->is_builtin)
 		q->st.m = q->st.dbe->owner->m;
 
-	if (tco && q->pl->opt) {
+	const bool reused = tco && q->pl->opt;
+
+	if (reused) {
 		Trace(q, get_head(save_dbe->cl.cells), q->st.cur_ctx, EXIT);
 		reuse_frame(q, cl->num_vars);
 	} else {
@@ -786,7 +824,8 @@ static void commit_frame(query *q)
 	if (last_match) {
 		leave_predicate(q, q->st.pr, false);
 		drop_choice(q);
-		trim_trail(q);
+		trim_trail(q, reused);
+
 
 	} else {
 		choice *ch = GET_CURR_CHOICE();
