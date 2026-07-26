@@ -6256,6 +6256,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
 #endif
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "global_bb", q->pl->global_bb?"true":"false");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "tabling", q->pl->tabling?"true":"false");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "verbose", q->pl->quiet?"false":"true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
