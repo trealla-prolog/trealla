@@ -363,6 +363,81 @@ test_many_variants :-
 	),
 	nl.
 
+
+% Tabling state is process-global and unlocked, so it is owned by the
+% first thread to use it; a tabled call from any other thread must fail
+% fast with a clear error rather than racing the tries (in practice:
+% hanging in completion). Deterministic by construction - this thread
+% has already tabled above, so the child is always the loser.
+
+test_threads :-
+	(	catch(thread_create(thread_child, T, []), _, fail) ->
+		thread_join(T, _)
+	;	% no thread support in this build - nothing to check
+		write('threads: ok'), nl
+	).
+
+thread_child :-
+	catch(( count(125, 1, _), Got = no_error ),
+	      error(resource_error(What), _),
+	      Got = What),
+	(	Got == tabling_not_thread_safe ->
+		write('threads: ok')
+	;	write('threads: FAILED '), write(Got)
+	),
+	nl.
+
+
+% abolish_table/1: selective invalidation. A completed table does not
+% notice assert/retract, so this is the supported way to drop one
+% predicate's answers without discarding every other table too. The
+% counters prove the selectivity: keep_t/1 must stay cached while
+% drop_t/1 recomputes.
+
+:- dynamic(ab_hits/1).
+:- dynamic(ab_edge/2).
+
+ab_hits(0).
+ab_edge(x,y).
+
+ab_bump :- retract(ab_hits(C)), C1 is C + 1, assertz(ab_hits(C1)).
+
+:- table keep_t/1.
+keep_t(X) :- ab_bump, member(X, [1,2]).
+
+:- table drop_t/1.
+drop_t(X) :- ab_bump, member(X, [3,4]).
+
+:- table ab_path/2.
+ab_path(X,Y) :- ab_edge(X,Y).
+
+test_abolish :-
+	findall(_, keep_t(_), _),
+	findall(_, drop_t(_), _),
+	ab_hits(H1),
+	abolish_table(drop_t/1),
+	findall(_, keep_t(_), _),
+	ab_hits(H2),
+	findall(_, drop_t(_), _),
+	ab_hits(H3),
+	findall(P0, ab_path(x,P0), Before),
+	assertz(ab_edge(x,z)),
+	abolish_table(ab_path/2),
+	findall(P1, ab_path(x,P1), After),
+	catch(abolish_table(_), error(E1,_), true),
+	catch(abolish_table(no_such_t/3), error(E2,_), true),
+	catch(abolish_table(42), error(E3,_), true),
+	(	H2 =:= H1,			% untouched table stayed cached
+		H3 =:= H1 + 1,			% abolished one recomputed
+		Before == [y], After == [y,z],	% assert now visible
+		E1 = instantiation_error,
+		E2 = existence_error(table, no_such_t/3),
+		E3 = type_error(predicate_indicator, 42) ->
+		write('abolish_table: ok')
+	;	write('abolish_table: FAILED')
+	),
+	nl.
+
 main :-
 	test_findall,
 	test_setof,
@@ -377,4 +452,6 @@ main :-
 	test_generate,
 	test_backtrack_variants,
 	test_many_variants,
+	test_threads,
+	test_abolish,
 	test_flag.

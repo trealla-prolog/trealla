@@ -11,5 +11,7 @@ answer sharing: ok
 generate mode: ok
 backtrack variants: ok
 many variants: ok
+threads: ok
+abolish_table: ok
 flag off: ok
 flag on: ok
