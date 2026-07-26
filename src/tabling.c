@@ -494,6 +494,15 @@ typedef struct table_ {
 	int status;
 	bool in_wl;
 	unsigned scc;			// owning SCC id (0 = none yet)
+
+	// Identity of the call this table answers, so abolish_table/1 can
+	// find every variant of one predicate, and the trie leaf pointing
+	// here, so it can be reset to "no table yet" when we drop it.
+
+	pl_idx functor;
+	unsigned arity;
+	tnode *leaf;
+
 	struct table_ *wl_next, *all_next, *fresh_next;
 } table;
 
@@ -519,35 +528,66 @@ typedef struct {
 	unsigned dep_min;		// smallest outer SCC id depended on (0 = none)
 } tscc;
 
-static tscc *g_scc = NULL;
-static unsigned g_scc_depth = 0, g_scc_max = 0, g_scc_next_id = 1;
+// --- per-instance state ---
+//
+// All of this used to be file statics, which meant two prolog instances
+// in one process silently shared tables (and the thread guard below was
+// process-wide rather than per-instance). It now hangs off prolog as an
+// opaque pointer, allocated on first tabled call and freed by
+// tabling_destroy() from pl_destroy().
 
-static unsigned tbl_scc_id(void)
+typedef struct {
+	tscc *scc;
+	unsigned scc_depth, scc_max, scc_next_id;
+
+	// Bumped by abolish; enumerations carry the generation they started
+	// in and stop cleanly if the tables were pulled out from under them.
+	// int64_t (not uint64_t) to match q->st.v2, where they stash it.
+
+	int64_t generation;
+
+	// Non-zero while a leader is driving completion. Abolishing must not
+	// free tables that live frames are still enumerating.
+
+	unsigned in_use;
+
+	// Set when a worker raised an exception during the current leader's
+	// fixpoint. Such a fixpoint may have gathered only part of the
+	// answers, so its tables must NOT be cached as complete.
+
+	bool saw_exception;
+
+	tnode *variants;
+	table *all_tables, *wl_head, *fresh_head;
+	bool leader;
+
+#if USE_THREADS
+	pthread_t owner;
+	bool owned;
+#endif
+
+	tnode *test_trie;		// '$trie_test_*' builtins only
+} tbl_state;
+
+static tbl_state *tbl(query *q)
 {
-	return g_scc_depth ? g_scc[g_scc_depth-1].id : 0;
+	prolog *pl = q->pl;
+
+	if (!pl->tabling_state) {
+		tbl_state *s = calloc(1, sizeof(tbl_state));
+		if (!s) return NULL;
+		s->generation = 1;
+		s->scc_next_id = 1;
+		pl->tabling_state = s;
+	}
+
+	return (tbl_state*)pl->tabling_state;
 }
 
-// Bumped by abolish; enumerations carry the generation they started in
-// and stop cleanly if the tables were pulled out from under them.
-
-// int64_t (not uint64_t) to match q->st.v2, where enumerations stash it.
-
-static int64_t g_generation = 1;
-
-// Non-zero while a leader is driving completion. abolish_all_tables/0
-// must not free tables that live frames are still enumerating.
-
-static unsigned g_in_use = 0;
-
-// Set when a worker raised an exception during the current leader's
-// fixpoint. Such a fixpoint may have gathered only part of the answers,
-// so its tables must NOT be cached as complete.
-
-static bool g_saw_exception = false;
-
-static tnode *g_variants = NULL;
-static table *g_all_tables = NULL, *g_wl_head = NULL, *g_fresh_head = NULL;
-static bool g_leader = false;
+static unsigned tbl_scc_id(const tbl_state *s)
+{
+	return s->scc_depth ? s->scc[s->scc_depth-1].id : 0;
+}
 
 static pl_idx s_fresh, s_active, s_complete;
 
@@ -596,14 +636,14 @@ static void tbl_free_pending(table *t)
 	t->pending = NULL;
 }
 
-static void tbl_enqueue(table *t)
+static void tbl_enqueue(tbl_state *s, table *t)
 {
 	if (t->in_wl)
 		return;
 
 	t->in_wl = true;
-	t->wl_next = g_wl_head;
-	g_wl_head = t;
+	t->wl_next = s->wl_head;
+	s->wl_head = t;
 }
 
 static void tbl_destroy(table *t)
@@ -690,53 +730,53 @@ static void tbl_pin_answer_frame(query *q, const cell *tmp)
 #if USE_THREADS
 #include <pthread.h>
 
-static pthread_t g_tbl_owner;
-static bool g_tbl_owned = false;
-
 // True if this thread owns tabling, claiming it if nobody does. The
 // CALLER throws: throw_error() returns TRUE (it raises by setting
 // q->did_throw, and the builtin returns that), so folding the throw in
 // here behind an "if (!ok) return false;" call site would read
 // backwards and fall through with a ball already pending.
 
-static bool tbl_claim(query *q)
+static bool tbl_claim(query *q, tbl_state *s)
 {
 	pthread_t self = pthread_self();
 	prolog_lock(q->pl);
 
-	if (!g_tbl_owned) {
-		g_tbl_owner = self;
-		g_tbl_owned = true;
+	if (!s->owned) {
+		s->owner = self;
+		s->owned = true;
 		prolog_unlock(q->pl);
 		return true;
 	}
 
-	bool mine = pthread_equal(self, g_tbl_owner);
+	bool mine = pthread_equal(self, s->owner);
 	prolog_unlock(q->pl);
 	return mine;
 }
 
-static void tbl_disown(void)
+static void tbl_disown(tbl_state *s)
 {
-	g_tbl_owned = false;
+	s->owned = false;
 }
 #else
-static bool tbl_claim(query *q) { (void)q; return true; }
-static void tbl_disown(void) { }
+static bool tbl_claim(query *q, tbl_state *s) { (void)q; (void)s; return true; }
+static void tbl_disown(tbl_state *s) { (void)s; }
 #endif
 
 static bool bif_tbl_variant_table_3(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 
-	if (!tbl_claim(q))
+	if (!tbl_claim(q, s))
 		return throw_error(q, p1, p1_ctx, "resource_error", "tabling_not_thread_safe");
 
 	tbl_intern_atoms(q);
 	bool existed = false, attvar = false;
-	tnode *leaf = trie_insert_(q, &g_variants, p1, p1_ctx, &existed, &attvar);
+	tnode *leaf = trie_insert_(q, &s->variants, p1, p1_ctx, &existed, &attvar);
 
 	if (!leaf) {
 		if (attvar)
@@ -751,8 +791,11 @@ static bool bif_tbl_variant_table_3(query *q)
 		t = calloc(1, sizeof(table));
 		CHECKED(t);
 		t->status = TBL_FRESH;
-		t->all_next = g_all_tables;
-		g_all_tables = t;
+		t->functor = is_interned(p1) ? p1->val_off : 0;
+		t->arity = p1->arity;
+		t->leaf = leaf;
+		t->all_next = s->all_tables;
+		s->all_tables = t;
 		leaf->value = t;
 	}
 
@@ -788,6 +831,9 @@ static bool bif_tbl_set_status_2(query *q)
 
 static bool bif_tbl_add_answer_2(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
@@ -816,7 +862,7 @@ static bool bif_tbl_add_answer_2(query *q)
 		t->unproc_ans = a;
 
 	if (t->first_susp)
-		tbl_enqueue(t);
+		tbl_enqueue(s, t);
 
 	return true;
 }
@@ -825,13 +871,16 @@ static bool bif_tbl_add_answer_2(query *q)
 
 static bool bif_tbl_get_answer_2(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
 
 	// Stop cleanly if the tables were abolished under a live enumeration.
 
-	if (q->retry && (q->st.v2 != g_generation))
+	if (q->retry && (q->st.v2 != s->generation))
 		return false;
 
 	tbl_ans *a = q->retry ? (tbl_ans*)(size_t)q->st.v1 : t->first_ans;
@@ -841,7 +890,7 @@ static bool bif_tbl_get_answer_2(query *q)
 
 	if (a->next) {
 		q->st.v1 = (uint64_t)(size_t)a->next;
-		q->st.v2 = g_generation;
+		q->st.v2 = s->generation;
 		CHECKED(push_choice(q));
 	}
 
@@ -855,6 +904,9 @@ static bool bif_tbl_get_answer_2(query *q)
 
 static bool bif_tbl_add_suspension_2(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
@@ -862,26 +914,26 @@ static bool bif_tbl_add_suspension_2(query *q)
 	// Depending on a table owned by an outer SCC means this SCC cannot
 	// complete on its own (see the SCC comment above).
 
-	if (g_scc_depth && t->scc && (t->scc < tbl_scc_id())) {
-		tscc *top = &g_scc[g_scc_depth-1];
+	if (s->scc_depth && t->scc && (t->scc < tbl_scc_id(s))) {
+		tscc *top = &s->scc[s->scc_depth-1];
 
 		if (!top->dep_min || (t->scc < top->dep_min))
 			top->dep_min = t->scc;
 	}
 
-	tbl_susp *s = calloc(1, sizeof(tbl_susp));
-	CHECKED(s);
-	s->image = tbl_image(q, p2, p2_ctx);
-	CHECKED(s->image);
+	tbl_susp *sp = calloc(1, sizeof(tbl_susp));
+	CHECKED(sp);
+	sp->image = tbl_image(q, p2, p2_ctx);
+	CHECKED(sp->image);
 
-	if (t->last_susp) t->last_susp->next = s; else t->first_susp = s;
-	t->last_susp = s;
+	if (t->last_susp) t->last_susp->next = sp; else t->first_susp = sp;
+	t->last_susp = sp;
 
 	if (!t->unproc_susp)
-		t->unproc_susp = s;
+		t->unproc_susp = sp;
 
 	if (t->first_ans)
-		tbl_enqueue(t);
+		tbl_enqueue(s, t);
 
 	return true;
 }
@@ -890,13 +942,16 @@ static bool bif_tbl_add_suspension_2(query *q)
 
 static bool bif_tbl_pop_worklist_1(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,any);
 
 	// Only drain tables owned by the SCC we are completing; work for
 	// outer SCCs is left for their own completion loops.
 
-	unsigned scc_id = tbl_scc_id();
-	table *t = g_wl_head, *prev = NULL;
+	unsigned scc_id = tbl_scc_id(s);
+	table *t = s->wl_head, *prev = NULL;
 
 	while (t && (t->scc != scc_id)) {
 		prev = t;
@@ -909,7 +964,7 @@ static bool bif_tbl_pop_worklist_1(query *q)
 	if (prev)
 		prev->wl_next = t->wl_next;
 	else
-		g_wl_head = t->wl_next;
+		s->wl_head = t->wl_next;
 
 	t->wl_next = NULL;
 	t->in_wl = false;
@@ -952,12 +1007,15 @@ static bool bif_tbl_pop_worklist_1(query *q)
 
 static bool bif_tbl_wkl_work_3(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 	table *t = tbl_handle(p1);
 
-	if (q->retry && (q->st.v2 != g_generation))
+	if (q->retry && (q->st.v2 != s->generation))
 		return false;
 
 	tbl_pair *p = q->retry ? (tbl_pair*)(size_t)q->st.v1 : t->pending;
@@ -967,7 +1025,7 @@ static bool bif_tbl_wkl_work_3(query *q)
 
 	if (p->next) {
 		q->st.v1 = (uint64_t)(size_t)p->next;
-		q->st.v2 = g_generation;
+		q->st.v2 = s->generation;
 		CHECKED(push_choice(q));
 	}
 
@@ -986,30 +1044,38 @@ static bool bif_tbl_wkl_work_3(query *q)
 
 // Leader flag (the "scheduling component" of the Desouter driver).
 
-static bool bif_tbl_leader_0(query *q) { (void)q; return g_scc_depth != 0; }
+static bool bif_tbl_leader_0(query *q)
+{
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+	return s->scc_depth != 0;
+}
 
 // '$tbl_push_scc'(+Handle): open a nested SCC owned by this table.
 
 static bool bif_tbl_push_scc_1(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,integer);
 	table *t = tbl_handle(p1);
 
-	if (g_scc_depth >= g_scc_max) {
-		unsigned nmax = g_scc_max ? g_scc_max*2 : 64;
-		tscc *tmp = realloc(g_scc, sizeof(tscc)*nmax);
+	if (s->scc_depth >= s->scc_max) {
+		unsigned nmax = s->scc_max ? s->scc_max*2 : 64;
+		tscc *tmp = realloc(s->scc, sizeof(tscc)*nmax);
 		CHECKED(tmp);
-		g_scc = tmp;
-		g_scc_max = nmax;
+		s->scc = tmp;
+		s->scc_max = nmax;
 	}
 
-	tscc *top = &g_scc[g_scc_depth++];
-	top->id = g_scc_next_id++;
+	tscc *top = &s->scc[s->scc_depth++];
+	top->id = s->scc_next_id++;
 	top->dep_min = 0;
 	top->fresh_head = t;
 	t->scc = top->id;
 	t->fresh_next = NULL;
-	g_in_use++;
+	s->in_use++;
 	return true;
 }
 
@@ -1019,20 +1085,23 @@ static bool bif_tbl_push_scc_1(query *q)
 
 static bool bif_tbl_pop_scc_1(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,any);
 
-	if (!g_scc_depth)
+	if (!s->scc_depth)
 		return false;
 
-	tscc *top = &g_scc[--g_scc_depth];
+	tscc *top = &s->scc[--s->scc_depth];
 
-	if (g_in_use)
-		g_in_use--;
+	if (s->in_use)
+		s->in_use--;
 
 	bool escaped = top->dep_min != 0;
 
-	if (escaped && g_scc_depth) {
-		tscc *parent = &g_scc[g_scc_depth-1];
+	if (escaped && s->scc_depth) {
+		tscc *parent = &s->scc[s->scc_depth-1];
 
 		// Merge: re-tag and hand our tables to the parent.
 
@@ -1067,12 +1136,15 @@ static bool bif_tbl_pop_scc_1(query *q)
 
 static bool bif_tbl_mark_all_complete_0(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	(void)q;
 
-	if (!g_scc_depth)
+	if (!s->scc_depth)
 		return true;
 
-	tscc *top = &g_scc[g_scc_depth-1];
+	tscc *top = &s->scc[s->scc_depth-1];
 
 	for (table *t = top->fresh_head; t; ) {
 		table *next = t->fresh_next;
@@ -1096,7 +1168,7 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 	}
 
 	top->fresh_head = NULL;
-	g_saw_exception = false;
+	s->saw_exception = false;
 	return true;
 }
 
@@ -1105,25 +1177,34 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 
 static bool bif_tbl_note_exception_0(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	(void)q;
-	g_saw_exception = true;
+	s->saw_exception = true;
 	return true;
 }
 
 static bool bif_tbl_saw_exception_0(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	(void)q;
-	return g_saw_exception;
+	return s->saw_exception;
 }
 
 static bool bif_tbl_reset_incomplete_0(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	(void)q;
 
-	if (!g_scc_depth)
+	if (!s->scc_depth)
 		return true;
 
-	tscc *rtop = &g_scc[g_scc_depth-1];
+	tscc *rtop = &s->scc[s->scc_depth-1];
 
 	for (table *t = rtop->fresh_head; t; ) {
 		table *next = t->fresh_next;
@@ -1149,48 +1230,125 @@ static bool bif_tbl_reset_incomplete_0(query *q)
 	}
 
 	rtop->fresh_head = NULL;
-	g_saw_exception = false;
+	s->saw_exception = false;
 	return true;
 }
 
-static bool bif_tbl_abolish_all_tables_0(query *q)
+// Drop every table. Shared by abolish_all_tables/0 and by
+// tabling_destroy() at instance teardown.
+
+static void tbl_clear_all(tbl_state *s)
 {
-	// Freeing tables while a leader is driving completion (or while an
-	// enumeration frame is live) would leave dangling handles behind.
-
-	// Deliberately NOT owner-checked: if the owning thread has since
-	// exited, requiring ownership here would lock tabling out of the
-	// process for good. g_in_use still refuses an abolish racing a live
-	// leader, and clearing the tables releases ownership, so
-	// abolish_all_tables/0 is the documented way to hand tabling from
-	// one thread to the next.
-
-	if (g_in_use)
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "modify,table");
-
-	g_generation++;
-
-	for (table *t = g_all_tables; t; ) {
+	for (table *t = s->all_tables; t; ) {
 		table *next = t->all_next;
 		tbl_destroy(t);
 		t = next;
 	}
 
-	trie_free(g_variants);
-	g_variants = NULL;
-	g_all_tables = g_wl_head = g_fresh_head = NULL;
-	g_leader = false;
-	g_scc_depth = 0;
+	trie_free(s->variants);
+	s->variants = NULL;
+	s->all_tables = s->wl_head = s->fresh_head = NULL;
+	s->leader = false;
+	s->scc_depth = 0;
 
-	// The SCC stack is a high-water-mark array that otherwise lives for
-	// the life of the process; nothing is on it here (g_in_use above
-	// guarantees no leader is running), so hand it back.
+	// The SCC stack is a high-water-mark array that otherwise lives as
+	// long as the instance; nothing is on it here, so hand it back.
 
-	free(g_scc);
-	g_scc = NULL;
-	g_scc_max = 0;
-	g_saw_exception = false;
-	tbl_disown();
+	free(s->scc);
+	s->scc = NULL;
+	s->scc_max = 0;
+	s->saw_exception = false;
+	tbl_disown(s);
+}
+
+void tabling_destroy(prolog *pl)
+{
+	tbl_state *s = (tbl_state*)pl->tabling_state;
+
+	if (!s)
+		return;
+
+	tbl_clear_all(s);
+	trie_free(s->test_trie);
+	free(s);
+	pl->tabling_state = NULL;
+}
+
+// abolish_table/1: drop every variant of ONE predicate. Without this the
+// only way to invalidate a table after assert/retract is
+// abolish_all_tables/0, which throws away unrelated work too.
+//
+// The trie node stays; resetting its value to NULL just makes the next
+// call see a fresh variant. Nodes are cheap and the same call is likely
+// to come back.
+
+static bool bif_tbl_abolish_1(query *q)
+{
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,integer);
+
+	// Same rule as abolish_all_tables/0: never while a leader is
+	// driving completion or a frame is still enumerating.
+
+	if (s->in_use)
+		return throw_error(q, p1, p1_ctx, "permission_error", "modify,table");
+
+	const pl_idx functor = p1->val_off;
+	const unsigned arity = (unsigned)get_smallint(p2);
+	table *prev = NULL;
+	unsigned dropped = 0;
+
+	for (table *t = s->all_tables; t; ) {
+		table *next = t->all_next;
+
+		if ((t->functor == functor) && (t->arity == arity)) {
+			if (t->leaf)
+				t->leaf->value = NULL;
+
+			if (prev)
+				prev->all_next = next;
+			else
+				s->all_tables = next;
+
+			tbl_destroy(t);
+			dropped++;
+		} else
+			prev = t;
+
+		t = next;
+	}
+
+	// Only disturb live enumerations if something actually went.
+
+	if (dropped)
+		s->generation++;
+
+	return true;
+}
+
+static bool bif_tbl_abolish_all_tables_0(query *q)
+{
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
+	// Freeing tables while a leader is driving completion (or while an
+	// enumeration frame is live) would leave dangling handles behind.
+
+	// Deliberately NOT owner-checked: if the owning thread has since
+	// exited, requiring ownership here would lock tabling out of the
+	// instance for good. s->in_use still refuses an abolish racing a
+	// live leader, and clearing the tables releases ownership, so
+	// abolish_all_tables/0 is the documented way to hand tabling from
+	// one thread to the next.
+
+	if (s->in_use)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "modify,table");
+
+	s->generation++;
+	tbl_clear_all(s);
 	return true;
 }
 
@@ -1198,23 +1356,27 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 // Test builtins. A single process-global test trie; the real variant
 // trie will hang off prolog* alongside the table registry.
 
-static tnode *g_test_trie = NULL;
-
 static bool bif_sys_trie_test_clear_0(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	(void)q;
-	trie_free(g_test_trie);
-	g_test_trie = NULL;
+	trie_free(s->test_trie);
+	s->test_trie = NULL;
 	return true;
 }
 
 static bool bif_sys_trie_test_insert_2(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	bool existed = false;
 
-	if (!trie_insert(q, &g_test_trie, p1, p1_ctx, &existed))
+	if (!trie_insert(q, &s->test_trie, p1, p1_ctx, &existed))
 		return false;
 
 	cell tmp;
@@ -1224,15 +1386,21 @@ static bool bif_sys_trie_test_insert_2(query *q)
 
 static bool bif_sys_trie_test_lookup_1(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,any);
-	return trie_lookup(q, &g_test_trie, p1, p1_ctx) != NULL;
+	return trie_lookup(q, &s->test_trie, p1, p1_ctx) != NULL;
 }
 
 static bool bif_sys_trie_test_count_1(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,any);
 	cell tmp;
-	make_int(&tmp, (pl_int)trie_count_leaves(g_test_trie));
+	make_int(&tmp, (pl_int)trie_count_leaves(s->test_trie));
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -1252,6 +1420,7 @@ builtins g_tabling_bifs[] =
 	{"$tbl_reset_incomplete", 0, bif_tbl_reset_incomplete_0, "", false, false, BLAH},
 	{"$tbl_note_exception", 0, bif_tbl_note_exception_0, "", false, false, BLAH},
 	{"$tbl_saw_exception", 0, bif_tbl_saw_exception_0, "", false, false, BLAH},
+	{"$tbl_abolish", 2, bif_tbl_abolish_1, "+atom,+integer", false, false, BLAH},
 	{"$tbl_abolish_all_tables", 0, bif_tbl_abolish_all_tables_0, "", false, false, BLAH},
 
 	{"$trie_test_clear", 0, bif_sys_trie_test_clear_0, "", false, false, BLAH},

@@ -10,7 +10,8 @@
 % Helpers precede the user:term_expansion clauses at the bottom, which
 % become active the moment they load.
 
-:- module(tabling, [start_tabling/2, abolish_all_tables/0,
+:- module(tabling, [start_tabling/2,
+	abolish_all_tables/0, abolish_table/1,
 	op(1150, fx, table)]).
 
 :- use_module(library(dcgs)).
@@ -20,6 +21,41 @@
 
 abolish_all_tables :-
 	'$tbl_abolish_all_tables'.
+
+% abolish_table(+Spec) drops every table of ONE predicate, where Spec
+% takes the same shapes as the (:- table) directive: Name/Arity,
+% Name//Arity for a DCG non-terminal, or a comma-conjunction of those.
+%
+% Needed because a completed table does NOT notice assert/retract on
+% the predicates it derived from - the answers stay as they were. Until
+% incremental tabling exists, invalidating by hand after changing the
+% facts is the supported route, and abolish_all_tables/0 is too blunt
+% for that: it throws away every unrelated table too.
+
+abolish_table(Spec) :-
+	(  var(Spec) ->
+	   throw(error(instantiation_error, abolish_table/1))
+	;  abolish_table_(Spec)
+	).
+
+abolish_table_((A,B)) :- !,
+	abolish_table_(A),
+	abolish_table_(B).
+abolish_table_(Name//Arity) :-
+	atom(Name), integer(Arity), Arity >= 0, !,
+	Arity2 is Arity + 2,
+	abolish_table_(Name/Arity2).
+abolish_table_(Name/Arity) :-
+	atom(Name), integer(Arity), Arity >= 0, !,
+	functor(Test, Name, Arity),
+	(  '$tabled'(Test) ->
+	   '$tbl_abolish'(Name, Arity)
+	;  % Silently doing nothing here hides a typo, and the caller
+	   % believes stale answers were dropped when they were not.
+	   throw(error(existence_error(table, Name/Arity), abolish_table/1))
+	).
+abolish_table_(Spec) :-
+	throw(error(type_error(predicate_indicator, Spec), abolish_table/1)).
 
 % --- driver ---
 
