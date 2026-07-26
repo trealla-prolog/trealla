@@ -152,25 +152,26 @@ static bool bif_findnsols_4(query *q)
 	// Retry takes the queue
 
 	pl_idx num_cells = queuen_used(q);
+	const pl_idx solns_cells = num_cells;
 	cell *solns = take_queuen(q);
 	drop_queuen(q);
 
 	// Now grab matching solutions with fresh variables for each...
 
-	CHECKED(init_tmp_heap(q), TPL_free(solns));
+	CHECKED(init_tmp_heap(q), free_solns(solns, solns_cells));
 
 	for (cell *c = solns; num_cells; num_cells -= c->num_cells, c += c->num_cells) {
 		cell *tmp = alloc_tmp(q, 1);
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
 		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, false);
 		q->noderef = false;
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 	}
 
-	TPL_free(solns);
 	cell *l = end_list(q);
+	free_solns(solns, solns_cells);
 	CHECKED(l);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
@@ -221,25 +222,26 @@ static bool bif_iso_findall_3(query *q)
 	// Retry takes the queue
 
 	pl_idx num_cells = queuen_used(q);
+	const pl_idx solns_cells = num_cells;
 	cell *solns = take_queuen(q);
 	drop_queuen(q);
 
 	// Now grab matching solutions with fresh variables for each...
 
-	CHECKED(init_tmp_heap(q), TPL_free(solns));
+	CHECKED(init_tmp_heap(q), free_solns(solns, solns_cells));
 
 	for (cell *c = solns; num_cells; num_cells -= c->num_cells, c += c->num_cells) {
 		cell *tmp = alloc_tmp(q, 1);
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
 		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, false);
 		q->noderef = false;
-		CHECKED(tmp, TPL_free(solns));
+		CHECKED(tmp, free_solns(solns, solns_cells));
 	}
 
-	TPL_free(solns);
 	cell *l = end_list(q);
+	free_solns(solns, solns_cells);
 	CHECKED(l);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
