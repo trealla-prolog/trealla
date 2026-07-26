@@ -674,11 +674,66 @@ static void tbl_pin_answer_frame(query *q, const cell *tmp)
 
 // '$tbl_variant_table'(+Variant, -Handle, -Status)
 
+// --- single-threaded ownership (fail fast) ---
+//
+// Every structure above is a process-global static with no locking, so
+// tabling belongs to whichever thread reaches it first. A tabled call
+// from a second thread would race the tries and, in practice, hang in
+// completion waiting on a worklist it cannot see. Refuse it with a
+// clear error instead. Ownership is released when the last table is
+// abolished, so threads can hand tabling over between them.
+//
+// The claim is taken under the prolog guard - the same lock bb_put/2
+// uses - so two threads racing to be first still get exactly one
+// winner. Per-thread (or properly locked) tables are Phase-2 work.
+
+#if USE_THREADS
+#include <pthread.h>
+
+static pthread_t g_tbl_owner;
+static bool g_tbl_owned = false;
+
+// True if this thread owns tabling, claiming it if nobody does. The
+// CALLER throws: throw_error() returns TRUE (it raises by setting
+// q->did_throw, and the builtin returns that), so folding the throw in
+// here behind an "if (!ok) return false;" call site would read
+// backwards and fall through with a ball already pending.
+
+static bool tbl_claim(query *q)
+{
+	pthread_t self = pthread_self();
+	prolog_lock(q->pl);
+
+	if (!g_tbl_owned) {
+		g_tbl_owner = self;
+		g_tbl_owned = true;
+		prolog_unlock(q->pl);
+		return true;
+	}
+
+	bool mine = pthread_equal(self, g_tbl_owner);
+	prolog_unlock(q->pl);
+	return mine;
+}
+
+static void tbl_disown(void)
+{
+	g_tbl_owned = false;
+}
+#else
+static bool tbl_claim(query *q) { (void)q; return true; }
+static void tbl_disown(void) { }
+#endif
+
 static bool bif_tbl_variant_table_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
+
+	if (!tbl_claim(q))
+		return throw_error(q, p1, p1_ctx, "resource_error", "tabling_not_thread_safe");
+
 	tbl_intern_atoms(q);
 	bool existed = false, attvar = false;
 	tnode *leaf = trie_insert_(q, &g_variants, p1, p1_ctx, &existed, &attvar);
@@ -1103,6 +1158,13 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 	// Freeing tables while a leader is driving completion (or while an
 	// enumeration frame is live) would leave dangling handles behind.
 
+	// Deliberately NOT owner-checked: if the owning thread has since
+	// exited, requiring ownership here would lock tabling out of the
+	// process for good. g_in_use still refuses an abolish racing a live
+	// leader, and clearing the tables releases ownership, so
+	// abolish_all_tables/0 is the documented way to hand tabling from
+	// one thread to the next.
+
 	if (g_in_use)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "modify,table");
 
@@ -1119,7 +1181,16 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 	g_all_tables = g_wl_head = g_fresh_head = NULL;
 	g_leader = false;
 	g_scc_depth = 0;
+
+	// The SCC stack is a high-water-mark array that otherwise lives for
+	// the life of the process; nothing is on it here (g_in_use above
+	// guarantees no leader is running), so hand it back.
+
+	free(g_scc);
+	g_scc = NULL;
+	g_scc_max = 0;
 	g_saw_exception = false;
+	tbl_disown();
 	return true;
 }
 
