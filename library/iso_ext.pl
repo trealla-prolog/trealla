@@ -98,10 +98,19 @@ findall(T, G, B, Tail) :-
 	append(B0, Tail, B), !.
 
 :- meta_predicate(call_with_time_limit(+,0)).
-:- help(call_with_time_limit(+float,:callable), [iso(false)]).
+:- help(call_with_time_limit(+number,:callable), [iso(false)]).
 
 call_with_time_limit(Time, Goal) :-
-	TimeMs is truncate(Time * 1000),
+	% 1000.0 not 1000: truncate/1 wants a float, so an INTEGER number of
+	% seconds used to raise type_error(float, _) instead of applying a
+	% limit. A sub-millisecond limit rounds down to 0, which is '$alarm's
+	% cancel opcode rather than a duration, so floor it at 1ms. Negative
+	% stays negative and '$alarm'/2 still raises domain_error.
+	TimeMs0 is truncate(Time * 1000.0),
+	(	TimeMs0 =:= 0 ->
+		TimeMs = 1
+	;	TimeMs = TimeMs0
+	),
 	'$alarm'(TimeMs, Timer),
 	(	catch(once(Goal), E, ('$alarm'(0, Timer), throw(E))) ->
 		'$alarm'(0, Timer)
@@ -111,7 +120,14 @@ call_with_time_limit(Time, Goal) :-
 :- meta_predicate(time_out(0,+,-)).
 :- help(time_out(:callable,+integer,?atom), [iso(false)]).
 
-time_out(Goal, TimeMs, Result) :-
+time_out(Goal, TimeMs0, Result) :-
+	% 0ms is '$alarm's cancel opcode, not a duration - floor it so an
+	% explicit zero times out at once instead of erroring, matching
+	% call_with_time_limit/2.
+	(	TimeMs0 =:= 0 ->
+		TimeMs = 1
+	;	TimeMs = TimeMs0
+	),
 	'$alarm'(TimeMs, Timer),
 	(	catch(once(Goal), E, ('$alarm'(0, Timer), throw(E))) ->
 		('$alarm'(0, Timer), Result = success)

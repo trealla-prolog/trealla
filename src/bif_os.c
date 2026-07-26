@@ -298,7 +298,7 @@ static bool bif_sleep_1(query *q)
 		msleep(10);
 
 		if (errno == EINTR)
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+			return throw_timeout(q);
 
 		ms -= 10;
 	}
@@ -471,6 +471,13 @@ static bool bif_sys_alarm_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
 	if (time_ms == 0) {
+		// Cancelling needs the handle the arming call returned. An
+		// unbound variable here was dereferenced as a pointer and
+		// passed to timer_delete()/free() - an immediate core dump.
+
+		if (!is_integer(p2))
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "timer");
+
 		timer_entry *e = get_voidptr(p2);
 
 		if (e->thread_id)
