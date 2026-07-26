@@ -665,6 +665,10 @@ void pl_destroy(prolog *pl)
 	if (pl->logfp)
 		fclose(pl->logfp);
 
+	// Before the modules: tables hold cells referencing module data.
+
+	tabling_destroy(pl);
+
 	module_destroy(pl->system_m);
 	module_destroy(pl->user_m);
 	sl_destroy(pl->biftab);
