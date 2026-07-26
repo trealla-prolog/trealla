@@ -52,6 +52,10 @@
 
   The annotation sto is recognised but such (parts of) descriptions
   are currently skipped, not interpreted.
+
+  An answer reports an answer *substitution*, so each equation binds a
+  variable and no variable is bound twice within one answer. '1 = X'
+  and 'X = 1, X = 2' are rejected as malformed, not run as tests.
 */
 
 :- module(quads, [run_quads/0, run_quads/1, run_quads_halt/0]).
@@ -98,13 +102,76 @@ run_list([q(Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 % description term are first unified via the VarNames list.
 
 check_quad(M, Q, VNs, AD, File, Line) :-
-	alternatives(AD, Alts),
-	(	member(Alt, Alts),
-		\+ \+ check_alternative(M, Q, VNs, Alt)
-	->	true
-	;	report_failure(M, Q, VNs, AD, File, Line),
+	(	malformed(AD, Bad)
+	->	report_malformed(M, Q, VNs, Bad, File, Line),
 		fail
+	;	alternatives(AD, Alts),
+		(	member(Alt, Alts),
+			\+ \+ check_alternative(M, Q, VNs, Alt)
+		->	true
+		;	report_failure(M, Q, VNs, AD, File, Line),
+			fail
+		)
 	).
+
+% The parser rejects a malformed answer description when the file is
+% consulted (issue #1074), but a '$quad' fact can also be asserted
+% directly, so the shape is checked here too rather than silently
+% mis-read. An answer reports a substitution: every equation binds a
+% variable, and no variable is bound twice within one answer, so
+% neither '1 = X' nor 'X = 1, X = 2' describes an answer.
+
+malformed(AD, Bad) :-
+	alternatives(AD, Alts),
+	member(Alt, Alts),
+	solutions(Alt, Sol),
+	member(S, Sol),
+	conj(S, Items),
+	(	member(Bad, Items),
+		\+ answer_item(Bad)
+	->	true
+	;	rebound(Items, Bad)
+	).
+
+answer_item(I) :- var(I), !, fail.
+answer_item(V = _) :- !, var(V).
+answer_item(I) :- atom(I), answer_atom(I), !.
+answer_item(I) :- expected_ball(I, _), !.
+
+answer_atom(true).
+answer_atom(false).
+answer_atom('...').
+answer_atom(loops).
+answer_atom(ad_infinitum).
+answer_atom(sto).
+answer_atom(unexpected).
+answer_atom(inattendue).
+
+% Report the equation that rebinds, not the one it clashes with.
+
+rebound([I|T], Bad) :-
+	(	nonvar(I),
+		I = (V = _),
+		var(V),
+		lhs_item(T, V, Bad0)
+	->	Bad = Bad0
+	;	rebound(T, Bad)
+	).
+
+lhs_item([I|T], V, Bad) :-
+	(	nonvar(I),
+		I = (V2 = _),
+		V2 == V
+	->	Bad = I
+	;	lhs_item(T, V, Bad)
+	).
+
+report_malformed(M, Q, VNs, Bad, File, Line) :-
+	link_names(VNs),
+	write('quads: MALFORMED '), write(File), write(':'), write(Line), nl,
+	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
+	write('   not an answer: '),
+	write_term(Bad, [variable_names(VNs), quoted(true)]), nl.
 
 % An answer description may carry the annotation 'unexpected',
 % meaning the answer it describes must *not* occur. It attaches to a
@@ -256,9 +323,19 @@ query_vars([_=V|T], QVs, W) :-
 var_member(V, [X|Xs]) :-
 	( V == X -> true ; var_member(V, Xs) ).
 
+% Only an equation binding a variable contributes to the witness;
+% 'true' and the annotations that survive this far contribute nothing.
+% A non-variable left side is not applied at all: unifying '1 = X'
+% would bind X and make the malformed description appear to hold.
+
 apply_equations([]).
 apply_equations([Item|T]) :-
-	( Item = (V = Val) -> V = Val ; true ),
+	(	nonvar(Item),
+		Item = (V = Val),
+		var(V)
+	->	V = Val
+	;	true
+	),
 	apply_equations(T).
 
 match_outcome(solution(_), matched).

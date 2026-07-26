@@ -713,53 +713,101 @@ void quad_reset(module *m)
 
 // The shape of a toplevel answer, per the grammar in issue #1063
 // plus the annotations used by existing quad suites (Flowlog).
+//
+// A toplevel answer reports an answer *substitution*, so every equation
+// in it binds a variable: it has a variable on the left, and no variable
+// is bound twice within one answer. '1 = X' and 'X = 1, X = 2' are
+// therefore not answer descriptions (issue #1074).
+//
+// Such a term is told apart from an ordinary clause that merely follows
+// a quad, because nothing else could be meant by an equation directly
+// after a query. ANSWER_BAD says so, and the caller reports it instead
+// of quietly loading it (which would surface as a permission error on
+// (=)/2, or, worse, as a quad that passes).
 
-static bool is_answer_description(parser *p, const cell *c)
+enum answer_kind { ANSWER_NO = 0, ANSWER_OK, ANSWER_BAD };
+
+// The variables already bound by the answer being checked. A new one
+// starts at each alternative, since ';' and '|' separate answers.
+
+typedef struct {
+	unsigned num_vars;
+	unsigned var_num[MAX_VARS];
+} answer_vars;
+
+static bool answer_vars_add(answer_vars *seen, unsigned var_num)
+{
+	for (unsigned i = 0; i < seen->num_vars; i++) {
+		if (seen->var_num[i] == var_num)
+			return false;
+	}
+
+	if (seen->num_vars < MAX_VARS)
+		seen->var_num[seen->num_vars++] = var_num;
+
+	return true;
+}
+
+static enum answer_kind answer_description(parser *p, const cell *c, answer_vars *seen)
 {
 	if (!is_interned(c))
-		return false;
+		return ANSWER_NO;
 
 	const char *name = C_STR(p, c);
 
 	if (c->arity == 0)
-		return !strcmp(name, "true") || !strcmp(name, "false")
+		return (!strcmp(name, "true") || !strcmp(name, "false")
 			|| !strcmp(name, "...") || !strcmp(name, "loops")
 			|| !strcmp(name, "instantiation_error")
 			|| !strcmp(name, "system_error")
 			|| !strcmp(name, "ad_infinitum")
 			|| !strcmp(name, "sto")
 			|| !strcmp(name, "unexpected")
-			|| !strcmp(name, "inattendue");
+			|| !strcmp(name, "inattendue"))
+			? ANSWER_OK : ANSWER_NO;
 
 	if (c->arity == 2) {
-		if (!strcmp(name, "="))
-			return true;
+		const cell *lhs = c + 1;
+		const cell *rhs = lhs + lhs->num_cells;
 
-		if (!strcmp(name, ",") || !strcmp(name, ";") || !strcmp(name, "|")) {
-			const cell *lhs = c + 1;
-			const cell *rhs = lhs + lhs->num_cells;
-			return is_answer_description(p, lhs) && is_answer_description(p, rhs);
+		if (!strcmp(name, "=")) {
+			if (!is_var(lhs))
+				return ANSWER_BAD;
+
+			return answer_vars_add(seen, lhs->var_num) ? ANSWER_OK : ANSWER_BAD;
+		}
+
+		if (!strcmp(name, ",")) {
+			enum answer_kind k = answer_description(p, lhs, seen);
+			return (k == ANSWER_OK) ? answer_description(p, rhs, seen) : k;
+		}
+
+		if (!strcmp(name, ";") || !strcmp(name, "|")) {
+			answer_vars lhs_seen = {0}, rhs_seen = {0};
+			enum answer_kind k = answer_description(p, lhs, &lhs_seen);
+			return (k == ANSWER_OK) ? answer_description(p, rhs, &rhs_seen) : k;
 		}
 
 		if (!strcmp(name, "error")
 			|| !strcmp(name, "type_error")
 			|| !strcmp(name, "domain_error")
 			|| !strcmp(name, "existence_error"))
-			return true;
+			return ANSWER_OK;
 	}
 
 	if (c->arity == 1)
-		return !strcmp(name, "throw")
+		return (!strcmp(name, "throw")
 			|| !strcmp(name, "syntax_error")
 			|| !strcmp(name, "representation_error")
 			|| !strcmp(name, "resource_error")
 			|| !strcmp(name, "evaluation_error")
-			|| !strcmp(name, "uninstantiation_error");
+			|| !strcmp(name, "uninstantiation_error"))
+			? ANSWER_OK : ANSWER_NO;
 
 	if (c->arity == 3)
-		return !strcmp(name, "permission_error");
+		return !strcmp(name, "permission_error") ? ANSWER_OK : ANSWER_NO;
 
-	return false;
+	return ANSWER_NO;
 }
 
 // Build and assert '$quad'(Query, VarNames, AnswerDescription, File, Line).
@@ -929,7 +977,20 @@ static bool quads(parser *p, cell *d)
 	if (!m->in_quad)
 		return false;
 
-	if (!is_answer_description(p, d)) {
+	answer_vars seen = {0};
+	enum answer_kind kind = answer_description(p, d, &seen);
+
+	if (kind == ANSWER_BAD) {
+		if (!p->do_read_term)
+			printf("Error: malformed answer description, %s:%d\n", get_loaded(m, m->filename), p->line_num);
+
+		p->error_desc = "malformed_answer_description";
+		p->error = true;
+		quad_reset(m);
+		return true;
+	}
+
+	if (kind == ANSWER_NO) {
 		if (m->quad_query && !m->quad_recorded)
 			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
 
