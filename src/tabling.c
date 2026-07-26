@@ -404,23 +404,6 @@ static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *ex
 	return leaf;
 }
 
-static tnode *trie_insert(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed)
-{
-	return trie_insert_(q, root, c, ctx, existed, NULL);
-}
-
-// Full-term lookup: NULL when no such canonical path/leaf.
-
-static tnode *trie_lookup(query *q, tnode **root, cell *c, pl_ctx ctx)
-{
-	twalk w;
-	twalk_init(&w, q, root, false);
-	bool ok = trie_walk(&w, c, ctx);
-	tnode *leaf = w.node;
-	twalk_done(&w);
-	return (ok && leaf && leaf->is_leaf) ? leaf : NULL;
-}
-
 static void trie_free(tnode *n)
 {
 	while (n) {
@@ -436,20 +419,6 @@ static void trie_free(tnode *n)
 		free(n);
 		n = sib;
 	}
-}
-
-static unsigned trie_count_leaves(const tnode *n)
-{
-	unsigned cnt = 0;
-
-	for (; n; n = n->sibling) {
-		if (n->is_leaf)
-			cnt++;
-
-		cnt += trie_count_leaves(n->child);
-	}
-
-	return cnt;
 }
 
 // ---------------------------------------------------------------------
@@ -566,7 +535,6 @@ typedef struct {
 	bool owned;
 #endif
 
-	tnode *test_trie;		// '$trie_test_*' builtins only
 } tbl_state;
 
 static tbl_state *tbl(query *q)
@@ -1269,7 +1237,6 @@ void tabling_destroy(prolog *pl)
 		return;
 
 	tbl_clear_all(s);
-	trie_free(s->test_trie);
 	free(s);
 	pl->tabling_state = NULL;
 }
@@ -1352,58 +1319,6 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 	return true;
 }
 
-// ---------------------------------------------------------------------
-// Test builtins. A single process-global test trie; the real variant
-// trie will hang off prolog* alongside the table registry.
-
-static bool bif_sys_trie_test_clear_0(query *q)
-{
-	tbl_state *s = tbl(q);
-	CHECKED(s);
-
-	(void)q;
-	trie_free(s->test_trie);
-	s->test_trie = NULL;
-	return true;
-}
-
-static bool bif_sys_trie_test_insert_2(query *q)
-{
-	tbl_state *s = tbl(q);
-	CHECKED(s);
-
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-	bool existed = false;
-
-	if (!trie_insert(q, &s->test_trie, p1, p1_ctx, &existed))
-		return false;
-
-	cell tmp;
-	make_atom(&tmp, existed ? g_true_s : g_false_s);
-	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-}
-
-static bool bif_sys_trie_test_lookup_1(query *q)
-{
-	tbl_state *s = tbl(q);
-	CHECKED(s);
-
-	GET_FIRST_ARG(p1,any);
-	return trie_lookup(q, &s->test_trie, p1, p1_ctx) != NULL;
-}
-
-static bool bif_sys_trie_test_count_1(query *q)
-{
-	tbl_state *s = tbl(q);
-	CHECKED(s);
-
-	GET_FIRST_ARG(p1,any);
-	cell tmp;
-	make_int(&tmp, (pl_int)trie_count_leaves(s->test_trie));
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
-}
-
 builtins g_tabling_bifs[] =
 {
 	{"$tbl_variant_table", 3, bif_tbl_variant_table_3, "+term,-integer,-atom", false, false, BLAH},
@@ -1423,10 +1338,6 @@ builtins g_tabling_bifs[] =
 	{"$tbl_abolish", 2, bif_tbl_abolish_1, "+atom,+integer", false, false, BLAH},
 	{"$tbl_abolish_all_tables", 0, bif_tbl_abolish_all_tables_0, "", false, false, BLAH},
 
-	{"$trie_test_clear", 0, bif_sys_trie_test_clear_0, "", false, false, BLAH},
-	{"$trie_test_insert", 2, bif_sys_trie_test_insert_2, "+term,-atom", false, false, BLAH},
-	{"$trie_test_lookup", 1, bif_sys_trie_test_lookup_1, "+term", false, false, BLAH},
-	{"$trie_test_count", 1, bif_sys_trie_test_count_1, "-integer", false, false, BLAH},
 
 	{0}
 };
