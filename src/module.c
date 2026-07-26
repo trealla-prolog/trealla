@@ -757,6 +757,13 @@ void clear_property(module *m, const char *name, unsigned arity)
 
 			sl_rem(pr->idx1, c, save);
 #else
+			// Dropping the index so it gets rebuilt, but the old one
+			// has to be handed back first: nulling the pointers alone
+			// abandoned both skiplists and every node in them, and
+			// assert_commit() then built a fresh pair over the top.
+
+			sl_destroy(pr->idx2);
+			sl_destroy(pr->idx1);
 			pr->idx1 = pr->idx2 = NULL;
 #endif
 
