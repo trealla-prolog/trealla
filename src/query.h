@@ -177,6 +177,20 @@ builtins *get_fn_ptr(void *fn);
 	q->nl = false; q->quoted = false; \
 }
 
+// Turning a pending timeout into an exception CONSUMES it. Leaving the
+// flag set makes start() raise a SECOND time_limit_exceeded at whatever
+// runs next - which is typically the very cleanup the first exception
+// was unwinding into. That is how every fired call_with_time_limit/2
+// leaked its timer: the '$alarm'(0, Timer) in its recovery goal was
+// killed by a spurious second timeout before it could free anything.
+
+inline static bool throw_timeout(query *q)
+{
+	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	self->timedout = 0;
+	return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+}
+
 #define CHECK_INTERRUPT() \
 	if (g_tpl_interrupt || \
 		((q)->thread_ptr ? (q)->thread_ptr->timedout : (q)->pl->threads[0].timedout)) { \
