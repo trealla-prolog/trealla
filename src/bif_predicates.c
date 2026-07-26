@@ -1849,8 +1849,16 @@ static bool bif_iso_univ_2(query *q)
 		pl_idx num_cells = tmp_heap_used(q);
 
 		if (is_cstring(tmp2) && !is_string(save_p2)) {
+			// convert_to_literal() reads the text out and rewrites the
+			// cell in place as an interned atom, clearing FLAG_MANAGED
+			// - after which the cell no longer looks managed and
+			// nothing can ever release this reference. Hold the blob
+			// across the conversion, then hand it straight back.
+
+			cell save = *tmp2;
 			share_cell(tmp2);
 			convert_to_literal(q->st.m, tmp2);
+			unshare_cell(&save);
 		}
 
 		if (!is_interned(tmp2) && arity)
