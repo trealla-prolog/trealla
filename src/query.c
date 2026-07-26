@@ -599,19 +599,6 @@ static void trim_trail(query *q)
 		if (tr->val_ctx != q->st.cur_ctx)
 			break;
 
-		// Dropping the entry means undo_me() will never unshare this
-		// slot. Harmless for a plain value, but a MANAGED cell (string
-		// blob, bignum, blob) holds a refcount that nothing else will
-		// release, so the blob then lives until the process exits.
-		// Stop trimming here and let the normal undo path handle it;
-		// the trail is a stack, so we cannot skip past this entry.
-
-		const frame *f = GET_FRAME(tr->val_ctx);
-		const slot *e = get_slot(q, f, tr->var_num);
-
-		if (is_managed(&e->c))
-			break;
-
 		q->st.tp--;
 	}
 }
