@@ -1304,13 +1304,6 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 	// Freeing tables while a leader is driving completion (or while an
 	// enumeration frame is live) would leave dangling handles behind.
 
-	// Deliberately NOT owner-checked: if the owning thread has since
-	// exited, requiring ownership here would lock tabling out of the
-	// instance for good. s->in_use still refuses an abolish racing a
-	// live leader, and clearing the tables releases ownership, so
-	// abolish_all_tables/0 is the documented way to hand tabling from
-	// one thread to the next.
-
 	if (s->in_use)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "modify,table");
 
