@@ -633,6 +633,45 @@ static table *tbl_handle(cell *c)
 	return (table*)(size_t)c->val_uint;
 }
 
+// Does this term image contain variables? Imported answers that are
+// ground need no frame protection (see tbl_pin_answer_frame below), and
+// ground answers are the common case, so this keeps the fast path free.
+
+static bool tbl_has_vars(const cell *c)
+{
+	const cell *p = c;
+
+	for (pl_idx i = 0; i < c->num_cells; i++, p++) {
+		if (is_var(p))
+			return true;
+	}
+
+	return false;
+}
+
+// import_term creates an imported term's variables in the CURRENT frame.
+// Once unified into the caller's term, any structure the caller now
+// holds (eg. an answer argument that is a list containing a shared
+// variable) points at slots of THIS frame. Trimming the frame on
+// deterministic exit recycles those slots and silently breaks variable
+// identity: two occurrences of one answer variable stop being the same
+// variable, so binding one no longer binds the other.
+//
+// The VM protects the analogous case itself - set_var() raises
+// q->no_recov when a caller variable is bound to a non-ground compound
+// living in a younger frame - but that flag is only transferred to the
+// next frame created, so a binding performed inside a builtin never
+// reaches the frame that owns the variables. Pin it explicitly.
+
+static void tbl_pin_answer_frame(query *q, const cell *tmp)
+{
+	if (!tbl_has_vars(tmp))
+		return;
+
+	frame *f = GET_FRAME(q->st.cur_ctx);
+	f->no_recov = true;
+}
+
 // '$tbl_variant_table'(+Variant, -Handle, -Status)
 
 static bool bif_tbl_variant_table_3(query *q)
@@ -753,6 +792,7 @@ static bool bif_tbl_get_answer_2(query *q)
 
 	cell *tmp = import_term(q, a->image, q->st.cur_ctx);
 	CHECKED(tmp);
+	tbl_pin_answer_frame(q, tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
 
@@ -878,12 +918,14 @@ static bool bif_tbl_wkl_work_3(query *q)
 
 	cell *ta = import_term(q, p->a->image, q->st.cur_ctx);
 	CHECKED(ta);
+	tbl_pin_answer_frame(q, ta);
 
 	if (!unify(q, p2, p2_ctx, ta, q->st.cur_ctx))
 		return false;
 
 	cell *td = import_term(q, p->s->image, q->st.cur_ctx);
 	CHECKED(td);
+	tbl_pin_answer_frame(q, td);
 	return unify(q, p3, p3_ctx, td, q->st.cur_ctx);
 }
 

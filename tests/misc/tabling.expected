@@ -5,5 +5,9 @@ left recursion: ok
 mutual: ok
 cycle: ok
 fib: ok
+variant answers: ok
+order independence: ok
+answer sharing: ok
+generate mode: ok
 flag off: ok
 flag on: ok

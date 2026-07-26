@@ -178,6 +178,116 @@ test_flag :-
 	write('flag on: ok'),
 	nl.
 
+% ---------------------------------------------------------------------
+% 9. Answer dedup is by VARIANT, not by term identity.
+%
+% Scryer issue #2621: two clauses q(_). q(_). must yield ONE answer, and
+% q(A,_,A). q(_,A,A). q(A,_,A). exactly TWO - the third clause is a
+% variant of the first. Requires the answer trie to number variables
+% canonically rather than compare terms structurally.
+
+:- table dup/1.
+
+dup(_).
+dup(_).
+
+:- table dup3/3.
+
+dup3(A, _, A).
+dup3(_, A, A).
+dup3(A, _, A).
+
+test_variant_answers :-
+	findall(x, dup(_), L1),
+	length(L1, N1),
+	findall(x, dup3(_, _, _), L2),
+	length(L2, N2),
+	(	N1 == 1, N2 == 2 ->
+		write('variant answers: ok')
+	;	write('variant answers: FAILED')
+	),
+	nl.
+
+% ---------------------------------------------------------------------
+% 10. Answers must not depend on the order in which tabled predicates
+% are first called.
+%
+% Scryer issue #1895: with p/1 calling setof over a tabled g/1, asking
+% p/1 first lost the setof answer, while asking g/1 first found it. Same
+% root cause as (1): the consumer inside setof/3 cannot be suspended, so
+% a fresh variant has to be completed instead.
+
+:- table p/1.
+:- table g/1.
+
+g(a).
+
+p(a).
+p(Ls) :- setof(X, g(X), Ls).
+
+test_order_independent :-
+	abolish_all_tables,
+	findall(X, p(X), P1),
+	abolish_all_tables,
+	findall(_, g(_), _),
+	findall(X, p(X), P2),
+	(	P1 == [a,[a]], P2 == [a,[a]] ->
+		write('order independence: ok')
+	;	write('order independence: FAILED')
+	),
+	nl.
+
+% ---------------------------------------------------------------------
+% 11. Non-ground answers must keep variable sharing.
+%
+% Scryer issue #3365. An answer like s([a,V],[V]) shares V between its
+% arguments. The imported answer's variables are created in the frame
+% running the tabling driver; if that frame is trimmed on deterministic
+% exit, a structure the caller holds points at recycled slots and the
+% two occurrences silently stop being the same variable - binding one no
+% longer binds the other. Every test above returns GROUND answers, which
+% is why this went unnoticed.
+
+:- table share/2.
+
+share([a|X], X).
+
+test_sharing :-
+	share([_P,Q], R),
+	R = [c],
+	(	Q == c ->
+		write('answer sharing: ok')
+	;	write('answer sharing: FAILED')
+	),
+	nl.
+
+% The same defect lost whole solutions in the issue's grammar: calling a
+% tabled predicate in generate mode (an unbound list) dropped answers
+% and returned half-bound terms. The recursive call here leaves its
+% second argument unbound, so the answer shares variables across
+% arguments - exactly the shape that breaks.
+
+:- table o/2, gram/2.
+
+o([the,man|B], B).
+o([the,ball|B], B).
+o([the,big,ball|B], B).
+
+gram(A, B) :- o(A, B).
+gram(A, B) :- o(A, C), C = [that|D], gram(D, E), E = [runs|B].
+
+test_generate :-
+	findall(W, (length(W, 7), gram(W, [])), Ws),
+	msort(Ws, Sorted),
+	(	Sorted == [[the,ball,that,the,big,ball,runs],
+		           [the,big,ball,that,the,ball,runs],
+		           [the,big,ball,that,the,man,runs],
+		           [the,man,that,the,big,ball,runs]] ->
+		write('generate mode: ok')
+	;	write('generate mode: FAILED')
+	),
+	nl.
+
 main :-
 	test_findall,
 	test_setof,
@@ -186,4 +296,8 @@ main :-
 	test_mutual,
 	test_cycle,
 	test_fib,
+	test_variant_answers,
+	test_order_independent,
+	test_sharing,
+	test_generate,
 	test_flag.
