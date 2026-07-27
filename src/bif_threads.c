@@ -746,6 +746,14 @@ static void *start_routine_thread_create(thread *t)
 
 	do_unlock_all(t->pl);
 
+	// Tables are per-thread, so they die with the thread. Freed here
+	// rather than only at pl_destroy() so a long-lived process that
+	// spawns many tabling threads does not accumulate them. Safe for
+	// both the detached and joinable paths: nothing outside this
+	// thread can reach its tables.
+
+	tabling_destroy_thread(t);
+
 	if (!t->is_detached)
 		return 0;
 

@@ -497,13 +497,13 @@ typedef struct {
 	unsigned dep_min;		// smallest outer SCC id depended on (0 = none)
 } tscc;
 
-// --- per-instance state ---
+// --- per-thread state ---
 //
-// All of this used to be file statics, which meant two prolog instances
-// in one process silently shared tables (and the thread guard below was
-// process-wide rather than per-instance). It now hangs off prolog as an
-// opaque pointer, allocated on first tabled call and freed by
-// tabling_destroy() from pl_destroy().
+// This was file statics (two prolog instances silently shared tables),
+// then per-prolog (one thread per instance could table, the rest got
+// resource_error). It is now per-thread: allocated on first tabled
+// call, freed by tabling_destroy_thread() when the thread retires and
+// by tabling_destroy() sweeping every slot at pl_destroy().
 
 typedef struct {
 	tscc *scc;
@@ -531,25 +531,39 @@ typedef struct {
 	bool leader;
 
 #if USE_THREADS
-	pthread_t owner;
-	bool owned;
 #endif
 
 } tbl_state;
 
+// Per-THREAD state. threads[0] is the main thread - the same
+// q->thread_ptr ? : &pl->threads[0] idiom used in query.c, toplevel.c,
+// bif_os.c and bif_threads.c.
+//
+// This is what makes tabling thread-safe without a single lock: a
+// table is only ever reachable from the thread that created it, so
+// there is nothing to race. The alternative - locking shared tables -
+// cannot work here anyway, because the leader's critical section spans
+// completion/0, a PROLOG loop that runs arbitrary user code between
+// '$tbl_*' calls. No lock can be held across that.
+//
+// The cost is that threads do not share completed tables and each
+// recomputes its own. Sharing completed (hence immutable) tables via a
+// published registry is the natural next step and does not disturb
+// this invariant.
+
 static tbl_state *tbl(query *q)
 {
-	prolog *pl = q->pl;
+	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
 
-	if (!pl->tabling_state) {
+	if (!self->tabling_state) {
 		tbl_state *s = calloc(1, sizeof(tbl_state));
 		if (!s) return NULL;
 		s->generation = 1;
 		s->scc_next_id = 1;
-		pl->tabling_state = s;
+		self->tabling_state = s;
 	}
 
-	return (tbl_state*)pl->tabling_state;
+	return (tbl_state*)self->tabling_state;
 }
 
 static unsigned tbl_scc_id(const tbl_state *s)
@@ -682,54 +696,6 @@ static void tbl_pin_answer_frame(query *q, const cell *tmp)
 
 // '$tbl_variant_table'(+Variant, -Handle, -Status)
 
-// --- single-threaded ownership (fail fast) ---
-//
-// Every structure above is a process-global static with no locking, so
-// tabling belongs to whichever thread reaches it first. A tabled call
-// from a second thread would race the tries and, in practice, hang in
-// completion waiting on a worklist it cannot see. Refuse it with a
-// clear error instead. Ownership is released when the last table is
-// abolished, so threads can hand tabling over between them.
-//
-// The claim is taken under the prolog guard - the same lock bb_put/2
-// uses - so two threads racing to be first still get exactly one
-// winner. Per-thread (or properly locked) tables are Phase-2 work.
-
-#if USE_THREADS
-#include <pthread.h>
-
-// True if this thread owns tabling, claiming it if nobody does. The
-// CALLER throws: throw_error() returns TRUE (it raises by setting
-// q->did_throw, and the builtin returns that), so folding the throw in
-// here behind an "if (!ok) return false;" call site would read
-// backwards and fall through with a ball already pending.
-
-static bool tbl_claim(query *q, tbl_state *s)
-{
-	pthread_t self = pthread_self();
-	prolog_lock(q->pl);
-
-	if (!s->owned) {
-		s->owner = self;
-		s->owned = true;
-		prolog_unlock(q->pl);
-		return true;
-	}
-
-	bool mine = pthread_equal(self, s->owner);
-	prolog_unlock(q->pl);
-	return mine;
-}
-
-static void tbl_disown(tbl_state *s)
-{
-	s->owned = false;
-}
-#else
-static bool tbl_claim(query *q, tbl_state *s) { (void)q; (void)s; return true; }
-static void tbl_disown(tbl_state *s) { (void)s; }
-#endif
-
 static bool bif_tbl_variant_table_3(query *q)
 {
 	tbl_state *s = tbl(q);
@@ -738,9 +704,6 @@ static bool bif_tbl_variant_table_3(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
-
-	if (!tbl_claim(q, s))
-		return throw_error(q, p1, p1_ctx, "resource_error", "tabling_not_thread_safe");
 
 	tbl_intern_atoms(q);
 	bool existed = false, attvar = false;
@@ -1226,19 +1189,30 @@ static void tbl_clear_all(tbl_state *s)
 	s->scc = NULL;
 	s->scc_max = 0;
 	s->saw_exception = false;
-	tbl_disown(s);
 }
 
-void tabling_destroy(prolog *pl)
+// Free one thread's tables. Called when a thread slot retires, so a
+// long-lived process spawning many threads does not accumulate them.
+
+void tabling_destroy_thread(thread *t)
 {
-	tbl_state *s = (tbl_state*)pl->tabling_state;
+	tbl_state *s = (tbl_state*)t->tabling_state;
 
 	if (!s)
 		return;
 
 	tbl_clear_all(s);
 	free(s);
-	pl->tabling_state = NULL;
+	t->tabling_state = NULL;
+}
+
+// Instance teardown: sweep every slot, including threads[0] (the main
+// thread) and any that exited without going through the retire path.
+
+void tabling_destroy(prolog *pl)
+{
+	for (unsigned i = 0; i < MAX_THREADS; i++)
+		tabling_destroy_thread(&pl->threads[i]);
 }
 
 // abolish_table/1: drop every variant of ONE predicate. Without this the

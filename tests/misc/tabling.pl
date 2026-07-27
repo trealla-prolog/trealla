@@ -370,22 +370,61 @@ test_many_variants :-
 % hanging in completion). Deterministic by construction - this thread
 % has already tabled above, so the child is always the loser.
 
+% Tables are per-thread, so concurrent tabling is allowed and each
+% thread must get the right answers off its own tables. This used to
+% assert resource_error(tabling_not_thread_safe); that error no longer
+% exists.
+%
+% Two things are checked, because "it didn't crash" is not evidence:
+%   1. the main thread tables while children do, and all agree with the
+%      value computed before any thread started;
+%   2. every child does its OWN work - a shared table would let a
+%      second thread find the first one's answers and skip the
+%      computation, so each child's worker count must be non-zero.
+
+:- dynamic(thr_result/2).
+
 test_threads :-
-	(	catch(thread_create(thread_child, T, []), _, fail) ->
-		thread_join(T, _)
+	(	catch(thread_create(thread_child(1), T1, []), _, fail) ->
+		test_threads_(T1)
 	;	% no thread support in this build - nothing to check
 		write('threads: ok'), nl
 	).
 
-thread_child :-
-	catch(( count(125, 1, _), Got = no_error ),
-	      error(resource_error(What), _),
-	      Got = What),
-	(	Got == tabling_not_thread_safe ->
-		write('threads: ok')
-	;	write('threads: FAILED '), write(Got)
+% thr_t/1 exists to be counted. Its body appends a marker (append-only,
+% so three threads asserting at once is not a read-modify-write race).
+% One marker per thread means each thread computed the table itself.
+
+:- table thr_t/1.
+:- dynamic(thr_work/1).
+
+thr_t(X) :- assertz(thr_work(marker)), X = done.
+
+test_threads_(T1) :-
+	thread_create(thread_child(2), T2, []),
+	thread_create(thread_child(3), T3, []),
+	count(125, 1, Main),			% main thread tables concurrently
+	thr_t(_),
+	thread_join(T1, _), thread_join(T2, _), thread_join(T3, _),
+	findall(I-C, thr_result(I, C), Rs0),
+	msort(Rs0, Rs),
+	findall(x, thr_work(_), Ws),
+	length(Ws, NW),
+	(	Rs = [1-C1, 2-C2, 3-C3],
+		C1 == Main, C2 == Main, C3 == Main
+	->	(	NW =:= 4			% 3 children + main, each on its own table
+		->	write('threads: ok')
+		;	write('threads: FAILED shared tables, workers='), write(NW)
+		)
+	;	write('threads: FAILED '), write(Rs-Main)
 	),
 	nl.
+
+thread_child(I) :-
+	catch(( count(125, 1, C), thr_t(_), Got = C ),
+	      E,
+	      Got = err(E)),
+	assertz(thr_result(I, Got)).
 
 
 % abolish_table/1: selective invalidation. A completed table does not
