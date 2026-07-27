@@ -266,9 +266,12 @@ Build & test rhythm:
     completion          '$tbl_pop_worklist' → '$tbl_wkl_work' pairs →
                         delim(cont) → fixpoint → '$tbl_mark_all_complete'
 
-Tables/tries are process-global statics in tabling.c (multi-prolog
-embedding shares them — known Phase-1 shortcut; move to `prolog*` if it
-matters). Handles cross the Prolog boundary as raw-pointer integers —
+Tables/tries/worklists/SCC stack live in one `tbl_state` hanging off
+`prolog` as an opaque `void *tabling_state`, allocated on first tabled
+call and freed by `tabling_destroy()` from `pl_destroy()`. **Two
+`prolog` instances in one process do not share tables.** These were
+file statics originally; see §"per-instance state" in tabling.c and the
+note below. Handles cross the Prolog boundary as raw-pointer integers —
 '$tbl_*'-internal only.
 
 ## 4. Phase 1 limits (documented, deliberate)
@@ -293,17 +296,20 @@ scheduling (post answers pre-completion — reopens the continuation
 capture we deliberately retreated from). Same caveat for an unbounded
 chain of distinct variants: that grows SCC nesting instead.
 
-**Tabling is single-threaded, and says so.** Every structure is a
-process-global static with no locking (contrast `bif_bboard.c`, which
-takes `prolog_lock` six times). Before the guard, a tabled call from a
-second thread *hung* — the newcomer waits in completion on a worklist
-it cannot see. Now `tbl_claim()` in `'$tbl_variant_table'` claims
-ownership for the first thread to table anything, under the prolog
-guard so a first-use race still has one winner, and refuses everyone
-else with `resource_error(tabling_not_thread_safe)`. Ownership is
+**Tabling is single-threaded *per instance*, and says so.** The state
+is per-`prolog` (above) but unlocked within an instance (contrast
+`bif_bboard.c`, which takes `prolog_lock` six times). Before the guard,
+a tabled call from a second thread *hung* — the newcomer waits in
+completion on a worklist it cannot see. Now `tbl_claim()` in
+`'$tbl_variant_table'` claims ownership for the first thread in **that
+instance** to table anything — the `pthread_t owner` lives inside
+`tbl_state`, so two embedded interpreters can have different owning
+threads — under the prolog guard so a first-use race still has one
+winner, and refuses everyone else in that instance with
+`resource_error(tabling_not_thread_safe)`. Ownership is
 released by `abolish_all_tables/0` — deliberately *not* owner-checked,
 because if the owning thread has exited, requiring ownership would lock
-tabling out of the process permanently (`g_in_use` still refuses an
+tabling out of that instance permanently (`s->in_use` still refuses an
 abolish racing a live leader). In practice sequential handover often
 works without abolishing too, since the OS recycles the retired
 thread's `pthread_t`; don't rely on that, it isn't guaranteed.
