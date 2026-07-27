@@ -900,7 +900,7 @@ struct prolog_ {
 	uint64_t s_last, s_cnt, seed, thr_cnt;
 	pl_refcnt q_cnt, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
-	unsigned current_input, current_output, current_error;
+	unsigned current_input, current_output, current_error, goal_expansions;
 	int8_t halt_code, opt, limit;
 	pl_refcnt rnd_first_time;
 	bool def_quoted:1;
