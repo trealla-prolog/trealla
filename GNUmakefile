@@ -231,7 +231,7 @@ all: tpl
 
 -include $(OBJECTS:.o=.d)
 
-tpl: $(OBJECTS) Makefile README.md LICENSE
+tpl: $(OBJECTS) README.md LICENSE
 	rm src/version.o
 	$(CC) $(CFLAGS) -o src/version.o -c src/version.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
