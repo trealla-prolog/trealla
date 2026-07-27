@@ -176,13 +176,33 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, save_num_cells-1);
 		cell *save_dst = *dst;
 		copy_term(dst, src);										// Functor
-		save_dst->arity += arity;
+		cell *target = save_dst;
+
+		// call(M:Goal, A...) must append to GOAL, not to the ':'
+		// wrapper. Bumping the wrapper yields ':'/N with N>2 - a shape
+		// only bif_iso_qualify_n() understands, and one that took the
+		// runtime through a different module-resolution path than a
+		// plain M:Goal(A...) body goal. Appending to the inner goal
+		// keeps ':'/2, which bif_iso_qualify_2() already resolves in
+		// the module it names.
+
+		if (is_interned(save_dst) && (save_dst->val_off == g_colon_s)
+			&& (save_dst->arity == 2)) {
+			cell *mod = save_dst + 1;
+			target = mod + mod->num_cells;
+		}
+
+		target->arity += arity;
 
 		while (arity--)
 			copy_term(dst, src);									// Args
 
-		save_dst->num_cells = *dst - save_dst;
-		calln_check(pr->m, save_dst);
+		target->num_cells = *dst - target;
+
+		if (target == save_dst)
+			calln_check(pr->m, save_dst);
+		else
+			save_dst->num_cells = *dst - save_dst;
 		*dst += copy_cells(*dst, save_dst, save_dst->num_cells);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num);
