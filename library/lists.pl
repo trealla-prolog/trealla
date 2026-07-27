@@ -468,32 +468,6 @@ maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 :- help(maplist(:callable,+list,+list,+list,+list,+list,+list), [iso(false)]).
 :- help(maplist(:callable,+list,+list,+list,+list,+list,+list,+list), [iso(false)]).
 
-goal_expansion(maplist(G, L1), Goal) :-
-	nonvar(G), !,
-	term_variables(G, Args),
-	gensym:gensym(maplist_, U),
-	Goal =.. [U,L1,Args],
-	G1 =.. [U,[],Args],
-	'$assertz_static'(G1),
-	G2a =.. [U,[E1|T1],Args],
-	G2b =.. [U,T1,Args],
-	'$assertz_static'((G2a :- call(G, E1), G2b)),
-	true.
-goal_expansion(maplist(G, L1), maplist(G, L1)).
-
-goal_expansion(maplist(G, L1, L2), Goal) :-
-	nonvar(G), !,
-	term_variables(G, Args),
-	gensym:gensym(maplist_, U),
-	Goal =.. [U,L1,L2,Args],
-	G1 =.. [U,[],[],Args],
-	'$assertz_static'(G1),
-	G2a =.. [U,[E1|T1],[E2|T2],Args],
-	G2b =.. [U,T1,T2,Args],
-	'$assertz_static'((G2a :- call(G, E1, E2), G2b)),
-	true.
-goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
-
 tasklist(G, L) :-
 	tasklist_(L, G).
 
