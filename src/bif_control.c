@@ -239,6 +239,16 @@ static bool bif_iso_qualify_n(query *q)
 	tmp2->match = NULL;
 	bool status;
 
+	// Switch to the target module BEFORE resolving. call_check() runs
+	// search_predicate(q->st.m, ...) and caches the result on the cell,
+	// so resolving first and switching afterwards looked the goal up in
+	// the CALLING module. Where the same name is visible from two
+	// modules that silently ran the wrong one: call(m1:pp, X) returned
+	// m2's answer. bif_iso_call_n() already switches first - this is
+	// the same order.
+
+	q->st.m = m;
+
 	if (!call_check(q, tmp2, &status, true))
 		return status;
 
@@ -251,7 +261,6 @@ static bool bif_iso_qualify_n(query *q)
 	make_call(q, tmp+num_cells);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 	q->st.instr = tmp;
-	q->st.m = m;
 	return true;
 }
 
