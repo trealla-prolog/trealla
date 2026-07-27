@@ -2671,8 +2671,27 @@ static void fixup_expansion_var_collisions(cell *goal, unsigned num_vars_before,
 	}
 }
 
+static cell *goal_expansion_(parser *p, cell *goal, unsigned depth);
+
 static cell *goal_expansion(parser *p, cell *goal)
 {
+	return goal_expansion_(p, goal, 0);
+}
+
+// Expansion is applied repeatedly until it reaches a fixpoint. A clause
+// that returns its input unchanged - the usual "fall through" shape,
+// eg. goal_expansion(foo(X), foo(X)) - never reaches one, and the
+// recursion at the bottom used to run until the C stack gave out. Two
+// guards: stop as soon as the result is byte-identical to the input,
+// and cap the chain regardless so no expansion can hang the compiler.
+
+#define MAX_GOAL_EXPANSION_DEPTH 64
+
+static cell *goal_expansion_(parser *p, cell *goal, unsigned depth)
+{
+	if (depth >= MAX_GOAL_EXPANSION_DEPTH)
+		return goal;
+
 	if (p->error || p->internal || !is_interned(goal) || !is_callable(goal))
 		return goal;
 
@@ -2846,6 +2865,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 	// snip the old goal...
 
 	const unsigned goal_idx = goal - p->cl->cells;
+	const unsigned save_num_cells = goal->num_cells;
+	cell *save_cells = TPL_malloc(sizeof(cell) * save_num_cells);
+	if (!save_cells) return goal;
+	memcpy(save_cells, goal, sizeof(cell) * save_num_cells);
 	unsigned trailing = p->cl->cidx - (goal_idx + goal->num_cells);
 	p->cl->cidx -= goal->num_cells;
 	unshare_cells(goal, goal->num_cells);
@@ -2874,7 +2897,15 @@ static cell *goal_expansion(parser *p, cell *goal)
 	parser_destroy(p2);
 	query_destroy(q);
 
-	return goal_expansion(p, goal);
+	const bool unchanged = (new_cells == save_num_cells)
+		&& !memcmp(goal, save_cells, sizeof(cell) * new_cells);
+
+	TPL_free(save_cells);
+
+	if (unchanged)
+		return goal;
+
+	return goal_expansion_(p, goal, depth + 1);
 }
 
 static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
