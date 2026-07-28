@@ -815,15 +815,19 @@ static bool bif_thread_create_3(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
-	int n = new_thread(q->pl);
 
-	if (n < 0)
-		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
+	// Options are validated BEFORE new_thread() hands out a slot, so
+	// none of the exits below has anything to unwind. Previously the
+	// slot (and any alias) was taken first and every error exit had to
+	// release both by hand.
+	//
+	// One deliberate consequence: a bad option is now reported in
+	// preference to resource_error(too_many_threads), because the
+	// arguments are checked before any resource is consumed.
 
-	thread *t = &q->pl->threads[n];
-	cell *at_exit_goal = NULL;
+	cell *alias = NULL, *at_exit_goal = NULL;
 	pl_ctx at_exit_goal_ctx = 0;
-	bool is_detached = false, is_alias = false;
+	bool is_detached = false;
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -831,83 +835,68 @@ static bool bif_thread_create_3(query *q)
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_var(c)) {
-			unwind_thread(q->pl, t);
+		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-		}
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
-			if (is_var(name)) {
-				unwind_thread(q->pl, t);
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
-			}
 
-			if (!is_atom(name)) {
-				unwind_thread(q->pl, t);
+			if (!is_atom(name))
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-			}
 
-			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				unwind_thread(q->pl, t);
+			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
-			}
 
-			t->alias = DUP_STRING(q, name);
-			sl_app(q->pl->alias, t->alias, t);
-			cell tmp;
-			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-			if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx)) {
-				unwind_thread(q->pl, t);
-				return false;
-			}
-
-			is_alias = true;
+			alias = name;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "at_exit")) {
-			if (is_var(name)) {
-				unwind_thread(q->pl, t);
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
-			}
 
-			if (!is_callable(name)) {
-				unwind_thread(q->pl, t);
+			if (!is_callable(name))
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-			}
 
 			at_exit_goal = name;
 			at_exit_goal_ctx = q->latest_ctx;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "detached")) {
-			if (is_var(name)) {
-				unwind_thread(q->pl, t);
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
-			}
 
-			if (c->arity != 1) {
-				unwind_thread(q->pl, t);
+			if (c->arity != 1)
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-			}
 
 			if (is_interned(name) && (name->val_off == g_true_s))
 				is_detached = true;
-		} else {
-			unwind_thread(q->pl, t);
+		} else
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-		}
 
 		p3 = LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 
-		if (is_var(p3)) {
-			unwind_thread(q->pl, t);
+		if (is_var(p3))
 			return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-		}
 	}
 
-	if (!is_alias) {
+	// Commit.
+
+	int n = new_thread(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
+
+	thread *t = &q->pl->threads[n];
+
+	if (alias) {
+		t->alias = DUP_STRING(q, alias);
+		sl_app(q->pl->alias, t->alias, t);
+		cell tmp;
+		make_atom(&tmp, new_atom(q->pl, C_STR(q, alias)));
+		unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	} else {
 		cell tmp;
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_THREAD;
@@ -1506,24 +1495,24 @@ static bool bif_is_thread_1(query *q)
 	return check_thread(p1);
 }
 
-static bool bif_message_queue_create_2(query *q)
+// Validate a mutex/message-queue option list WITHOUT taking a slot.
+//
+// The whole bug class in this file came from allocating first and
+// parsing options second, so every error exit had to unwind a slot and
+// a registered alias - and none of them did. Validate first and there
+// is nothing to unwind: the commit below cannot fail.
+//
+// Returns 1 if the options are good, 0 if an error has ALREADY been
+// thrown. It cannot return throw_error()'s value directly, because
+// throw_error() returns TRUE (it signals via q->did_throw), so a
+// caller testing it as a success flag would read backwards.
+//
+// *alias_out is the alias(...) name cell, borrowed from the option
+// list; it is only duplicated once a slot has been committed.
+
+static int parse_thread_opts(query *q, cell *p2, pl_ctx p2_ctx, cell **alias_out)
 {
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,list_or_nil);
-	int n = new_thread(q->pl);
-
-	if (n < 0)
-		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
-
-	if (is_atom(p1)) {
-		thread *t = &q->pl->threads[n];
-		t->alias = DUP_STRING(q, p1);
-		sl_app(q->pl->alias, t->alias, t);
-	}
-
-	thread *t = &q->pl->threads[n];
-	bool is_alias = false;
+	*alias_out = NULL;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
@@ -1532,8 +1521,8 @@ static bool bif_message_queue_create_2(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c)) {
-			unwind_thread(q->pl, t);
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			return 0;
 		}
 
 		cell *name = c + 1;
@@ -1541,34 +1530,24 @@ static bool bif_message_queue_create_2(query *q)
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name)) {
-				unwind_thread(q->pl, t);
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				return 0;
 			}
 
 			if (!is_atom(name)) {
-				unwind_thread(q->pl, t);
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				return 0;
 			}
 
 			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				unwind_thread(q->pl, t);
-				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+				throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+				return 0;
 			}
 
-			t->alias = DUP_STRING(q, name);
-			sl_app(q->pl->alias, t->alias, t);
-			cell tmp;
-			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-			if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-				unwind_thread(q->pl, t);
-				return false;
-			}
-
-			is_alias = true;
+			*alias_out = name;
 		} else {
-			unwind_thread(q->pl, t);
-			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+			throw_error(q, c, c_ctx, "domain_error", "stream_option");
+			return 0;
 		}
 
 		p2 = LIST_TAIL(p2);
@@ -1576,22 +1555,47 @@ static bool bif_message_queue_create_2(query *q)
 		p2_ctx = q->latest_ctx;
 
 		if (is_var(p2)) {
-			unwind_thread(q->pl, t);
-			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			return 0;
 		}
 	}
 
+	return 1;
+}
+
+static bool bif_message_queue_create_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,list_or_nil);
+
+	// Options first - see parse_thread_opts().
+	cell *alias = NULL;
+
+	if (!parse_thread_opts(q, p2, p2_ctx, &alias))
+		return true;			// already thrown
+
+	int n = new_thread(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
+
+	thread *t = &q->pl->threads[n];
 	t->is_queue_only = true;
 
-	if (is_var(p1) && !is_alias) {
+	// Commit. Nothing below can fail in a way that needs unwinding.
+
+	if (alias) {
+		t->alias = DUP_STRING(q, alias);
+		sl_app(q->pl->alias, t->alias, t);
+		cell tmp;
+		make_atom(&tmp, new_atom(q->pl, C_STR(q, alias)));
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	} else {
 		cell tmp;
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_THREAD;
-
-		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-			unwind_thread(q->pl, t);
-			return false;
-		}
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
@@ -1835,87 +1839,34 @@ static bool bif_mutex_create_2(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,list_or_nil);
+
+	// Options first - see parse_thread_opts().
+	cell *alias = NULL;
+
+	if (!parse_thread_opts(q, p2, p2_ctx, &alias))
+		return true;			// already thrown
+
 	int n = new_thread(q->pl);
 
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
 
-	if (is_atom(p1)) {
-		thread *t = &q->pl->threads[n];
-		t->alias = DUP_STRING(q, p1);
-		sl_app(q->pl->alias, t->alias, t);
-	}
-
 	thread *t = &q->pl->threads[n];
-	bool is_alias = false;
-	LIST_HANDLER(p2);
-
-	while (is_list(p2)) {
-		cell *h = LIST_HEAD(p2);
-		cell *c = deref(q, h, p2_ctx);
-		pl_ctx c_ctx = q->latest_ctx;
-
-		if (is_var(c)) {
-			unwind_thread(q->pl, t);
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-		}
-
-		cell *name = c + 1;
-		name = deref(q, name, c_ctx);
-
-		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
-			if (is_var(name)) {
-				unwind_thread(q->pl, t);
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
-			}
-
-			if (!is_atom(name)) {
-				unwind_thread(q->pl, t);
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-			}
-
-			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				unwind_thread(q->pl, t);
-				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
-			}
-
-			t->alias = DUP_STRING(q, name);
-			sl_app(q->pl->alias, t->alias, t);
-			cell tmp;
-			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-			if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-				unwind_thread(q->pl, t);
-				return false;
-			}
-
-			is_alias = true;
-		} else {
-			unwind_thread(q->pl, t);
-			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-		}
-
-		p2 = LIST_TAIL(p2);
-		p2 = deref(q, p2, p2_ctx);
-		p2_ctx = q->latest_ctx;
-
-		if (is_var(p2)) {
-			unwind_thread(q->pl, t);
-			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-		}
-	}
-
 	t->is_mutex_only = true;
 
-	if (is_var(p1) && !is_alias) {
+	// Commit. Nothing below can fail in a way that needs unwinding.
+
+	if (alias) {
+		t->alias = DUP_STRING(q, alias);
+		sl_app(q->pl->alias, t->alias, t);
+		cell tmp;
+		make_atom(&tmp, new_atom(q->pl, C_STR(q, alias)));
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	} else {
 		cell tmp;
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_THREAD;
-
-		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-			unwind_thread(q->pl, t);
-			return false;
-		}
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
