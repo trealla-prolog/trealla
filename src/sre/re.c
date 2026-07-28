@@ -74,10 +74,15 @@ static int ismetachar(char c);
 /* Public functions: */
 int re_match(const char* pattern, const char* text, int* matchlength)
 {
+  /* re_compile() returns 0 on an invalid pattern and does NOT write
+     *buf on those paths, so buf must start NULL. Without this, an
+     invalid pattern - e.g. an unterminated char class from
+     sre_match/4 - reached free() with an indeterminate stack value:
+     "attempting free on address which was not malloc()-ed". */
   regex_t *tmp;
-  unsigned char *buf;
+  unsigned char *buf = NULL;
   int ok = re_matchp(tmp = re_compile(pattern, &buf), text, matchlength);
-  free (buf);
+  free(buf);
   free(tmp);
   return ok;
 }
@@ -192,6 +197,7 @@ re_t re_compile(const char* pattern, unsigned char** buf)
           if (pattern[i+1] == 0) /* incomplete pattern, missing non-zero char after '^' */
           {
 			free(ccl_buf);
+            *buf = NULL;
             return 0;
           }
         }
@@ -210,11 +216,13 @@ re_t re_compile(const char* pattern, unsigned char** buf)
             {
               //fputs("exceeded internal buffer!\n", stderr);
 			  free(ccl_buf);
+              *buf = NULL;
               return 0;
             }
             if (pattern[i+1] == 0) /* incomplete pattern, missing non-zero char after '\\' */
             {
 			  free(ccl_buf);
+              *buf = NULL;
               return 0;
             }
             ccl_buf[ccl_bufidx++] = pattern[i++];
@@ -223,6 +231,7 @@ re_t re_compile(const char* pattern, unsigned char** buf)
           {
               //fputs("exceeded internal buffer!\n", stderr);
 			  free(ccl_buf);
+              *buf = NULL;
               return 0;
           }
           ccl_buf[ccl_bufidx++] = pattern[i];
@@ -232,6 +241,7 @@ re_t re_compile(const char* pattern, unsigned char** buf)
             /* Catches cases such as [00000000000000000000000000000000000000][ */
             //fputs("exceeded internal buffer!\n", stderr);
 			free(ccl_buf);
+            *buf = NULL;
             return 0;
         }
         /* Null-terminate string end */
@@ -250,6 +260,7 @@ re_t re_compile(const char* pattern, unsigned char** buf)
     if (pattern[i] == 0)
     {
 	  free(ccl_buf);
+      *buf = NULL;
       return 0;
     }
 

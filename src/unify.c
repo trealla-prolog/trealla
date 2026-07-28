@@ -532,6 +532,22 @@ struct dispatch {
 	bool (*fn)(query*, cell*, pl_ctx, cell*, pl_ctx, unsigned);
 };
 
+static bool unify_blobs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
+{
+	(void)q; (void)p1_ctx; (void)p2_ctx; (void)depth;
+	return is_blob(p2) && (p1->val_blob == p2->val_blob);
+}
+
+// deref() resolves indirects, so unify_internal() should never see one.
+// Present so the table covers every tag rather than reading past its
+// end - see the note on g_disp below.
+
+static bool unify_indirects(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
+{
+	(void)q; (void)p1; (void)p1_ctx; (void)p2; (void)p2_ctx; (void)depth;
+	return false;
+}
+
 static const struct dispatch g_disp[] =
 {
 	{TAG_EMPTY, NULL},
@@ -541,6 +557,8 @@ static const struct dispatch g_disp[] =
 	{TAG_INT, unify_integers},
 	{TAG_FLOAT, unify_floats},
 	{TAG_RATIONAL, unify_rationals},
+	{TAG_INDIRECT, unify_indirects},
+	{TAG_BLOB, unify_blobs},
 	{0}
 };
 
