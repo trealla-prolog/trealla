@@ -317,7 +317,6 @@ Non-standard predicates
 	module_info/2				# module_info(+atom, -list)
 
 	module/1					# module(?atom)
-	modules/1					# modules(-list)
 
 	load_text/2					# load_text(+atom,+opts)
 
@@ -329,14 +328,12 @@ Non-standard predicates
 	between/3
 	msort/2						# version of sort/3 with duplicates
 	samsort/2                   # same as msort/2
-	merge/3
 	format/[1-3]
 	portray_clause/[1-2]
 	predicate_property/2
 	evaluable_property/2
 	numbervars/[1,3-4]
 	e/0
-	name/2
 	tab/[1,2]
 
 	get_unbuffered_code/1		# read a single unbuffered code
@@ -381,8 +378,6 @@ Non-standard predicates
 	chars_urlenc/3              # currently options are ignored
 	hex_chars/2                 # as number_chars, but in hex
 	octal_chars/2               # as number_chars, but in octal
-	partial_string/2            # partial_string(+string,-String)
-	partial_string/3            # partial_string(+string,-String,-Var)
 	if/3, (*->)/2               # soft-cut
 	call_det/2					# call_det(+call,?boolean)
 	copy_term_nat/2             # doesn't copy attrs (same as copy_term/2)
@@ -403,17 +398,13 @@ Non-standard predicates
 	term_hash/2
 	term_hash/3					# ignores arg2 (options)
 	time/1
-	inf/0
-	nan/0
 	\uXXXX and \UXXXXXXXX 		# Unicode escapes (for JSON)
 	gcd/2
 	uuid/1                      # uuid(-string)
 	load_files/[1,2]
 	module/1
-	line_count/2
 	atom_number/2				# *SWI-Prolog* compatible
 	cfor/3						# cfor(+evaluable,+evaluable,-var)
-	repeat/1					# repeat(+integer)
 	make/0
 	argv/1						# argv(-list)
 	raw_argv/1					# raw_argv(-list)
@@ -493,7 +484,6 @@ Non-standard predicates
 	posix_fork/1				# posix_fork(-pid)
 
 
-	current_key/1
 	string_concat/3				# string_concat(+string,+string,?string)
 	string_length/2
 	sleep/1                     # sleep time in secs
