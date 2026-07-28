@@ -1823,7 +1823,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.cur_ctx);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(FFI_TAG_SINT8)) {
-				make_int(&tmp, cells[i].val_ffi_sint);
+				make_int(&tmp, cells[i].val_ffi_sint8);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.cur_ctx);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(FFI_TAG_SINT16)) {
