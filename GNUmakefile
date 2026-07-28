@@ -6,6 +6,7 @@ MANDIR ?= $(PREFIX)/share/man
 
 EMBED ?= 1
 
+PYTHON ?= python3
 HOST_CC ?= cc
 
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
@@ -287,7 +288,7 @@ compile: util/bin2c
 	rm -f main.pl main.c main.o src/library.o
 
 reference: tpl
-	./util/gen_reference.py --in-place README.md
+	$(PYTHON) util/gen_reference.py --in-place README.md
 
 test:
 	./tests/run.sh
