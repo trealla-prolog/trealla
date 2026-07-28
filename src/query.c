@@ -1952,9 +1952,21 @@ void query_destroy(query *q)
 	undo_item *u;
 
 	while ((u = list_pop_back(&q->undo)) != NULL) {
+		// Three kinds of undo item, and this used to handle two. A
+		// UNDO_RULE (a ground clause retracted with nothing iterating
+		// the predicate, parked here so backtracking can restore it)
+		// fell into the cells branch, which read the rule* as a cell*
+		// and freed it WITHOUT clear_clause() - so the clause's
+		// managed cells were never unshared. The backtrack path in
+		// drop_choice() has had the third case all along; this is the
+		// same dispatch, and the two copies had drifted apart.
+
 		if (u->is_bboard)
 			sl_del(u->m->keyval, u->key);
-		else {
+		else if (u->is_rule) {
+			clear_clause(&u->r->cl);
+			TPL_free(u->r);
+		} else {
 			unshare_cells(u->c, u->c->num_cells);
 			TPL_free(u->c);
 		}
