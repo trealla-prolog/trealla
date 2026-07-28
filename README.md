@@ -22,7 +22,7 @@ and using a plain old Makefile.
 	Blackboarding primitives
 	Sockets library
 	Delimited continuations
-	Variant tabling
+	Per-thread Variant tabling
 	...
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
