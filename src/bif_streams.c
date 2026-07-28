@@ -921,51 +921,52 @@ static bool bif_iso_open_4(query *q)
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
-	int n = new_stream(q->pl);
-	char *src = NULL;
 
-	if (n < 0)
-		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+	// Everything that can throw happens BEFORE new_stream(), so that a
+	// bad call never takes a stream slot it then has to give back. The
+	// old shape took the slot first and every one of the twenty-odd
+	// error exits had to remember unwind_stream() - see bif_threads.c
+	// and bif_os.c for the same change.
+	//
+	// Order of errors is unchanged, with one deliberate addition: in
+	// read mode a missing file is reported here rather than after
+	// fopen() fails, which is the common case and the one that used to
+	// allocate a slot, a filename, an alias table and a mode string
+	// only to throw them away.
+	//
+	// Two things need the slot number and so can only be applied after
+	// the commit: alias(current_input/output/error), which is recorded
+	// in std_alias, and a plain alias(A), recorded in alias.
 
-	char *filename;
+	// --- validate the source_sink. Shape only, nothing allocated yet.
+
 	stream *oldstr = NULL;
 
 	if (is_compound(p1) && (p1->arity == 1) && !CMP_STRING_TO_CSTR(q, p1, "stream")) {
 		int oldn = get_stream(q, p1+1);
 
 		if (oldn < 0)
-			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "type_error", "not_a_stream"); }
+			return throw_error(q, p1, p1_ctx, "type_error", "not_a_stream");
 
 		oldstr = &q->pl->streams[oldn];
-		filename = oldstr->filename;
-	} else if (is_atom(p1))
-		filename = src = DUP_STRING(q, p1);
-	else if (!is_iso_list(p1))
-		{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "domain_error", "source_sink"); }
+	} else if (!is_atom(p1) && !is_iso_list(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+	else if (is_iso_list(p1) && !scan_is_chars_list(q, p1, p1_ctx, true))
+		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-	if (is_iso_list(p1)) {
-		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
+	// --- validate the options, collecting what the commit will need.
 
-		if (!len)
-			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "type_error", "atom"); }
-
-		filename = src = chars_list_to_string(q, p1, p1_ctx);
-	}
-
-	stream *str = &q->pl->streams[n];
-	CHECKED(str->filename = strdup(filename));
-	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
-	CHECKED(str->mode = DUP_STRING(q, p2));
+	cell *alias = NULL;
+	int std_alias = 0;			// 0 none, 1 input, 2 output, 3 error
 	bool binary = false, repo = true;
 	uint8_t eof_action = eof_action_eof_code;
-	TPL_free(src);
+	bool bom_specified = false, use_bom = false, is_alias = false;
 
 #if USE_MMAP
 	cell *mmap_var = NULL;
 	pl_ctx mmap_ctx = 0;
 #endif
 
-	bool bom_specified = false, use_bom = false, is_alias = false;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -974,12 +975,10 @@ static bool bif_iso_open_4(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
-			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
-
-		//printf("*** %s %s : %s\n", str->filename, C_STR(q, c), C_STR(q, name));
 
 		if (!CMP_STRING_TO_CSTR(q, c, "mmap")) {
 #if USE_MMAP
@@ -989,112 +988,158 @@ static bool bif_iso_open_4(query *q)
 #endif
 		} else if (!CMP_STRING_TO_CSTR(q, c, "encoding")) {
 			if (is_var(name))
-				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		} else if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name))
-				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "permission_error", "open,source_sink"); }
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			if (!CMP_STRING_TO_CSTR(q, name, "current_input")) {
-				q->pl->current_input = n;
-			} else if (!CMP_STRING_TO_CSTR(q, name, "current_output")) {
-				q->pl->current_output = n;
-			} else if (!CMP_STRING_TO_CSTR(q, name, "current_error")) {
-				q->pl->current_error = n;
-			} else {
-				sl_app(str->alias, DUP_STRING(q, name), NULL);
-#if 0
-				cell tmp;
-				make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-				if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-					{ unwind_stream(q, n); return false; }
-
-				is_alias = true;
-#endif
-			}
+			if (!CMP_STRING_TO_CSTR(q, name, "current_input"))
+				std_alias = 1;
+			else if (!CMP_STRING_TO_CSTR(q, name, "current_output"))
+				std_alias = 2;
+			else if (!CMP_STRING_TO_CSTR(q, name, "current_error"))
+				std_alias = 3;
+			else
+				alias = name;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
-				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
-			if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "binary")) {
+			if (!CMP_STRING_TO_CSTR(q, name, "binary"))
 				binary = true;
-			} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "text"))
+			else if (!CMP_STRING_TO_CSTR(q, name, "text"))
 				binary = false;
 			else
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		} else if (!CMP_STRING_TO_CSTR(q, c, "bom")) {
 			if (is_var(name))
-				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 			bom_specified = true;
 
-			if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true"))
+			if (!CMP_STRING_TO_CSTR(q, name, "true"))
 				use_bom = true;
-			else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "false"))
+			else if (!CMP_STRING_TO_CSTR(q, name, "false"))
 				use_bom = false;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "reposition")) {
 			if (is_var(name))
-				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
-			if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true"))
+			if (!CMP_STRING_TO_CSTR(q, name, "true"))
 				repo = true;
-			else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "false"))
+			else if (!CMP_STRING_TO_CSTR(q, name, "false"))
 				repo = false;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "eof_action")) {
 			if (is_var(name))
-				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
-			if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "error")) {
+			if (!CMP_STRING_TO_CSTR(q, name, "error"))
 				eof_action = eof_action_error;
-			} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "eof_code")) {
+			else if (!CMP_STRING_TO_CSTR(q, name, "eof_code"))
 				eof_action = eof_action_eof_code;
-			} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "reset")) {
+			else if (!CMP_STRING_TO_CSTR(q, name, "reset"))
 				eof_action = eof_action_reset;
-			}
-		} else {
-			{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
-		}
+		} else
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 		p4 = LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 
 		if (is_var(p4))
-			{ unwind_stream(q, n); return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
+	// --- materialise the filename and stat it. Three exits below still
+	// free src by hand; that is three, not twenty, and none of them has
+	// a stream slot to worry about.
+
+	char *src = NULL;
+	const char *filename;
+
+	if (oldstr)
+		filename = oldstr->filename;
+	else if (is_atom(p1))
+		filename = src = DUP_STRING(q, p1);
+	else
+		filename = src = chars_list_to_string(q, p1, p1_ctx);
+
 	struct stat st = {0};
-	bool statted = !stat(str->filename, &st);
+	bool statted = !stat(filename, &st);
+	int stat_errno = errno;
 
 	// A directory can be handed to fopen() in read mode on POSIX: it
 	// succeeds and only the subsequent reads fail with EISDIR. Catch
-	// it here so open/4 reports it like any other unopenable sink...
+	// it here so open/4 reports it like any other unopenable sink.
 
 	if (statted && S_ISDIR(st.st_mode)) {
-		str->is_active = false;
-		{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink"); }
+		TPL_free(src);
+		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
 	}
+
+	bool is_read = !CMP_STRING_TO_CSTR(q, p2, "read");
+
+	if (!is_read
+		&& CMP_STRING_TO_CSTR(q, p2, "write")
+		&& CMP_STRING_TO_CSTR(q, p2, "append")
+		&& CMP_STRING_TO_CSTR(q, p2, "update")) {
+		TPL_free(src);
+		return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
+	}
+
+	// Reading something that is not there. Only ENOENT: if stat failed
+	// for any other reason (EACCES on a parent directory, say) fopen is
+	// left to produce the error it always did.
+
+	if (is_read && !oldstr && !statted && (stat_errno == ENOENT)) {
+		TPL_free(src);
+		return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
+	}
+
+	// --- commit. Only fopen/fdopen can fail from here.
+
+	int n = new_stream(q->pl);
+
+	if (n < 0) {
+		TPL_free(src);
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+	}
+
+	stream *str = &q->pl->streams[n];
+	CHECKED(str->filename = strdup(filename));
+	TPL_free(src);
+	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
+	CHECKED(str->mode = DUP_STRING(q, p2));
+
+	if (std_alias == 1)
+		q->pl->current_input = n;
+	else if (std_alias == 2)
+		q->pl->current_output = n;
+	else if (std_alias == 3)
+		q->pl->current_error = n;
+	else if (alias)
+		sl_app(str->alias, DUP_STRING(q, alias), NULL);
 
 	if (!S_ISREG(st.st_mode) && !bom_specified) {
 		bom_specified = true;
@@ -1118,12 +1163,8 @@ static bool bif_iso_open_4(query *q)
 			str->fp = fdopen(fd, str->binary?"wb":"w");
 		else if (!strcmp(str->mode, "append"))
 			str->fp = fdopen(fd, str->binary?"ab":"a");
-		else if (!strcmp(str->mode, "update"))
+		else
 			str->fp = fdopen(fd, str->binary?"rb+":"r+");
-		else {
-			str->is_active = false;
-			{ unwind_stream(q, n); return throw_error(q, p2, p2_ctx, "domain_error", "io_mode"); }
-		}
 	} else {
 		if (!strcmp(str->mode, "read"))
 			str->fp = fopen(str->filename, str->binary?"rb":"r");
@@ -1131,25 +1172,19 @@ static bool bif_iso_open_4(query *q)
 			str->fp = fopen(str->filename, str->binary?"wb":"w");
 		else if (!strcmp(str->mode, "append"))
 			str->fp = fopen(str->filename, str->binary?"ab":"a");
-		else if (!strcmp(str->mode, "update"))
+		else
 			str->fp = fopen(str->filename, str->binary?"rb+":"r+");
-		else {
-			str->is_active = false;
-			{ unwind_stream(q, n); return throw_error(q, p2, p2_ctx, "domain_error", "io_mode"); }
-		}
 	}
 
 	if (!str->fp) {
-		str->is_active = false;
+		bool perm = (errno == EACCES)
+			|| (!is_read && ((errno == EROFS) || (errno == EISDIR)));
+		unwind_stream(q, n);
 
-		if ((errno == EACCES) || (strcmp(str->mode, "read")
-			&& ((errno == EROFS) || (errno == EISDIR))
-			))
-			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink"); }
-		//else if ((strcmp(str->mode, "read") && (errno == EISDIR)))
-		//	return throw_error(q, p1, p1_ctx, "permission_error", "open,isadir");
+		if (perm)
+			return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
 		else
-			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "existence_error", "source_sink"); }
+			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
 	str->fp_out = str->fp;

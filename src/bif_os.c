@@ -732,27 +732,93 @@ static bool bif_popen_4(query *q)
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
+
+	// Options are validated BEFORE new_stream() and before the filename
+	// is allocated, so no error exit below has a slot or a buffer to
+	// unwind. Previously both were taken first and every exit had to
+	// release them by hand - see bif_threads.c for the same change.
+	//
+	// std_alias records alias(current_input/output/error), which needs
+	// the slot number and so can only be applied after the commit.
+
+	// Shape-check the command first, so that a bad command still wins
+	// over a bad option exactly as it did before. This allocates
+	// nothing - the string is only materialised after the loop.
+
+	if (!is_atom(p1) && !is_iso_list(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+
+	if (is_iso_list(p1) && !scan_is_chars_list(q, p1, p1_ctx, true))
+		return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+	cell *alias = NULL;
+	int std_alias = 0;			// 0 none, 1 input, 2 output, 3 error
+	bool binary = false;
+	int eof_action = eof_action_eof_code;
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		if (is_compound(c) && (c->arity == 1)) {
+			cell *name = c + 1;
+			name = deref(q, name, q->latest_ctx);
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink");
+
+			if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
+				if (!CMP_STRING_TO_CSTR(q, name, "current_input"))
+					std_alias = 1;
+				else if (!CMP_STRING_TO_CSTR(q, name, "current_output"))
+					std_alias = 2;
+				else if (!CMP_STRING_TO_CSTR(q, name, "current_error"))
+					std_alias = 3;
+				else
+					alias = name;
+			} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
+				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "binary"))
+					binary = true;
+				else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "text"))
+					binary = false;
+			} else if (!CMP_STRING_TO_CSTR(q, c, "eof_action")) {
+				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "error"))
+					eof_action = eof_action_error;
+				else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "eof_code"))
+					eof_action = eof_action_eof_code;
+				else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "reset"))
+					eof_action = eof_action_reset;
+			}
+		} else
+			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+
+		if (is_var(p4))
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+	// Now materialise the command name. Already shape-checked above,
+	// so this cannot fail and nothing below has to release it early.
+
+	char *src = is_atom(p1) ? DUP_STRING(q, p1)
+	                        : chars_list_to_string(q, p1, p1_ctx);
+	char *filename = src;
+
+	// Commit. From here only popen() itself can fail, and that path
+	// still has to release the slot.
+
 	int n = new_stream(q->pl);
-	char *src = NULL;
 
-	if (n < 0)
+	if (n < 0) {
+		TPL_free(src);
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
-
-	char *filename = NULL;
-
-	if (is_atom(p1))
-		filename = src = DUP_STRING(q, p1);
-	else if (!is_iso_list(p1))
-		{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "domain_error", "source_sink"); }
-
-	if (is_iso_list(p1)) {
-		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
-
-		if (!len)
-			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "type_error", "atom"); }
-
-		src = chars_list_to_string(q, p1, p1_ctx);
-		filename = src;
 	}
 
 	stream *str = &q->pl->streams[n];
@@ -761,114 +827,48 @@ static bool bif_popen_4(query *q)
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	CHECKED(str->filename = strdup(filename));
 	CHECKED(str->mode = DUP_STRING(q, p2));
-	bool binary = false;
-	uint8_t eof_action = eof_action_eof_code;
-	bool is_alias = false;
-	LIST_HANDLER(p4);
-
-	while (is_list(p4)) {
-		cell *h = LIST_HEAD(p4);
-		cell *c = deref(q, h, p4_ctx);
-
-		if (is_var(c)) {
-			TPL_free(src);	// FIX: free src on error
-			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
-		}
-
-		if (is_compound(c) && (c->arity == 1)) {
-			cell *name = c + 1;
-			name = deref(q, name, q->latest_ctx);
-
-
-			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				TPL_free(src);	// FIX: free src on error
-				{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink"); }
-			}
-
-			if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
-				if (!CMP_STRING_TO_CSTR(q, name, "current_input")) {
-					q->pl->current_input = n;
-				} else if (!CMP_STRING_TO_CSTR(q, name, "current_output")) {
-					q->pl->current_output = n;
-				} else if (!CMP_STRING_TO_CSTR(q, name, "current_error")) {
-					q->pl->current_error = n;
-				} else {
-					sl_app(str->alias, DUP_STRING(q, name), NULL);
-#if 0
-					cell tmp;
-					make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-					if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-						{ unwind_stream(q, n); return false; }
-
-					is_alias = true;
-#endif
-				}
-			} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
-				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "binary")) {
-					binary = true;
-				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "text"))
-					binary = false;
-			} else if (!CMP_STRING_TO_CSTR(q, c, "eof_action")) {
-				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "error")) {
-					eof_action = eof_action_error;
-				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "eof_code")) {
-					eof_action = eof_action_eof_code;
-				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "reset")) {
-					eof_action = eof_action_reset;
-				}
-			}
-		} else {
-			TPL_free(src);	// FIX: free src on error
-			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option"); }
-		}
-
-		p4 = LIST_TAIL(p4);
-		p4 = deref(q, p4, p4_ctx);
-		p4_ctx = q->latest_ctx;
-
-		if (is_var(p4)) {
-			TPL_free(src);	// FIX: free src on error
-			{ unwind_stream(q, n); return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
-		}
-	}
-
 	str->binary = binary;
 	str->eof_action = eof_action;
+
+	if (std_alias == 1)
+		q->pl->current_input = n;
+	else if (std_alias == 2)
+		q->pl->current_output = n;
+	else if (std_alias == 3)
+		q->pl->current_error = n;
+	else if (alias)
+		sl_app(str->alias, DUP_STRING(q, alias), NULL);
 
 	if (!strcmp(str->mode, "read"))
 		str->fp = popen(filename, binary?"rb":"r");
 	else if (!strcmp(str->mode, "write"))
 		str->fp = popen(filename, binary?"wb":"w");
 	else {
-		str->is_active = false;
-		{ unwind_stream(q, n); return throw_error(q, p2, p2_ctx, "domain_error", "io_mode"); }
+		TPL_free(src);
+		unwind_stream(q, n);
+		return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
 	}
 
 	TPL_free(src);
 
 	if (!str->fp) {
-		str->is_active = false;
+		bool is_read = !strcmp(str->mode, "read");
+		unwind_stream(q, n);
 
-		if ((errno == EACCES) || (strcmp(str->mode, "read") && (errno == EROFS)))
-			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink"); }
+		if ((errno == EACCES) || (!is_read && (errno == EROFS)))
+			return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
 		else
-			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "existence_error", "source_sink"); }
+			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
 	str->fp_out = str->fp;
-
-	if (!is_alias) {
-		cell tmp;
-		make_int(&tmp, n);
-		tmp.flags |= FLAG_INT_STREAM;
-
-		if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-			{ unwind_stream(q, n); return false; }
-	}
-
+	cell tmp;
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM;
+	unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 	return true;
 }
+
 static bool bif_pclose_1(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);

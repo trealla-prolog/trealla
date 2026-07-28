@@ -12,15 +12,14 @@
 static bool bif_map_create_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	int n = new_stream(q->pl);
 	GET_NEXT_ARG(p4,list_or_nil);
 
-	if (n < 0)
-		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+	// Options are validated BEFORE new_stream() hands out a slot, so no
+	// error exit below has anything to unwind. Previously the slot and
+	// its alias skiplist were taken first and every exit had to release
+	// them by hand - see bif_threads.c for the same change.
 
-	stream *str = &q->pl->streams[n];
-	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	bool is_alias = false;
+	cell *alias = NULL;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -29,52 +28,56 @@ static bool bif_map_create_2(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
-			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name))
-				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
-				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "permission_error", "open,source_sink"); }
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			sl_app(str->alias, DUP_STRING(q, name), NULL);
-			cell tmp;
-			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-			if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-				{ unwind_stream(q, n); return false; }
-
-			is_alias = true;
-		} else {
-			{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
-		}
+			alias = name;
+		} else
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 		p4 = LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 
 		if (is_var(p4))
-			{ unwind_stream(q, n); return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
+	// Commit.
+
+	int n = new_stream(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	str->keyval = sl_create((void*)fake_strcmp, (void*)fake_free, NULL);
 	CHECKED(str->keyval);
 	str->is_map = true;
 
-	if (!is_alias) {
-		cell tmp ;
+	if (alias) {
+		sl_app(str->alias, DUP_STRING(q, alias), NULL);
+		cell tmp;
+		make_atom(&tmp, new_atom(q->pl, C_STR(q, alias)));
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	} else {
+		cell tmp;
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_MAP;
-
-		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-			{ unwind_stream(q, n); return false; }
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	return true;
