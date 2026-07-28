@@ -1368,10 +1368,12 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			} else if (ptr->types[i] == MARK_OUT(FFI_TAG_C_STR)) {
 				CHECKED(make_cstring(&tmp, cells[i].val_ffi_pointer));
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
+				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(FFI_TAG_C_CSTR)) {
 				CHECKED(make_cstring(&tmp, cells[i].val_ffi_pointer));
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
+				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			}
 		}
@@ -1455,10 +1457,12 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		CHECKED(make_cstring(&tmp, r.val_ffi_pointer));
 		TPL_free(r.val_ffi_pointer);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
+		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == FFI_TAG_C_CSTR) {
 		CHECKED(make_cstring(&tmp, r.val_ffi_pointer));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
+		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == FFI_TAG_STRUCT) {
 		ffi_type *p = ffi_ret_type;
