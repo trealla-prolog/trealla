@@ -456,7 +456,7 @@ struct predicate_ {
 	bool is_dirty:1;
 };
 
-#define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL, NULL
+#define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 
 #define MAX_FFI_ARGS 64
 
@@ -478,6 +478,13 @@ struct builtins_ {
 	char *desc;
 	char *help2;
 	char *help_alt;
+
+	// Pre-compiled libffi call interface, built once at registration.
+	// void* so this header doesn't have to drag in ffi.h. NULL means
+	// the signature can't be pre-compiled (it returns a struct) and
+	// the cif is built per call as before.
+
+	void *cif;
 };
 
 typedef struct {
