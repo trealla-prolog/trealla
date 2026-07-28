@@ -26,6 +26,20 @@
 %  * `type(+Type)`: Type can be `text` or `binary`. Defines the type of the stream, if it's optimized for plain text
 %    or just binary
 %
+% The socket already exists by the time options are applied, so an
+% option error must not leak the fd and the stream slot. Before this,
+% a bad option left the socket open with no handle reachable from the
+% caller - 1024 failed opens exhausted MAX_STREAMS and every later
+% open raised resource_error(too_many_streams).
+%
+% close/1 is itself wrapped so a failure there cannot replace the
+% option error the caller actually needs to see.
+
+'$sock_opts'(S, Options) :-
+	catch(set_stream(S, Options),
+	      E,
+	      ( catch(close(S), _, true), throw(E) )).
+
 socket_client_open(Addr0, Stream, Options) :-
 	( var(Addr0) ->
 		throw(error(instantiation_error, socket_client_open/3))
@@ -37,7 +51,7 @@ socket_client_open(Addr0, Stream, Options) :-
 	atom(Path),
 	atom_concat('unix://', Path, Addr),
 	'$client'(Addr, _, _, Stream, Options),
-	set_stream(Stream, Options).
+	'$sock_opts'(Stream, Options).
 
 socket_client_open(Addr0, Stream, Options) :-
 	( var(Addr0) ->
@@ -54,7 +68,7 @@ socket_client_open(Addr0, Stream, Options) :-
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
 	'$client'(Addr, _, _, Stream, Options),
-	set_stream(Stream, Options).
+	'$sock_opts'(Stream, Options).
 
 socket_client_open(Addr, Stream, Options) :-
 	( var(Addr) ->
@@ -70,7 +84,7 @@ socket_client_open(Addr, Stream, Options) :-
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
 	'$client'(Addr, _, _, Stream, Options),
-	set_stream(Stream, Options).
+	'$sock_opts'(Stream, Options).
 
 socket_client_open(Addr, Stream, Options) :-
 	( var(Addr) ->
@@ -85,7 +99,7 @@ socket_client_open(Addr, Stream, Options) :-
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
 	'$client'(Addr, _, _, Stream, Options),
-	set_stream(Stream, Options).
+	'$sock_opts'(Stream, Options).
 
 
 
@@ -113,7 +127,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 	must_be(var, ServerSocket),
 	must_be(list, Options),
 	'$server'(Addr, ServerSocket, Options),
-	set_stream(ServerSocket, Options).
+	'$sock_opts'(ServerSocket, Options).
 
 socket_server_open(Addr0, ServerSocket, Options) :-
 	Addr0 = unix(Path), !,
@@ -122,7 +136,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 	atom(Path),
 	atom_concat('unix://', Path, Addr),
 	'$server'(Addr, ServerSocket, Options),
-	set_stream(ServerSocket, Options).
+	'$sock_opts'(ServerSocket, Options).
 
 socket_server_open(Addr0, ServerSocket, Options) :-
 	Addr0 = inet(Address,Port), !,
@@ -135,7 +149,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
 	'$server'(Addr, ServerSocket, Options),
-	set_stream(ServerSocket, Options).
+	'$sock_opts'(ServerSocket, Options).
 
 socket_server_open(Addr, ServerSocket, Options) :-
 	Addr = Address:Port, !,
@@ -147,7 +161,7 @@ socket_server_open(Addr, ServerSocket, Options) :-
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
 	'$server'(Addr, ServerSocket, Options),
-	set_stream(ServerSocket, Options).
+	'$sock_opts'(ServerSocket, Options).
 
 socket_server_open(Addr0, ServerSocket, Options) :-
 	must_be(var, ServerSocket),
@@ -156,7 +170,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 	; Addr = Addr0
 	),
 	'$server'(Addr, ServerSocket, Options),
-	set_stream(ServerSocket, Options).
+	'$sock_opts'(ServerSocket, Options).
 
 
 
@@ -178,7 +192,7 @@ socket_server_accept(ServerSocket, Client, Stream, Options) :-
 	'$accept'(ServerSocket, Stream),
 	'$peer_addr'(Stream, Addr, Port),
 	Client = Addr:Port,
-	set_stream(Stream, Options).
+	'$sock_opts'(Stream, Options).
 
 
 

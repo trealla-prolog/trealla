@@ -6429,12 +6429,23 @@ static bool bif_set_stream_2(query *q)
 				} else {
 					int n2 = get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name));
 
-					if (n2 >= 0) {
-						stream *str2 = &q->pl->streams[n2];
-						sl_del(str2->alias, C_STR(q, name));
-					}
+					// An alias already held by a DIFFERENT stream used
+					// to be sl_del()'d from that stream and handed
+					// over silently, so the original lost its name
+					// with no indication - a typo'd alias would
+					// quietly steal an open stream's identity.
+					// open/4 refuses the same situation with a
+					// permission_error; do the same here.
+					//
+					// n2 == n is re-aliasing a stream to a name it
+					// already holds: a no-op, not an error, and not a
+					// second skiplist entry either.
 
-					sl_app(str->alias, DUP_STRING(q, name), NULL);
+					if (n2 >= 0) {
+						if (n2 != n)
+							return throw_error(q, c, c_ctx, "permission_error", "modify,stream_alias");
+					} else
+						sl_app(str->alias, DUP_STRING(q, name), NULL);
 				}
 
 				return true;
