@@ -66,10 +66,16 @@ skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *)
 		return NULL;
 	}
 
-	l->seed = (unsigned)(size_t)(l + clock());
+	l->seed = (unsigned)((size_t)l + (size_t)clock());
 	l->level = 1;
 
-	for (int i = 0; i < MAX_LEVELS; i++)
+	// new_node_of_level(x) allocates x+1 forward slots, so the header
+	// has MAX_LEVELS+1 of them. Initialising only MAX_LEVELS left the
+	// top slot holding whatever the allocator last put there, and
+	// sl_del/sl_rem read exactly that slot once l->level reaches the
+	// MAX_LEVELS cap.
+
+	for (int i = 0; i <= MAX_LEVELS; i++)
 		l->header->forward[i] = NULL;
 
 	l->header->key = NULL;
@@ -128,6 +134,15 @@ static int random_level(unsigned *seedp)
 {
 	const double P = 0.5;
 	double r = frand(seedp);
+
+	// rand_r() can legitimately return 0, and log(0.0) is -inf, whose
+	// conversion to int is undefined - in practice INT_MIN, which then
+	// asks new_node_of_level() for a nonsense size and silently loses
+	// the insert. Treat it as the level-0 case it should have been.
+
+	if (r <= 0.0)
+		return 0;
+
 	int lvl = (int)(log(r) / log(1.0 - P));
 	return lvl < MAX_LEVEL ? lvl : MAX_LEVEL;
 }
@@ -240,7 +255,7 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
 	int k;
 
-	for (k = l->level; k >= 0; k--) {
+	for (k = l->level - 1; k >= 0; k--) {
 		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) <= 0)) {
 			if (l->cmpkey(q->key, key, l->p, l) == 0) {
 				if (q->val == val)
@@ -292,7 +307,7 @@ bool sl_del(skiplist *l, const void *key)
 	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
 	int k;
 
-	for (k = l->level; k >= 0; k--) {
+	for (k = l->level - 1; k >= 0; k--) {
 		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
 			p = q;
 
