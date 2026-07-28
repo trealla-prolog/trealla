@@ -34,6 +34,20 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 		}
 
 		if (quoted && (ch == params->quote)) {
+			// RFC 4180: a doubled quote inside a quoted field is a
+			// literal quote and the field STAYS quoted. This used to
+			// fall through to the close-quote case below, so after
+			// "a""b" the parser was no longer in quoted state and the
+			// next separator was taken literally - `"a""b",c` came
+			// back as the single field `a"b,c` instead of two.
+
+			if (peek_char_utf8(src) == params->quote) {
+				get_char_utf8(&src);
+				SB_putchar(pr, params->quote);
+				chars++;
+				continue;
+			}
+
 			ch = get_char_utf8(&src);
 			quoted = 0;
 		}
@@ -369,6 +383,47 @@ bool bif_parse_csv_file_2(query *q)
 	return true;
 }
 
+// RFC 4180: a field containing the separator, the quote character, CR
+// or LF must be written quoted, with any embedded quote doubled.
+//
+// Without this, write_csv_file(F, [[a,'b,c']], []) emitted
+//
+//     a,b,c
+//
+// which reads back as THREE fields - a silent round-trip corruption,
+// and the reader in this same file already handles the quoted form.
+
+static bool write_csv_field(FILE *fp, const char *src, size_t len, csv *params)
+{
+	bool quoted = false;
+
+	for (size_t i = 0; i < len; i++) {
+		if ((src[i] == params->sep) || (src[i] == params->quote)
+			|| (src[i] == '\n') || (src[i] == '\r')) {
+			quoted = true;
+			break;
+		}
+	}
+
+	if (!quoted)
+		return fwrite(src, 1, len, fp) == len;
+
+	if (fputc(params->quote, fp) == EOF)
+		return false;
+
+	for (size_t i = 0; i < len; i++) {
+		if (src[i] == params->quote) {
+			if (fputc(params->quote, fp) == EOF)
+				return false;
+		}
+
+		if (fputc(src[i], fp) == EOF)
+			return false;
+	}
+
+	return fputc(params->quote, fp) != EOF;
+}
+
 static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_ctx l_ctx)
 {
 	LIST_HANDLER(l);
@@ -381,7 +436,7 @@ static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_ctx 
 		char *dst = print_term_to_strbuf(q, h, h_ctx, 1);
 		size_t len = strlen(dst);
 
-		if (fwrite(dst, 1, len, p->fp) < len) {
+		if (!write_csv_field(p->fp, dst, len, params)) {
 			printf("Error: write_csv_file\n");
 			TPL_free(dst);		// print_term_to_strbuf() returns a
 			return false;		// TPL_malloc'd buffer we own
