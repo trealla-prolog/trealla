@@ -124,6 +124,18 @@ static bool bif_map_set_3(query *q)
 	}
 
 	CHECKED(val);
+
+	// Replace rather than accumulate. sl_app() inserts *after* equal
+	// keys (it is the assertz half of the pair asserta/assertz use for
+	// the clause index), while sl_get() returns the *first* match - so
+	// without this delete a second map_set/3 on the same key was never
+	// visible, map_count/2 counted the key once per set, and the old
+	// key and value were held until map_close/1.
+	//
+	// sl_del() frees the stored key and value via fake_free(); the key
+	// we just built is untouched and is handed to sl_app() below.
+
+	sl_del(str->keyval, key);
 	sl_app(str->keyval, key, val);
 	return true;
 }
@@ -214,7 +226,12 @@ static bool bif_map_del_2(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "integer");
 
 	CHECKED(key);
+
+	// sl_del() frees the key that is *stored*, not the one used to
+	// look it up, so this one is ours to release.
+
 	sl_del(str->keyval, key);
+	TPL_free(key);
 	return true;
 }
 
