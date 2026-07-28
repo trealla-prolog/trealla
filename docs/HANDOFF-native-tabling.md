@@ -267,17 +267,20 @@ Build & test rhythm:
                         delim(cont) → fixpoint → '$tbl_mark_all_complete'
 
 Tables/tries/worklists/SCC stack live in one `tbl_state` hanging off
-`prolog` as an opaque `void *tabling_state`, allocated on first tabled
-call and freed by `tabling_destroy()` from `pl_destroy()`. **Two
-`prolog` instances in one process do not share tables.** These were
-file statics originally; see §"per-instance state" in tabling.c and the
-note below. Handles cross the Prolog boundary as raw-pointer integers —
+**`thread`** as an opaque `void *tabling_state`, allocated on first
+tabled call. `threads[0]` is the main thread, via the established
+`q->thread_ptr ? q->thread_ptr : &q->pl->threads[0]` idiom. **Tables
+are private to the thread that built them**, so two `prolog` instances
+do not share them either. These were file statics originally, then
+per-`prolog`; see §"per-thread state" in tabling.c and the note below.
+Handles cross the Prolog boundary as raw-pointer integers —
 '$tbl_*'-internal only.
 
 ## 4. Phase 1 limits (documented, deliberate)
 
 Variant tabling, least-model semantics. No tnot/WFS, no incremental,
-no answer subsumption, no shared/thread-local table split. Attvars in
+no answer subsumption. Tables are thread-private, so threads do not
+share completed tables (see §5). Attvars in
 tabled calls → type_error(free_variable). cstr strings vs char lists
 are distinct trie paths. Suspension inside ITE *conditions*
 unsupported. `test104.expected` is var-numbering sensitive; regenerate
@@ -296,25 +299,40 @@ scheduling (post answers pre-completion — reopens the continuation
 capture we deliberately retreated from). Same caveat for an unbounded
 chain of distinct variants: that grows SCC nesting instead.
 
-**Tabling is single-threaded *per instance*, and says so.** The state
-is per-`prolog` (above) but unlocked within an instance (contrast
-`bif_bboard.c`, which takes `prolog_lock` six times). Before the guard,
-a tabled call from a second thread *hung* — the newcomer waits in
-completion on a worklist it cannot see. Now `tbl_claim()` in
-`'$tbl_variant_table'` claims ownership for the first thread in **that
-instance** to table anything — the `pthread_t owner` lives inside
-`tbl_state`, so two embedded interpreters can have different owning
-threads — under the prolog guard so a first-use race still has one
-winner, and refuses everyone else in that instance with
-`resource_error(tabling_not_thread_safe)`. Ownership is
-released by `abolish_all_tables/0` — deliberately *not* owner-checked,
-because if the owning thread has exited, requiring ownership would lock
-tabling out of that instance permanently (`s->in_use` still refuses an
-abolish racing a live leader). In practice sequential handover often
-works without abolishing too, since the OS recycles the retired
-thread's `pthread_t`; don't rely on that, it isn't guaranteed.
-Covered by `test_threads` in `tests/misc/tabling.pl`, negative-control
-checked (guard stubbed out → `threads: FAILED no_error`).
+**Tabling is thread-safe because tables are thread-private.** The
+state hangs off `thread` (above), so a table is only reachable from the
+thread that built it and there is nothing to race — no locking at all,
+and every thread may table concurrently. `tbl_claim`, the `pthread_t
+owner`, and `resource_error(tabling_not_thread_safe)` are all gone.
+
+Locking shared tables was the obvious alternative and does not work.
+The leader's critical section is not inside a builtin: `completion/0`
+is a *Prolog* loop that calls `'$tbl_pop_worklist'`, then `delim/3`
+which runs **arbitrary user code**, then loops. No lock survives that —
+the worker can call another tabled predicate, block on I/O or throw.
+Per-builtin locks would have made the tries memory-safe while leaving
+thread B free to find thread A's *incomplete* table and read it as
+complete. That is strictly worse than the error it replaced: quietly
+wrong instead of loudly refused.
+
+Cost: threads don't share completed tables, each recomputes. Sharing
+completed (hence immutable) tables via a published registry is the
+next step and preserves the no-lock invariant.
+
+Freed by `tabling_destroy_thread()` when the thread retires (in
+`start_routine_thread_create`, before the detached/joinable split so it
+covers both) and swept for every slot by `tabling_destroy()` at
+`pl_destroy()`. The per-thread free is a *peak memory* matter, not a
+leak — the sweep frees everything at exit either way, so **ASAN cannot
+see the difference**; measure RSS instead. 200 sequential tabling
+threads: 9 MB with, 59 MB without.
+
+Covered by `test_threads` in `tests/misc/tabling.pl`: four threads
+tabling at once must agree with the pre-thread value, *and* a marker
+count must show each did its own work — the answers alone would pass
+just as well with shared tables. Negative-control checked (`tbl()`
+forced to one shared state → `threads: FAILED shared tables,
+workers=1`).
 
 Trap worth knowing, since it cost an hour: **`throw_error()` returns
 TRUE.** It raises by setting `q->did_throw` and the builtin returns
