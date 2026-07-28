@@ -6,26 +6,26 @@ and using a plain old Makefile.
 
 	MIT licensed
 	Integers & Rationals are unbounded
-	Atoms are UTF-8 of unlimited length
+	Atoms and strings are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
-	Strings & slices are super-efficient (especially with mmap'd files)
+	Strings & slices are efficient (especially with mmap'd files)
 	REPL with history
 	Runs on Linux, Android, BSD, macOS, and WebAssembly (WASI) & Go
-	Windows build is of indeterminate state and is unsupported
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
-	Pre-emptive multi-threading
-	Attributed variables: freeze/2 dif/2, when/2
+	Full multi-threading
+	Attributed variables with freeze/2 dif/2, when/2
 	Constraint libraries: CLP(B), CLP(Z)
 	Blackboarding primitives
 	Sockets library
 	...
+	Windows build is of indeterminate state ##UNSUPPORTED##
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
-	Variant tabling ##EXPERIMENTAL##
+	Thread-local variant tabling ##EXPERIMENTAL##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
@@ -75,54 +75,6 @@ The file *~/.tplrc* is consulted on startup unless the *-f* option is present.
 When consulting, reconsulting and deconsulting files the *.pl* version
 of the filename is always preferred (if not specified) when looking for a
 file.
-
-
-A note on UTF-8
-===============
-
-Trealla uses UTF-8 internally and this works well with modern operating
-systems that are already [[1](https://www.utf8everywhere.org/)], or moving to
-[[2](https://en.wikipedia.org/wiki/Unicode_in_Microsoft_Windows#UTF-8)],
-native UTF-8.
-
-It aligns well with standard C as functions like strcmp/memcmp that
-require no special handling to respect codepoint order. This also works
-seamlessly with the implementation of double-quoted *strings* (ie.
-chars-list), DCGs, and mmap'd files. Any code-point specific
-requirements, like *get_char*, *get_code*, *sub_atom*, *atom_length*,
-*atom_codes*, *atom_chars* & *_upper/*_lower are handled on the fly.
-
-UTF-8 atoms do not need to be quoted unless they contain breaking
-characters...
-
-```console
-	?- [user].
-	是.            % be: means, approximately, "True".
-	不是 :- \+ 是.  % not be: means, approximately, "False".
-	<CTRL-D>
-	   true.
-	?- 是.
-	   true.
-	?- 不是.
-	   false.
-	```
-
-	```console
-	?- X = 国字.
-	   X = 国字.
-	?-
-```
-
-Trealla accepts as a var any atom beginning with an uppercase
-character...
-
-```console
-	?- atom_upper(δ,C).
-	   C = Δ.
-	?- Δ is 123456-123455.
-	   Δ = 1.
-	?-
-```
 
 
 Building
