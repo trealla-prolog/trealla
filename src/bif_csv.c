@@ -383,7 +383,8 @@ static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_ctx 
 
 		if (fwrite(dst, 1, len, p->fp) < len) {
 			printf("Error: write_csv_file\n");
-			return false;
+			TPL_free(dst);		// print_term_to_strbuf() returns a
+			return false;		// TPL_malloc'd buffer we own
 		}
 
 		TPL_free(dst);
@@ -466,12 +467,22 @@ bool bif_write_csv_file_3(query *q)
 		h = deref(q,h,p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 
-		if (!is_list_or_nil(h))
+		// Both of these exits used to leak the parser (and the first
+		// leaked the open FILE* too). The fopen-failure path a few
+		// lines above has always done parser_destroy(p) - the three
+		// exits had simply drifted apart.
+
+		if (!is_list_or_nil(h)) {
+			fclose(p->fp);
+			p->fp = NULL;
+			parser_destroy(p);
 			return throw_error(q, h, h_ctx, "type_error", "list");
+		}
 
 		if (!do_write_csv_line(q, p, &params, h, h_ctx)) {
 			fclose(p->fp);
 			p->fp = NULL;
+			parser_destroy(p);
 			return false;
 		}
 
