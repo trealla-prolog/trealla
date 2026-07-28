@@ -286,6 +286,9 @@ compile: util/bin2c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) main.o $(OPT) $(LDFLAGS)
 	rm -f main.pl main.c main.o src/library.o
 
+reference: tpl
+	./util/gen_reference.py --in-place README.md
+
 test:
 	./tests/run.sh
 
