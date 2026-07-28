@@ -557,8 +557,10 @@ static bool bif_iso_atom_chars_2(query *q)
 			p2_ctx = q->latest_ctx;
 		}
 
-		if (!is_nil(p2))
+		if (!is_nil(p2)) {
+			SB_free(pr);		// unreachable today: the arg type check
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
+		}					// rejects improper lists first
 
 		cell tmp;
 		make_cstring(&tmp, SB_cstr(pr));
@@ -808,8 +810,10 @@ static bool bif_iso_atom_codes_2(query *q)
 
 		}
 
-		if (!is_nil(p2))
+		if (!is_nil(p2)) {
+			SB_free(pr);		// unreachable today: the arg type check
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
+		}					// rejects improper lists first
 
 		cell tmp;
 		make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr));
@@ -928,8 +932,10 @@ static bool bif_string_codes_2(query *q)
 
 		}
 
-		if (!is_nil(p2))
+		if (!is_nil(p2)) {
+			SB_free(pr);		// unreachable today: the arg type check
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
+		}					// rejects improper lists first
 
 		cell tmp;
 		make_stringn(&tmp, SB_cstr(pr), SB_strlen(pr));
@@ -1011,8 +1017,10 @@ static bool bif_hex_bytes_2(query *q)
 
 			pl_int val = get_smallint(head);
 
-			if ((val < 0) || (val > 255))
+			if ((val < 0) || (val > 255)) {
+				SB_free(pr);
 				return throw_error(q, head, q->latest_ctx, "representation_error", "byte");
+			}
 
 			char ch[10];
 			snprintf(ch, sizeof(ch), "%02X", (unsigned)val);
@@ -1023,8 +1031,10 @@ static bool bif_hex_bytes_2(query *q)
 
 		}
 
-		if (!is_nil(p2))
+		if (!is_nil(p2)) {
+			SB_free(pr);
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
+		}
 
 		cell tmp;
 		make_string(&tmp, SB_cstr(pr));
@@ -4200,10 +4210,14 @@ static bool bif_crypto_data_hash_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, h, "hmac") && is_iso_list(arg)
 				&& (scan_is_chars_list(q, arg, 0, true)) > 0) {
 				key = chars_list_to_string(q, arg, 0);
-			} else
+			} else {
+				TPL_free(key);		// may already own a buffer from an earlier option
 				return throw_error(q, h, h_ctx, "domain_error", "hash_option");
-		} else
+			}
+		} else {
+			TPL_free(key);
 			return throw_error(q, h, h_ctx, "domain_error", "hash_option");
+		}
 
 		p3 = LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
@@ -4755,11 +4769,15 @@ static bool bif_atomic_list_concat_3(query *q)
 		cell *h = LIST_HEAD(p1);
 		h = deref(q, h, p1_ctx);
 
-		if (is_var(h))
+		if (is_var(h)) {
+			SB_free(pr);
 			return throw_error(q, h, q->latest_ctx, "instantiation_error", "atomic");
+		}
 
-		if (!is_atomic(h))
+		if (!is_atomic(h)) {
+			SB_free(pr);
 			return throw_error(q, h, q->latest_ctx, "type_error", "atomic");
+		}
 
 		q->parens = true;
 		char *dst = print_term_to_strbuf(q, h, q->latest_ctx, 1);
@@ -4780,8 +4798,10 @@ static bool bif_atomic_list_concat_3(query *q)
 		}
 	}
 
-	if (is_var(p1))
+	if (is_var(p1)) {
+		SB_free(pr);
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "atomic_list_concat/3");
+	}
 
 	cell tmp;
 	make_cstring(&tmp, SB_cstr(pr));

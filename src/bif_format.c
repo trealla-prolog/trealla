@@ -155,6 +155,35 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 	tmpbuf_free -= len;										\
 }
 
+// eval(q,c) LOOKS like an assignment but the macro body ends in three
+// bare return statements - q->did_throw, is_var, and the is_builtin
+// check in builtins.h. Inside do_format that returns past every
+// TPL_free(tmpbuf), leaking the 8 KB format buffer on any arithmetic
+// error: format("~d", [X]) with X unbound leaked 8192 bytes per call,
+// as did ~c ~e ~E ~f ~g ~G ~D ~r ~R with a non-evaluable argument.
+//
+// This is the same macro with the buffer released on each exit. It has
+// to be a macro too, because it declares p1 in the caller's scope and
+// because those returns must return from do_format.
+
+#define FMT_EVAL(p1, c)														\
+	cell p1 = is_evaluable(c) || is_builtin(c) ? (call_builtin(q,c,c##_ctx), q->accum) : \
+		is_callable(c) ? (call_userfun(q, c, c##_ctx), q->accum) : *c;		\
+	q->accum.flags = 0;														\
+	q->accum.num_cells = 1;													\
+	if (q->did_throw) {														\
+		TPL_free(tmpbuf);													\
+		return true;														\
+	}																		\
+	if (is_var(c)) {														\
+		TPL_free(tmpbuf);													\
+		return throw_error(q, c, q->st.cur_ctx, "instantiation_error", "number"); \
+	}																		\
+	if (is_builtin(c) && c->bif_ptr && (c->bif_ptr->fn != bif_iso_float_1) && (c->bif_ptr->fn != bif_iso_integer_1)) { \
+		TPL_free(tmpbuf);													\
+		return throw_error(q, c, q->st.cur_ctx, "type_error", "evaluable");	\
+	}
+
 bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 {
 	list_reader_t fmt1 = {0}, fmt2 = {0};
@@ -223,7 +252,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				return throw_error(q, p2, p2_ctx, "domain_error", "positive");
 			}
 
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (is_float(c)) {
@@ -419,13 +448,17 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 		switch(ch) {
 		case 's':
-			if (is_iso_list(c) && !check_list(q, c, c_ctx, &is_partial, NULL) && is_partial)
+			if (is_iso_list(c) && !check_list(q, c, c_ctx, &is_partial, NULL) && is_partial) {
+				TPL_free(tmpbuf);
 				return throw_error(q, c, c_ctx, "instantiation_error", "atom");
+			}
 
 			if (is_nil(c)) {
 			} else if (is_var(c)) {
+				TPL_free(tmpbuf);
 				return throw_error(q, c, c_ctx, "instantiation_error", "atom");
 			} else if (is_number(c)) {
+				TPL_free(tmpbuf);
 				return throw_error(q, c, c_ctx, "type_error", "atom");
 			} else if (is_atom(c)) {
 				int len = noargval ? (int)C_STRLEN_UTF8(c) : MIN_OF(argval, (int)C_STRLEN_UTF8(c));
@@ -463,7 +496,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			break;
 
 		case 'c': {
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (is_float(c)) {
@@ -488,7 +521,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		}
 		case 'e':
 		case 'E': {
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (!is_float(c)) {
@@ -517,7 +550,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		}
 		case 'g':
 		case 'G': {
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (!is_float(c)) {
@@ -545,7 +578,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			break;
 		}
 		case 'f': {
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (!is_float(c)) {
@@ -565,7 +598,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			break;
 		}
 		case 'I': {
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (is_float(c)) {
@@ -586,7 +619,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			break;
 		}
 		case 'd': {
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (is_float(c)) {
@@ -607,7 +640,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			break;
 		}
 		case 'D': {
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (is_float(c)) {
@@ -634,7 +667,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				return throw_error(q, p1, p1_ctx, "domain_error", "radix_invalid");
 			}
 
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (is_float(c)) {
@@ -660,7 +693,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				return throw_error(q, p1, p1_ctx, "domain_error", "radix_invalid");
 			}
 
-			cell p1 = eval(q, c);
+			FMT_EVAL(p1, c);
 			c = &p1;
 
 			if (is_float(c)) {
@@ -775,7 +808,8 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			char *tmpbuf2 = print_term_to_strbuf(q, c, c_ctx, 1);
 
 			if (q->cycle_error) {
-				TPL_free(tmpbuf);
+				TPL_free(tmpbuf2);		// the matching block below frees
+				TPL_free(tmpbuf);		// both; this one did not
 				return throw_error(q, c, q->st.cur_ctx, "resource_error", "cyclic");
 			}
 
