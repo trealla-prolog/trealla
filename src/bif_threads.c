@@ -2385,3 +2385,20 @@ builtins g_threads_bifs[] =
 
 	{0}
 };
+
+#if !USE_THREADS
+
+// get_self() is defined inside the USE_THREADS block above, but
+// bif_os.c's SIGALRM handler calls it unconditionally. Without this
+// the threadless build - which is the WASI/WASM configuration - fails
+// to link at -O0; -O3 only papered over it by dropping the unused
+// handler before the reference reached the linker.
+//
+// With no threads there is exactly one, and it is threads[0].
+
+thread *get_self(prolog *pl)
+{
+	return pl ? &pl->threads[0] : NULL;
+}
+
+#endif
