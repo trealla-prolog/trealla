@@ -3116,6 +3116,33 @@ static bool bif_help_1(query *q)
 	return true;
 }
 
+
+// Trealla has no per-predicate documentation site. The generated
+// predicate reference in README.md is what the GitHub Pages site
+// renders, so point there.
+
+#define DOC_URL_TREALLA "https://trealla-prolog.github.io/trealla/#predicate-reference"
+
+// Emit a documentation URL, as an OSC 8 terminal hyperlink when we are
+// talking to a terminal and as plain text otherwise.
+//
+// Guarded on stdin *and* stdout being ttys. stdin is the interactive
+// check; stdout matters because otherwise
+//
+//     tpl -g "help(append/3,swi)" > notes.txt
+//
+// would write escape sequences into the file. Terminals that don't
+// understand OSC 8 ignore it and show the text, which is why the URL
+// is also the link label.
+
+static void print_doc_url(const char *url)
+{
+	if (isatty(fileno(stdin)) && isatty(fileno(stdout)))
+		fprintf(stdout, "\x1b]8;;%s\x1b\\%s\x1b]8;;\x1b\\", url, url);
+	else
+		fprintf(stdout, "%s", url);
+}
+
 static bool bif_help_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -3169,16 +3196,46 @@ static bool bif_help_2(query *q)
 	if (!found || !fn)
 		return false;
 
+	// url was only ever written for swi and tau. Any other flavour -
+	// including the obvious help(F/A, trealla) - left it as whatever
+	// was on the stack and printed that with %s, reading on until it
+	// happened to find a zero byte.
+	//
+	// trealla now reports our own entry, the same as help/1, and an
+	// unrecognised flavour is an error rather than garbage.
+
 	if (!strcmp(pr, "swi"))
 		snprintf(url, sizeof(url), "http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
 	else if (!strcmp(pr, "tau"))
 		snprintf(url, sizeof(url), "http://tau-prolog.org/documentation/prolog/builtin/%s/%u", functor, arity);
+	else if (!strcmp(pr, "trealla")) {
+		// Trealla has no per-predicate documentation site, so this
+		// reports the local entry and links to the generated predicate
+		// reference in the README, which is what the GitHub Pages site
+		// renders. Deep-linking to the predicate itself would need
+		// per-row anchors in util/gen_reference.py.
 
-	if (arity)
-		fprintf(stdout, "%% %s/%u: %s\n", fn->name, arity, url);
-	else
-		fprintf(stdout, "%% %s/%u: %s\n", fn->name, arity, url);
+		if (arity)
+			fprintf(stdout, "%% %s/%u: %s(%s)%s%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		else
+			fprintf(stdout, "%% %s/%u: %s%s%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 
+		// Only 31 of the help declarations carry a desc, so most
+		// predicates would otherwise print a blank line here.
+
+		if (fn->desc && *fn->desc)
+			fprintf(stdout, "%s\n", fn->desc);
+
+		fprintf(stdout, "%% ");
+		print_doc_url(DOC_URL_TREALLA);
+		fprintf(stdout, "\n");
+		return true;
+	} else
+		return throw_error(q, p2, p2_ctx, "domain_error", "help_flavour");
+
+	fprintf(stdout, "%% %s/%u: ", fn->name, arity);
+	print_doc_url(url);
+	fprintf(stdout, "\n");
 	return true;
 }
 
@@ -3334,15 +3391,29 @@ static bool bif_module_help_3(query *q)
 	if (!found || !fn)
 		return false;
 
+	// As in help/2: url was only written for swi and tau, and printed
+	// regardless, so any other flavour printed uninitialised stack.
+
 	if (!strcmp(pr, "swi"))
-		snprintf(url, sizeof(url), "%% http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
+		snprintf(url, sizeof(url), "http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
 	else if (!strcmp(pr, "tau"))
-		snprintf(url, sizeof(url), "%% http://tau-prolog.org/documentation/prolog/builtin/%s/%u", functor, arity);
+		snprintf(url, sizeof(url), "http://tau-prolog.org/documentation/prolog/builtin/%s/%u", functor, arity);
+	else if (!strcmp(pr, "trealla"))
+		snprintf(url, sizeof(url), "%s", DOC_URL_TREALLA);
+	else
+		return throw_error(q, p2, p2_ctx, "domain_error", "help_flavour");
 
 	if (arity)
-		fprintf(stdout, "%s/%u: %s(%s)%s%s %s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+		fprintf(stdout, "%s/%u: %s(%s)%s%s", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 	else
-		fprintf(stdout, "%s/%u: %s%s%s %s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+		fprintf(stdout, "%s/%u: %s%s%s", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+
+	if (url[0]) {
+		fprintf(stdout, " %% ");
+		print_doc_url(url);
+		fprintf(stdout, "\n");
+	} else
+		fprintf(stdout, "\n%s\n", fn->desc ? fn->desc : "");
 
 	return true;
 }
