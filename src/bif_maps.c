@@ -29,31 +29,31 @@ static bool bif_map_create_2(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
-				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "permission_error", "open,source_sink"); }
 
 			sl_app(str->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
 			if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-				return false;
+				{ unwind_stream(q, n); return false; }
 
 			is_alias = true;
 		} else {
-			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+			{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 		}
 
 		p4 = LIST_TAIL(p4);
@@ -61,7 +61,7 @@ static bool bif_map_create_2(query *q)
 		p4_ctx = q->latest_ctx;
 
 		if (is_var(p4))
-			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 	}
 
 	str->keyval = sl_create((void*)fake_strcmp, (void*)fake_free, NULL);
@@ -74,7 +74,7 @@ static bool bif_map_create_2(query *q)
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_MAP;
 
 		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-			return false;
+			{ unwind_stream(q, n); return false; }
 	}
 
 	return true;
@@ -341,31 +341,31 @@ static bool bif_engine_create_4(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
-				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "permission_error", "open,source_sink"); }
 
 			sl_app(str->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
 			if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-				return false;
+				{ unwind_stream(q, n); return false; }
 
 			is_alias = true;
 		} else {
-			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+			{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 		}
 
 		p4 = LIST_TAIL(p4);
@@ -373,12 +373,12 @@ static bool bif_engine_create_4(query *q)
 		p4_ctx = q->latest_ctx;
 
 		if (is_var(p4))
-			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 	}
 
 	if (is_atom(p3)) {
 		if (get_named_stream(q->pl, C_STR(q, p3), C_STRLEN(q, p3)) >= 0)
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "open,source_sink");
+			{ unwind_stream(q, n); return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "open,source_sink"); }
 
 		sl_app(str->alias, DUP_STRING(q, p3), NULL);
 	} else if (!is_alias) {

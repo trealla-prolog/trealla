@@ -879,6 +879,42 @@ static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t
 #endif
 
 
+// Release a stream slot that was handed out by new_stream() but never
+// finished being built. open/4 allocates filename, mode and the alias
+// skiplist BEFORE parsing options, and the option loop has a dozen
+// error exits; each one used to return straight out. The slot stayed
+// is_active, so 1024 bad-option opens exhausted MAX_STREAMS and every
+// later open/4 raised resource_error(too_many_streams). The paths that
+// did clear is_active still leaked the three allocations.
+//
+// Not stream_close(): that assumes a fully built stream and would
+// tpl_close() a NULL fp. Here fp may or may not exist, so close it
+// only if it does.
+
+void unwind_stream(query *q, int n)
+{
+	stream *str = &q->pl->streams[n];
+
+	if (str->fp && (str->fp != stdin) && (str->fp != stdout) && (str->fp != stderr))
+		fclose(str->fp);
+
+	str->fp = str->fp_in = str->fp_out = NULL;
+	parser_destroy(str->p);
+	str->p = NULL;
+	sl_destroy(str->alias);
+	str->alias = NULL;
+	TPL_free(str->filename);
+	str->filename = NULL;
+	TPL_free(str->mode);
+	str->mode = NULL;
+	TPL_free(str->addr);
+	str->addr = NULL;
+	TPL_free(str->data);
+	str->data = NULL;
+	str->is_active = false;
+}
+
+
 static bool bif_iso_open_4(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
@@ -898,20 +934,20 @@ static bool bif_iso_open_4(query *q)
 		int oldn = get_stream(q, p1+1);
 
 		if (oldn < 0)
-			return throw_error(q, p1, p1_ctx, "type_error", "not_a_stream");
+			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "type_error", "not_a_stream"); }
 
 		oldstr = &q->pl->streams[oldn];
 		filename = oldstr->filename;
 	} else if (is_atom(p1))
 		filename = src = DUP_STRING(q, p1);
 	else if (!is_iso_list(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+		{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "domain_error", "source_sink"); }
 
 	if (is_iso_list(p1)) {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
 		if (!len)
-			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "type_error", "atom"); }
 
 		filename = src = chars_list_to_string(q, p1, p1_ctx);
 	}
@@ -938,7 +974,7 @@ static bool bif_iso_open_4(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
@@ -953,19 +989,19 @@ static bool bif_iso_open_4(query *q)
 #endif
 		} else if (!CMP_STRING_TO_CSTR(q, c, "encoding")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 		} else if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
-				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "permission_error", "open,source_sink"); }
 
 			if (!CMP_STRING_TO_CSTR(q, name, "current_input")) {
 				q->pl->current_input = n;
@@ -980,30 +1016,30 @@ static bool bif_iso_open_4(query *q)
 				make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
 				if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-					return false;
+					{ unwind_stream(q, n); return false; }
 
 				is_alias = true;
 #endif
 			}
 		} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 
 			if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "binary")) {
 				binary = true;
 			} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "text"))
 				binary = false;
 			else
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 		} else if (!CMP_STRING_TO_CSTR(q, c, "bom")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 
 			bom_specified = true;
 
@@ -1013,10 +1049,10 @@ static bool bif_iso_open_4(query *q)
 				use_bom = false;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "reposition")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 
 			if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true"))
 				repo = true;
@@ -1024,10 +1060,10 @@ static bool bif_iso_open_4(query *q)
 				repo = false;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "eof_action")) {
 			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option"); }
 
 			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 
 			if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "error")) {
 				eof_action = eof_action_error;
@@ -1037,7 +1073,7 @@ static bool bif_iso_open_4(query *q)
 				eof_action = eof_action_reset;
 			}
 		} else {
-			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+			{ unwind_stream(q, n); return throw_error(q, c, c_ctx, "domain_error", "stream_option"); }
 		}
 
 		p4 = LIST_TAIL(p4);
@@ -1045,7 +1081,7 @@ static bool bif_iso_open_4(query *q)
 		p4_ctx = q->latest_ctx;
 
 		if (is_var(p4))
-			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 	}
 
 	struct stat st = {0};
@@ -1057,7 +1093,7 @@ static bool bif_iso_open_4(query *q)
 
 	if (statted && S_ISDIR(st.st_mode)) {
 		str->is_active = false;
-		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
+		{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink"); }
 	}
 
 	if (!S_ISREG(st.st_mode) && !bom_specified) {
@@ -1086,7 +1122,7 @@ static bool bif_iso_open_4(query *q)
 			str->fp = fdopen(fd, str->binary?"rb+":"r+");
 		else {
 			str->is_active = false;
-			return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
+			{ unwind_stream(q, n); return throw_error(q, p2, p2_ctx, "domain_error", "io_mode"); }
 		}
 	} else {
 		if (!strcmp(str->mode, "read"))
@@ -1099,7 +1135,7 @@ static bool bif_iso_open_4(query *q)
 			str->fp = fopen(str->filename, str->binary?"rb+":"r+");
 		else {
 			str->is_active = false;
-			return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
+			{ unwind_stream(q, n); return throw_error(q, p2, p2_ctx, "domain_error", "io_mode"); }
 		}
 	}
 
@@ -1109,11 +1145,11 @@ static bool bif_iso_open_4(query *q)
 		if ((errno == EACCES) || (strcmp(str->mode, "read")
 			&& ((errno == EROFS) || (errno == EISDIR))
 			))
-			return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
+			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink"); }
 		//else if ((strcmp(str->mode, "read") && (errno == EISDIR)))
 		//	return throw_error(q, p1, p1_ctx, "permission_error", "open,isadir");
 		else
-			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
+			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "existence_error", "source_sink"); }
 	}
 
 	str->fp_out = str->fp;

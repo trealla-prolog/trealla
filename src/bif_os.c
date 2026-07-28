@@ -743,13 +743,13 @@ static bool bif_popen_4(query *q)
 	if (is_atom(p1))
 		filename = src = DUP_STRING(q, p1);
 	else if (!is_iso_list(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+		{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "domain_error", "source_sink"); }
 
 	if (is_iso_list(p1)) {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
 		if (!len)
-			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "type_error", "atom"); }
 
 		src = chars_list_to_string(q, p1, p1_ctx);
 		filename = src;
@@ -772,7 +772,7 @@ static bool bif_popen_4(query *q)
 
 		if (is_var(c)) {
 			TPL_free(src);	// FIX: free src on error
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 		}
 
 		if (is_compound(c) && (c->arity == 1)) {
@@ -782,7 +782,7 @@ static bool bif_popen_4(query *q)
 
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
 				TPL_free(src);	// FIX: free src on error
-				return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink");
+				{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink"); }
 			}
 
 			if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
@@ -799,7 +799,7 @@ static bool bif_popen_4(query *q)
 					make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
 					if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-						return false;
+						{ unwind_stream(q, n); return false; }
 
 					is_alias = true;
 #endif
@@ -820,7 +820,7 @@ static bool bif_popen_4(query *q)
 			}
 		} else {
 			TPL_free(src);	// FIX: free src on error
-			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
+			{ unwind_stream(q, n); return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option"); }
 		}
 
 		p4 = LIST_TAIL(p4);
@@ -829,7 +829,7 @@ static bool bif_popen_4(query *q)
 
 		if (is_var(p4)) {
 			TPL_free(src);	// FIX: free src on error
-			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+			{ unwind_stream(q, n); return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated"); }
 		}
 	}
 
@@ -842,7 +842,7 @@ static bool bif_popen_4(query *q)
 		str->fp = popen(filename, binary?"wb":"w");
 	else {
 		str->is_active = false;
-		return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
+		{ unwind_stream(q, n); return throw_error(q, p2, p2_ctx, "domain_error", "io_mode"); }
 	}
 
 	TPL_free(src);
@@ -851,9 +851,9 @@ static bool bif_popen_4(query *q)
 		str->is_active = false;
 
 		if ((errno == EACCES) || (strcmp(str->mode, "read") && (errno == EROFS)))
-			return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
+			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink"); }
 		else
-			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
+			{ unwind_stream(q, n); return throw_error(q, p1, p1_ctx, "existence_error", "source_sink"); }
 	}
 
 	str->fp_out = str->fp;
@@ -864,7 +864,7 @@ static bool bif_popen_4(query *q)
 		tmp.flags |= FLAG_INT_STREAM;
 
 		if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-			return false;
+			{ unwind_stream(q, n); return false; }
 	}
 
 	return true;
