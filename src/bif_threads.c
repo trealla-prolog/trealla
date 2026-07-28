@@ -191,6 +191,29 @@ void thread_deinitialize(prolog *pl)
 	}
 }
 
+// Release a thread/mutex/queue slot whose option list failed to parse.
+//
+// Clearing is_active alone is not enough once an alias(...) option has
+// been seen: t->alias is a DUP_STRING that leaks, and it is still
+// registered in pl->alias, so the skiplist keeps a pointer into a slot
+// that has just been handed back. Reachable whenever a LATER option is
+// bad - mutex_create(M, [alias(foo), bogus]) and the same shape for
+// message_queue_create/2 and thread_create/3.
+//
+// thread_deinitialize() has always done the full teardown; these three
+// option loops just never reached it.
+
+static void unwind_thread(prolog *pl, thread *t)
+{
+	if (t->alias) {
+		sl_del(pl->alias, t->alias);
+		TPL_free(t->alias);
+		t->alias = NULL;
+	}
+
+	t->is_active = false;
+}
+
 static bool is_thread_or_alias(query *q, cell *c)
 {
 	pl_ctx c_ctx = 0;
@@ -809,7 +832,7 @@ static bool bif_thread_create_3(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 		}
 
@@ -818,17 +841,17 @@ static bool bif_thread_create_3(query *q)
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 			}
 
 			if (!is_atom(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 			}
 
 			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
@@ -838,19 +861,19 @@ static bool bif_thread_create_3(query *q)
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
 			if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return false;
 			}
 
 			is_alias = true;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "at_exit")) {
 			if (is_var(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 			}
 
 			if (!is_callable(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 			}
 
@@ -858,19 +881,19 @@ static bool bif_thread_create_3(query *q)
 			at_exit_goal_ctx = q->latest_ctx;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "detached")) {
 			if (is_var(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 			}
 
 			if (c->arity != 1) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 			}
 
 			if (is_interned(name) && (name->val_off == g_true_s))
 				is_detached = true;
 		} else {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
 
@@ -879,7 +902,7 @@ static bool bif_thread_create_3(query *q)
 		p3_ctx = q->latest_ctx;
 
 		if (is_var(p3)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 		}
 	}
@@ -961,7 +984,7 @@ static bool bif_thread_join_2(query *q)
 	void *retval;
 
 	if (pthread_join((pthread_t)t->id, &retval)) {
-		t->is_active = false;
+		unwind_thread(q->pl, t);
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_joinable");
 	}
 
@@ -1509,7 +1532,7 @@ static bool bif_message_queue_create_2(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 		}
 
@@ -1518,17 +1541,17 @@ static bool bif_message_queue_create_2(query *q)
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 			}
 
 			if (!is_atom(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 			}
 
 			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
@@ -1538,13 +1561,13 @@ static bool bif_message_queue_create_2(query *q)
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
 			if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return false;
 			}
 
 			is_alias = true;
 		} else {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
 
@@ -1553,7 +1576,7 @@ static bool bif_message_queue_create_2(query *q)
 		p2_ctx = q->latest_ctx;
 
 		if (is_var(p2)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 		}
 	}
@@ -1566,7 +1589,7 @@ static bool bif_message_queue_create_2(query *q)
 		tmp.flags |= FLAG_INT_THREAD;
 
 		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return false;
 		}
 	}
@@ -1833,7 +1856,7 @@ static bool bif_mutex_create_2(query *q)
 		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 		}
 
@@ -1842,17 +1865,17 @@ static bool bif_mutex_create_2(query *q)
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 			}
 
 			if (!is_atom(name)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 			}
 
 			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
@@ -1862,13 +1885,13 @@ static bool bif_mutex_create_2(query *q)
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
 			if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-				t->is_active = false;
+				unwind_thread(q->pl, t);
 				return false;
 			}
 
 			is_alias = true;
 		} else {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
 
@@ -1877,7 +1900,7 @@ static bool bif_mutex_create_2(query *q)
 		p2_ctx = q->latest_ctx;
 
 		if (is_var(p2)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 		}
 	}
@@ -1890,7 +1913,7 @@ static bool bif_mutex_create_2(query *q)
 		tmp.flags |= FLAG_INT_THREAD;
 
 		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx)) {
-			t->is_active = false;
+			unwind_thread(q->pl, t);
 			return false;
 		}
 	}
