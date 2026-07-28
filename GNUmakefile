@@ -126,7 +126,6 @@ SRCOBJECTS = tpl.o \
 	src/base64.o \
 	src/bif_atts.o \
 	src/bif_bboard.o \
-	src/tabling.o \
 	src/bif_control.o \
 	src/bif_csv.o \
 	src/bif_database.o \
@@ -141,6 +140,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_sort.o \
 	src/bif_sregex.o \
 	src/bif_streams.o \
+	src/bif_tabling.o \
 	src/bif_tasks.o \
 	src/bif_threads.o \
 	src/compile.o \
