@@ -2353,6 +2353,11 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 			return false;
 		}
 
+		bool is_partial = false;
+
+		if (!check_list(q, c1, c1_ctx, &is_partial, NULL) && !is_partial)
+			throw_error(q, c, c_ctx, "domain_error", "write_option");
+
 		cell *c1_orig = c1;
 		pl_ctx c1_orig_ctx = c1_ctx;
 		bool any1 = false, any2 = false;
@@ -2361,11 +2366,8 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 		while (is_list(c1)) {
 			cell *h = LIST_HEAD(c1);
 			pl_ctx h_ctx = c1_ctx;
-
-			slot *e = NULL;
-			uint32_t save_vgen = 0;
-			int both = 0;
-			DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+			h = deref(q, h, h_ctx);
+			h_ctx = q->latest_ctx;
 
 			if (is_var(h)) {
 				throw_error(q, h, h_ctx, "instantiation_error", "write_option");
@@ -2392,26 +2394,11 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 					throw_error(q, c, c_ctx, "domain_error", "write_option");
 					return false;
 				}
-
-#if 0
-				cell *h2 = deref(q, h+2, h_ctx);
-
-				if (!is_var(h2)) {
-					throw_error(q, c, c_ctx, "domain_error", "write_option");
-					return false;
-				}
-#endif
 			}
 
 			c1 = LIST_TAIL(c1);
-
-			both = 0;
-			DEREF_VAR(any2, both, save_vgen, e, e->vgen, c1, c1_ctx, q->vgen);
-
-			if (both) {
-				throw_error(q, c, c_ctx, "domain_error", "write_option");
-				return false;
-			}
+			c1 = deref(q, c1, h_ctx);
+			c1_ctx = q->latest_ctx;
 		}
 
 		if (is_var(c1)) {
