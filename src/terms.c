@@ -43,8 +43,6 @@ static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 	return false;
 }
 
-static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
-
 typedef struct {
 	lnode hdr;
 	cell *p1;
@@ -165,53 +163,6 @@ void collect_vars(query *q, cell *p1, pl_ctx p1_ctx)
 	q->vars = NULL;
 }
 
-static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
-
-static bool has_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
-{
-	cell *l = p1;
-	pl_ctx l_ctx = p1_ctx;
-	bool any1 = false, any2 = false;
-
-	while (is_iso_list(l)) {
-		cell *h = l + 1;
-		pl_ctx h_ctx = l_ctx;
-		slot *e = NULL;
-		uint32_t save_vgen;
-		int both = 0;
-
-		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
-
-		if (!both)
-			if (has_vars_internal(q, h, h_ctx, depth+1))
-				return true;
-
-		if (e) e->vgen = save_vgen;
-		l = l + 1; l += l->num_cells;
-		e = NULL;
-		both = 0;
-
-		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
-
-		if (both)
-			return false;
-	}
-
-	if (any2) {
-		l = p1;
-		l_ctx = p1_ctx;
-
-		while (is_iso_list(l)) {
-			l = l + 1; l += l->num_cells;
-			cell *c = l;
-			pl_ctx c_ctx = l_ctx;
-			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
-		}
-	}
-
-	return has_vars_internal(q, l, l_ctx, depth+1);
-}
-
 static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (is_var(p1))
@@ -219,9 +170,6 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 
 	if (!is_compound(p1) || is_ground(p1))
 		return false;
-
-	if (is_iso_list(p1))
-		return has_vars_lists(q, p1, p1_ctx, depth+1);
 
 	// Transform recursion into stack iteration...
 
@@ -236,7 +184,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 		pl_ctx p1_ctx = n->c_ctx;
 		TPL_free(n);
 
-		if (!is_compound(p1) || is_iso_list(p1)) {
+		if (!is_compound(p1)) {
 			if (has_vars_internal(q, p1, p1_ctx, depth+1)) {
 				while ((n = (snode*)list_pop_front(&stack)) != NULL)
 					TPL_free(n);
