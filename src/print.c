@@ -469,7 +469,7 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	char tmpbuf[256];
 
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
-		if (q->varnames && q->top->vartab.off[c->var_num]) {
+		if (q->top->vartab.off[c->var_num]) {
 			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf));
