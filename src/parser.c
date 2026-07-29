@@ -5162,7 +5162,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		p->pl->error = q->error;
 		p->pl->is_redo = q->is_redo;
 		ok = !q->error;
-		p->m = q->st.m;
+		//p->m = q->st.m;
 
 		if (!subq)
 			query_destroy(q);
