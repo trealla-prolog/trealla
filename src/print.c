@@ -477,7 +477,8 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf));
 	} else if (q->is_dump_vars) {
-		if ((c_ctx == 0) && (c->var_num < q->top->num_vars)) {
+		if ((c_ctx == 0) && (c->var_num < q->top->num_vars) && !is_anon(c)
+			&& (strcmp(GET_POOL(q, q->top->vartab.off[c->var_num]), "_"))) {
 			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf));
@@ -522,7 +523,7 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 		cell *v = 0 && running ? deref(q, h+2, h_ctx) : h+2;
 		pl_ctx v_ctx = 0 && running ? q->latest_ctx : l_ctx;
 
-		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx)) {
+		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx) && !is_anon(c) && !is_anon(v)) {
 			SB_sprintf(q->sb, "%s", C_STR(q, name));
 			q->last_thing = WAS_OTHER;
 			return true;

@@ -413,8 +413,10 @@ void dump_vars(query *q, bool partial)
 			continue;
 
 		if (is_ref(c)) {
+#if 0
 			if (GET_POOL(q, p->vartab.off[c->var_num])[0] == '_')
 				continue;
+#endif
 		}
 
 		if (any)
