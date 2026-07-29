@@ -45,52 +45,6 @@ static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 
 static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
 
-static void collect_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
-{
-	cell *l = p1;
-	pl_ctx l_ctx = p1_ctx;
-	bool any1 = false, any2 = false;
-
-	while (is_iso_list(l)) {
-		cell *h = l + 1;
-		pl_ctx h_ctx = l_ctx;
-		slot *e = NULL;
-		uint32_t save_vgen;
-		int both = 0;
-
-		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
-
-		if (!both && is_var(h) && !(h->flags & FLAG_VAR_CYCLIC))
-			accum_var(q, h, h_ctx);
-		else if (!both)
-			collect_vars_internal(q, h, h_ctx, depth+1);
-
-		if (e) e->vgen = save_vgen;
-		l = l + 1; l += l->num_cells;
-		e = NULL;
-		both = 0;
-
-		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
-
-		if (both)
-			return;
-	}
-
-	if (any2) {
-		l = p1;
-		l_ctx = p1_ctx;
-
-		while (is_iso_list(l)) {
-			l = l + 1; l += l->num_cells;
-			cell *c = l;
-			pl_ctx c_ctx = l_ctx;
-			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
-		}
-	}
-
-	collect_vars_internal(q, l, l_ctx, depth+1);
-}
-
 typedef struct {
 	lnode hdr;
 	cell *p1;
@@ -110,11 +64,6 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 	if (!is_compound(p1) || is_ground(p1))
 		return;
-
-	if (is_iso_list(p1)) {
-		collect_vars_lists(q, p1, p1_ctx, depth+1);
-		return;
-	}
 
 	// Transform recursion into stack iteration (as in has_vars_internal):
 	//
@@ -176,9 +125,6 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 		if (is_var(c) && !(c->flags & FLAG_VAR_CYCLIC)) {
 			accum_var(q, c, c_ctx);
-			if (e) e->vgen = save_vgen;
-		} else if (is_iso_list(c)) {
-			collect_vars_lists(q, c, c_ctx, n->depth+1);
 			if (e) e->vgen = save_vgen;
 		} else if (is_compound(c) && !is_ground(c)) {
 			// Descend iteratively instead of recursing; defer the vgen
