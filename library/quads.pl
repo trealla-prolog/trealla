@@ -345,12 +345,31 @@ attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 	witness(Q, VNs, W),
 	copy_term(Q-W, Q1-W1),
 	call_nth(M:Q1, N),
-	copy_term(qd(Q,W,VNs,Items), qd(_,W2,VNs2,Items2)),
+	copy_term(qd(Q,W,VNs,Items), qd(Q2,W2,VNs2,Items2)),
 	link_names(VNs2),
+	bound_in_query(Items2, Q2),
 	apply_equations(Items2),
 	variant(W1, W2).
 attempt_match(M, Q, _, N, _) :-
 	call_nth(M:Q, N).
+
+% An answer substitution binds variables of the query, so a description
+% binding anything else does not describe an answer of it (issue #1077):
+% '?- true.' is answered by 'true', never by 'X = 1'. Such a binding was
+% simply dropped by witness/3 below, which reports only the query's own
+% variables, and so could never make a quad fail. Names are linked
+% first, so a description variable sharing a name with one of the query
+% is one of the query's.
+
+bound_in_query(Items, Q) :-
+	term_variables(Q, QVs),
+	bound_vars(Items, Vs),
+	vars_among(Vs, QVs).
+
+vars_among([], _).
+vars_among([V|T], QVs) :-
+	var_member(V, QVs),
+	vars_among(T, QVs).
 
 % The named variables of the query: exactly the bindings a toplevel
 % would report. Anonymous variables are not recorded in VarNames.

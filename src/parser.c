@@ -1122,16 +1122,6 @@ static bool quads(parser *p, cell *d)
 	answer_vars seen = {0};
 	enum answer_kind kind = answer_one(p, d, &seen);
 
-	if (kind == ANSWER_BAD) {
-		if (!p->do_read_term)
-			printf("Error: malformed answer description, %s:%d\n", get_loaded(m, m->filename), p->line_num);
-
-		p->error_desc = "malformed_answer_description";
-		p->error = true;
-		quad_reset(m);
-		return true;
-	}
-
 	if (kind == ANSWER_NO) {
 		if (m->quad_query && !m->quad_recorded)
 			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
@@ -1143,6 +1133,13 @@ static bool quads(parser *p, cell *d)
 	// A quad may carry more than one answer description, and all of
 	// them have to hold. Keep the query so each following description
 	// is recorded against it, rather than discarding all but the first.
+	//
+	// A malformed one (ANSWER_BAD) is recorded too, so the load carries
+	// on and run_quads reports it as failed, rather than each such case
+	// needing a file of its own (issue #1078). It must still be consumed
+	// here: left to ordinary clause loading, an equation would surface
+	// as a permission error on (=)/2. library(quads) repeats the shape
+	// check, so nothing is lost by not reporting it now.
 
 	if (m->quad_query) {
 		quad_record(p, d);
