@@ -6,9 +6,11 @@
 
   When a file is consulted the compiler records each quad as a fact
 
-      '$quad'(Query, VarNames, AnswerDescription, File, Line)
+      '$quad'(Id, Query, VarNames, AnswerDescription, File, Line)
 
-  in the module being consulted. Nothing is executed at load time.
+  in the module being consulted, Id being the label of a quad written
+  'Name ?- Query.' and unbound otherwise. Nothing is executed at load
+  time.
   This library interprets the recorded quads as tests:
 
       ?- use_module(library(quads)).
@@ -45,6 +47,21 @@
          true
       ;  true
       ;  ... .
+
+  ... accepts any further answers, and so does ad_infinitum, which
+  states that there are infinitely many of them:
+
+      ?- repeat.
+         true
+      ;  ad_infinitum.
+
+  Both are annotations, so either may also be written as a conjunct of
+  the last answer described ('X = 1, ... .').
+
+  A query that does not terminate is described by loops:
+
+      ?- repeat, fail.
+         loops.
 
   Alternative acceptable outcomes are separated by (|)/2.
 
@@ -92,17 +109,22 @@
 run_quads :-
 	run_quads(user).
 
+% The count run_quads_halt/0 exits on is recorded by every run, a run
+% over a module without quads included: leaving the previous count in
+% place would halt non-zero on 'nothing to run'.
+
 run_quads(M) :-
 	quad_list(M, Qs),
 	( Qs == [] ->
-		write('quads: nothing to run.'), nl
+		write('quads: nothing to run.'), nl,
+		Failed = 0
 	;	run_list(Qs, M, 0, Passed, 0, Failed),
 		Total is Passed + Failed,
 		write('quads: '), write(Total), write(' run, '),
 		write(Passed), write(' passed, '),
-		write(Failed), write(' failed.'), nl,
-		bb_put(quads_failed, Failed)
-	).
+		write(Failed), write(' failed.'), nl
+	),
+	bb_put(quads_failed, Failed).
 
 run_quads_halt :-
 	run_quads,
@@ -328,7 +350,8 @@ has_outputs(Sol) :-
 
 % Walk the expected solutions, requesting the Nth answer of the
 % query for the Nth description. After the last description the
-% query must yield no further answer, unless ... said otherwise.
+% query must yield no further answer, unless ... or ad_infinitum said
+% otherwise.
 %
 % Mode = capture when any solution of this alternative uses outputs/1:
 % each call_nth(N) is captured in full, and only the suffix beyond the
@@ -345,24 +368,39 @@ check_solutions([Sol0|T], M, Q, VNs, N, Mode, PrevCs) :-
 	conj(Sol0, Items0),
 	drop_annotation(Items0, unexpected, Items, Unexpected),
 	drop_annotation(Items, sto, Items1, Sto),
-	take_output(Items1, Items2, Output),
-	rebuild_conj(Items2, Sol),
-	( Items2 = [...|_] ->
-		true
+	drop_more(Items1, Items2, More),
+	take_output(Items2, Items3, Output),
+	rebuild_conj(Items3, Sol),
+	( More == true, Items3 == [] ->
+		true							% any further answers accepted
 	; Sto == true ->
 		true
-	; Items2 = [loops] ->
+	; Items3 = [loops] ->
 		expect(Unexpected, M, Q, VNs, N, loops, Output, Mode, PrevCs, _)
-	; Items2 = [false] ->
+	; Items3 = [false] ->
 		T == [],
 		expect(Unexpected, M, Q, VNs, N, none, Output, Mode, PrevCs, _)
 	; expected_ball(Sol, Ball) ->
 		T == [],
 		expect(Unexpected, M, Q, VNs, N, ball(Ball), Output, Mode, PrevCs, _)
-	;	expect(Unexpected, M, Q, VNs, N, solution(Items2), Output, Mode, PrevCs, FullCs),
-		N1 is N + 1,
-		check_solutions(T, M, Q, VNs, N1, Mode, FullCs)
+	;	expect(Unexpected, M, Q, VNs, N, solution(Items3), Output, Mode, PrevCs, FullCs),
+		(	More == true
+		->	true					% described, then anything further
+		;	N1 is N + 1,
+			check_solutions(T, M, Q, VNs, N1, Mode, FullCs)
+		)
 	).
+
+% Both ... and ad_infinitum say that further answers are accepted, the
+% latter that there are infinitely many; neither is checked beyond that.
+% They are annotations rather than answers, so, like unexpected and sto,
+% they are recognised wherever they occur in the conjunction: 'X = 1,
+% ... .' describes the answer X = 1 and accepts whatever follows it.
+
+drop_more(Items0, Items, More) :-
+	drop_annotation(Items0, ..., Items1, Ellipsis),
+	drop_annotation(Items1, ad_infinitum, Items, Infinitely),
+	( Ellipsis == true -> More = true ; More = Infinitely ).
 
 % outputs/1 is stripped before matching the rest of the answer so that
 % 'outputs("3"), instantiation_error' still classifies as a ball, and

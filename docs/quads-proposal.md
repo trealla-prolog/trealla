@@ -196,14 +196,20 @@ seeing the answer term, assert the combined `'$quad'/5` fact.
 
 ### 3.2 Running: `library/quads.pl`
 
-A new embedded library (added to `library.c` like the others) exporting:
+A new embedded library (added to `library.c` like the others). As
+shipped it exports:
 
 ```prolog
-quads:run_all/0        % run every recorded '$quad'/5, report, fail count
-quads:run/1            % run quads whose query calls the given PI, e.g. member/2
+quads:run_quads/0      % run the quads recorded in module user
+quads:run_quads/1      % run the quads recorded in the given module
+quads:run_quads_halt/0 % as run_quads/0, then halt(1) if any failed
 ```
 
-`run_all/0` iterates the `'$quad'/5` facts and for each:
+(The names first proposed were `run_all/0` and a `run/1` selecting quads
+by the predicate indicator their query calls; the latter was not built,
+a module being selection enough so far.)
+
+`run_quads/1` iterates the `'$quad'/6` facts and for each:
 
 1. Unifies same-named variables across the two name lists.
 2. Normalises the answer description: split on `'|'` into acceptable
@@ -211,15 +217,24 @@ quads:run/1            % run quads whose query calls the given PI, e.g. member/2
    expand error shorthands (`instantiation_error` →
    `error(instantiation_error,_)`, etc.); note trailing `...` /
    `ad_infinitum`, `sto`, `unexpected` annotations.
-3. Enumerates solutions of `Query` with a cap (e.g. 64, like Flowlog's
-   `quad_default_solution_cap`) using `catch/3` to capture thrown errors as
-   `error(...)` outcomes, rendering each solution as its `Name = Value`
-   bindings (`false` when no solution, `true` when no visible bindings).
-   `loops` is approximated with `call_with_time_limit/2` (already in
-   `library/iso_ext.pl`); an inference-limit builtin can replace it later.
-4. Compares actual vs expected; on mismatch prints
-   `file:line: quad failed: ?- Query.  expected: ...  got: ...`.
-5. Finally prints `N quads, P passed, F failed`.
+3. Asks for the answer each description describes rather than
+   enumerating and rendering all of them, so no solution cap is needed:
+   the Nth description is checked against `call_nth(Query, N)`, and
+   after the last one a further answer must not exist. `catch/3` turns
+   a thrown ball into an outcome to match, and `loops` is approximated
+   with `call_with_time_limit/2` (already in `library/iso_ext.pl`); an
+   inference-limit builtin can replace it later.
+4. Compares actual vs expected — the bindings of the query's named
+   variables against those the description gives, as variants (§8) —
+   and on mismatch prints
+
+   ```
+   quads: FAILED member_2, tests/misc/quads.pl:126
+      ?- member(X,[1,2]).
+      expected: X=1;X=99
+   ```
+5. Finally prints `quads: N run, P passed, F failed.`, and records F so
+   that `run_quads_halt/0` can exit on it.
 
 Matching semantics can start strict (`==` on rendered bindings modulo variable
 renaming) and grow toward the full Flowlog semantics incrementally — the value
@@ -230,15 +245,15 @@ as well (issue #1088; see §8).
 
 ### 3.3 Invoking
 
-- Interactively, any time after loading (the `'$quad'/5` facts persist):
-  `?- quads:run_all.`
-- Batch: `tpl --quads file.pl` — consult, then call `quads:run_all/0`
-  instead of entering the toplevel, and exit nonzero (via `pl->halt_code`)
-  if any quad failed, so `make quad-tpl`-style runners need no wrapper.
-- Whether recording is always on or gated behind a flag
-  (`:- set_prolog_flag(quads, record).`) is a space/tidiness call; a `'$quad'/5`
-  fact per test is cheap, and always-on means the REPL can run any consulted
-  file's quads without reloading.
+- Interactively, any time after loading (the `'$quad'/6` facts persist):
+  `?- use_module(library(quads)), run_quads.`
+- Batch, exiting non-zero if any quad failed:
+  `tpl file.pl -g 'use_module(library(quads)), run_quads_halt'`.
+  A dedicated `tpl --quads file.pl` option was considered and not added:
+  the goal above needs no wrapper either, and keeping the runner out of
+  the executable's option table keeps quads a library concern.
+- Recording is always on; a `'$quad'/6` fact per test is cheap, and it
+  means the REPL can run any consulted file's quads without reloading.
 
 ### 3.4 Suggested split into PRs
 
@@ -279,7 +294,8 @@ foo(bar).                 % must load; '?-'/1 must NOT exist
 ## 5. Open questions
 
 - Should a pending `in_quad` at `end_of_file` warn (query with no answer
-  description)? Probably yes, once checking is on.
+  description)? Yes, and it does: `Warning: quad query without answer
+  description, file.pl:2`.
 - `X = 1, Y = 2` answers use `,`/2 which is also a valid clause body — the
   form-based skip therefore only treats it as an answer when directly
   following a query, which the design above already does; a bare `true.`
@@ -289,7 +305,10 @@ foo(bar).                 % must load; '?-'/1 must NOT exist
   since `process_term()` checks `ifs_blocked` before `quads()` — but note the
   answer terms too must be skipped while blocked (they are, same check).
 - `sto`/`unexpected`/`ad_infinitum` handling can be stubbed (treated as
-  "any outcome accepted") in the first matcher version.
+  "any outcome accepted") in the first matcher version. `unexpected` is
+  now interpreted (§3.2); `sto` is skipped; `ad_infinitum` accepts any
+  further answers, exactly as `...` does, without checking that there
+  are infinitely many (§12).
 
 ## 6. Answer *substitutions* (issue #1074)
 
@@ -379,10 +398,10 @@ library's own shape checking be tested on hand-written facts.
 
 ## 8. `...` in answer substitutions (issue #1088)
 
-Trailing `...` already means “further answers are accepted” (§2.2,
-`check_solutions/7`). The same atom also stands for an *unspecified
-subterm* inside a binding or an error ball — the English “…” of ISO
-answer descriptions:
+Trailing `...` already means “further answers are accepted”
+(`check_solutions/7`, §12). The same atom also stands for an
+*unspecified subterm* inside a binding or an error ball — the English
+“…” of ISO answer descriptions:
 
 ```prolog
 ?- X = 1.
@@ -453,3 +472,36 @@ user:(,)/2`. The fix elevates a non-description subterm to malformed
 when it occurs under a description constructor, so the term is consumed
 and `library(quads)` reports `not an answer: some_unknown_stuff` like
 any other malformed case (§6 / #1078).
+
+## 12. “Further answers” as an annotation
+
+`...` and `ad_infinitum` both say that whatever answers follow the ones
+described are accepted, the latter that there are infinitely many of
+them; neither is checked beyond that, as §5 allows. `ad_infinitum` used
+to be recognised by the parser and by the library's shape check without
+`check_solutions/7` interpreting it, so it was compared as if it were an
+ordinary answer and any quad using it failed:
+
+```prolog
+?- repeat.
+   true
+;  ad_infinitum.        % failed, where 'true ; ... .' passed
+```
+
+Both are now dropped by `drop_more/3` the way `unexpected` and `sto` are
+dropped by `drop_annotation/4`, which also means they are recognised
+wherever they occur in the conjunction rather than only as the first
+conjunct of an alternative of their own:
+
+```prolog
+?- member(X, [1,2,3]).
+   X = 1, ... .         % X = 1 is checked; further answers accepted
+```
+
+The answer described alongside one of them still has to hold, so
+`X = 9, ... .` fails.
+
+Relatedly, `run_quads/1` records the failure count on every run, one
+over a module with no quads included. Leaving the previous count in the
+blackboard made `run_quads_halt/0` exit non-zero after reporting
+`quads: nothing to run.`

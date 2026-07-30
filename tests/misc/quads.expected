@@ -28,6 +28,9 @@ quads: FAILED outputs_4, tests/misc/quads.pl:208
 quads: FAILED ellipsis_3, tests/misc/quads.pl:222
    ?- X=1.
    expected: X=f(...)
+quads: FAILED more_3, tests/misc/quads.pl:237
+   ?- member(X,[1,2,3]).
+   expected: X=9, ...
 quads: MALFORMED hand_1, hand-written.pl:1
    ?- X=1.
    not an answer: 1=X
@@ -37,4 +40,4 @@ quads: MALFORMED hand_2, hand-written.pl:2
 quads: MALFORMED hand_4, hand-written.pl:4
    ?- V=f(W),W=1.
    not an answer: V=f(W)
-quads: 51 run, 38 passed, 13 failed.
+quads: 54 run, 40 passed, 14 failed.

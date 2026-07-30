@@ -222,6 +222,21 @@ ellipsis_2 ?- length(L, 999).
 ellipsis_3 ?- X = 1.
    X = f(...).
 
+% ad_infinitum accepts any further answers, as '...' does, and either
+% may be written as a conjunct of the answer it follows.
+
+more_1 ?- repeat.
+   true
+;  ad_infinitum.
+
+more_2 ?- member(X, [1,2,3]).
+   X = 1, ... .
+
+% deliberately failing: the answer described alongside '...' must hold
+
+more_3 ?- member(X, [1,2,3]).
+   X = 9, ... .
+
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one
 % answer (issue #1074). The parser rejects a malformed description when
