@@ -1075,15 +1075,11 @@ static bool quads(parser *p, cell *d)
 		cell *id = (d->arity == 2) ? d + 1 : NULL;
 		cell *q = id ? id + id->num_cells : d + 1;
 
-		if (id && !is_ground_term(id)) {
-			if (!p->do_read_term)
-				printf("Error: quad identifier is not ground, %s:%d\n", get_loaded(m, m->filename), p->line_num);
-
-			p->error_desc = "non_ground_quad_identifier";
-			p->error = true;
-			quad_reset(m);
-			return true;
-		}
+		// A non-ground label is recorded like a malformed answer
+		// description (issue #1078): do not set p->error, or the rest
+		// of the file is abandoned and later quads never run. The
+		// following answer terms must still be consumed, and
+		// library(quads) reports the bad identifier as failed.
 
 		if (m->quad_query && !m->quad_recorded)
 			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
@@ -1099,14 +1095,29 @@ static bool quads(parser *p, cell *d)
 		dup_cells(m->quad_query, q, q->num_cells);
 
 		if (id) {
-			m->quad_name = TPL_malloc(sizeof(cell) * id->num_cells);
+			// A non-ground label cannot be stored as-is: a variable
+			// label is indistinguishable from an unlabelled quad once
+			// retrieved. Record a ground sentinel so the load can
+			// continue (issue #1078) and library(quads) reports it.
+			if (!is_ground_term(id)) {
+				m->quad_name = TPL_malloc(sizeof(cell));
 
-			if (!m->quad_name) {
-				p->error = true;
-				return true;
+				if (!m->quad_name) {
+					p->error = true;
+					return true;
+				}
+
+				make_atom(m->quad_name, new_atom(p->pl, "$bad_quad_identifier"));
+			} else {
+				m->quad_name = TPL_malloc(sizeof(cell) * id->num_cells);
+
+				if (!m->quad_name) {
+					p->error = true;
+					return true;
+				}
+
+				dup_cells(m->quad_name, id, id->num_cells);
 			}
-
-			dup_cells(m->quad_name, id, id->num_cells);
 		}
 
 		m->quad_num_vars = p->cl->num_vars;

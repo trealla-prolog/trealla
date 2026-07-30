@@ -63,6 +63,9 @@
   An answer reports an answer *substitution*, so each equation binds a
   variable and no variable is bound twice within one answer. '1 = X'
   and 'X = 1, X = 2' are rejected as malformed, not run as tests.
+
+  A non-ground label ('X ?- true.') is likewise recorded and reported
+  as failed rather than aborting the load (issue #1078).
 */
 
 :- module(quads, [run_quads/0, run_quads/1, run_quads_halt/0]).
@@ -109,7 +112,10 @@ run_list([q(Id, Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 % description term are first unified via the VarNames list.
 
 check_quad(M, Id, Q, VNs, AD, File, Line) :-
-	(	malformed(AD, Bad)
+	(	Id == '$bad_quad_identifier'
+	->	report(bad_identifier, M, Id, Q, VNs, Id, File, Line),
+		fail
+	;	malformed(AD, Bad)
 	->	report(malformed, M, Id, Q, VNs, Bad, File, Line),
 		fail
 	;	alternatives(AD, Alts),
@@ -208,17 +214,28 @@ bound_vars([I|T], Vs) :-
 report(Why, M, Id, Q, VNs, What, File, Line) :-
 	link_names(VNs),
 	write('quads: '), write_why(Why), write(' '),
-	( var(Id) -> true ; write_term(Id, [quoted(true)]), write(', ') ),
+	(	var(Id)
+	->	true
+	;	Id == '$bad_quad_identifier'
+	->	true
+	;	write_term(Id, [quoted(true)]), write(', ')
+	),
 	write(File), write(':'), write(Line), nl,
 	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
-	write('   '), write_what(Why), write(': '),
-	write_term(What, [variable_names(VNs), quoted(true)]), nl.
+	write('   '), write_what(Why, What, VNs), nl.
 
 write_why(failed) :- write('FAILED').
 write_why(malformed) :- write('MALFORMED').
+write_why(bad_identifier) :- write('BAD_ID').
 
-write_what(failed) :- write(expected).
-write_what(malformed) :- write('not an answer').
+write_what(failed, What, VNs) :-
+	write(expected), write(': '),
+	write_term(What, [variable_names(VNs), quoted(true)]).
+write_what(malformed, What, VNs) :-
+	write('not an answer'), write(': '),
+	write_term(What, [variable_names(VNs), quoted(true)]).
+write_what(bad_identifier, _, _) :-
+	write('identifier is not ground').
 
 % An answer description may carry the annotation 'unexpected',
 % meaning the answer it describes must *not* occur. It attaches to a
