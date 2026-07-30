@@ -224,6 +224,9 @@ quads:run/1            % run quads whose query calls the given PI, e.g. member/2
 Matching semantics can start strict (`==` on rendered bindings modulo variable
 renaming) and grow toward the full Flowlog semantics incrementally — the value
 is that all of this lives in Prolog and never touches the parser again.
+`library(quads)` now matches solutions with the same `ball_matches/3` walk
+used for error balls, so `'...'` as an unspecified subterm works in bindings
+as well (issue #1088; see §8).
 
 ### 3.3 Invoking
 
@@ -373,3 +376,36 @@ One consequence of recording quads as data: the first quad in a file
 used to make `'$quad'/6` static, so a program could not add one of its
 own. `quad_record()` now declares it dynamic, which is what lets the
 library's own shape checking be tested on hand-written facts.
+
+## 8. `'...'` in answer substitutions (issue #1088)
+
+Trailing `'...'` already means “further answers are accepted” (§2.2,
+`check_solutions/7`). The same atom also stands for an *unspecified
+subterm* inside a binding or an error ball — the English “…” of ISO
+answer descriptions:
+
+```prolog
+?- X = 1.
+   X = ... .
+
+?- length(L, 999).
+   L = [_A,_B,_C|...].
+```
+
+No parser change is required: `answer_description` accepts any right-hand
+side of `=`/2 once the left side is a variable (§6), so `X = ...` and
+`L = [_A,_B,_C|...]` are already well-formed descriptions. The gap was
+only in the matcher, which compared solution witnesses with `variant/2`
+and therefore demanded a literal `'...'` in the actual answer.
+
+`attempt_match/5` for `solution(Items)` now uses `ball_matches/3` — the
+same predicate that already treats `P == '...'` as matching any subterm
+when checking thrown balls — so a description binding may leave structure
+unspecified without weakening the one-to-one variable correspondence that
+`variant/2` enforced (issue #1080 / #1067). A different functor still
+fails (`X = f(...)` does not describe `X = 1`).
+
+Compound walking in `ball_match/5` uses `functor/3` and `arg/3` rather
+than `(=..)/2`: univ on a list whose elements share variables did not
+decompose reliably in this recursive match, which made complete
+descriptions such as `X = f(Y,Y), Z = Y` fail after the switch.

@@ -209,6 +209,19 @@ outputs_4 ?- write(abc), nl.
    outputs("nope"),
    true.
 
+% '...' in a binding stands for an unspecified subterm (issue #1088).
+
+ellipsis_1 ?- X = 1.
+   X = ... .
+
+ellipsis_2 ?- length(L, 999).
+   L = [_A,_B,_C|...].
+
+% deliberately failing: '...' does not make a different functor match
+
+ellipsis_3 ?- X = 1.
+   X = f(...).
+
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one
 % answer (issue #1074). The parser rejects a malformed description when

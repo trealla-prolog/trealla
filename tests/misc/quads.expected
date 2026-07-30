@@ -25,6 +25,9 @@ quads: FAILED ball_4, tests/misc/quads.pl:163
 quads: FAILED outputs_4, tests/misc/quads.pl:208
    ?- write(abc),nl.
    expected: outputs([n,o,p,e]),true
+quads: FAILED ellipsis_3, tests/misc/quads.pl:222
+   ?- X=1.
+   expected: X=f(...)
 quads: MALFORMED hand_1, hand-written.pl:1
    ?- X=1.
    not an answer: 1=X
@@ -34,4 +37,4 @@ quads: MALFORMED hand_2, hand-written.pl:2
 quads: MALFORMED hand_4, hand-written.pl:4
    ?- V=f(W),W=1.
    not an answer: V=f(W)
-quads: 48 run, 36 passed, 12 failed.
+quads: 51 run, 38 passed, 13 failed.

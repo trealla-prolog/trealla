@@ -73,6 +73,14 @@
   An answer reports an answer *substitution*, so each equation binds a
   variable and no variable is bound twice within one answer. '1 = X'
   and 'X = 1, X = 2' are rejected as malformed, not run as tests.
+
+  In a binding, '...' stands for an unspecified subterm (issue #1088):
+
+      ?- X = 1.
+         X = ... .
+
+      ?- length(L, 999).
+         L = [_A,_B,_C|...].
 */
 
 :- module(quads, [run_quads/0, run_quads/1, run_quads_halt/0]).
@@ -459,10 +467,12 @@ output_matches(Expected, Cs) :-
 %
 % which says nothing about Z. The query is solved in one copy and the
 % description applied to a second, so the two witnesses stay
-% independent and can be compared. Note that a variable in a binding
-% therefore denotes a variable in the answer, and so does one inside an
-% error term, which ball_matches/3 below pairs one-to-one with a
-% variable of the ball.
+% independent and can be compared. Matching is variant-like, except
+% that '...' stands for an unspecified subterm — the same rule as for
+% error balls — so 'X = ...' and 'L = [_A,_B,_C|...]' hold (issue
+% #1088). A variable in a binding denotes a variable in the answer,
+% and so does one inside an error term, which ball_matches/3 pairs
+% one-to-one with a variable of the ball.
 
 attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 	witness(Q, VNs, W),
@@ -472,7 +482,7 @@ attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 	link_names(VNs2),
 	bound_in_query(Items2, Q2),
 	apply_equations(Items2),
-	variant(W1, W2).
+	ball_matches([], W2, W1).
 attempt_match(M, Q, _, N, _) :-
 	call_nth(M:Q, N).
 
@@ -576,16 +586,23 @@ ball_match(QVs, P, A, B0, B) :-
 		pair_vars(P, A, B0, B)
 	).
 ball_match(_, P, A, B, B) :- \+ compound(P), !, P == A.
+% Walk with functor/arg rather than (=..)/2: univ on a list whose
+% elements share variables can fail to decompose reliably here, which
+% made complete answer descriptions such as 'X = f(Y,Y), Z = Y' fail
+% to match after switching solutions to ball_matches/3 (#1088).
 ball_match(QVs, P, A, B0, B) :-
 	compound(A),
-	P =.. [F|Ps],
-	A =.. [F|As],
-	ball_args(QVs, Ps, As, B0, B).
+	functor(P, F, N),
+	functor(A, F, N),
+	ball_args(QVs, 1, N, P, A, B0, B).
 
-ball_args(_, [], [], B, B).
-ball_args(QVs, [P|Ps], [A|As], B0, B) :-
-	ball_match(QVs, P, A, B0, B1),
-	ball_args(QVs, Ps, As, B1, B).
+ball_args(_, I, N, _, _, B, B) :- I > N, !.
+ball_args(QVs, I, N, P, A, B0, B) :-
+	arg(I, P, Pi),
+	arg(I, A, Ai),
+	ball_match(QVs, Pi, Ai, B0, B1),
+	I1 is I + 1,
+	ball_args(QVs, I1, N, P, A, B1, B).
 
 % A description variable always corresponds to the same ball variable,
 % and no two of them to the same one.
