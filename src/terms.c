@@ -236,55 +236,23 @@ bool has_vars(query *q, cell *p1, pl_ctx p1_ctx)
 	return has_vars_internal(q, p1, p1_ctx, 0);
 }
 
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
-
-static bool is_cyclic_term_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
+static void cyclic_stack_abort(list *stack)
 {
-	cell *l = p1;
-	pl_ctx l_ctx = p1_ctx;
-	bool any1 = false, any2 = false;
+	vnode *n;
 
-	while (is_iso_list(l)) {
-		cell *h = l + 1;
-		pl_ctx h_ctx = l_ctx;
-		slot *e = NULL;
-		uint32_t save_vgen;
-		int both = 0;
+	while ((n = (vnode*)list_pop_back(stack)) != NULL) {
+		if (n->e)
+			n->e->vgen = n->save_vgen;
 
-		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
-
-		if (both)
-			return true;
-
-		if (is_cyclic_term_internal(q, h, h_ctx, depth+1))
-			return true;
-
-		if (e) e->vgen = save_vgen;
-		l = l + 1; l += l->num_cells;
-		e = NULL;
-		both = 0;
-
-		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
-
-		if (both)
-			return true;
+		TPL_free(n);
 	}
-
-	if (any2) {
-		l = p1;
-		l_ctx = p1_ctx;
-
-		while (is_iso_list(l)) {
-			l = l + 1; l += l->num_cells;
-			cell *c = l;
-			pl_ctx c_ctx = l_ctx;
-			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
-		}
-	}
-
-	return is_cyclic_term_internal(q, l, l_ctx, depth+1);
 }
 
+// Stack iteration as in collect_vars_internal(): each frame walks one
+// compound's arguments left-to-right; vgen restore for the slot that led
+// here is deferred until the frame pops (recursive-return point). That
+// keeps ancestor marks live for cycle detection and removes the need for
+// a post-pass RESTORE_VAR over list spines.
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (depth >= g_max_depth)
@@ -293,30 +261,74 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 	if (!is_compound(p1) || is_ground(p1))
 		return false;
 
-	if (is_iso_list(p1))
-		return is_cyclic_term_lists(q, p1, p1_ctx, depth);
+	list stack = {0};
+	vnode *n = TPL_malloc(sizeof(vnode));
 
-	int arity = p1->arity;
-	p1++;
+	if (!n)
+		return true;
 
-	while (arity--) {
-		cell *c = p1;
-		pl_ctx c_ctx = p1_ctx;
+	n->arity = p1->arity;
+	n->p1 = p1 + 1;
+	n->p1_ctx = p1_ctx;
+	n->depth = depth;
+	n->e = NULL;
+	n->save_vgen = 0;
+	list_push_back(&stack, n);
+
+	while ((n = (vnode*)list_back(&stack)) != NULL) {
+		if (n->arity <= 0) {
+			slot *pending_e = n->e;
+			uint32_t pending_vgen = n->save_vgen;
+
+			list_pop_back(&stack);
+			TPL_free(n);
+
+			if (pending_e)
+				pending_e->vgen = pending_vgen;
+
+			continue;
+		}
+
+		if (n->depth >= g_max_depth) {
+			cyclic_stack_abort(&stack);
+			return true;
+		}
+
+		n->arity--;
+		cell *c = n->p1;
+		pl_ctx c_ctx = n->p1_ctx;
 		slot *e = NULL;
-		uint32_t save_vgen;
+		uint32_t save_vgen = 0;
 		bool any = false;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		n->p1 += n->p1->num_cells;
 
-		if (both)
+		if (both) {
+			cyclic_stack_abort(&stack);
 			return true;
+		}
 
-		if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
-			return true;
+		if (is_compound(c) && !is_ground(c)) {
+			vnode *cn = TPL_malloc(sizeof(vnode));
 
-		if (e) e->vgen = save_vgen;
-		p1 += p1->num_cells;
+			if (!cn) {
+				cyclic_stack_abort(&stack);
+				return true;
+			}
+
+			cn->arity = c->arity;
+			cn->p1 = c + 1;
+			cn->p1_ctx = c_ctx;
+			// List spines do not consume depth (same as the old iterative
+			// is_cyclic_term_lists); only non-list compounds do.
+			cn->depth = is_iso_list(c) ? n->depth : n->depth + 1;
+			cn->e = e;
+			cn->save_vgen = save_vgen;
+			list_push_back(&stack, cn);
+		} else if (e)
+			e->vgen = save_vgen;
 	}
 
 	return false;
