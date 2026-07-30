@@ -731,7 +731,8 @@ struct query_ {
 	uint64_t total_tcos, total_recovs, total_matched, total_no_recovs;
 	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, yield_at;
-	uint64_t cpu_time, time_cpu_last_started, future;
+	uint64_t cpu_time;					// time/1 baseline, kept out of st so it survives backtracking
+	uint64_t time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned varno, tab0_varno, cur_engine, cur_chan, my_chan;
 	unsigned s_cnt, retries, popp, rand_seed;

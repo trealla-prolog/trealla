@@ -926,12 +926,6 @@ bool bif_sys_drop_barrier_1(query *q)
 	GET_FIRST_ARG(p1,integer)
 	q->total_inferences--;
 	drop_barrier(q, get_smalluint(p1));
-
-	if (q->st.cp) {
-		const choice *ch = GET_CURR_CHOICE();
-		q->st.cpu_time = ch->st.cpu_time;
-	}
-
 	return true;
 }
 

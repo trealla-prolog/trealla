@@ -557,9 +557,15 @@ static bool bif_busy_1(query *q)
 	return true;
 }
 
+// The baseline is q->cpu_time, not q->st.cpu_time: the latter is part of
+// the machine state, so it is restored on backtracking and a REDO would be
+// timed from the original call rather than from the redo (issue #1050).
+// It is also the query start time that statistics/2 and cpu_time/1 report
+// against, which time/1 has no business resetting.
+
 static bool bif_sys_timer_0(query *q)
 {
-	q->st.cpu_time = cpu_time_in_usec();
+	q->cpu_time = cpu_time_in_usec();
 	q->total_inferences = 0;
 	return true;
 }
@@ -568,7 +574,7 @@ static bool bif_sys_elapsed_0(query *q)
 {
 	q->total_inferences--;
 	uint64_t cpu_now = cpu_time_in_usec();
-	uint64_t cpu_elapsed = cpu_now - q->st.cpu_time;
+	uint64_t cpu_elapsed = cpu_now - q->cpu_time;
 	double lips = (1.0 / ((double)cpu_elapsed/1000/1000)) * q->total_inferences;
 	cell tmp;
 	make_int(&tmp, q->total_inferences);
@@ -577,7 +583,7 @@ static bool bif_sys_elapsed_0(query *q)
 	fprintf(stderr, "%% CPU elapsed %.3fs, %s inferences, %.3f MLips\n", (double)cpu_elapsed/1000/1000, tmpbuf, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	q->total_inferences = 0;
-	q->st.cpu_time = cpu_now;
+	q->cpu_time = cpu_now;
 	return true;
 }
 
