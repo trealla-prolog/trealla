@@ -183,6 +183,32 @@ ball_4 ?- throw(error(type_error(atom,[X,Y]),[])).
 ?- X = f(X).
    X = f(X), sto.
 
+% outputs/1 records what the query writes to current output (issue
+% #1082). A list of characters (or double-quoted string) is enough for
+% now; it may be conjoined with true or an error description.
+
+outputs_1 ?- write(abc), nl.
+   outputs("abc\n"),
+   true.
+
+outputs_2 ?- call((write(3), X)).
+   outputs("3"),
+   instantiation_error.
+
+% Per-answer output under disjunction: only the characters produced for
+% that answer are matched, not the cumulative capture of call_nth
+% (issue #1084).
+
+outputs_3 ?- put_char(a) ; put_char(b).
+   outputs("a")
+;  outputs("b").
+
+% deliberately failing: wrong output
+
+outputs_4 ?- write(abc), nl.
+   outputs("nope"),
+   true.
+
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one
 % answer (issue #1074). The parser rejects a malformed description when

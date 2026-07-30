@@ -230,7 +230,7 @@ report(Why, M, Id, Q, VNs, What, File, Line) :-
 	;	write_term(Id, [quoted(true)]), write(', ')
 	),
 	write(File), write(':'), write(Line), nl,
-	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
+	write('   ?- '), write_term(Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
 	write('   '), write_what(Why, What, VNs), nl.
 
 write_why(failed) :- write('FAILED').
@@ -297,43 +297,62 @@ conj(A, [A]).
 
 check_alternative(M, Q, VNs, Alt) :-
 	solutions(Alt, Sols),
-	check_solutions(Sols, M, Q, VNs, 1, no_output).
+	(	sols_have_output(Sols)
+	->	Mode = capture
+	;	Mode = plain
+	),
+	check_solutions(Sols, M, Q, VNs, 1, Mode, []).
+
+sols_have_output([S|T]) :-
+	(	has_outputs(S)
+	->	true
+	;	sols_have_output(T)
+	).
+
+has_outputs(Sol) :-
+	conj(Sol, Items),
+	member(I, Items),
+	nonvar(I),
+	I = outputs(_),
+	!.
 
 % Walk the expected solutions, requesting the Nth answer of the
 % query for the Nth description. After the last description the
 % query must yield no further answer, unless '...' said otherwise.
-% Mute carries capture-without-match into that final 'none' probe so a
-% query that writes is not echoed when looking for a missing extra
-% answer (issue #1082).
+%
+% Mode = capture when any solution of this alternative uses outputs/1:
+% each call_nth(N) is captured in full, and only the suffix beyond the
+% previous answer's capture is matched — call_nth re-runs prior
+% branches, so a naive capture of the Nth answer would include their
+% output too (issue #1084). PrevCs is that prior capture (initially
+% []). The final 'none' probe is silenced the same way.
 
-check_solutions([], M, Q, VNs, N, Mute) :-
-	attempt(M, Q, VNs, N, none, Mute).
-check_solutions([Sol0|T], M, Q, VNs, N, _) :-
+check_solutions([], M, Q, VNs, N, plain, _) :- !,
+	attempt(M, Q, VNs, N, none, no_output).
+check_solutions([], M, Q, VNs, N, capture, _) :-
+	attempt(M, Q, VNs, N, none, silence).
+check_solutions([Sol0|T], M, Q, VNs, N, Mode, PrevCs) :-
 	conj(Sol0, Items0),
 	drop_annotation(Items0, unexpected, Items, Unexpected),
 	drop_annotation(Items, sto, Items1, Sto),
 	take_output(Items1, Items2, Output),
 	rebuild_conj(Items2, Sol),
 	( Items2 = ['...'|_] ->
-		true							% any further answers accepted
+		true
 	; Sto == true ->
-		true							% occurs-check dependent: skipped
+		true
 	; Items2 = [loops] ->
-		expect(Unexpected, M, Q, VNs, N, loops, Output)
+		expect(Unexpected, M, Q, VNs, N, loops, Output, Mode, PrevCs, _)
 	; Items2 = [false] ->
 		T == [],
-		expect(Unexpected, M, Q, VNs, N, none, Output)
+		expect(Unexpected, M, Q, VNs, N, none, Output, Mode, PrevCs, _)
 	; expected_ball(Sol, Ball) ->
 		T == [],
-		expect(Unexpected, M, Q, VNs, N, ball(Ball), Output)
-	;	expect(Unexpected, M, Q, VNs, N, solution(Items2), Output),
+		expect(Unexpected, M, Q, VNs, N, ball(Ball), Output, Mode, PrevCs, _)
+	;	expect(Unexpected, M, Q, VNs, N, solution(Items2), Output, Mode, PrevCs, FullCs),
 		N1 is N + 1,
-		mute_after(Output, Mute),
-		check_solutions(T, M, Q, VNs, N1, Mute)
+		check_solutions(T, M, Q, VNs, N1, Mode, FullCs)
 	).
-
-mute_after(no_output, no_output).
-mute_after(outputs(_), silence).
 
 % outputs/1 is stripped before matching the rest of the answer so that
 % 'outputs("3"), instantiation_error' still classifies as a ball, and
@@ -355,10 +374,23 @@ take_output([I|T], Rest, Out) :-
 
 % An 'unexpected' answer must not be the one the query produces there.
 
-expect(true, M, Q, VNs, N, Expect, Output) :- !,
-	\+ attempt(M, Q, VNs, N, Expect, Output).
-expect(_, M, Q, VNs, N, Expect, Output) :-
-	attempt(M, Q, VNs, N, Expect, Output).
+expect(true, M, Q, VNs, N, Expect, Output, Mode, PrevCs, FullCs) :- !,
+	\+ expect_do(M, Q, VNs, N, Expect, Output, Mode, PrevCs, FullCs).
+expect(_, M, Q, VNs, N, Expect, Output, Mode, PrevCs, FullCs) :-
+	expect_do(M, Q, VNs, N, Expect, Output, Mode, PrevCs, FullCs).
+
+expect_do(M, Q, VNs, N, Expect, Output, plain, PrevCs, PrevCs) :- !,
+	(	Output = outputs(Expected)
+	->	attempt(M, Q, VNs, N, Expect, outputs(Expected))
+	;	attempt(M, Q, VNs, N, Expect, no_output)
+	).
+expect_do(M, Q, VNs, N, Expect, Output, capture, PrevCs, FullCs) :-
+	attempt_capture(M, Q, VNs, N, Expect, FullCs),
+	append(PrevCs, Delta, FullCs),
+	(	Output = outputs(Expected)
+	->	output_matches(Expected, Delta)
+	;	true
+	).
 
 % Request the Nth answer of Q and check the outcome. Every call is
 % bindings-transparent (\+ \+) and time-limited, so nonterminating
@@ -381,23 +413,12 @@ attempt(M, Q, VNs, N, Expect, no_output) :- !,
 	),
 	match_outcome(Q, VNs, Expect, Outcome).
 attempt(M, Q, VNs, N, Expect, silence) :- !,
-	setup_call_cleanup(
-		'$capture_output',
-		catch(
-			( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
-				Outcome = matched
-			;	( catch(call_with_time_limit(1.0, \+ \+ call_nth(M:Q, N)), _, fail) ->
-					Outcome = mismatched
-				;	Outcome = none
-				)
-			),
-			Ball0,
-			( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
-		),
-		'$capture_output_to_chars'(_)
-	),
-	match_outcome(Q, VNs, Expect, Outcome).
+	attempt_capture(M, Q, VNs, N, Expect, _).
 attempt(M, Q, VNs, N, Expect, outputs(Expected)) :-
+	attempt_capture(M, Q, VNs, N, Expect, Cs),
+	output_matches(Expected, Cs).
+
+attempt_capture(M, Q, VNs, N, Expect, Cs) :-
 	setup_call_cleanup(
 		'$capture_output',
 		catch(
@@ -413,11 +434,12 @@ attempt(M, Q, VNs, N, Expect, outputs(Expected)) :-
 		),
 		'$capture_output_to_chars'(Cs)
 	),
-	output_matches(Expected, Cs),
 	match_outcome(Q, VNs, Expect, Outcome).
 
 % Expected is a character list (or double-quoted string under
 % double_quotes(chars)), optionally a DCG body via phrase/2.
+% For multi-answer quads only the per-answer suffix is passed here
+% (issue #1084).
 
 output_matches(Expected, Cs) :-
 	(	Expected == Cs

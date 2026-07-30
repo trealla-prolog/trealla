@@ -1,34 +1,37 @@
 quads: FAILED tests/misc/quads.pl:97
-   ?- user:member(X,[1,2]).
+   ?- member(X,[1,2]).
    expected: X=1;X=99
 quads: FAILED tests/misc/quads.pl:103
-   ?- user:(X=1).
+   ?- X=1.
    expected: X=1,unexpected
 quads: FAILED tests/misc/quads.pl:108
-   ?- user:(X=f(Y,Z),Y=Z).
+   ?- X=f(Y,Z),Y=Z.
    expected: X=f(Y,Y)
 quads: FAILED member_2, tests/misc/quads.pl:126
-   ?- user:member(X,[1,2]).
+   ?- member(X,[1,2]).
    expected: X=1;X=99
 quads: FAILED ball_1, tests/misc/quads.pl:148
-   ?- user:throw(error(_A,_B)).
+   ?- throw(error(_A,_B)).
    expected: error(X,X)
 quads: FAILED ball_2, tests/misc/quads.pl:154
-   ?- user:throw(f(A,A)).
+   ?- throw(f(A,A)).
    expected: throw(f(X,Y))
 quads: FAILED ball_3, tests/misc/quads.pl:160
-   ?- user:throw(f(X)).
+   ?- throw(f(X)).
    expected: throw(f(X))
 quads: FAILED ball_4, tests/misc/quads.pl:163
-   ?- user:throw(error(type_error(atom,[X,Y]),[])).
+   ?- throw(error(type_error(atom,[X,Y]),[])).
    expected: type_error(atom,[X,X])
+quads: FAILED outputs_4, tests/misc/quads.pl:208
+   ?- write(abc),nl.
+   expected: outputs([n,o,p,e]),true
 quads: MALFORMED hand_1, hand-written.pl:1
-   ?- user:(X=1).
+   ?- X=1.
    not an answer: 1=X
 quads: MALFORMED hand_2, hand-written.pl:2
-   ?- user:(Y=1).
+   ?- Y=1.
    not an answer: Y=2
 quads: MALFORMED hand_4, hand-written.pl:4
-   ?- user:(V=f(W),W=1).
+   ?- V=f(W),W=1.
    not an answer: V=f(W)
-quads: 44 run, 33 passed, 11 failed.
+quads: 48 run, 36 passed, 12 failed.

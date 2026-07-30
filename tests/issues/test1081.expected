@@ -1,4 +1,4 @@
 quads: MALFORMED tests/issues/test1081.pl:8
-   ?- user:(X=f(Y),Y=1).
+   ?- X=f(Y),Y=1.
    not an answer: X=f(Y)
 quads: 1 run, 0 passed, 1 failed.
