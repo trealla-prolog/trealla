@@ -60,6 +60,16 @@
   The annotation sto is recognised but such (parts of) descriptions
   are currently skipped, not interpreted.
 
+  outputs/1 records what the query writes to current output (issue
+  #1082). Its argument is matched against the captured characters; a
+  character list or double-quoted string is accepted for now (a DCG
+  body also works via phrase/2). It is a conjunct of the answer, as in
+  the English answer descriptions of ISO 13211-1:
+
+      ?- write(abc), nl.
+         outputs("abc\n"),
+         true.
+
   An answer reports an answer *substitution*, so each equation binds a
   variable and no variable is bound twice within one answer. '1 = X'
   and 'X = 1, X = 2' are rejected as malformed, not run as tests.
@@ -69,6 +79,7 @@
 
 :- use_module(library(lists)).
 :- use_module(library(iso_ext)).
+:- use_module(library(dcgs)).
 
 run_quads :-
 	run_quads(user).
@@ -149,6 +160,7 @@ malformed(AD, Bad) :-
 answer_item(I) :- var(I), !, fail.
 answer_item(V = _) :- !, var(V).
 answer_item(I) :- atom(I), answer_atom(I), !.
+answer_item(outputs(_)) :- !.
 answer_item(I) :- expected_ball(I, _), !.
 
 answer_atom(true).
@@ -285,48 +297,77 @@ conj(A, [A]).
 
 check_alternative(M, Q, VNs, Alt) :-
 	solutions(Alt, Sols),
-	check_solutions(Sols, M, Q, VNs, 1).
+	check_solutions(Sols, M, Q, VNs, 1, no_output).
 
 % Walk the expected solutions, requesting the Nth answer of the
 % query for the Nth description. After the last description the
 % query must yield no further answer, unless '...' said otherwise.
+% Mute carries capture-without-match into that final 'none' probe so a
+% query that writes is not echoed when looking for a missing extra
+% answer (issue #1082).
 
-check_solutions([], M, Q, VNs, N) :-
-	attempt(M, Q, VNs, N, none).
-check_solutions([Sol0|T], M, Q, VNs, N) :-
+check_solutions([], M, Q, VNs, N, Mute) :-
+	attempt(M, Q, VNs, N, none, Mute).
+check_solutions([Sol0|T], M, Q, VNs, N, _) :-
 	conj(Sol0, Items0),
 	drop_annotation(Items0, unexpected, Items, Unexpected),
 	drop_annotation(Items, sto, Items1, Sto),
-	rebuild_conj(Items1, Sol),
-	( Items1 = ['...'|_] ->
+	take_output(Items1, Items2, Output),
+	rebuild_conj(Items2, Sol),
+	( Items2 = ['...'|_] ->
 		true							% any further answers accepted
 	; Sto == true ->
 		true							% occurs-check dependent: skipped
-	; Items1 = [loops] ->
-		expect(Unexpected, M, Q, VNs, N, loops)
-	; Items1 = [false] ->
+	; Items2 = [loops] ->
+		expect(Unexpected, M, Q, VNs, N, loops, Output)
+	; Items2 = [false] ->
 		T == [],
-		expect(Unexpected, M, Q, VNs, N, none)
+		expect(Unexpected, M, Q, VNs, N, none, Output)
 	; expected_ball(Sol, Ball) ->
 		T == [],
-		expect(Unexpected, M, Q, VNs, N, ball(Ball))
-	;	expect(Unexpected, M, Q, VNs, N, solution(Items1)),
+		expect(Unexpected, M, Q, VNs, N, ball(Ball), Output)
+	;	expect(Unexpected, M, Q, VNs, N, solution(Items2), Output),
 		N1 is N + 1,
-		check_solutions(T, M, Q, VNs, N1)
+		mute_after(Output, Mute),
+		check_solutions(T, M, Q, VNs, N1, Mute)
+	).
+
+mute_after(no_output, no_output).
+mute_after(outputs(_), silence).
+
+% outputs/1 is stripped before matching the rest of the answer so that
+% 'outputs("3"), instantiation_error' still classifies as a ball, and
+% the captured characters are checked separately (issue #1082).
+
+take_output([], [], no_output).
+take_output([I|T], Rest, Out) :-
+	(	nonvar(I),
+		I = outputs(E)
+	->	take_output(T, Rest, Out0),
+		(	Out0 == no_output
+		->	Out = outputs(E)
+		;	Out0 = outputs(E),
+			Out = Out0
+		)
+	;	take_output(T, Rest0, Out),
+		Rest = [I|Rest0]
 	).
 
 % An 'unexpected' answer must not be the one the query produces there.
 
-expect(true, M, Q, VNs, N, Expect) :- !,
-	\+ attempt(M, Q, VNs, N, Expect).
-expect(_, M, Q, VNs, N, Expect) :-
-	attempt(M, Q, VNs, N, Expect).
+expect(true, M, Q, VNs, N, Expect, Output) :- !,
+	\+ attempt(M, Q, VNs, N, Expect, Output).
+expect(_, M, Q, VNs, N, Expect, Output) :-
+	attempt(M, Q, VNs, N, Expect, Output).
 
 % Request the Nth answer of Q and check the outcome. Every call is
 % bindings-transparent (\+ \+) and time-limited, so nonterminating
-% queries are caught and nothing leaks between attempts.
+% queries are caught and nothing leaks between attempts. When the
+% description names outputs/1, current output is captured for the
+% duration of the attempt (issue #1082). 'silence' captures and
+% discards, used when probing for a further answer after one that wrote.
 
-attempt(M, Q, VNs, N, Expect) :-
+attempt(M, Q, VNs, N, Expect, no_output) :- !,
 	catch(
 		( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
 			Outcome = matched
@@ -339,6 +380,52 @@ attempt(M, Q, VNs, N, Expect) :-
 		( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
 	),
 	match_outcome(Q, VNs, Expect, Outcome).
+attempt(M, Q, VNs, N, Expect, silence) :- !,
+	setup_call_cleanup(
+		'$capture_output',
+		catch(
+			( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
+				Outcome = matched
+			;	( catch(call_with_time_limit(1.0, \+ \+ call_nth(M:Q, N)), _, fail) ->
+					Outcome = mismatched
+				;	Outcome = none
+				)
+			),
+			Ball0,
+			( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
+		),
+		'$capture_output_to_chars'(_)
+	),
+	match_outcome(Q, VNs, Expect, Outcome).
+attempt(M, Q, VNs, N, Expect, outputs(Expected)) :-
+	setup_call_cleanup(
+		'$capture_output',
+		catch(
+			( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
+				Outcome = matched
+			;	( catch(call_with_time_limit(1.0, \+ \+ call_nth(M:Q, N)), _, fail) ->
+					Outcome = mismatched
+				;	Outcome = none
+				)
+			),
+			Ball0,
+			( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
+		),
+		'$capture_output_to_chars'(Cs)
+	),
+	output_matches(Expected, Cs),
+	match_outcome(Q, VNs, Expect, Outcome).
+
+% Expected is a character list (or double-quoted string under
+% double_quotes(chars)), optionally a DCG body via phrase/2.
+
+output_matches(Expected, Cs) :-
+	(	Expected == Cs
+	->	true
+	;	Expected = Cs
+	->	true
+	;	catch(phrase(Expected, Cs), _, fail)
+	).
 
 % An answer description must describe the answer *completely*: the
 % bindings of the query's named variables have to be a variant of the

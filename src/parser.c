@@ -739,7 +739,8 @@ static bool is_ground_term(const cell *c)
 }
 
 // The shape of a toplevel answer, per the grammar in issue #1063
-// plus the annotations used by existing quad suites (Flowlog).
+// plus the annotations used by existing quad suites (Flowlog), and
+// outputs/1 for captured current-output (issue #1082).
 //
 // A toplevel answer reports an answer *substitution*, so every equation
 // in it binds a variable: it has a variable on the left, and no variable
@@ -840,7 +841,8 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			|| !strcmp(name, "representation_error")
 			|| !strcmp(name, "resource_error")
 			|| !strcmp(name, "evaluation_error")
-			|| !strcmp(name, "uninstantiation_error"))
+			|| !strcmp(name, "uninstantiation_error")
+			|| !strcmp(name, "outputs"))
 			? ANSWER_OK : ANSWER_NO;
 
 	if (c->arity == 3)
