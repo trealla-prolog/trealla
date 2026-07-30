@@ -398,8 +398,41 @@ static bool unify_cstrings(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 	return false;
 }
 
+// True if this compound pair was already visited this unify(); else record it.
+static bool unify_pair_seen(query *q, cell *c1, pl_ctx ctx1, cell *c2, pl_ctx ctx2)
+{
+	uintptr_t h = ((uintptr_t)c1 >> 3) ^ ((uintptr_t)c2 >> 2)
+		^ ((uintptr_t)ctx1 << 9) ^ (uintptr_t)ctx2;
+	h &= UNIFY_SEEN_SIZE - 1;
+
+	for (unsigned n = 0; n < UNIFY_SEEN_SIZE; n++) {
+		unsigned i = (unsigned)((h + n) & (UNIFY_SEEN_SIZE - 1));
+		unify_seen_pair *p = &q->unify_seen[i];
+
+		if (p->gen != q->vgen) {
+			p->c1 = c1;
+			p->c2 = c2;
+			p->ctx1 = ctx1;
+			p->ctx2 = ctx2;
+			p->gen = q->vgen;
+			return false;
+		}
+
+		if ((p->c1 == c1) && (p->c2 == c2) && (p->ctx1 == ctx1) && (p->ctx2 == ctx2))
+			return true;
+	}
+
+	return false; // table full — skip memo, still correct
+}
+
 static bool unify_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
 {
+	if ((p1 == p2) && (p1_ctx == p2_ctx))
+		return true;
+
+	if (unify_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
+		return true;
+
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
@@ -447,6 +480,12 @@ static bool unify_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 
 	if (p1->val_off != p2->val_off)
 		return false;
+
+	if ((p1 == p2) && (p1_ctx == p2_ctx))
+		return true;
+
+	if (unify_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
+		return true;
 
 	int arity = p1->arity;
 	p1++; p2++;

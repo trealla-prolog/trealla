@@ -701,6 +701,16 @@ typedef struct {
 	bool is_anon;
 } var_item;
 
+// Ephemeral compound-pair memo for one unify() call (keyed by q->vgen).
+// Avoids re-walking shared DAG nodes (e.g. issue #855 blam/1).
+#define UNIFY_SEEN_SIZE 256
+
+typedef struct {
+	cell *c1, *c2;
+	pl_ctx ctx1, ctx2;
+	uint32_t gen;
+} unify_seen_pair;
+
 struct query_ {
 	lnode hdr;							// must be first
 	query *prev, *next, *parent;
@@ -748,6 +758,7 @@ struct query_ {
 	enum q_retry retry;
 	int is_cyclic1, is_cyclic2;
 	uint32_t vgen;
+	unify_seen_pair unify_seen[UNIFY_SEEN_SIZE];
 	int8_t halt_code;
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
