@@ -63,9 +63,6 @@
   An answer reports an answer *substitution*, so each equation binds a
   variable and no variable is bound twice within one answer. '1 = X'
   and 'X = 1, X = 2' are rejected as malformed, not run as tests.
-
-  A non-ground label ('X ?- true.') is likewise recorded and reported
-  as failed rather than aborting the load (issue #1078).
 */
 
 :- module(quads, [run_quads/0, run_quads/1, run_quads_halt/0]).
