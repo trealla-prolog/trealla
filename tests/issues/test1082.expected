@@ -1,4 +1,4 @@
 quads: FAILED wrong, tests/issues/test1082.pl:16
-   ?- user:(write(abc),nl).
+   ?- write(abc),nl.
    expected: outputs([n,o,p,e]),true
 quads: 3 run, 2 passed, 1 failed.
