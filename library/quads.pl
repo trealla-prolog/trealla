@@ -129,16 +129,16 @@ run_list([q(Id, Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 
 check_quad(M, Id, Q, VNs, AD, File, Line) :-
 	(	Id == '$bad_quad_identifier'
-	->	report(bad_identifier, M, Id, Q, VNs, Id, File, Line),
+	->	report(bad_identifier, Id, Q, VNs, Id, File, Line),
 		fail
 	;	malformed(AD, Bad)
-	->	report(malformed, M, Id, Q, VNs, Bad, File, Line),
+	->	report(malformed, Id, Q, VNs, Bad, File, Line),
 		fail
 	;	alternatives(AD, Alts),
 		(	member(Alt, Alts),
 			\+ \+ check_alternative(M, Q, VNs, Alt)
 		->	true
-		;	report(failed, M, Id, Q, VNs, AD, File, Line),
+		;	report(failed, Id, Q, VNs, AD, File, Line),
 			fail
 		)
 	).
@@ -226,9 +226,11 @@ bound_vars([I|T], Vs) :-
 
 % A quad written 'Name ?- Query.' is identified by Name, which is
 % reported so a suite can be read without counting line numbers
-% (issue #1071). An unlabelled quad leaves Id unbound.
+% (issue #1071). An unlabelled quad leaves Id unbound. The module is
+% not printed (plain '?- Query.'), so report/7 does not take it —
+% keeping an unused M warned as a singleton on use_module (issue #1085).
 
-report(Why, M, Id, Q, VNs, What, File, Line) :-
+report(Why, Id, Q, VNs, What, File, Line) :-
 	link_names(VNs),
 	write('quads: '), write_why(Why), write(' '),
 	(	var(Id)

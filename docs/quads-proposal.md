@@ -410,7 +410,15 @@ than `(=..)/2`: univ on a list whose elements share variables did not
 decompose reliably in this recursive match, which made complete
 descriptions such as `X = f(Y,Y), Z = Y` fail after the switch.
 
-## 9. Principal functors identify answer descriptions (issue #1087)
+## 9. Singleton on loading `library(quads)` (issue #1085)
+
+`report/8` still took the module argument after reports stopped printing
+`M:Query` (plain `?- Query.`). The unused `M` warned as a singleton on
+`use_module(library(quads))`, with a line number that landed near
+`link_names/1`. The module argument was dropped; reporting does not need
+it.
+
+## 10. Principal functors identify answer descriptions (issue #1087)
 
 An unknown atom alone after a query is not an answer description:
 
