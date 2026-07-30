@@ -127,12 +127,12 @@ check_quad(M, Id, Q, VNs, AD, File, Line) :-
 		)
 	).
 
-% The parser rejects a malformed answer description when the file is
-% consulted (issue #1074), but a '$quad' fact can also be asserted
-% directly, so the shape is checked here too rather than silently
-% mis-read. An answer reports a substitution: every equation binds a
-% variable, and no variable is bound twice within one answer, so
-% neither '1 = X' nor 'X = 1, X = 2' describes an answer.
+% The parser used to reject a malformed answer description when the
+% file was consulted (issue #1074). That aborted the load (issue #1078);
+% both malformed answers and non-ground labels are now recorded so
+% run_quads can report them. An answer reports a substitution: every
+% equation binds a variable, and no variable is bound twice within one
+% answer, so neither '1 = X' nor 'X = 1, X = 2' describes an answer.
 
 malformed(AD, Bad) :-
 	alternatives(AD, Alts),
