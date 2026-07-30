@@ -79,6 +79,40 @@ static inline bool ref_is_live(const query *q, const cell *c)
 #define deep_copy(c) \
  (!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_ctx) && ref_is_live(q, c) && !is_anon(c)))
 
+// Chase variable refs to the ultimate slot. Needed when copy_term's
+// source is a frame-local ref (e.g. variant/2 → copy_term(A,C) where A
+// aliases the caller's cyclic var).
+static slot *ultimate_var_slot(query *q, unsigned vnum, pl_ctx vctx)
+{
+	const frame *vf = GET_FRAME(vctx);
+	slot *vs = get_slot(q, vf, vnum);
+
+	while (is_ref(&vs->c)) {
+		vctx = vs->c.val_ctx;
+		vnum = vs->c.var_num;
+		vf = GET_FRAME(vctx);
+		slot *vs2 = get_slot(q, vf, vnum);
+
+		if (vs2 == vs)
+			break;
+
+		vs = vs2;
+	}
+
+	return vs;
+}
+
+static bool var_aliases_dump_var(query *q, cell *c, pl_ctx c_ctx)
+{
+	if ((q->dump_var_num == (unsigned)-1) || !is_var(c))
+		return false;
+
+	pl_ctx vctx = is_ref(c) ? c->val_ctx : c_ctx;
+	slot *vs = ultimate_var_slot(q, c->var_num, vctx);
+	slot *ds = ultimate_var_slot(q, q->dump_var_num, q->dump_var_ctx);
+	return vs == ds;
+}
+
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
 
@@ -88,20 +122,8 @@ static inline bool ref_is_live(const query *q, const cell *c)
 // descend into this node, and are restored once this node (and everything
 // beneath it) has been fully cloned - i.e. at the point the recursive call
 // would otherwise have returned.
-// 'origin' is the compound being expanded, used to spot cyclic bindings
-// that point back at a term already on the stack (issue #1002).
 
-typedef struct { lnode hdr; cell *p1; pl_ctx p1_ctx; cell *origin; int arity; pl_idx save_idx; unsigned depth; slot *e; uint32_t save_vgen; } snode;
-
-static bool clone_stack_has(const list *stack, const cell *c)
-{
-	for (const snode *n = list_front((list*)stack); n; n = list_next((void*)n)) {
-		if (n->origin == c)
-			return true;
-	}
-
-	return false;
-}
+typedef struct { lnode hdr; cell *p1; pl_ctx p1_ctx; int arity; pl_idx save_idx; unsigned depth; slot *e; uint32_t save_vgen; } snode;
 
 static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
@@ -203,7 +225,6 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 	n->arity = p1->arity;
 	n->p1 = p1 + 1;
 	n->p1_ctx = p1_ctx;
-	n->origin = p1;
 	n->save_idx = save_idx;
 	n->depth = depth;
 	n->e = NULL;
@@ -249,12 +270,20 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 		if (both) {
 			q->cycle_error = true;
-		} else if (e && is_compound(c) && !is_iso_list(c)
-			&& ((c == root_origin) || clone_stack_has(&stack, c))) {
-			// Binding leads back to a compound already being cloned.
-			// Prefer a ref to the copy_term source var (dump_var)
-			// so X→Y replacement rebuilds the cycle; the cell in the
-			// structure may be a callee-frame local (issue #1002).
+			// Premark hit: rewrite to dump_var so replacement closes the cycle
+			// when the source is a frame-local ref (variant/2).
+			if (var_aliases_dump_var(q, c0, c0_ctx)) {
+				make_ref(&c_ref, q->dump_var_num, q->dump_var_ctx);
+				c = &c_ref;
+				c_ctx = q->dump_var_ctx;
+			}
+		} else if (e && is_compound(c) && !is_iso_list(c) && (c == root_origin)) {
+			// Binding leads back to the compound being cloned (issue #1002).
+			// Always emit dump_var when set: the back-ref may be a callee-
+			// frame local that no longer aliases dump_var by slot identity
+			// after the callee returned, yet still deref's to the root.
+			// Only the clone root counts — not every on-stack compound
+			// (that breaks structure-sharing; retina beetle/witch).
 			if (q->dump_var_num != (unsigned)-1) {
 				make_ref(&c_ref, q->dump_var_num, q->dump_var_ctx);
 				c = &c_ref;
@@ -266,6 +295,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			both = 1;
 			q->cycle_error = true;
 		}
+
 		n->p1 += n->p1->num_cells;
 
 		if (is_compound(c) && !is_iso_list(c)) {
@@ -296,7 +326,6 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			cn->arity = c->arity;
 			cn->p1 = c + 1;
 			cn->p1_ctx = c_ctx;
-			cn->origin = c;
 			cn->save_idx = child_idx;
 			cn->depth = n->depth + 1;
 			cn->e = e;
@@ -502,8 +531,9 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 	}
 
 	if (mark_num != (unsigned)-1) {
-		const frame *f = GET_FRAME(mark_ctx);
-		mark_e = get_slot(q, f, mark_num);
+		// Mark the ultimate slot so a frame-local ref (variant/2) still
+		// stops unfolding at the real cyclic variable.
+		mark_e = ultimate_var_slot(q, mark_num, mark_ctx);
 		save_mark_vgen = mark_e->vgen;
 		mark_e->vgen = q->vgen;
 	}
