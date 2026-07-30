@@ -5162,7 +5162,10 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		p->pl->error = q->error;
 		p->pl->is_redo = q->is_redo;
 		ok = !q->error;
-		//p->m = q->st.m;
+
+		// p->m is not taken from q->st.m: a goal ending in another module
+		// (any library predicate does) would move the toplevel there, so
+		// later consults and asserts would land in it (issue #1079).
 
 		if (!subq)
 			query_destroy(q);

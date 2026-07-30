@@ -127,6 +127,42 @@ member_2 ?- member(X, [1,2]).
    X = 1
 ;  X = 99.
 
+% A described ball must be a variant of the one actually thrown, so the
+% correspondence between their variables is one-to-one (issue #1080)
+
+?- throw(error(_,_)).
+   error(X,Y).
+
+?- throw(f(A,A)).
+   throw(f(X,X)).
+
+% throw/1 copies the ball, so an anonymous description variable
+% describes the copy
+
+?- throw(f(X)).
+   throw(f(_)).
+
+% a deliberately failing quad: one description variable cannot describe
+% two distinct variables of the ball
+
+ball_1 ?- throw(error(_A,_B)).
+   error(X,X).
+
+% a deliberately failing quad: nor two description variables one
+% variable of the ball
+
+ball_2 ?- throw(f(A,A)).
+   throw(f(X,Y)).
+
+% deliberately failing quads: a variable shared with the query is that
+% variable of the query, which a copied ball never contains
+
+ball_3 ?- throw(f(X)).
+   throw(f(X)).
+
+ball_4 ?- throw(error(type_error(atom,[X,Y]),[])).
+   type_error(atom,[X,X]).
+
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one
 % answer (issue #1074). The parser rejects a malformed description when

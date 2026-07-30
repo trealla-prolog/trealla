@@ -296,7 +296,7 @@ attempt(M, Q, VNs, N, Expect) :-
 		Ball0,
 		( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
 	),
-	match_outcome(Expect, Outcome).
+	match_outcome(Q, VNs, Expect, Outcome).
 
 % An answer description must describe the answer *completely*: the
 % bindings of the query's named variables have to be a variant of the
@@ -309,9 +309,9 @@ attempt(M, Q, VNs, N, Expect) :-
 % which says nothing about Z. The query is solved in one copy and the
 % description applied to a second, so the two witnesses stay
 % independent and can be compared. Note that a variable in a binding
-% therefore denotes a variable in the answer, whereas one inside an
-% error term stays a wildcard, since errors are matched by
-% subsumes_term/2 in match_outcome/2 below.
+% therefore denotes a variable in the answer, and so does one inside an
+% error term, which ball_matches/3 below pairs one-to-one with a
+% variable of the ball.
 
 attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 	witness(Q, VNs, W),
@@ -357,10 +357,15 @@ apply_equations([Item|T]) :-
 	),
 	apply_equations(T).
 
-match_outcome(solution(_), matched).
-match_outcome(none, none).
-match_outcome(loops, loops).
-match_outcome(ball(B), ball(B0)) :- ball_matches(B, B0).
+match_outcome(_, _, solution(_), matched).
+match_outcome(_, _, none, none).
+match_outcome(_, _, loops, loops).
+match_outcome(Q, VNs, ball(B), ball(B0)) :-
+	\+ \+ (
+		link_names(VNs),
+		term_variables(Q, QVs),
+		ball_matches(QVs, B, B0)
+	).
 
 % The described ball must be a variant of the one actually thrown,
 % except that '...' stands for an unspecified subterm. A variable in a
@@ -371,20 +376,63 @@ match_outcome(ball(B), ball(B0)) :- ball_matches(B, B0).
 % requires the implementation-defined second argument to be unbound.
 % To leave it unspecified write error(instantiation_error, ...), or the
 % concise shorthand instantiation_error (#1068).
+%
+% Being a variant means the correspondence between the variables of the
+% description and those of the ball is one-to-one, so a variable
+% recurring in the description describes one recurring in the ball
+% (issue #1080): 'error(X,X)' does not describe error(_,_), and
+% 'f(X,Y)' does not describe f(A,A).
+%
+% A description variable shared with the query is that variable of the
+% query, not a fresh one, so it describes only itself. throw/1 copies
+% the ball, so a variable of the query never occurs in it and
+%
+%     ?- throw(f(X)).
+%        throw(f(X)).
+%
+% fails, whereas 'throw(f(_))' holds -- as at the toplevel, which
+% reports the copy, not X.
 
-ball_matches(P, _) :- P == '...', !.
-ball_matches(P, A) :- var(P), !, var(A).
-ball_matches(P, A) :- \+ compound(P), !, P == A.
-ball_matches(P, A) :-
+ball_matches(QVs, P, A) :-
+	ball_match(QVs, P, A, [], _).
+
+ball_match(_, P, _, B, B) :- P == '...', !.
+ball_match(QVs, P, A, B0, B) :-
+	var(P), !,
+	(	var_member(P, QVs)
+	->	P == A,
+		B = B0
+	;	var(A),
+		pair_vars(P, A, B0, B)
+	).
+ball_match(_, P, A, B, B) :- \+ compound(P), !, P == A.
+ball_match(QVs, P, A, B0, B) :-
 	compound(A),
 	P =.. [F|Ps],
 	A =.. [F|As],
-	ball_args(Ps, As).
+	ball_args(QVs, Ps, As, B0, B).
 
-ball_args([], []).
-ball_args([P|Ps], [A|As]) :-
-	ball_matches(P, A),
-	ball_args(Ps, As).
+ball_args(_, [], [], B, B).
+ball_args(QVs, [P|Ps], [A|As], B0, B) :-
+	ball_match(QVs, P, A, B0, B1),
+	ball_args(QVs, Ps, As, B1, B).
+
+% A description variable always corresponds to the same ball variable,
+% and no two of them to the same one.
+
+pair_vars(P, A, B0, B) :-
+	(	pair_left(B0, P, A0)
+	->	A0 == A,
+		B = B0
+	;	\+ pair_right(B0, A),
+		B = [P-A|B0]
+	).
+
+pair_left([P0-A0|T], P, A) :-
+	( P0 == P -> A = A0 ; pair_left(T, P, A) ).
+
+pair_right([_-A0|T], A) :-
+	( A0 == A -> true ; pair_right(T, A) ).
 
 % Errors may be written in full or in the customary shorthand
 
