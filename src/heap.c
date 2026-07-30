@@ -79,40 +79,6 @@ static inline bool ref_is_live(const query *q, const cell *c)
 #define deep_copy(c) \
  (!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_ctx) && ref_is_live(q, c) && !is_anon(c)))
 
-// Chase variable refs to the ultimate slot. Needed when copy_term's
-// source is a frame-local ref (e.g. variant/2 → copy_term(A,C) where A
-// aliases the caller's cyclic var).
-static slot *ultimate_var_slot(query *q, unsigned vnum, pl_ctx vctx)
-{
-	const frame *vf = GET_FRAME(vctx);
-	slot *vs = get_slot(q, vf, vnum);
-
-	while (is_ref(&vs->c)) {
-		vctx = vs->c.val_ctx;
-		vnum = vs->c.var_num;
-		vf = GET_FRAME(vctx);
-		slot *vs2 = get_slot(q, vf, vnum);
-
-		if (vs2 == vs)
-			break;
-
-		vs = vs2;
-	}
-
-	return vs;
-}
-
-static bool var_aliases_dump_var(query *q, cell *c, pl_ctx c_ctx)
-{
-	if ((q->dump_var_num == (unsigned)-1) || !is_var(c))
-		return false;
-
-	pl_ctx vctx = is_ref(c) ? c->val_ctx : c_ctx;
-	slot *vs = ultimate_var_slot(q, c->var_num, vctx);
-	slot *ds = ultimate_var_slot(q, q->dump_var_num, q->dump_var_ctx);
-	return vs == ds;
-}
-
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
 
@@ -232,7 +198,6 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 	list_push_back(&stack, n);
 
 	cell *result = NULL;
-	cell *root_origin = p1;
 
 	while ((n = (snode*)list_back(&stack)) != NULL) {
 		if (n->arity <= 0) {
@@ -259,43 +224,13 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 
 		n->arity--;
 		slot *e = NULL;
-		cell *c0 = n->p1;
-		pl_ctx c0_ctx = n->p1_ctx;
-		cell *c = c0;
-		pl_ctx c_ctx = c0_ctx;
-		cell c_ref;
+		cell *c = n->p1;
+		pl_ctx c_ctx = n->p1_ctx;
 		uint32_t save_vgen = 0;
 		bool any = false;
 		int both = 0;
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
-		if (both) {
-			q->cycle_error = true;
-			// Premark hit: rewrite to dump_var so replacement closes the cycle
-			// when the source is a frame-local ref (variant/2).
-			if (var_aliases_dump_var(q, c0, c0_ctx)) {
-				make_ref(&c_ref, q->dump_var_num, q->dump_var_ctx);
-				c = &c_ref;
-				c_ctx = q->dump_var_ctx;
-			}
-		} else if (e && is_compound(c) && !is_iso_list(c) && (c == root_origin)) {
-			// Binding leads back to the compound being cloned (issue #1002).
-			// Always emit dump_var when set: the back-ref may be a callee-
-			// frame local that no longer aliases dump_var by slot identity
-			// after the callee returned, yet still deref's to the root.
-			// Only the clone root counts — not every on-stack compound
-			// (that breaks structure-sharing; retina beetle/witch).
-			if (q->dump_var_num != (unsigned)-1) {
-				make_ref(&c_ref, q->dump_var_num, q->dump_var_ctx);
-				c = &c_ref;
-				c_ctx = q->dump_var_ctx;
-			} else {
-				c = c0;
-				c_ctx = c0_ctx;
-			}
-			both = 1;
-			q->cycle_error = true;
-		}
-
+		if (both) q->cycle_error = true;
 		n->p1 += n->p1->num_cells;
 
 		if (is_compound(c) && !is_iso_list(c)) {
@@ -509,39 +444,7 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 {
 	cell *c = deref(q, p1, p1_ctx);
 	pl_ctx c_ctx = q->latest_ctx;
-
-	// Mark the source variable before cloning its binding so cyclic
-	// references back to it stay as refs rather than unfolding one
-	// level and inventing an extra variable (issue #1002). Same idea
-	// as dump_var_num on the list path in clone_term_to_tmp_internal.
-	if (++q->vgen == 0) q->vgen = 1;
-	q->has_vars = false;
-
-	slot *mark_e = NULL;
-	uint32_t save_mark_vgen = 0;
-	unsigned mark_num = (unsigned)-1;
-	pl_ctx mark_ctx = 0;
-
-	if (q->dump_var_num != (unsigned)-1) {
-		mark_num = q->dump_var_num;
-		mark_ctx = q->dump_var_ctx;
-	} else if (from && is_var(from)) {
-		mark_num = from->var_num;
-		mark_ctx = from_ctx;
-	}
-
-	if (mark_num != (unsigned)-1) {
-		// Mark the ultimate slot so a frame-local ref (variant/2) still
-		// stops unfolding at the real cyclic variable.
-		mark_e = ultimate_var_slot(q, mark_num, mark_ctx);
-		save_mark_vgen = mark_e->vgen;
-		mark_e->vgen = q->vgen;
-	}
-
-	cell *tmp = clone_term_to_tmp_internal(q, c, c_ctx, 0);
-
-	if (mark_e)
-		mark_e->vgen = save_mark_vgen;
+	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 
 	if (!tmp)
 		return NULL;
