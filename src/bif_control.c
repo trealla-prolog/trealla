@@ -1121,6 +1121,10 @@ static bool find_exception_handler(query *q, char *ball)
 static bool bif_iso_throw_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
+	// portray_clause/2 (and friends) leave fullstop/nl set; if they throw
+	// mid-write those flags would stick a trailing ".\n" onto the ball and
+	// parse_to_heap would then append another '.', which fails to parse (#948).
+	q->fullstop = q->nl = false;
 	q->parens = q->numbervars = true;
 	//q->is_dump_vars = true;
 	q->quoted = true;
@@ -1412,6 +1416,9 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	}
 
+	// See bif_iso_throw_1: clear leftover portray_clause fullstop/nl so the
+	// ball is a single term, not "error(...).\n." (#948).
+	q->fullstop = q->nl = false;
 	q->parens = q->numbervars = true;
 	q->quoted = true;
 	char *ball = print_term_to_strbuf(q, tmp, c_ctx, 1);

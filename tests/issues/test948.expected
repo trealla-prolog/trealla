@@ -1,0 +1,7 @@
+--- reader ---
+T = p(1)
+
+--- writer ---
+Err = existence_error(stream,'$stream'(3))
+
+--- writer stderr ---

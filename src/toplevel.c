@@ -74,6 +74,16 @@ int check_interrupt(query *q)
 
 		fflush(stdout);
 		int ch = history_getch();
+
+		if (ch == EOF) {			// no input left: abort, don't re-prompt forever
+			printf("\n");
+			q->is_redo = true;
+			q->retry = QUERY_RETRY;
+			q->pl->did_dump_vars = false;
+			q->noretry = true;
+			break;
+		}
+
 #ifndef __wasi__
 		printf("%c\n", ch);
 #endif
@@ -184,6 +194,15 @@ bool check_redo(query *q)
 		printf("\n;");
 		fflush(stdout);
 		int ch = history_getch();
+
+		if (ch == EOF) {			// no input left: stop enumerating, don't re-prompt forever
+			printf("  ... .\n");
+			q->is_redo = true;
+			q->retry = QUERY_RETRY;
+			q->pl->did_dump_vars = true;
+			q->noretry = true;
+			break;
+		}
 
 		if ((ch == 'h') || (ch == '?')) {
 			printf("Action:\n"

@@ -37,24 +37,27 @@
 #include "history.h"
 #include "prolog.h"
 
+// Turning off line buffering and echo only applies to a terminal. When
+// input is a pipe or a file there is nothing to turn off, so read it as
+// it comes rather than failing: bailing out here handed the caller a -1
+// it could not tell apart from end of input, and it had consumed nothing.
+
 int history_getch_fd(int fd)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	struct termios oldattr, newattr;
+	bool is_tty = !tcgetattr(fd, &oldattr);
 
-	if (tcgetattr(fd, &oldattr) != 0)
-		return -1;
-
-	newattr = oldattr;
-	newattr.c_lflag &= ~(ICANON | ECHO);
-
-	if (tcsetattr(fd, TCSANOW, &newattr) != 0)
-		return -1;
+	if (is_tty) {
+		newattr = oldattr;
+		newattr.c_lflag &= ~(ICANON | ECHO);
+		is_tty = !tcsetattr(fd, TCSANOW, &newattr);
+	}
 #endif
 	int ch = fgetc_utf8(stdin);
 #if !defined(_WIN32) && !defined(__wasi__)
-	if (tcsetattr(fd, TCSANOW, &oldattr) != 0)
-		return -1;
+	if (is_tty)
+		tcsetattr(fd, TCSANOW, &oldattr);
 #endif
 	return ch;
 }
