@@ -2348,15 +2348,19 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 			return false;
 		}
 
-		if (!is_list_or_nil(c1)) {
+		if (!is_iso_list_or_nil(c1)) {
 			throw_error(q, c, c_ctx, "domain_error", "write_option");
 			return false;
 		}
 
 		bool is_partial = false;
 
-		if (!check_list(q, c1, c1_ctx, &is_partial, NULL) && !is_partial)
-			throw_error(q, c, c_ctx, "domain_error", "write_option");
+		if (!check_list(q, c1, c1_ctx, &is_partial, NULL)) {
+			if (is_partial)
+				throw_error(q, c1, c1_ctx, "instantiation_error", "write_option");
+			else
+				throw_error(q, c, c_ctx, "domain_error", "write_option");
+		}
 
 		cell *c1_orig = c1;
 		pl_ctx c1_orig_ctx = c1_ctx;
@@ -2399,16 +2403,6 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 			c1 = LIST_TAIL(c1);
 			c1 = deref(q, c1, h_ctx);
 			c1_ctx = q->latest_ctx;
-		}
-
-		if (is_var(c1)) {
-			throw_error(q, c1_orig, c_ctx, "instantiation_error", "write_option");
-			return false;
-		}
-
-		if (!is_nil(c1)) {
-			throw_error(q, c, c_ctx, "domain_error", "write_option");
-			return false;
 		}
 
 		if (vnames) *vnames = c1_orig;
