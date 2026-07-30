@@ -1912,17 +1912,31 @@ static bool bif_iso_univ_2(query *q)
 		return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 	}
 
-	cell tmp = *p1;
-	tmp.num_cells = 1;
-	tmp.arity = 0;
-	tmp.flags = 0;
+	// Atomic / functor head of Term =.. List. Same cstring pitfall as
+	// functor/3: clearing FLAG_CSTR_BLOB on a managed atom turns the
+	// strbuf pointer into bogus character data.
+	cell tmp;
 
-	if (is_builtin(p1)) {
-		tmp.flags &= ~FLAG_INTERNED_BUILTIN;
-		tmp.bif_ptr = NULL;
+	if (is_string(p1)) {
+		make_atom(&tmp, g_dot_s);
+	} else if (is_cstring(p1) && !p1->arity) {
+		pl_idx off = new_atom(q->pl, C_STR(q, p1));
+		CHECKED(off != ERR_IDX);
+		make_atom(&tmp, off);
+	} else {
+		tmp = *p1;
+		tmp.num_cells = 1;
+		tmp.arity = 0;
+		tmp.flags = 0;
+
+		if (is_builtin(p1)) {
+			tmp.flags &= ~FLAG_INTERNED_BUILTIN;
+			tmp.bif_ptr = NULL;
+		}
+
+		CLR_OP(&tmp);
 	}
 
-	CLR_OP(&tmp);
 	allocate_list(q, &tmp);
 	int arity = p1->arity;
 	p1++;
@@ -2191,15 +2205,24 @@ static bool bif_iso_functor_3(query *q)
 		return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 	}
 
-	cell tmp = *p1;
-	tmp.num_cells = 1;
-	tmp.arity = 0;
-	tmp.flags = 0;
-	CLR_OP(&tmp);
+	// Return the atomic functor. Long cstring atoms are managed blobs;
+	// clearing flags (as for interned atoms) makes C_STR read the
+	// strbuf pointer bits as characters. Intern so the result is a
+	// stable atom. ISO strings are the '.'/2 functor.
+	cell tmp;
 
 	if (is_string(p1)) {
-		tmp.tag = TAG_INTERNED;
-		tmp.val_off = g_dot_s;
+		make_atom(&tmp, g_dot_s);
+	} else if (is_cstring(p1)) {
+		pl_idx off = new_atom(q->pl, C_STR(q, p1));
+		CHECKED(off != ERR_IDX);
+		make_atom(&tmp, off);
+	} else {
+		tmp = *p1;
+		tmp.num_cells = 1;
+		tmp.arity = 0;
+		tmp.flags = 0;
+		CLR_OP(&tmp);
 	}
 
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
