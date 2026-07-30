@@ -757,8 +757,24 @@ static bool is_ground_term(const cell *c)
 // after a query. ANSWER_BAD says so, and the caller reports it instead
 // of quietly loading it (which would surface as a permission error on
 // (=)/2, or, worse, as a quad that passes).
+//
+// The same applies once the principal functor is already one that marks
+// an answer description — ','/2, ';'/2, '|'/2 (issue #1087). An unknown
+// conjunct such as 'Y = 2, some_unknown_stuff' is still an answer
+// description (malformed), not "not an answer description": returning
+// ANSWER_NO would warn that the query has no description and fall
+// through to a permission error on (',')/2.
 
 enum answer_kind { ANSWER_NO = 0, ANSWER_OK, ANSWER_BAD };
+
+// Inside a known answer-description constructor, a subterm that is not
+// itself a description is a malformation of this one, not evidence that
+// the outer term is an ordinary clause.
+
+static enum answer_kind answer_as_part(enum answer_kind k)
+{
+	return (k == ANSWER_NO) ? ANSWER_BAD : k;
+}
 
 // The variables already bound by the answer being checked. A new one
 // starts at each alternative, since ';' and '|' separate answers.
@@ -818,14 +834,22 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 		}
 
 		if (!strcmp(name, ",")) {
-			enum answer_kind k = answer_description(p, lhs, seen);
-			return (k == ANSWER_OK) ? answer_description(p, rhs, seen) : k;
+			enum answer_kind k = answer_as_part(answer_description(p, lhs, seen));
+
+			if (k != ANSWER_OK)
+				return k;
+
+			return answer_as_part(answer_description(p, rhs, seen));
 		}
 
 		if (!strcmp(name, ";") || !strcmp(name, "|")) {
 			answer_vars lhs_seen = {0}, rhs_seen = {0};
-			enum answer_kind k = answer_one(p, lhs, &lhs_seen);
-			return (k == ANSWER_OK) ? answer_one(p, rhs, &rhs_seen) : k;
+			enum answer_kind k = answer_as_part(answer_one(p, lhs, &lhs_seen));
+
+			if (k != ANSWER_OK)
+				return k;
+
+			return answer_as_part(answer_one(p, rhs, &rhs_seen));
 		}
 
 		if (!strcmp(name, "error")

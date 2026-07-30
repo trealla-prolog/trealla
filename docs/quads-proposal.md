@@ -409,3 +409,30 @@ Compound walking in `ball_match/5` uses `functor/3` and `arg/3` rather
 than `(=..)/2`: univ on a list whose elements share variables did not
 decompose reliably in this recursive match, which made complete
 descriptions such as `X = f(Y,Y), Z = Y` fail after the switch.
+
+## 9. Principal functors identify answer descriptions (issue #1087)
+
+An unknown atom alone after a query is not an answer description:
+
+```prolog
+?- Y = 2.
+   some_unknown_stuff.     % ordinary term; warn, resume loading
+```
+
+But once the principal functor is already one that marks a description
+— `','/2`, `';'/2`, `'|'/2`, or `'='/2` as in §6 — the whole term *is*
+an answer description. An unknown conjunct makes it malformed, not
+“not a description”:
+
+```prolog
+?- Y = 2.
+   Y = 2, some_unknown_stuff.
+```
+
+Previously the recogniser returned “no” for the unknown leaf and
+propagated that out of `','/2`, which warned `quad query without answer
+description` and fell through to `permission error modifying
+user:(,)/2`. The fix elevates a non-description subterm to malformed
+when it occurs under a description constructor, so the term is consumed
+and `library(quads)` reports `not an answer: some_unknown_stuff` like
+any other malformed case (§6 / #1078).

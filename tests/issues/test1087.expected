@@ -1,0 +1,4 @@
+quads: MALFORMED 18, tests/issues/test1087.pl:8
+   ?- Y=2.
+   not an answer: some_unknown_stuff
+quads: 1 run, 0 passed, 1 failed.
