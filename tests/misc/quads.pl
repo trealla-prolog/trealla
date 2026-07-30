@@ -163,6 +163,26 @@ ball_3 ?- throw(f(X)).
 ball_4 ?- throw(error(type_error(atom,[X,Y]),[])).
    type_error(atom,[X,X]).
 
+% An answer substitution is idempotent, so no variable it binds occurs
+% in what it binds another to (issue #1081): the answer here is
+% 'X = f(1), Y = 1', not 'X = f(Y), Y = 1'. The parser rejects the
+% latter when the file is consulted, which aborts the load, so that
+% case is tests/issues/test1081.pl.
+
+?- X = f(Y), Y = 1.
+   X = f(1), Y = 1.
+
+% one variable may still be bound to another that the answer leaves free
+
+?- X = Y.
+   X = Y.
+
+% a description annotated 'sto' is exempt, a cyclic term being what it
+% states
+
+?- X = f(X).
+   X = f(X), sto.
+
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one
 % answer (issue #1074). The parser rejects a malformed description when
@@ -175,4 +195,5 @@ main :-
 	assertz('$quad'(hand_1, (X=1), ['X'=X], (1 = X), 'hand-written.pl', 1)),
 	assertz('$quad'(hand_2, (Y=1), ['Y'=Y], (Y = 1, Y = 2), 'hand-written.pl', 2)),
 	assertz('$quad'(hand_3, (Z=1), ['Z'=Z], (Z = 1), 'hand-written.pl', 3)),
+	assertz('$quad'(hand_4, (V=f(W),W=1), ['V'=V,'W'=W], (V = f(W), W = 1), 'hand-written.pl', 4)),
 	run_quads.

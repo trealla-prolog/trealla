@@ -746,6 +746,11 @@ static bool is_ground_term(const cell *c)
 // is bound twice within one answer. '1 = X' and 'X = 1, X = 2' are
 // therefore not answer descriptions (issue #1074).
 //
+// A substitution is also idempotent: no variable it binds occurs in what
+// another equation binds. 'X = f(Y), Y = 1' is therefore not one either,
+// the answer being 'X = f(1), Y = 1' (issue #1081). An answer annotated
+// 'sto' is exempt, a cyclic term being what such a description states.
+//
 // Such a term is told apart from an ordinary clause that merely follows
 // a quad, because nothing else could be meant by an equation directly
 // after a query. ANSWER_BAD says so, and the caller reports it instead
@@ -760,6 +765,7 @@ enum answer_kind { ANSWER_NO = 0, ANSWER_OK, ANSWER_BAD };
 typedef struct {
 	unsigned num_vars;
 	unsigned var_num[MAX_VARS];
+	bool sto;
 } answer_vars;
 
 static bool answer_vars_add(answer_vars *seen, unsigned var_num)
@@ -775,6 +781,8 @@ static bool answer_vars_add(answer_vars *seen, unsigned var_num)
 	return true;
 }
 
+static enum answer_kind answer_one(parser *p, const cell *c, answer_vars *seen);
+
 static enum answer_kind answer_description(parser *p, const cell *c, answer_vars *seen)
 {
 	if (!is_interned(c))
@@ -782,7 +790,10 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 
 	const char *name = C_STR(p, c);
 
-	if (c->arity == 0)
+	if (c->arity == 0) {
+		if (!strcmp(name, "sto"))
+			seen->sto = true;
+
 		return (!strcmp(name, "true") || !strcmp(name, "false")
 			|| !strcmp(name, "...") || !strcmp(name, "loops")
 			|| !strcmp(name, "instantiation_error")
@@ -792,6 +803,7 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			|| !strcmp(name, "unexpected")
 			|| !strcmp(name, "inattendue"))
 			? ANSWER_OK : ANSWER_NO;
+	}
 
 	if (c->arity == 2) {
 		const cell *lhs = c + 1;
@@ -811,8 +823,8 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 
 		if (!strcmp(name, ";") || !strcmp(name, "|")) {
 			answer_vars lhs_seen = {0}, rhs_seen = {0};
-			enum answer_kind k = answer_description(p, lhs, &lhs_seen);
-			return (k == ANSWER_OK) ? answer_description(p, rhs, &rhs_seen) : k;
+			enum answer_kind k = answer_one(p, lhs, &lhs_seen);
+			return (k == ANSWER_OK) ? answer_one(p, rhs, &rhs_seen) : k;
 		}
 
 		if (!strcmp(name, "error")
@@ -835,6 +847,55 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 		return !strcmp(name, "permission_error") ? ANSWER_OK : ANSWER_NO;
 
 	return ANSWER_NO;
+}
+
+// Walk the equations of one answer again, now that every variable it
+// binds is known, and check that none of them occurs on a right-hand
+// side. Alternatives are not entered: each is an answer of its own and
+// has been checked against its own set.
+
+static bool answer_is_substitution(parser *p, const cell *c, const answer_vars *seen)
+{
+	if (!is_interned(c) || (c->arity != 2))
+		return true;
+
+	const char *name = C_STR(p, c);
+	const cell *lhs = c + 1;
+	const cell *rhs = lhs + lhs->num_cells;
+
+	if (!strcmp(name, ","))
+		return answer_is_substitution(p, lhs, seen)
+			&& answer_is_substitution(p, rhs, seen);
+
+	if (strcmp(name, "="))
+		return true;
+
+	pl_idx num_cells = rhs->num_cells;
+
+	for (pl_idx i = 0; i < num_cells; i++, rhs++) {
+		if (!is_var(rhs))
+			continue;
+
+		for (unsigned j = 0; j < seen->num_vars; j++) {
+			if (seen->var_num[j] == rhs->var_num)
+				return false;
+		}
+	}
+
+	return true;
+}
+
+// One answer: its shape, then the substitution property over the whole
+// of it, which is only decidable once all its equations have been seen.
+
+static enum answer_kind answer_one(parser *p, const cell *c, answer_vars *seen)
+{
+	enum answer_kind k = answer_description(p, c, seen);
+
+	if ((k != ANSWER_OK) || seen->sto)
+		return k;
+
+	return answer_is_substitution(p, c, seen) ? ANSWER_OK : ANSWER_BAD;
 }
 
 // Build and assert
@@ -1059,7 +1120,7 @@ static bool quads(parser *p, cell *d)
 		return false;
 
 	answer_vars seen = {0};
-	enum answer_kind kind = answer_description(p, d, &seen);
+	enum answer_kind kind = answer_one(p, d, &seen);
 
 	if (kind == ANSWER_BAD) {
 		if (!p->do_read_term)

@@ -138,6 +138,9 @@ malformed(AD, Bad) :-
 		\+ answer_item(Bad)
 	->	true
 	;	rebound(Items, Bad)
+	->	true
+	;	\+ ( member(I, Items), annotation(I, sto) ),
+		unsolved(Items, Bad)
 	).
 
 answer_item(I) :- var(I), !, fail.
@@ -172,6 +175,31 @@ lhs_item([I|T], V, Bad) :-
 	->	Bad = I
 	;	lhs_item(T, V, Bad)
 	).
+
+% A substitution is idempotent, so no variable it binds occurs in what
+% it binds another to. 'X = f(Y), Y = 1' is not an answer, the answer
+% being 'X = f(1), Y = 1' (issue #1081). Report the equation that is
+% not in solved form, not the one binding the variable it mentions.
+
+unsolved(Items, Bad) :-
+	bound_vars(Items, Vs),
+	member(Bad, Items),
+	nonvar(Bad),
+	Bad = (_ = Val),
+	term_variables(Val, Rs),
+	member(R, Rs),
+	var_member(R, Vs),
+	!.
+
+bound_vars([], []).
+bound_vars([I|T], Vs) :-
+	(	nonvar(I),
+		I = (V = _),
+		var(V)
+	->	Vs = [V|Vs0]
+	;	Vs = Vs0
+	),
+	bound_vars(T, Vs0).
 
 % A quad written 'Name ?- Query.' is identified by Name, which is
 % reported so a suite can be read without counting line numbers
