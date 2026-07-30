@@ -225,7 +225,7 @@ Matching semantics can start strict (`==` on rendered bindings modulo variable
 renaming) and grow toward the full Flowlog semantics incrementally — the value
 is that all of this lives in Prolog and never touches the parser again.
 `library(quads)` now matches solutions with the same `ball_matches/3` walk
-used for error balls, so `'...'` as an unspecified subterm works in bindings
+used for error balls, so `...` as an unspecified subterm works in bindings
 as well (issue #1088; see §8).
 
 ### 3.3 Invoking
@@ -377,9 +377,9 @@ used to make `'$quad'/6` static, so a program could not add one of its
 own. `quad_record()` now declares it dynamic, which is what lets the
 library's own shape checking be tested on hand-written facts.
 
-## 8. `'...'` in answer substitutions (issue #1088)
+## 8. `...` in answer substitutions (issue #1088)
 
-Trailing `'...'` already means “further answers are accepted” (§2.2,
+Trailing `...` already means “further answers are accepted” (§2.2,
 `check_solutions/7`). The same atom also stands for an *unspecified
 subterm* inside a binding or an error ball — the English “…” of ISO
 answer descriptions:
@@ -396,10 +396,10 @@ No parser change is required: `answer_description` accepts any right-hand
 side of `=`/2 once the left side is a variable (§6), so `X = ...` and
 `L = [_A,_B,_C|...]` are already well-formed descriptions. The gap was
 only in the matcher, which compared solution witnesses with `variant/2`
-and therefore demanded a literal `'...'` in the actual answer.
+and therefore demanded a literal `...` in the actual answer.
 
 `attempt_match/5` for `solution(Items)` now uses `ball_matches/3` — the
-same predicate that already treats `P == '...'` as matching any subterm
+same predicate that already treats `P == ...` as matching any subterm
 when checking thrown balls — so a description binding may leave structure
 unspecified without weakening the one-to-one variable correspondence that
 `variant/2` enforced (issue #1080 / #1067). A different functor still
@@ -410,7 +410,16 @@ than `(=..)/2`: univ on a list whose elements share variables did not
 decompose reliably in this recursive match, which made complete
 descriptions such as `X = f(Y,Y), Z = Y` fail after the switch.
 
-## 9. Singleton on loading `library(quads)` (issue #1085)
+## 9. `...` needs no quotes (issue #1086)
+
+The answer-description atom `...` is a graphic atom, not an operator.
+Quoting it as `'...'` in `library/quads.pl` was unnecessary (and
+suggestive of a system that had declared `...` as an operator, which
+would also break `write_term/2`’s `max_depth` ellipsis). Code and
+comments use the bare atom; parentheses are enough if a reader wants
+to stress that it is a term.
+
+## 10. Singleton on loading `library(quads)` (issue #1085)
 
 `report/8` still took the module argument after reports stopped printing
 `M:Query` (plain `?- Query.`). The unused `M` warned as a singleton on
@@ -418,7 +427,7 @@ descriptions such as `X = f(Y,Y), Z = Y` fail after the switch.
 `link_names/1`. The module argument was dropped; reporting does not need
 it.
 
-## 10. Principal functors identify answer descriptions (issue #1087)
+## 11. Principal functors identify answer descriptions (issue #1087)
 
 An unknown atom alone after a query is not an answer description:
 

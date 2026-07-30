@@ -74,7 +74,7 @@
   variable and no variable is bound twice within one answer. '1 = X'
   and 'X = 1, X = 2' are rejected as malformed, not run as tests.
 
-  In a binding, '...' stands for an unspecified subterm (issue #1088):
+  In a binding, ... stands for an unspecified subterm (issue #1088):
 
       ?- X = 1.
          X = ... .
@@ -173,7 +173,7 @@ answer_item(I) :- expected_ball(I, _), !.
 
 answer_atom(true).
 answer_atom(false).
-answer_atom('...').
+answer_atom(...).
 answer_atom(loops).
 answer_atom(ad_infinitum).
 answer_atom(sto).
@@ -328,7 +328,7 @@ has_outputs(Sol) :-
 
 % Walk the expected solutions, requesting the Nth answer of the
 % query for the Nth description. After the last description the
-% query must yield no further answer, unless '...' said otherwise.
+% query must yield no further answer, unless ... said otherwise.
 %
 % Mode = capture when any solution of this alternative uses outputs/1:
 % each call_nth(N) is captured in full, and only the suffix beyond the
@@ -347,7 +347,7 @@ check_solutions([Sol0|T], M, Q, VNs, N, Mode, PrevCs) :-
 	drop_annotation(Items, sto, Items1, Sto),
 	take_output(Items1, Items2, Output),
 	rebuild_conj(Items2, Sol),
-	( Items2 = ['...'|_] ->
+	( Items2 = [...|_] ->
 		true
 	; Sto == true ->
 		true
@@ -470,7 +470,7 @@ output_matches(Expected, Cs) :-
 % which says nothing about Z. The query is solved in one copy and the
 % description applied to a second, so the two witnesses stay
 % independent and can be compared. Matching is variant-like, except
-% that '...' stands for an unspecified subterm — the same rule as for
+% that ... stands for an unspecified subterm — the same rule as for
 % error balls — so 'X = ...' and 'L = [_A,_B,_C|...]' hold (issue
 % #1088). A variable in a binding denotes a variable in the answer,
 % and so does one inside an error term, which ball_matches/3 pairs
@@ -550,7 +550,7 @@ match_outcome(Q, VNs, ball(B), ball(B0)) :-
 	).
 
 % The described ball must be a variant of the one actually thrown,
-% except that '...' stands for an unspecified subterm. A variable in a
+% except that ... stands for an unspecified subterm. A variable in a
 % description denotes an actual variable, here as anywhere else, so
 %
 %     error(instantiation_error, _)
@@ -578,7 +578,7 @@ match_outcome(Q, VNs, ball(B), ball(B0)) :-
 ball_matches(QVs, P, A) :-
 	ball_match(QVs, P, A, [], _).
 
-ball_match(_, P, _, B, B) :- P == '...', !.
+ball_match(_, P, _, B, B) :- P == ..., !.
 ball_match(QVs, P, A, B0, B) :-
 	var(P), !,
 	(	var_member(P, QVs)
@@ -627,17 +627,17 @@ pair_right([_-A0|T], A) :-
 
 expected_ball(error(E, Impl), error(E, Impl)).
 expected_ball(throw(B), B).
-expected_ball(instantiation_error, error(instantiation_error, '...')).
-expected_ball(type_error(T, C), error(type_error(T, C), '...')).
-expected_ball(domain_error(D, C), error(domain_error(D, C), '...')).
-expected_ball(existence_error(T, C), error(existence_error(T, C), '...')).
-expected_ball(permission_error(O, T, C), error(permission_error(O, T, C), '...')).
-expected_ball(evaluation_error(E), error(evaluation_error(E), '...')).
-expected_ball(system_error, error(system_error, '...')).
-expected_ball(syntax_error(E), error(syntax_error(E), '...')).
-expected_ball(representation_error(R), error(representation_error(R), '...')).
-expected_ball(resource_error(R), error(resource_error(R), '...')).
-expected_ball(uninstantiation_error(C), error(uninstantiation_error(C), '...')).
+expected_ball(instantiation_error, error(instantiation_error, ...)).
+expected_ball(type_error(T, C), error(type_error(T, C), ...)).
+expected_ball(domain_error(D, C), error(domain_error(D, C), ...)).
+expected_ball(existence_error(T, C), error(existence_error(T, C), ...)).
+expected_ball(permission_error(O, T, C), error(permission_error(O, T, C), ...)).
+expected_ball(evaluation_error(E), error(evaluation_error(E), ...)).
+expected_ball(system_error, error(system_error, ...)).
+expected_ball(syntax_error(E), error(syntax_error(E), ...)).
+expected_ball(representation_error(R), error(representation_error(R), ...)).
+expected_ball(resource_error(R), error(resource_error(R), ...)).
+expected_ball(uninstantiation_error(C), error(uninstantiation_error(C), ...)).
 
 timeout_ball(B) :-
 	nonvar(B),
