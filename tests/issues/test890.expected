@@ -1,0 +1,19 @@
+   L = "ab"||I, I = "cd"||L.
+   L = "ab"||I, I = "cd"||L, Ia = a, Ib = b, Lc = c, Ld = d.
+   I = "cdabcd"||_, Ia = a, Ib = b, L = "abcdab"||_, Lc = c, Ld = d.
+   I = "cdabcd"||X, Ia = a, Ib = b, X = "ab"||Y, L = "abcdab"||Y, Lc = c, Ld = d, Y = "cd"||X.
+   I = "cdab"||X, Ia = a, Ib = b, X = "cd"||Y, L = "abcdabcd"||Y, Lc = c, Ld = d, Y = "abcd"||Y.
+   I = "cdabcdab"||X, Ia = a, Ib = b, X = "cdab"||X, L = "abcd"||Y, Lc = c, Ld = d, Y = "abcdab"||X.
+   I = "c"||X, X = "d"||L, L = "a"||Y, Y = "b"||I.
+   I = "c"||_, L = "a"||_.
+   false.
+   I = "cda"||F, F = "b"||I, L = "a"||F.
+   L = "ab"||L.
+   L = "ab"||X.
+   X = "a"||Y, Y = "b"||X.
+   N = 0, M = [], X = "d"||L, I = "c"||X, L = "a"||Y, Y = "b"||I
+;  N = 1, M = "c", X = "a"||Y, I = "cd"||X, L = "a"||Y, Y = "b"||I
+;  N = 2, M = "cd", X = "b"||I, I = "cda"||X, L = "a"||Y, Y = "b"||I
+;  N = 3, M = "cda", X = "cdab"||X, I = "cdab"||X, L = "a"||Y, Y = "b"||I
+;  N = 4, M = "cdab", X = "dabc"||X, I = "cdabc"||X, L = "a"||Y, Y = "b"||I
+;  N = 5, M = "cdabc", X = "abcd"||X, I = "cdabcd"||X, L = "a"||Y, Y = "b"||I.

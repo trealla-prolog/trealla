@@ -506,6 +506,38 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 #endif
 }
 
+// True when c is a top-level query var in the unreified spine — a
+// rightslicing cut-point. Named vars print as themselves; anons as `_`.
+static bool is_dump_spine_var(query *q, cell *c, pl_ctx c_ctx)
+{
+	if (!q->is_dump_vars || !is_var(c))
+		return false;
+
+	pl_ctx ctx = is_ref(c) ? c->val_ctx : c_ctx;
+
+	if (ctx != 0)
+		return false;
+
+	if (is_anon(c))
+		return true;
+
+	if (c->var_num >= q->top->num_vars)
+		return false;
+
+	const char *name = GET_POOL(q, q->top->vartab.off[c->var_num]);
+
+	if (!name || !name[0] || !strcmp(name, "__G_"))
+		return false;
+
+	if (!strcmp(name, "_"))
+		return true;
+
+	if (q->pl->quiet && (name[0] == '_'))
+		return false;
+
+	return true;
+}
+
 static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 {
 	if (!q->variable_names)
@@ -529,9 +561,37 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 			return true;
 		}
 
+		// Also match refs to the same top-level slot (list spines use refs).
+		if (is_var(c) && is_var(v) && !is_anon(c) && !is_anon(v)
+			&& (c->var_num == v->var_num)) {
+			pl_ctx c_slot_ctx = is_ref(c) ? c->val_ctx : c_ctx;
+			pl_ctx v_slot_ctx = is_ref(v) ? v->val_ctx : v_ctx;
+
+			if ((c_slot_ctx == 0) && (v_slot_ctx == 0)) {
+				SB_sprintf(q->sb, "%s", C_STR(q, name));
+				q->last_thing = WAS_OTHER;
+				return true;
+			}
+		}
+
 		l = LIST_TAIL(l);
 		l = running ? deref(q, l, l_ctx) : l;
 		l_ctx = running ? q->latest_ctx : 0;
+	}
+
+	// Prefer the var's own top-level name over dump_var_num (issue #890).
+	if (is_var(c)) {
+		pl_ctx ctx = is_ref(c) ? c->val_ctx : c_ctx;
+
+		if ((ctx == 0) && (c->var_num < q->top->num_vars) && !is_anon(c)) {
+			const char *name = GET_POOL(q, q->top->vartab.off[c->var_num]);
+
+			if (name && name[0] && strcmp(name, "_") && strcmp(name, "__G_")) {
+				SB_sprintf(q->sb, "%s", name);
+				q->last_thing = WAS_OTHER;
+				return true;
+			}
+		}
 	}
 
 	c = deref(q, c, c_ctx);
@@ -1588,6 +1648,14 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		LIST_HANDLER(l);
 		bool closing_quote = true;
 		bool any = false, done = false;
+		cell *cut_var = NULL;
+		pl_ctx cut_var_ctx = 0;
+
+		// Fresh visit gen so marks left by scan_is_chars_list2 do not
+		// make the print walk think it has already hit a cycle (#890).
+		if (running) {
+			if (++q->vgen == 0) q->vgen = 1;
+		}
 
 		while (is_list(l)) {
 			if (q->max_depth && (cnt++ >= q->max_depth)) {
@@ -1619,7 +1687,18 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 				SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), true, q->json));
 			}
 
-			l = LIST_TAIL(l);
+			cell *tail_cell = LIST_TAIL(l);
+
+			// Rightslicing: stop at a query var in the unreified
+			// spine so mutual cycles print as L="ab"||I, I="cd"||L (#890).
+			if (is_dump_spine_var(q, tail_cell, l_ctx)) {
+				cut_var = tail_cell;
+				cut_var_ctx = l_ctx;
+				is_partial = true;
+				break;
+			}
+
+			l = tail_cell;
 			e = NULL;
 			both = 0;
 			any = false;
@@ -1636,14 +1715,26 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 
 		if (is_partial && !done) {
 			SB_strcat(q->sb, "||");
-			if (is_op(l)) SB_putchar(q->sb, '(');
-			if (q->cycle_error) {
+			if (cut_var) {
+				if (is_anon(cut_var)) {
+					SB_sprintf(q->sb, "%s", "_");
+				} else if (!dump_variable(q, cut_var, cut_var_ctx, 0)) {
+					print_variable(q, cut_var, cut_var_ctx, 0);
+				}
+			} else if (q->cycle_error) {
 				if (!dump_variable(q, v?v:c, c_ctx, !v))
 					print_variable(q, v?v:c, c_ctx, !v);
-			} else
+			} else {
+				if (is_op(l)) {
+					SB_putchar(q->sb, '(');
+				}
 				print_term_to_buf_(q, l, 0, running, 0, depth+1, depth+1, NULL);
-			if (is_op(l)) { SB_putchar(q->sb, ')'); }
-			else if (q->last_thing) SB_putchar(q->sb, ' ');
+				if (is_op(l)) {
+					SB_putchar(q->sb, ')');
+				} else if (q->last_thing) {
+					SB_putchar(q->sb, ' ');
+				}
+			}
 		}
 
 		q->last_thing = WAS_OTHER;
