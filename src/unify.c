@@ -6,8 +6,6 @@ static int compare_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx 
 
 static int compare_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
 {
-	cell *orig_p1 = p1, *orig_p2 = p2;
-	pl_ctx orig_p1_ctx = p1_ctx, orig_p2_ctx = p2_ctx;
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
@@ -402,8 +400,6 @@ static bool unify_cstrings(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 
 static bool unify_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
 {
-	cell *orig_p1 = p1, *orig_p2 = p2;
-	pl_ctx orig_p1_ctx = p1_ctx, orig_p2_ctx = p2_ctx;
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
