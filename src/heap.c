@@ -79,6 +79,90 @@ static inline bool ref_is_live(const query *q, const cell *c)
 #define deep_copy(c) \
  (!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_ctx) && ref_is_live(q, c) && !is_anon(c)))
 
+// The slot a variable ultimately names, following the chain of refs the
+// way deref() does.
+
+static slot *ultimate_slot(const query *q, const cell *c, pl_ctx c_ctx)
+{
+	if (is_ref(c))
+		c_ctx = c->val_ctx;
+
+	const frame *f = GET_FRAME(c_ctx);
+	slot *e = get_slot(q, f, c->var_num);
+
+	while (is_var(&e->c)) {
+		c_ctx = e->c.val_ctx;
+		c = &e->c;
+
+		if (is_ref(c))
+			c_ctx = c->val_ctx;
+
+		f = GET_FRAME(c_ctx);
+		slot *e2 = get_slot(q, f, c->var_num);
+
+		if (e == e2)
+			break;
+
+		e = e2;
+	}
+
+	return e;
+}
+
+// Whether a variable in the term being copied denotes the same thing as
+// the variable copy_term/2 is replacing, so that a reference back to it
+// becomes the target variable instead of a newly invented one.
+//
+// Comparing var_num and context is not enough, and neither is comparing
+// slots. Given
+//
+//     cyclic(X) :- X = f(g(X,_),_).
+//     wrap(X, Y) :- copy_term(X, Y).
+//
+// the back-reference inside the term names the slot of whoever built it
+// (cyclic/1's X), while copy_term/2 is handed the term through another
+// slot again (wrap/2's X), arguments being passed by value. All three
+// name the same term, which is what makes the reference a cycle, so a
+// bound variable is compared by the term it denotes. Getting this wrong
+// left copy_term/2 with nothing to replace, and it then invented a
+// variable for the back-reference: an acyclic unrolling of a cyclic
+// term, with one variable too many (#1002).
+//
+// A term is a cell together with a context, and both halves have to
+// match: activations of a recursive clause share its cells and are told
+// apart only by their context.
+
+static bool denotes_same(query *q, cell *c, pl_ctx c_ctx, const cell *from_val, pl_ctx from_val_ctx, const slot *from_e)
+{
+	if (!from_val)
+		return ultimate_slot(q, c, c_ctx) == from_e;
+
+	const pl_ctx save_latest_ctx = q->latest_ctx;
+	const cell *val = deref(q, c, c_ctx);
+	const pl_ctx val_ctx = q->latest_ctx;
+	q->latest_ctx = save_latest_ctx;
+	return (val == from_val) && (val_ctx == from_val_ctx);
+}
+
+// Whether a dereferenced argument is a reference back to the whole term
+// being copied. Only the raw argument tells us: dereferencing it lands
+// on the term itself, and it is the variable that named it which has to
+// be kept, for copy_vars() to turn into the target variable. Descending
+// instead copies one level of the cycle before catching it, so that each
+// copy of a cyclic term came out larger than the last.
+//
+// The context matters as much as the cell: the arguments of a recursive
+// clause's head are the same cells at every depth, and comparing cells
+// alone takes the deeper one for the term the copy started from.
+//
+// Callers test the raw argument for being a variable first: that cell has
+// just been read, whereas this walks off into the query.
+
+static bool cycles_back(const query *q, const cell *c, pl_ctx c_ctx)
+{
+	return q->clone_root && (c == q->clone_root) && (c_ctx == q->clone_root_ctx);
+}
+
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
 
@@ -130,6 +214,13 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			int both = 0;
 			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 			if (both) q->cycle_error = true;
+
+			if (is_var(p1 + 1) && cycles_back(q, h, h_ctx)) {
+				h = p1 + 1;
+				h_ctx = p1_ctx;
+				q->cycle_error = true;
+			}
+
 			cell *rec = clone_term_to_tmp_internal(q, h, h_ctx, depth+1);
 			if (!rec) return NULL;
 			if (e) e->vgen = save_vgen;
@@ -148,6 +239,12 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 
 			if (both)
 				q->cycle_error = true;
+
+			if (is_var(p1) && cycles_back(q, t, t_ctx)) {
+				t = p1;
+				t_ctx = p1_ctx;
+				q->cycle_error = true;
+			}
 
 			p1 = t;
 			p1_ctx = t_ctx;
@@ -231,6 +328,13 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		int both = 0;
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 		if (both) q->cycle_error = true;
+
+		if (is_var(n->p1) && cycles_back(q, c, c_ctx)) {
+			c = n->p1;
+			c_ctx = n->p1_ctx;
+			q->cycle_error = true;
+		}
+
 		n->p1 += n->p1->num_cells;
 
 		if (is_compound(c) && !is_iso_list(c)) {
@@ -321,6 +425,20 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 {
 	unsigned num_cells = c->num_cells;
 	unsigned cnt = 0;
+	const slot *from_e = NULL;			// the slot 'from' names
+	cell *from_val = NULL;				// the term it denotes, if bound
+	pl_ctx from_val_ctx = 0;
+
+	if (from) {
+		const pl_ctx save_latest_ctx = q->latest_ctx;
+		from_val = deref(q, from, from_ctx);
+		from_val_ctx = q->latest_ctx;
+		q->latest_ctx = save_latest_ctx;
+		from_e = ultimate_slot(q, from, from_ctx);
+
+		if (is_var(from_val))
+			from_val = NULL;
+	}
 
 	for (unsigned i = 0; i < num_cells; i++, c++) {
 		if (!is_ref(c))
@@ -328,7 +446,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 
 		c->flags |= FLAG_VAR_LOCAL;
 
-		if (from && (c->var_num == from->var_num) && (c->val_ctx == from_ctx)) {
+		if (from && denotes_same(q, c, c->val_ctx, from_val, from_val_ctx, from_e)) {
 			c->var_num = to->var_num;
 			c->val_ctx = to_ctx;
 
@@ -336,9 +454,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 			// attributes from the source variable onto the target.
 
 			if (copy_attrs && !c->tmp_attrs) {
-				const frame *f = GET_FRAME(from_ctx);
-				const slot *e = get_slot(q, f, from->var_num);
-				cell *attrs = e->c.val_attrs;
+				cell *attrs = from_e->c.val_attrs;
 
 				if (attrs) {
 					cell *save_tmp_heap = q->tmp_heap;
@@ -444,7 +560,20 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 {
 	cell *c = deref(q, p1, p1_ctx);
 	pl_ctx c_ctx = q->latest_ctx;
+
+	// Have the walk stop at references back to the whole term, but only
+	// when there is a target variable for such a reference to become:
+	// without one it has to be a newly invented variable wherever the
+	// cycle is caught, and catching it later at least keeps a level of
+	// the structure.
+
+	cell *save_root = q->clone_root;
+	pl_ctx save_root_ctx = q->clone_root_ctx;
+	q->clone_root = (from && to && is_compound(c)) ? c : NULL;
+	q->clone_root_ctx = c_ctx;
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
+	q->clone_root = save_root;
+	q->clone_root_ctx = save_root_ctx;
 
 	if (!tmp)
 		return NULL;

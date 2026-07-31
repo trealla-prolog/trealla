@@ -722,6 +722,7 @@ struct query_ {
 	choice *choices;
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
+	cell *clone_root;					// the term copy_term/2 is copying, for cycles back to it
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
 	slot *save_e;
@@ -748,6 +749,7 @@ struct query_ {
 	unsigned s_cnt, retries, popp, rand_seed;
 	int autofail_n;
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
+	pl_ctx clone_root_ctx;				// context of clone_root, which alone does not identify a term
 	pl_idx tmphp;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
 	pl_idx before_hook_tp, qcnt[MAX_QUEUES];
