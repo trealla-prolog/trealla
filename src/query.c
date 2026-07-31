@@ -762,6 +762,59 @@ static bool commit_any_choices(const query *q, const frame *f)
 	return ch->gen > f->chgen;
 }
 
+// Is the goal about to be called really the last thing this frame has
+// to do? LCO (see reuse_frame) throws away the rest of the current
+// instruction stream along with the frame, so it is only sound when
+// there is nothing left in that stream.
+//
+// FLAG_INTERNED_RECURSIVE_CALL is not enough on its own: it is set at
+// clause-compile time on any cell that *ends* at the clause end, which
+// includes a goal that is merely the argument of a trailing control
+// construct - \+ G, once(G), ignore(G), (C -> G) and friends. Those
+// constructs run that very cell as a goal, but with a continuation of
+// their own planted after it (a cut, a fail, a then-branch, a barrier
+// drop), either inlined by compile_term() or built on the heap by
+// prepare_call(). Reusing the frame there silently discards that
+// continuation - e.g. \+ G would lose its `!, $drop_barrier, fail'
+// and so succeed for a provable G.
+
+static bool is_last_call(const query *q)
+{
+	const cell *c = q->st.instr + q->st.instr->num_cells;
+	bool barrier = false;
+
+	// call/N plants nothing after the goal but a $drop_barrier, which is
+	// bookkeeping that reuse_frame() performs directly.
+
+	if (is_interned(c) && (c->val_off == g_sys_drop_barrier_s)) {
+		c += c->num_cells;
+		barrier = true;
+	}
+
+	// Past that, only the branch join points that compile_term() emits
+	// on the way to the clause end may be skipped: they do nothing.
+
+	while (!is_end(c)) {
+		if (!is_interned(c))
+			return false;
+
+		if ((c->val_off == g_true_s) && !c->arity)
+			c += c->num_cells;						// landing
+		else if ((c->val_off == g_sys_jump_s) && (c->arity == 1)
+			&& is_smallint(c+1) && (get_smallint(c+1) > 0))
+			c += get_smallint(c+1);					// jump to a landing
+		else
+			return false;
+	}
+
+	// The clause's own end cell means nothing is left to do. The end
+	// cell of a heap continuation instead carries a return address and
+	// the frame state to restore along with it, which is work - bar the
+	// call/N case above, where reuse_frame() has always taken over.
+
+	return barrier || !c->ret_instr;
+}
+
 static void commit_frame(query *q)
 {
 	q->st.dbe->matched++;
@@ -790,7 +843,7 @@ static void commit_frame(query *q)
 		&& last_match
 		&& (q->st.fp == (q->st.cur_ctx + 1))
 		) {
-		bool tail_recursive = is_recursive_call(q->st.instr);
+		bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
 		bool choices = commit_any_choices(q, f);
 		tco = slots_ok && tail_recursive && !choices;
