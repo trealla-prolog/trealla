@@ -538,10 +538,60 @@ static bool is_dump_spine_var(query *q, cell *c, pl_ctx c_ctx)
 	return true;
 }
 
+// Follow var-to-var aliases only. Full deref would walk into a binding
+// like Y = -Y and lose the variable identity needed for naming (test842);
+// skipping deref entirely misses Cor.3 leftmost-alias selection (#1091).
+static bool var_root_slot(query *q, cell *c, pl_ctx c_ctx, uint32_t *var_num, pl_ctx *out_ctx)
+{
+	if (!is_var(c) || is_anon(c))
+		return false;
+
+	if (is_ref(c))
+		c_ctx = c->val_ctx;
+
+	const frame *f = GET_FRAME(c_ctx);
+	slot *e = get_slot(q, f, c->var_num);
+	uint32_t vn = c->var_num;
+
+	while (is_var(&e->c)) {
+		c_ctx = e->c.val_ctx;
+		vn = e->c.var_num;
+		cell *next = &e->c;
+
+		if (is_ref(next))
+			c_ctx = next->val_ctx;
+
+		f = GET_FRAME(c_ctx);
+		slot *e2 = get_slot(q, f, vn);
+
+		if (e == e2)
+			break;
+
+		e = e2;
+	}
+
+	*var_num = vn;
+	*out_ctx = c_ctx;
+	return true;
+}
+
 static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 {
 	if (!q->variable_names)
 		return false;
+
+	uint32_t c_vn;
+	pl_ctx c_root_ctx;
+
+	if (running) {
+		if (!var_root_slot(q, c, c_ctx, &c_vn, &c_root_ctx))
+			return false;
+	} else {
+		if (!is_var(c) || is_anon(c))
+			return false;
+		c_vn = c->var_num;
+		c_root_ctx = is_ref(c) ? c->val_ctx : c_ctx;
+	}
 
 	cell *l = q->variable_names;
 	pl_ctx l_ctx = q->variable_names_ctx;
@@ -552,26 +602,25 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 		h = running ? deref(q, h, l_ctx) : h;
 		pl_ctx h_ctx = running ? q->latest_ctx : l_ctx;
 		cell *name = running ? deref(q, h+1, h_ctx) : h+1;
-		cell *v = 0 && running ? deref(q, h+2, h_ctx) : h+2;
-		pl_ctx v_ctx = 0 && running ? q->latest_ctx : l_ctx;
+		cell *v = h+2;
+		pl_ctx v_ctx = h_ctx;
+		uint32_t v_vn;
+		pl_ctx v_root_ctx;
+		bool v_ok;
 
-		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx) && !is_anon(c) && !is_anon(v)) {
+		if (running)
+			v_ok = var_root_slot(q, v, v_ctx, &v_vn, &v_root_ctx);
+		else if (is_var(v) && !is_anon(v)) {
+			v_ok = true;
+			v_vn = v->var_num;
+			v_root_ctx = is_ref(v) ? v->val_ctx : v_ctx;
+		} else
+			v_ok = false;
+
+		if (v_ok && (v_vn == c_vn) && (v_root_ctx == c_root_ctx)) {
 			SB_sprintf(q->sb, "%s", C_STR(q, name));
 			q->last_thing = WAS_OTHER;
 			return true;
-		}
-
-		// Also match refs to the same top-level slot (list spines use refs).
-		if (is_var(c) && is_var(v) && !is_anon(c) && !is_anon(v)
-			&& (c->var_num == v->var_num)) {
-			pl_ctx c_slot_ctx = is_ref(c) ? c->val_ctx : c_ctx;
-			pl_ctx v_slot_ctx = is_ref(v) ? v->val_ctx : v_ctx;
-
-			if ((c_slot_ctx == 0) && (v_slot_ctx == 0)) {
-				SB_sprintf(q->sb, "%s", C_STR(q, name));
-				q->last_thing = WAS_OTHER;
-				return true;
-			}
 		}
 
 		l = LIST_TAIL(l);
@@ -580,17 +629,13 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	}
 
 	// Prefer the var's own top-level name over dump_var_num (issue #890).
-	if (is_var(c)) {
-		pl_ctx ctx = is_ref(c) ? c->val_ctx : c_ctx;
+	if ((c_root_ctx == 0) && (c_vn < q->top->num_vars)) {
+		const char *name = GET_POOL(q, q->top->vartab.off[c_vn]);
 
-		if ((ctx == 0) && (c->var_num < q->top->num_vars) && !is_anon(c)) {
-			const char *name = GET_POOL(q, q->top->vartab.off[c->var_num]);
-
-			if (name && name[0] && strcmp(name, "_") && strcmp(name, "__G_")) {
-				SB_sprintf(q->sb, "%s", name);
-				q->last_thing = WAS_OTHER;
-				return true;
-			}
+		if (name && name[0] && strcmp(name, "_") && strcmp(name, "__G_")) {
+			SB_sprintf(q->sb, "%s", name);
+			q->last_thing = WAS_OTHER;
+			return true;
 		}
 	}
 
