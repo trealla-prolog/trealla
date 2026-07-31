@@ -2356,10 +2356,14 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 		bool is_partial = false;
 
 		if (!check_list(q, c1, c1_ctx, &is_partial, NULL)) {
+			// Must return after throw: falling through re-throws from the
+			// element loop (issue #1090 — double error / write-after-error).
 			if (is_partial)
 				throw_error(q, c1, c1_ctx, "instantiation_error", "write_option");
 			else
 				throw_error(q, c, c_ctx, "domain_error", "write_option");
+
+			return false;
 		}
 
 		cell *c1_orig = c1;
