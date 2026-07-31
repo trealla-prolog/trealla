@@ -19,8 +19,20 @@ wrap(X, Y) :- copy_term(X, Y).
 dag(0, x) :- !.
 dag(N, f(T,T)) :- N1 is N-1, dag(N1, T).
 
-report(Label, X, Y) :-
-	term_variables(X, XVs), length(XVs, NX),
-	term_variables(Y, YVs), length(YVs, NY),
-	( acyclic_term(Y) -> Kind = acyclic ; Kind = cyclic ),
-	write(Label), write(': '), write(NX-NY), write(' '), write(Kind), nl.
+same_vars_cyclic(X, Y) :-
+	term_variables(X, XVs), length(XVs, N),
+	term_variables(Y, YVs), length(YVs, N),
+	\+ acyclic_term(Y).
+
+main :-
+	cyclic(A), wrap(A, A2),
+	( same_vars_cyclic(A, A2), variant(A, A2) -> write(wrap-ok) ; write(wrap-fail) ), nl,
+	cyclic_ground_list(G), copy_term(G, G2),
+	( same_vars_cyclic(G, G2) -> write(glist-ok) ; write(glist-fail) ), nl,
+	cyclic_partial_list(P), copy_term(P, P2),
+	( same_vars_cyclic(P, P2) -> write(plist-ok) ; write(plist-fail) ), nl,
+	dag(3, D), copy_term(D, D2),
+	( acyclic_term(D2), variant(D, D2) -> write(dag-ok) ; write(dag-fail) ), nl,
+	X = f(X), copy_term(X, Y),
+	( \+ acyclic_term(Y) -> write(fx-ok) ; write(fx-fail) ), nl,
+	halt.

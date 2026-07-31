@@ -1,1 +1,5 @@
-   Warning: Initialization goal exception: error(existence_error(procedure,main/0),main/0).
+wrap-ok
+glist-ok
+plist-ok
+dag-ok
+fx-ok
