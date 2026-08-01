@@ -2093,11 +2093,28 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			if (cl2->dbgen_retracted)
 				continue;
 
+			// Must be checked here as well as on the incremental path
+			// below: these are the clauses that already existed when
+			// the index crossed the threshold. Missing them leaves
+			// is_var_in_first_arg false with var-headed clauses in
+			// idx1, and find_key() then does an idx1 lookup whose
+			// comparator (index_cmpkey) calls a var equal to anything.
+			// That is not a total order, so the skiplist descent can
+			// walk straight past the var-headed node and the clause is
+			// never returned.
+
+			if (c->arity && is_var(FIRST_ARG(c)))
+				pr->is_var_in_first_arg = true;
+
 			sl_app(pr->idx1, c, cl2);
 
 			if (pr->idx2) {
 				cell *arg1 = FIRST_ARG(c);
 				cell *arg2 = NEXT_ARG(arg1);
+
+				if (is_var(arg2))
+					pr->is_var_in_second_arg = true;
+
 				sl_app(pr->idx2, arg2, cl2);
 			}
 		}
@@ -2111,6 +2128,9 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 	if (arg1 && is_var(arg1))
 		pr->is_var_in_first_arg = true;
+
+	if (arg2 && is_var(arg2))
+		pr->is_var_in_second_arg = true;
 
 	if (!append) {
 		sl_set(pr->idx1, c, r);

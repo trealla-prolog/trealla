@@ -1364,7 +1364,12 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	skiplist *idx = pr->idx1;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
-		if (!pr->idx2) {
+		// is_var_in_second_arg: idx2 is keyed on Arg2 and index_cmpkey
+		// calls a var equal to anything, so a var-headed Arg2 breaks
+		// the skiplist's ordering the same way it does for idx1. No
+		// usable index here - fall back to the linear walk.
+
+		if (!pr->idx2 || pr->is_var_in_second_arg) {
 			q->st.dbe = pr->head;
 			return true;
 		}
