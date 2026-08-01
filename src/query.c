@@ -1079,15 +1079,44 @@ bool push_barrier(query *q)
 //     loop(N) :- foo(N), M is N-1, loop(M).
 //
 // loop/1 runs in constant frames if foo/1's body is anything else.
-// Dropping the pin here looks safe on paper - push_barrier() stamps the
-// choicepoint with gen == f->chgen, so resume_frame() and commit_frame()
-// both see it while it is live, and once it is gone there is nothing
-// left to protect - but it is not: tests/issues/test338.pl (clpb) then
-// loses solutions, because attributed variables rely on frames being
-// pinned by paths that do not set the flag themselves. Scoping the pin
-// to the choicepoint's lifetime needs that dependency untangled first,
-// and a bit of its own: restoring the old value at $drop_barrier would
-// discard a pin set legitimately while the condition ran.
+// once/1 escapes, as it compiles to the fail-on-retry barrier instead.
+//
+// What the pin holds off is not this choicepoint - both resume_frame()
+// and commit_frame() see that one while it is live, and it is always
+// gone before the clause ends. It is the frame's *index* going back into
+// circulation while something outside still refers to its variables, and
+// the something turns out to be plural:
+//
+//   - The trail. An entry names a variable as (frame, var number) and
+//     undo_me() walks entries by index, so a later frame landing on that
+//     index gets one of its variables unbound by a retry that has
+//     nothing to do with it. Both trim_frame() and reuse_frame() recycle
+//     indices this way - reuse_frame() twice over, since it *moves* the
+//     incoming frame's slots into place, copied without a share, and
+//     leaves that frame holding a dangling duplicate. Counting entries
+//     undone against a frame beyond q->st.fp gives 5,364 in one run of
+//     Logtalk's library/types tests, and the same number in this build:
+//     the pin does not stop them being made, it keeps the indices they
+//     name out of circulation so nothing notices. Drop it and
+//     tests/issues/test338.pl (clpb) loses solutions and those Logtalk
+//     tests abort in malloc().
+//
+//   - Attributed variables, through the same trail entries.
+//
+//   - Thread queues. threaded_once/1 posts a goal holding variables from
+//     the caller's frames and collects the answer later, long after the
+//     posting predicate has returned - see the difference lists in
+//     Logtalk's examples/threads/primes, which come back truncated in
+//     proportion to the thread count once those frames can be recovered.
+//
+// Repairs tried: sweeping the trail when a frame is reclaimed (needs a
+// per-frame count of live entries to stay bounded, or takeuchi.pl stops
+// finishing; still leaves reuse_frame()'s), and stamping entries with a
+// frame incarnation so undo_me() can ignore stale ones (covers the whole
+// trail, at 4 bytes an entry and about 1% - but not the thread queues).
+//
+// So the pin stays until frames are no longer the only place a variable
+// lives, or until every holder of a frame reference is accounted for.
 
 bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
