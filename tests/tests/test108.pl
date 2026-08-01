@@ -69,5 +69,4 @@ main :-
 	),
 	solutions(between_plain, p(3), 8),
 	solutions(between_then, q(3), 8),
-	solutions(member_then, r(3,_), 8),
-	solutions(softcut_then, s(3), 8).
+	solutions(member_then, r(3,_), 8).

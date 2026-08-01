@@ -536,7 +536,11 @@ static bool bif_iso_catch_3(query *q)
 	if ((q->retry == QUERY_EXCEPTION) || (q->retry == QUERY_ABORT)) {
 		unsigned is_abort = q->retry == QUERY_ABORT;
 		check_pressure(q);
-		q->error = false;
+		// Allocation failure sets oom (and often error) before throw_error
+		// runs. Without clearing oom here the query loop still hard-stops
+		// with "resource_error(memory). %query terminated" even after catch/3
+		// recovers — which breaks run_quads (issue #1094).
+		q->error = q->oom = false;
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,any);
 		q->retry = QUERY_OK;

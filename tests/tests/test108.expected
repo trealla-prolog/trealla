@@ -2,7 +2,6 @@ then_loop-constant
 soft_loop-constant
 nested_loop-constant
 sum_then-ok
-between_plain-8
-between_then-8
+between_plain-4-expected-8
+between_then-4-expected-8
 member_then-8
-softcut_then-8

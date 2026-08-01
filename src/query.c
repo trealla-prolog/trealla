@@ -457,15 +457,14 @@ int create_vars(query *q, unsigned cnt)
 	if (!cnt)
 		return f->actual_slots;
 
-	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
-		q->oom = q->error = true;
+	// Fail soft: callers use CHECKED() to throw resource_error(memory).
+	// Setting oom/error here would make start() abort the query even when
+	// catch/3 handles the throw (issue #1094).
+	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS)
 		return -1;
-	}
 
-	if (!check_slot(q, cnt)) {
-		q->error = true;
+	if (!check_slot(q, cnt))
 		return -1;
-	}
 
 	unsigned var_num = f->actual_slots;
 
@@ -479,10 +478,8 @@ int create_vars(query *q, unsigned cnt)
 		f->op = q->st.sp;
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
 
-		if (!check_slot(q, cnt2)) {
-			q->error = true;
+		if (!check_slot(q, cnt2))
 			return -1;
-		}
 
 		memmove(q->slots+f->op, q->slots+save_overflow, sizeof(slot)*cnt2);
 		q->st.sp += cnt2;
@@ -753,52 +750,13 @@ static void reuse_frame(query *q, unsigned num_vars)
 	trim_heap(q);
 }
 
-// Would any choicepoint resume into this frame? If one would, the frame
-// still owns bindings that a retry has to undo, and reuse_frame() must
-// not hand its slots to the tail call.
-//
-// A choicepoint can only need this frame if the frame already existed
-// when it was pushed, and ch->st.fp says so exactly: it is the frame
-// count at that moment, so ch->st.fp > q->st.cur_ctx means the frame was
-// live and a retry restores into it. Anything pushed earlier belongs to
-// an ancestor, and retrying it throws this frame away whole. Since
-// commit_frame() only gets here with q->st.fp == q->st.cur_ctx + 1, that
-// is the test below.
-//
-// This used to compare choice generations - ch->gen > f->chgen - which
-// is not the same question and got it wrong both ways.
-//
-// Too loose: a choicepoint pushed by an earlier goal of this very clause
-// carries gen == f->chgen exactly, so it was invisible.
-//
-//     p(0) :- !.
-//     p(N) :- between(1,2,_), M is N-1, p(M).
-//
-// findall(x, p(3), L) has to give eight solutions; it gave four, because
-// the tail call recycled the frame between/3's choicepoint needed. The
-// if-then-else branches this commit turns into tail calls sit behind
-// more of these than a plain clause body does.
-//
-// Too tight, had it simply been tightened to >=: generations do not
-// order frames. commit_frame() stamps a pending clause choice with
-// q->chgen, the generation of the frame the call went on to create, and
-// $drop_barrier hands a frame back a generation it held earlier - so an
-// ancestor's choicepoint can carry gen == f->chgen while having nothing
-// to do with this frame. samples/chess.pl loses ~31k of its 20.7M tail
-// calls that way, all in can_move/5 recursing under an outer clause
-// choice five frames up.
-//
-// skip counts the choicepoints on top that commit_frame() is about to
-// drop by itself: the in-progress clause choice always, plus the call/N
-// barrier when is_last_call() found one.
-
-static bool commit_any_choices(const query *q, unsigned skip)
+static bool commit_any_choices(const query *q, const frame *f)
 {
-	if (q->st.cp <= skip)
+	if (q->st.cp == 1)							// Skip in-progress choice
 		return false;
 
-	const choice *ch = GET_CHOICE(q->st.cp - 1 - skip);
-	return ch->st.fp >= q->st.fp;
+	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
+	return ch->gen > f->chgen;
 }
 
 // Is the goal about to be called really the last thing this frame has
@@ -817,7 +775,7 @@ static bool commit_any_choices(const query *q, unsigned skip)
 // continuation - e.g. \+ G would lose its `!, $drop_barrier, fail'
 // and so succeed for a provable G.
 
-static bool is_last_call(const query *q, bool *found_barrier)
+static bool is_last_call(const query *q)
 {
 	const cell *c = q->st.instr + q->st.instr->num_cells;
 	bool barrier = false;
@@ -851,7 +809,6 @@ static bool is_last_call(const query *q, bool *found_barrier)
 	// the frame state to restore along with it, which is work - bar the
 	// call/N case above, where reuse_frame() has always taken over.
 
-	*found_barrier = barrier;
 	return barrier || !c->ret_instr;
 }
 
@@ -883,12 +840,10 @@ static void commit_frame(query *q)
 		&& last_match
 		&& (q->st.fp == (q->st.cur_ctx + 1))
 		) {
-		bool barrier = false;
-		bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q, &barrier);
+		bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
-		bool choices = commit_any_choices(q, barrier ? 2 : 1);
+		bool choices = commit_any_choices(q, f);
 		tco = slots_ok && tail_recursive && !choices;
-
 
 #if 0
 		cell *head = get_head(cl->cells);
@@ -1066,57 +1021,6 @@ bool push_barrier(query *q)
 	ch->barrier = true;
 	return true;
 }
-
-// Pins the frame against recovery for as long as it exists, which is
-// blunt - see the FIXME. The pin is never taken back, so one \+,
-// ignore/1, \= or if-then-else anywhere in a body costs that clause's
-// frame for the rest of the query, and because the unrecovered frame
-// keeps q->st.fp above the caller's cur_ctx + 1, the caller loses its
-// own TCO too:
-//
-//     foo(N) :- ( N > 0 -> true ; true ).
-//     loop(0) :- !.
-//     loop(N) :- foo(N), M is N-1, loop(M).
-//
-// loop/1 runs in constant frames if foo/1's body is anything else.
-// once/1 escapes, as it compiles to the fail-on-retry barrier instead.
-//
-// What the pin holds off is not this choicepoint - both resume_frame()
-// and commit_frame() see that one while it is live, and it is always
-// gone before the clause ends. It is the frame's *index* going back into
-// circulation while something outside still refers to its variables, and
-// the something turns out to be plural:
-//
-//   - The trail. An entry names a variable as (frame, var number) and
-//     undo_me() walks entries by index, so a later frame landing on that
-//     index gets one of its variables unbound by a retry that has
-//     nothing to do with it. Both trim_frame() and reuse_frame() recycle
-//     indices this way - reuse_frame() twice over, since it *moves* the
-//     incoming frame's slots into place, copied without a share, and
-//     leaves that frame holding a dangling duplicate. Counting entries
-//     undone against a frame beyond q->st.fp gives 5,364 in one run of
-//     Logtalk's library/types tests, and the same number in this build:
-//     the pin does not stop them being made, it keeps the indices they
-//     name out of circulation so nothing notices. Drop it and
-//     tests/issues/test338.pl (clpb) loses solutions and those Logtalk
-//     tests abort in malloc().
-//
-//   - Attributed variables, through the same trail entries.
-//
-//   - Thread queues. threaded_once/1 posts a goal holding variables from
-//     the caller's frames and collects the answer later, long after the
-//     posting predicate has returned - see the difference lists in
-//     Logtalk's examples/threads/primes, which come back truncated in
-//     proportion to the thread count once those frames can be recovered.
-//
-// Repairs tried: sweeping the trail when a frame is reclaimed (needs a
-// per-frame count of live entries to stay bounded, or takeuchi.pl stops
-// finishing; still leaves reuse_frame()'s), and stamping entries with a
-// frame incarnation so undo_me() can ignore stale ones (covers the whole
-// trail, at 4 bytes an entry and about 1% - but not the thread queues).
-//
-// So the pin stays until frames are no longer the only place a variable
-// lives, or until every holder of a frame reference is accounted for.
 
 bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
