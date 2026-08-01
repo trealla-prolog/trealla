@@ -1,15 +1,17 @@
 :- initialization(main).
 
-% Clauses with a var in an indexed arg must still be found once the
-% predicate crosses the dynamic index threshold (500). The pre-existing
-% clauses are indexed by the bulk-build loop in assert_commit(), which
-% used to skip the is_var_in_first_arg check, and idx2 had no such check
-% on either path.
+% Clauses with a var in an indexed argument must still be found once a
+% predicate crosses the dynamic index threshold (500). idx1 is keyed on
+% the head and idx2 on Arg2, and index_cmpkey() calls a var equal to
+% anything, so a var-headed argument breaks the skiplist's ordering and
+% the descent can walk straight past the clause.
 
 :- dynamic(p/2).
 :- dynamic(q/2).
 :- dynamic(r/2).
 :- dynamic(s/2).
+:- dynamic(t/2).
+:- dynamic(u/2).
 
 % var Arg1, asserted before the threshold
 setup_p :- assertz(p(_, varclause)), fail.
@@ -31,9 +33,25 @@ setup_s :- between(2,600,I), assertz(s(I,I)), fail.
 setup_s :- assertz(s(vc, _)), fail.
 setup_s.
 
+% two var-headed clauses; retracting one must not un-flag the predicate
+setup_t :- between(1,600,I), assertz(t(I,ground)), fail.
+setup_t :- assertz(t(_, v1)), fail.
+setup_t :- assertz(t(_, v2)), fail.
+setup_t.
+
+% the only var-headed clause; retracting it must clear the flag and
+% hand the predicate back its index, without changing any answers
+setup_u :- between(1,600,I), assertz(u(I,ground)), fail.
+setup_u :- assertz(u(_, vc)), fail.
+setup_u.
+
 main :-
-	setup_p, setup_q, setup_r, setup_s,
+	setup_p, setup_q, setup_r, setup_s, setup_t, setup_u,
 	findall(Y, p(7,Y), LP), write(LP), nl,
 	findall(Y, q(7,Y), LQ), write(LQ), nl,
 	findall(X, r(X,7), LR), write(LR), nl,
-	findall(X, s(X,7), LS), write(LS), nl.
+	findall(X, s(X,7), LS), write(LS), nl,
+	retract(t(_,v1)),
+	findall(Y, t(7,Y), LT), write(LT), nl,
+	retract(u(_,vc)),
+	findall(Y, u(7,Y), LU), write(LU), nl.

@@ -790,6 +790,8 @@ void clear_property(module *m, const char *name, unsigned arity)
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1);
 			pr->idx1 = pr->idx2 = NULL;
+			pr->is_var_in_first_arg = false;
+			pr->is_var_in_second_arg = false;
 #endif
 
 			clear_clause(&save->cl);
@@ -2059,6 +2061,39 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 	return r;
 }
 
+// Recompute is_var_in_{first,second}_arg from the live clause chain.
+// assert_commit() only ever sets them, so retracting the last var-headed
+// clause would otherwise leave the predicate permanently barred from its
+// own index. Call after clauses have been delinked, never while a query
+// holds the predicate.
+
+void recheck_var_in_indexed_args(predicate *pr)
+{
+	pr->is_var_in_first_arg = false;
+	pr->is_var_in_second_arg = false;
+
+	for (rule *r = pr->head; r; r = r->next) {
+		if (r->dbgen_retracted || r->cl.is_deleted)
+			continue;
+
+		cell *c = get_head(r->cl.cells);
+
+		if (!c->arity)
+			return;
+
+		cell *arg1 = FIRST_ARG(c);
+
+		if (is_var(arg1))
+			pr->is_var_in_first_arg = true;
+
+		if ((c->arity > 1) && is_var(NEXT_ARG(arg1)))
+			pr->is_var_in_second_arg = true;
+
+		if (pr->is_var_in_first_arg && pr->is_var_in_second_arg)
+			return;
+	}
+}
+
 static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 {
 	if (pr->db_id)
@@ -2086,6 +2121,14 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			pr->idx2 = sl_create(index_cmpkey, NULL, m);
 			ENSURE(pr->idx2);
 		}
+
+		// Recomputed from scratch, not OR'd into whatever survived an
+		// earlier index. The flags are only ever set, never cleared, so
+		// a stale true from a since-retracted clause would otherwise
+		// outlive it and keep the predicate off the index forever.
+
+		pr->is_var_in_first_arg = false;
+		pr->is_var_in_second_arg = false;
 
 		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);

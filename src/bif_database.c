@@ -200,6 +200,9 @@ static void predicate_purge_dirty_list(predicate *pr)
 		cnt++;
 	}
 
+	if (cnt && (pr->is_var_in_first_arg || pr->is_var_in_second_arg))
+		recheck_var_in_indexed_args(pr);
+
 #if 0
 	if (cnt)
 		printf("*** predicate_purge_dirty_list %u\n", cnt);
@@ -1210,4 +1213,3 @@ builtins g_database_bifs[] =
 
 	{0}
 };
-

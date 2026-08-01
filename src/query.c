@@ -557,6 +557,15 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 		sl_destroy(pr->idx2);
 		sl_destroy(pr->idx1);
 		pr->idx1 = pr->idx2 = NULL;
+		pr->is_var_in_first_arg = false;
+		pr->is_var_in_second_arg = false;
+	} else if (pr->is_var_in_first_arg || pr->is_var_in_second_arg) {
+		// Clauses just left the chain. If the last var-headed one was
+		// among them the flags are now stale, and being stale here is
+		// one-way: they are only ever set by assert_commit(). Safe to
+		// walk - refcnt is 0, so no query is iterating this predicate.
+
+		recheck_var_in_indexed_args(pr);
 	}
 
 	module_unlock(pr->m);
