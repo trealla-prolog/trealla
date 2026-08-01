@@ -1730,6 +1730,84 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 		c->flags |= FLAG_INTERNED_GROUND;
 }
 
+// Mark a goal that ends the clause. Mirrors the tail of process_cell():
+// builtins are left alone, only a goal whose functor matches the
+// predicate being loaded is a recursive call.
+
+static void mark_tail_call(cell *c, predicate *parent)
+{
+	if (!is_interned(c) || is_builtin(c) || is_evaluable(c))
+		return;
+
+	c->flags |= FLAG_INTERNED_TAIL_CALL;
+
+	if (parent
+		&& (parent->key.val_off == c->val_off)
+		&& (parent->key.arity == c->arity))
+		c->flags |= FLAG_INTERNED_RECURSIVE_CALL;
+}
+
+// A goal is in tail position when nothing is left to run after it
+// succeeds. process_cell() tests that by asking whether the goal's cells
+// end where the clause's cells end, which only ever finds the textually
+// last goal. In (C -> T ; E) that is the last goal of E: T is followed
+// in the term by the whole of E, so it is never marked and commit_frame()
+// never even considers reusing its frame - the THEN branch of every
+// if-then-else recurses by growing the frame stack.
+//
+// Both branches really are tail positions though. compile_term() lays
+// the construct out as
+//
+//     $succeed_on_retry(V,N1), <C>, !, $drop_barrier(V), <T>,
+//     $jump(N2), <E>, true
+//
+// so after the last goal of T comes only a jump to the landing that ends
+// the clause. Walk the control skeleton and mark every branch that ends
+// it, rather than reading the term's last cell.
+//
+// This is a hint, not a promise: commit_frame() still calls
+// is_last_call(), which inspects the instruction stream actually
+// following the goal at run time and rejects anything but those jumps
+// and landings. A mark that compile_term() lays out differently than
+// assumed here therefore costs a failed test, not correctness.
+
+static void mark_tail_positions(cell *body, predicate *parent)
+{
+	if (!is_interned(body) || !body->arity) {
+		mark_tail_call(body, parent);
+		return;
+	}
+
+	cell *arg1 = body + 1;
+	cell *arg2 = arg1 + arg1->num_cells;
+
+	if ((body->val_off == g_conjunction_s) && (body->arity == 2)) {
+		mark_tail_positions(arg2, parent);				// (_ , Tail)
+		return;
+	}
+
+	if ((body->val_off == g_disjunction_s) && (body->arity == 2)) {
+		mark_tail_positions(arg1, parent);				// (Tail ; _)
+		mark_tail_positions(arg2, parent);				// (_ ; Tail)
+		return;
+	}
+
+	if (((body->val_off == g_if_then_s) || (body->val_off == g_soft_cut_s))
+		&& (body->arity == 2)) {
+		mark_tail_positions(arg2, parent);				// (_ -> Tail)
+		return;
+	}
+
+	if ((body->val_off == g_if_s) && (body->arity == 3)) {
+		cell *arg3 = arg2 + arg2->num_cells;
+		mark_tail_positions(arg2, parent);				// if(_, Tail, _)
+		mark_tail_positions(arg3, parent);				// if(_, _, Tail)
+		return;
+	}
+
+	mark_tail_call(body, parent);
+}
+
 void process_clause(module *m, clause *cl, predicate *parent)
 {
 	cl->is_unique = false;
@@ -1754,6 +1832,13 @@ void process_clause(module *m, clause *cl, predicate *parent)
 			last_was_colon--;
 			process_cell(m, cl, c, parent, last_was_colon, is_directive);
 		}
+	}
+
+	if (!is_directive) {
+		cell *body = get_body(cl->cells);
+
+		if (body)
+			mark_tail_positions(body, parent);
 	}
 }
 

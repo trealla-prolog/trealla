@@ -753,13 +753,52 @@ static void reuse_frame(query *q, unsigned num_vars)
 	trim_heap(q);
 }
 
-static bool commit_any_choices(const query *q, const frame *f)
+// Would any choicepoint resume into this frame? If one would, the frame
+// still owns bindings that a retry has to undo, and reuse_frame() must
+// not hand its slots to the tail call.
+//
+// A choicepoint can only need this frame if the frame already existed
+// when it was pushed, and ch->st.fp says so exactly: it is the frame
+// count at that moment, so ch->st.fp > q->st.cur_ctx means the frame was
+// live and a retry restores into it. Anything pushed earlier belongs to
+// an ancestor, and retrying it throws this frame away whole. Since
+// commit_frame() only gets here with q->st.fp == q->st.cur_ctx + 1, that
+// is the test below.
+//
+// This used to compare choice generations - ch->gen > f->chgen - which
+// is not the same question and got it wrong both ways.
+//
+// Too loose: a choicepoint pushed by an earlier goal of this very clause
+// carries gen == f->chgen exactly, so it was invisible.
+//
+//     p(0) :- !.
+//     p(N) :- between(1,2,_), M is N-1, p(M).
+//
+// findall(x, p(3), L) has to give eight solutions; it gave four, because
+// the tail call recycled the frame between/3's choicepoint needed. The
+// if-then-else branches this commit turns into tail calls sit behind
+// more of these than a plain clause body does.
+//
+// Too tight, had it simply been tightened to >=: generations do not
+// order frames. commit_frame() stamps a pending clause choice with
+// q->chgen, the generation of the frame the call went on to create, and
+// $drop_barrier hands a frame back a generation it held earlier - so an
+// ancestor's choicepoint can carry gen == f->chgen while having nothing
+// to do with this frame. samples/chess.pl loses ~31k of its 20.7M tail
+// calls that way, all in can_move/5 recursing under an outer clause
+// choice five frames up.
+//
+// skip counts the choicepoints on top that commit_frame() is about to
+// drop by itself: the in-progress clause choice always, plus the call/N
+// barrier when is_last_call() found one.
+
+static bool commit_any_choices(const query *q, unsigned skip)
 {
-	if (q->st.cp == 1)							// Skip in-progress choice
+	if (q->st.cp <= skip)
 		return false;
 
-	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
-	return ch->gen > f->chgen;
+	const choice *ch = GET_CHOICE(q->st.cp - 1 - skip);
+	return ch->st.fp >= q->st.fp;
 }
 
 // Is the goal about to be called really the last thing this frame has
@@ -778,7 +817,7 @@ static bool commit_any_choices(const query *q, const frame *f)
 // continuation - e.g. \+ G would lose its `!, $drop_barrier, fail'
 // and so succeed for a provable G.
 
-static bool is_last_call(const query *q)
+static bool is_last_call(const query *q, bool *found_barrier)
 {
 	const cell *c = q->st.instr + q->st.instr->num_cells;
 	bool barrier = false;
@@ -812,6 +851,7 @@ static bool is_last_call(const query *q)
 	// the frame state to restore along with it, which is work - bar the
 	// call/N case above, where reuse_frame() has always taken over.
 
+	*found_barrier = barrier;
 	return barrier || !c->ret_instr;
 }
 
@@ -843,10 +883,12 @@ static void commit_frame(query *q)
 		&& last_match
 		&& (q->st.fp == (q->st.cur_ctx + 1))
 		) {
-		bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q);
+		bool barrier = false;
+		bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q, &barrier);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
-		bool choices = commit_any_choices(q, f);
+		bool choices = commit_any_choices(q, barrier ? 2 : 1);
 		tco = slots_ok && tail_recursive && !choices;
+
 
 #if 0
 		cell *head = get_head(cl->cells);
@@ -1024,6 +1066,28 @@ bool push_barrier(query *q)
 	ch->barrier = true;
 	return true;
 }
+
+// Pins the frame against recovery for as long as it exists, which is
+// blunt - see the FIXME. The pin is never taken back, so one \+,
+// ignore/1, \= or if-then-else anywhere in a body costs that clause's
+// frame for the rest of the query, and because the unrecovered frame
+// keeps q->st.fp above the caller's cur_ctx + 1, the caller loses its
+// own TCO too:
+//
+//     foo(N) :- ( N > 0 -> true ; true ).
+//     loop(0) :- !.
+//     loop(N) :- foo(N), M is N-1, loop(M).
+//
+// loop/1 runs in constant frames if foo/1's body is anything else.
+// Dropping the pin here looks safe on paper - push_barrier() stamps the
+// choicepoint with gen == f->chgen, so resume_frame() and commit_frame()
+// both see it while it is live, and once it is gone there is nothing
+// left to protect - but it is not: tests/issues/test338.pl (clpb) then
+// loses solutions, because attributed variables rely on frames being
+// pinned by paths that do not set the flag themselves. Scoping the pin
+// to the choicepoint's lifetime needs that dependency untangled first,
+// and a bit of its own: restoring the old value at $drop_barrier would
+// discard a pin set legitimately while the condition ran.
 
 bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
