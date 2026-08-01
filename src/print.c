@@ -1,3 +1,26 @@
+/*
+ * Term printing (ISO/IEC 13211-1 Cor.3 §7.10.4–7.10.5).
+ *
+ * Frozen public API (query.h / module.h / internal.h):
+ *   print_term, print_term_to_stream, print_term_to_strbuf
+ *   print_canonical, print_canonical_to_stream, print_canonical_to_strbuf
+ *   clear_write_options, partial_clear_write_options
+ *   needs_quoting, formatted, sprint_int
+ *   chars_list_to_string, string_to_chars_list
+ *
+ * Write-option flags on query (set by bif_streams parse_write_params):
+ *   quoted, ignore_ops, numbervars, variable_names(+ctx), max_depth
+ *   Trealla: json, double_quotes, varnames, nl, fullstop, portrayed
+ * Dump/listing: portray_vars, is_dump_vars, do_dump_vars, dump_var_num/ctx
+ * Spacing state: last_thing (WAS_OTHER|SPACE|COMMA|SYMBOL)
+ *
+ * Dispatch order mirrors ISO writing a1→a2→e1→e2→e3→f→h.
+ * Extensions: json escapes, double_quotes chars strings, dump "ab"||I spines.
+ *
+ * File layout: visit/cycle → atoms/escapes → variables → lists/chars →
+ * compounds (canonical / operators) → print_term_dispatch → sinks/options.
+ */
+
 #include <ctype.h>
 #include <float.h>
 #include <inttypes.h>
@@ -724,7 +747,7 @@ static void print_string_list(query *q, cell *c, pl_ctx c_ctx, int running, bool
 	if (!cons) { SB_sprintf(q->sb, "%s", "]"); }
 }
 
-static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *);
+static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *);
 
 static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned print_depth, unsigned depth, visit *visited)
 {
@@ -776,7 +799,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 			parens = is_compound(head) && special_op;
 			if (parens) {  SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 			q->parens = parens;
-			print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1, &me);
+			print_term_dispatch(q, head, head_ctx, running, -1, 0, depth+1, &me);
 			q->parens = false;
 		}
 
@@ -794,15 +817,8 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 		if (running) tail = deref(q, tail, tail_ctx);
 		if (running) tail_ctx = q->latest_ctx;
 
-		if (q->do_dump_vars && is_var(save_tail) && 0 && is_cyclic_term(q, tail, c_ctx)) {
-			SB_sprintf(q->sb, "%s", "|");
-			print_variable(q, save_tail, c_ctx, 0);
-			SB_sprintf(q->sb, "%s", "]");
-			q->last_thing = WAS_OTHER;
-			break;
-		} else if (has_visited(visited, tail, tail_ctx)
+		if (has_visited(visited, tail, tail_ctx)
 			|| ((tail == save_c) && (tail_ctx == save_c_ctx))
-			//|| (q->max_depth && (print_depth >= q->max_depth))
 			) {
 			SB_sprintf(q->sb, "%s", "|");
 			cell v = *(c+1);
@@ -831,7 +847,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 			if (strcmp(src, "[]")) {
 				SB_sprintf(q->sb, "%s", "|");
-				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
+				print_term_dispatch(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
 			}
 		} else if (q->st.m->flags.double_quote_chars && running
 			&& !q->ignore_ops && possible_chars
@@ -901,7 +917,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				unsigned priority = match_op(q->st.m, C_STR(q, tail), &specifier, tail->arity);
 				bool parens = (is_infix(tail) || is_prefix(tail)) && (priority >= 1000);
 				if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
-				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
+				print_term_dispatch(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
 				if (parens) { SB_sprintf(q->sb, "%s", ")"); }
 			}
 		}
@@ -950,7 +966,7 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 		bool parens = is_compound(head) && special_op;
 		if (parens) {  SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = parens;
-		print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1, NULL);
+		print_term_dispatch(q, head, head_ctx, running, -1, 0, depth+1, NULL);
 		q->parens = false;
 		if (parens) { SB_sprintf(q->sb, "%s", ")"); }
 
@@ -960,7 +976,7 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 
 		if (!is_list(c)) {
 			SB_sprintf(q->sb, "%s", ",");
-			print_term_to_buf_(q, c, c_ctx, running, -1, 0, depth+1, NULL);
+			print_term_dispatch(q, c, c_ctx, running, -1, 0, depth+1, NULL);
 			break;
 		}
 
@@ -979,195 +995,153 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 	}
 }
 
-static const char *find_match(query *q, cell *v, pl_ctx v_ctx)
+static void print_list(query *q, cell *c, pl_ctx c_ctx, int running, bool cons,
+	unsigned print_depth, unsigned depth, visit *visited)
 {
-	const frame *f = GET_FRAME(0);
-
-	for (unsigned i = 0; i < q->top->vartab.num_vars; i++) {
-		slot *e = get_slot(q, f, i);
-
-		if (is_empty(&e->c))
-			continue;
-
-		cell *c = deref(q, &e->c, 0);
-		pl_ctx c_ctx = q->latest_ctx;
-
-		//return "$$$";
-	}
-
-	return "...";
+	/* ISO e2: list notation when !ignore_ops; else canonical '.'/2 */
+	if (q->ignore_ops)
+		print_iso_list_canonical(q, c, c_ctx, running, cons, depth, print_depth);
+	else
+		print_iso_list(q, c, c_ctx, running, cons, print_depth, depth, visited);
 }
 
-static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsigned depth, visit *visited)
+static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool running, unsigned depth, visit *visited,
+	const char *src, size_t src_len)
 {
-	// ATOM / COMPOUND
+	/* ISO e1 numbervars / e3 {} / f canonical / atoms */
+	bool is_needs_quoting = needs_quoting(q->st.m, src, src_len);
+	int quote = ((running <= 0) || q->quoted) && !is_var(c) && is_needs_quoting;
+	int dq = 0, braces = 0;
+	if (is_string(c) && q->double_quotes) dq = quote = 1;
+	if (q->quoted < 0) quote = 0;
+	if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
+	cell *c1 = c->arity && running ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
 
-	const char *src = !is_ref(c) ? C_STR(q, c) : "_";
-	size_t src_len = !is_ref(c) ? C_STRLEN(q, c) : 1;
-	unsigned my_specifier = 0;
-	unsigned my_priority = match_op(q->st.m, src, &my_specifier, c->arity);
-
-	if (!my_priority
-		|| ((IS_PREFIX(my_specifier) || IS_POSTFIX(my_specifier)) && (c->arity != 1))
-		|| (IS_INFIX(my_specifier) && (c->arity != 2))
-		) {
-		my_priority = 0;
-	}
-
-	bool is_op = my_priority;
-	unsigned pri = 0, spec = 0;
-
-	if (!is_op && !is_var(c) && (c->arity == 1)
-		&& (pri = match_op(q->st.m, src, &spec, c->arity))) {
-		if (IS_PREFIX(spec)) {
-			is_op = true;
-			my_specifier = spec;
-			my_priority = pri;
-		}
-	}
-
-	// CANONICAL
-
-	if (q->ignore_ops || !is_op || !c->arity) {
-		bool is_needs_quoting = needs_quoting(q->st.m, src, src_len);
-		int quote = ((running <= 0) || q->quoted) && !is_var(c) && is_needs_quoting;
-		int dq = 0, braces = 0;
-		if (is_string(c) && q->double_quotes) dq = quote = 1;
-		if (q->quoted < 0) quote = 0;
-		if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
-		cell *c1 = c->arity && running ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
-
-		if (running && is_interned(c) && c->arity
-			&& q->numbervars && (c->val_off == g_sys_var_s) && c1
-			&& is_integer(c1) && (get_smallint(c1) >= 0)) {
-			char tmpbuf[256];
-			SB_sprintf(q->sb, "%s", varformat2(tmpbuf, sizeof(tmpbuf), c1, 0));
-			q->last_thing = WAS_OTHER;
-			return true;
-		}
-
-		if (is_var(c) && q->variable_names) {
-			if (dump_variable(q, c, c_ctx, running))
-				return true;
-		}
-
-		SB_sprintf(q->sb, "%s", !braces&&quote?dq?"\"":"'":"");
-
-		if (is_var(c)) {
-			print_variable(q, c, c_ctx, running);
-			q->last_thing = WAS_OTHER;
-			return true;
-		}
-
-		unsigned len_str = src_len;
-
-		if (braces && !q->ignore_ops)
-			;
-		else if (quote) {
-			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128))
-				len_str = q->max_depth;
-
-			SB_strcat_and_free(q->sb, formatted(src, len_str, dq, q->json));
-
-			if (is_blob(c) && q->max_depth && (len_str > q->max_depth) && (src_len > 128)) {
-				SB_ungetchar(q->sb);
-				SB_sprintf(q->sb, "%s", "...");
-				q->last_thing = WAS_SYMBOL;
-			} else
-				q->last_thing = WAS_OTHER;
-		} else {
-			int ch = peek_char_utf8(src);
-			bool is_symbol = !needs_quoting(q->st.m, src, src_len) && !iswalpha(ch)
-				&& strcmp(src, "\\") && strcmp(src, ",") && strcmp(src, ";")
-				&& strcmp(src, "[]") && strcmp(src, "{}") && !q->parens;
-
-			if ((q->last_thing == WAS_SYMBOL) && is_symbol && !q->parens && !quote
-				&& (c->arity == 1) // Only if prefix
-				) {
-				SB_sprintf(q->sb, "%s", " ");
-				q->last_thing = WAS_SPACE;
-			}
-
-			SB_strcatn(q->sb, src, len_str);
-			q->last_thing = is_symbol ? WAS_SYMBOL : WAS_OTHER;
-		}
-
-		SB_sprintf(q->sb, "%s", !braces&&quote?dq?"\"":"'":"");
-		q->did_quote = !braces&&quote;
-
-		if (is_compound(c) && !is_string(c)) {
-			int arity = c->arity;
-			SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"{":"(");
-			q->last_thing = WAS_OTHER;
-			q->parens = true;
-
-			for (c++; arity--; c += c->num_cells) {
-				cell *tmp = c;
-				pl_ctx tmp_ctx = c_ctx;
-				if (running) tmp = deref(q, tmp, tmp_ctx);
-				if (running) tmp_ctx = q->latest_ctx;
-				bool is_cyclic = has_visited(visited, tmp, tmp_ctx);
-
-				if (q->is_dump_vars && is_cyclic) {
-					if (c_ctx == 0) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
-					else { SB_sprintf(q->sb, "%s", find_match(q, c, c_ctx)); }
-					if (arity) {SB_sprintf(q->sb, "%s", ","); }
-					q->last_thing = WAS_OTHER;
-					continue;
-				}
-
-				if (q->max_depth && ((depth+!braces) >= q->max_depth)) {
-					if (q->variable_names && is_var(c)) {
-						//if (!dump_variable(q, c, c_ctx, running))
-						//	print_variable(q, c, c_ctx, running);
-						SB_sprintf(q->sb, "%s", "...");
-					} else if (is_var(c)) {
-						SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
-					} else {
-						SB_sprintf(q->sb, "%s", "...");
-					}
-
-					q->last_thing = WAS_SYMBOL;
-
-					if (arity) {
-						SB_sprintf(q->sb, "%s", ",");
-						q->last_thing = WAS_OTHER;
-					}
-					continue;
-				}
-
-				bool parens = false;
-
-				if (!braces && is_interned(tmp) && !q->ignore_ops) {
-					unsigned tmp_priority = match_op(q->st.m, C_STR(q, tmp), NULL, tmp->arity);
-
-					if ((tmp_priority >= 1000) && tmp->arity)
-						q->parens = parens = true;
-				}
-
-				if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
-
-				visit me = {.next = visited, .c = tmp, .c_ctx = tmp_ctx};
-				q->parens = parens;
-				print_term_to_buf_(q, tmp, tmp_ctx, running, 0, depth+1, depth+1, &me);
-				q->parens = false;
-				if (parens) {SB_sprintf(q->sb, "%s", ")"); }
-				if (arity) {SB_sprintf(q->sb, "%s", ","); }
-			}
-
-			SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"}":")");
-			q->parens = false;
-		} else if (q->last_thing != WAS_SYMBOL)
-			q->last_thing = WAS_OTHER;
-
+	if (running && is_interned(c) && c->arity
+		&& q->numbervars && (c->val_off == g_sys_var_s) && c1
+		&& is_integer(c1) && (get_smallint(c1) >= 0)) {
+		char tmpbuf[256];
+		SB_sprintf(q->sb, "%s", varformat2(tmpbuf, sizeof(tmpbuf), c1, 0));
+		q->last_thing = WAS_OTHER;
 		return true;
 	}
 
-	// OP
+	SB_sprintf(q->sb, "%s", !braces&&quote?dq?"\"":"'":"");
 
-	bool is_op_infix = is_op && IS_INFIX(my_specifier);
-	bool is_op_prefix = is_op && IS_PREFIX(my_specifier);
-	bool is_op_postfix = is_op && IS_POSTFIX(my_specifier);
+	unsigned len_str = src_len;
+
+	if (braces && !q->ignore_ops)
+		;
+	else if (quote) {
+		if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128))
+			len_str = q->max_depth;
+
+		SB_strcat_and_free(q->sb, formatted(src, len_str, dq, q->json));
+
+		if (is_blob(c) && q->max_depth && (len_str > q->max_depth) && (src_len > 128)) {
+			SB_ungetchar(q->sb);
+			SB_sprintf(q->sb, "%s", "...");
+			q->last_thing = WAS_SYMBOL;
+		} else
+			q->last_thing = WAS_OTHER;
+	} else {
+		int ch = peek_char_utf8(src);
+		bool is_symbol = !needs_quoting(q->st.m, src, src_len) && !iswalpha(ch)
+			&& strcmp(src, "\\") && strcmp(src, ",") && strcmp(src, ";")
+			&& strcmp(src, "[]") && strcmp(src, "{}") && !q->parens;
+
+		if ((q->last_thing == WAS_SYMBOL) && is_symbol && !q->parens && !quote
+			&& (c->arity == 1) // Only if prefix
+			) {
+			SB_sprintf(q->sb, "%s", " ");
+			q->last_thing = WAS_SPACE;
+		}
+
+		SB_strcatn(q->sb, src, len_str);
+		q->last_thing = is_symbol ? WAS_SYMBOL : WAS_OTHER;
+	}
+
+	SB_sprintf(q->sb, "%s", !braces&&quote?dq?"\"":"'":"");
+	q->did_quote = !braces&&quote;
+
+	if (is_compound(c) && !is_string(c)) {
+		int arity = c->arity;
+		SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"{":"(");
+		q->last_thing = WAS_OTHER;
+		q->parens = true;
+
+		for (c++; arity--; c += c->num_cells) {
+			cell *tmp = c;
+			pl_ctx tmp_ctx = c_ctx;
+			if (running) tmp = deref(q, tmp, tmp_ctx);
+			if (running) tmp_ctx = q->latest_ctx;
+			bool is_cyclic = has_visited(visited, tmp, tmp_ctx);
+
+			if (q->is_dump_vars && is_cyclic) {
+				if (c_ctx == 0) {
+					SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
+				} else {
+					SB_sprintf(q->sb, "%s", "...");
+				}
+				if (arity) { SB_sprintf(q->sb, "%s", ","); }
+				q->last_thing = WAS_OTHER;
+				continue;
+			}
+
+			if (q->max_depth && ((depth+!braces) >= q->max_depth)) {
+				if (q->variable_names && is_var(c)) {
+					//if (!dump_variable(q, c, c_ctx, running))
+					//	print_variable(q, c, c_ctx, running);
+					SB_sprintf(q->sb, "%s", "...");
+				} else if (is_var(c)) {
+					SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
+				} else {
+					SB_sprintf(q->sb, "%s", "...");
+				}
+
+				q->last_thing = WAS_SYMBOL;
+
+				if (arity) {
+					SB_sprintf(q->sb, "%s", ",");
+					q->last_thing = WAS_OTHER;
+				}
+				continue;
+			}
+
+			bool parens = false;
+
+			if (!braces && is_interned(tmp) && !q->ignore_ops) {
+				unsigned tmp_priority = match_op(q->st.m, C_STR(q, tmp), NULL, tmp->arity);
+
+				if ((tmp_priority >= 1000) && tmp->arity)
+					q->parens = parens = true;
+			}
+
+			if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
+
+			visit me = {.next = visited, .c = tmp, .c_ctx = tmp_ctx};
+			q->parens = parens;
+			print_term_dispatch(q, tmp, tmp_ctx, running, 0, depth+1, depth+1, &me);
+			q->parens = false;
+			if (parens) {SB_sprintf(q->sb, "%s", ")"); }
+			if (arity) {SB_sprintf(q->sb, "%s", ","); }
+		}
+
+		SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"}":")");
+		q->parens = false;
+	} else if (q->last_thing != WAS_SYMBOL)
+		q->last_thing = WAS_OTHER;
+
+	return true;
+}
+
+static bool print_operator(query *q, cell *c, pl_ctx c_ctx, bool running, unsigned depth, visit *visited,
+	const char *src, size_t src_len, unsigned my_specifier, unsigned my_priority)
+{
+	/* ISO h — operator form; last_thing tracks spacing to avoid ambiguity */
+	bool is_op_infix = IS_INFIX(my_specifier);
+	bool is_op_prefix = IS_PREFIX(my_specifier);
+	bool is_op_postfix = IS_POSTFIX(my_specifier);
 	bool is_op_yfx = is_op_infix && (my_specifier == OP_YFX);
 	bool is_op_xfy = is_op_infix && (my_specifier == OP_XFY);
 	size_t srclen = src_len;
@@ -1191,11 +1165,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		if (iswalpha(ch)) space = true;
 		if (lhs_pri > my_priority) { parens = true; space = false; }
 
-		if (q->do_dump_vars && is_var(save_lhs) && 0 && is_cyclic_term(q, lhs, c_ctx)) {
-			print_variable(q, save_lhs, lhs_ctx, 0);
-			q->last_thing = WAS_OTHER;
-			return true;
-		} else if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
+		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 			SB_sprintf(q->sb, "%s", "...");
 			q->last_thing = WAS_SYMBOL;
@@ -1208,7 +1178,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 			pl_ctx lhs_ctx = running ? q->latest_ctx : 0;
 
 			if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
-			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
+			print_term_dispatch(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
 			if (parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
 			q->last_thing = WAS_OTHER;
 		}
@@ -1297,15 +1267,8 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		else
 			q->last_thing = WAS_OTHER;
 
-		if (q->do_dump_vars && is_var(save_rhs) && 0 && is_cyclic_term(q, rhs, c_ctx)) {
-			print_variable(q, save_rhs, rhs_ctx, 0);
-			q->last_thing = WAS_OTHER;
-			return true;
-		} else if (q->is_dump_vars && has_visited(visited, rhs, rhs_ctx)) {
-			if (q->is_dump_vars) {
-				if (!dump_variable(q, save_rhs, rhs_ctx, 1))
-					print_variable(q, save_rhs, rhs_ctx, 1);
-			} else
+		if (q->is_dump_vars && has_visited(visited, rhs, rhs_ctx)) {
+			if (!dump_variable(q, save_rhs, rhs_ctx, 1))
 				print_variable(q, save_rhs, rhs_ctx, 1);
 
 			q->last_thing = WAS_OTHER;
@@ -1331,7 +1294,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 		if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = parens;
-		print_term_to_buf_(q, rhs, rhs_ctx, running, 0, 0, depth+1, &me);
+		print_term_dispatch(q, rhs, rhs_ctx, running, 0, 0, depth+1, &me);
 		q->parens = false;
 		if (parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
 		return true;
@@ -1374,10 +1337,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (q->do_dump_vars && is_var(save_lhs) && 0 && is_cyclic_term(q, lhs, c_ctx)) {
-		dump_variable(q, save_lhs, c_ctx, 0);
-		q->last_thing = WAS_OTHER;
-	} else if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
+	if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 		if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
@@ -1395,7 +1355,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		me.c_ctx = lhs_ctx;
 		if (lhs_parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = lhs_parens;
-		print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
+		print_term_dispatch(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
 		q->parens = false;
 		if (lhs_parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
 	}
@@ -1495,10 +1455,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (q->do_dump_vars && is_var(save_rhs) && 0 && is_cyclic_term(q, rhs, c_ctx)) {
-		print_variable(q, save_rhs, rhs_ctx, 0);
-		q->last_thing = WAS_OTHER;
-	} else if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
+	if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 		if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
@@ -1516,26 +1473,185 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		me.c_ctx = rhs_ctx;
 		if (rhs_parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = rhs_parens || space;
-		print_term_to_buf_(q, rhs, rhs_ctx, running, 0, 0, depth+1, &me);
+		print_term_dispatch(q, rhs, rhs_ctx, running, 0, 0, depth+1, &me);
 		q->parens = false;
 		if (rhs_parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
 		else if (rhs_is_symbol) { q->last_thing = WAS_SYMBOL; }
 	}
 
 	return true;
+
 }
 
-static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
+static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsigned depth, visit *visited)
 {
-#if 1
+	// ATOM / COMPOUND — choose ISO f/e3 vs h
+	const char *src = !is_ref(c) ? C_STR(q, c) : "_";
+	size_t src_len = !is_ref(c) ? C_STRLEN(q, c) : 1;
+	unsigned my_specifier = 0;
+	unsigned my_priority = match_op(q->st.m, src, &my_specifier, c->arity);
+
+	if (!my_priority
+		|| ((IS_PREFIX(my_specifier) || IS_POSTFIX(my_specifier)) && (c->arity != 1))
+		|| (IS_INFIX(my_specifier) && (c->arity != 2))
+		) {
+		my_priority = 0;
+	}
+
+	bool is_op = my_priority;
+	unsigned pri = 0, spec = 0;
+
+	if (!is_op && !is_var(c) && (c->arity == 1)
+		&& (pri = match_op(q->st.m, src, &spec, c->arity))) {
+		if (IS_PREFIX(spec)) {
+			is_op = true;
+			my_specifier = spec;
+			my_priority = pri;
+		}
+	}
+
+	if (q->ignore_ops || !is_op || !c->arity)
+		return print_canonical_compound(q, c, c_ctx, running, depth, visited, src, src_len);
+
+	return print_operator(q, c, c_ctx, running, depth, visited, src, src_len, my_specifier, my_priority);
+}
+
+
+static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, unsigned depth)
+{
+	/* Trealla double_quotes / #890 rightsplice chars printing */
+	int is_chars_list = is_string(c) && q->double_quotes;
+	bool possible_chars = false, has_var = false, is_partial = false;
+	cell *v = NULL;
+
+	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops && q->double_quotes)
+		possible_chars = true;
+
+	if (!is_chars_list && running && possible_chars
+		&& (scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v) > 0))
+		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v);
+
+	if (!is_chars_list)
+		return false;
+
+	cell *l = c;
+	pl_ctx l_ctx = c_ctx;
+	SB_sprintf(q->sb, "%s", "\"");
+	unsigned cnt = 0;
+	LIST_HANDLER(l);
+	bool closing_quote = true;
+	bool any = false, done = false;
+	cell *cut_var = NULL;
+	pl_ctx cut_var_ctx = 0;
+
+	// Fresh visit gen so marks left by scan_is_chars_list2 do not
+	// make the print walk think it has already hit a cycle (#890).
+	if (running) {
+		if (++q->vgen == 0) q->vgen = 1;
+	}
+
+	while (is_list(l)) {
+		if (q->max_depth && (cnt++ >= q->max_depth)) {
+			SB_sprintf(q->sb, "%s", "\"||... ");
+			closing_quote = false;
+			done = true;
+			break;
+		}
+
+		cell *h = LIST_HEAD(l);
+		pl_ctx h_ctx = l_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+
+		if (running) {
+			DEREF_VAR(any, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+			if (e) e->vgen = save_vgen;
+		}
+
+		if (!both && (c->flags & FLAG_CSTR_CODES) && (h->val_uint < ' ')) {
+			char tmpbuf[2];
+			tmpbuf[0] = h->val_uint;
+			tmpbuf[1] = 0;
+			SB_strcat_and_free(q->sb, formatted(tmpbuf, 1, true, q->json));
+		} else if (is_smallint(h) && !both) {
+			SB_putchar(q->sb, h->val_uint);
+		} else {
+			SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), true, q->json));
+		}
+
+		cell *tail_cell = LIST_TAIL(l);
+
+		// Rightslicing: stop at a query var in the unreified
+		// spine so mutual cycles print as L="ab"||I, I="cd"||L (#890).
+		if (is_dump_spine_var(q, tail_cell, l_ctx)) {
+			cut_var = tail_cell;
+			cut_var_ctx = l_ctx;
+			is_partial = true;
+			break;
+		}
+
+		l = tail_cell;
+		e = NULL;
+		both = 0;
+		any = false;
+
+		if (running) DEREF_VAR(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
+
+		if (both) {
+			q->cycle_error = true;
+			break;
+		}
+	}
+
+	if (closing_quote) SB_sprintf(q->sb, "%s", "\"");
+
+	if (is_partial && !done) {
+		SB_strcat(q->sb, "||");
+		if (cut_var) {
+			if (is_anon(cut_var)) {
+				SB_sprintf(q->sb, "%s", "_");
+			} else if (!dump_variable(q, cut_var, cut_var_ctx, 0)) {
+				print_variable(q, cut_var, cut_var_ctx, 0);
+			}
+		} else if (q->cycle_error) {
+			if (!dump_variable(q, v?v:c, c_ctx, !v))
+				print_variable(q, v?v:c, c_ctx, !v);
+		} else {
+			if (is_op(l)) {
+				SB_putchar(q->sb, '(');
+			}
+			print_term_dispatch(q, l, 0, running, 0, depth+1, depth+1, NULL);
+			if (is_op(l)) {
+				SB_putchar(q->sb, ')');
+			} else if (q->last_thing) {
+				SB_putchar(q->sb, ' ');
+			}
+		}
+	}
+
+	q->last_thing = WAS_OTHER;
+	return true;
+}
+
+static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
+{
+	/* ISO/Cor.3 7.10.5 write_term decision tree (plus Trealla specials). */
+
 	if (depth > g_max_depth) {
-		printf("*** OOPS %u, %s %d\n", depth, __FILE__, __LINE__);
 		SB_sprintf(q->sb, "%s", "...");
 		q->cycle_error = true;
 		q->last_thing = WAS_OTHER;
 		return false;
 	}
-#endif
+
+	// a1 / a2 — variables (variable_names leftmost; else _…)
+	if (is_var(c)) {
+		if (!dump_variable(q, c, c_ctx, running))
+			print_variable(q, c, c_ctx, running);
+		q->last_thing = WAS_OTHER;
+		return true;
+	}
 
 	// THREAD OBJECTS
 
@@ -1596,6 +1712,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		}
 	}
 
+	// numbers
 	// RATIONAL
 
 	if (is_rational(c)) {
@@ -1656,15 +1773,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		return true;
 	}
 
-	// STRING
-
+	// strings (canonical / list / double_quotes)
 	if (is_string(c) && q->ignore_ops) {
 		print_string_canonical(q, c, c_ctx, running, cons > 0, depth+1);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
-
-	// STRING
 
 	if (is_string(c) && (!q->double_quotes || q->st.m->flags.double_quote_codes)) {
 		print_string_list(q, c, c_ctx, running, cons > 0, depth+1);
@@ -1672,143 +1786,18 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		return true;
 	}
 
-	// STRING / CHARS
+	// STRING / CHARS (Trealla double_quotes + #890)
+	if (print_chars_quoted(q, c, c_ctx, running, depth))
+		return true;
 
-	int is_chars_list = is_string(c) && q->double_quotes;
-	bool possible_chars = false, has_var = false, is_partial = false;
-	cell *v = NULL;
-
-	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops && q->double_quotes)
-		possible_chars = true;
-
-	if (!is_chars_list && running && possible_chars
-		&& (scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v) > 0))
-		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v);
-
-	if (is_chars_list) {
-		cell *l = c;
-		pl_ctx l_ctx = c_ctx;
-		SB_sprintf(q->sb, "%s", "\"");
-		unsigned cnt = 0;
-		LIST_HANDLER(l);
-		bool closing_quote = true;
-		bool any = false, done = false;
-		cell *cut_var = NULL;
-		pl_ctx cut_var_ctx = 0;
-
-		// Fresh visit gen so marks left by scan_is_chars_list2 do not
-		// make the print walk think it has already hit a cycle (#890).
-		if (running) {
-			if (++q->vgen == 0) q->vgen = 1;
-		}
-
-		while (is_list(l)) {
-			if (q->max_depth && (cnt++ >= q->max_depth)) {
-				SB_sprintf(q->sb, "%s", "\"||... ");
-				closing_quote = false;
-				done = true;
-				break;
-			}
-
-			cell *h = LIST_HEAD(l);
-			pl_ctx h_ctx = l_ctx;
-			slot *e = NULL;
-			uint32_t save_vgen = 0;
-			int both = 0;
-
-			if (running) {
-				DEREF_VAR(any, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
-				if (e) e->vgen = save_vgen;
-			}
-
-			if (!both && (c->flags & FLAG_CSTR_CODES) && (h->val_uint < ' ')) {
-				char tmpbuf[2];
-				tmpbuf[0] = h->val_uint;
-				tmpbuf[1] = 0;
-				SB_strcat_and_free(q->sb, formatted(tmpbuf, 1, true, q->json));
-			} else if (is_smallint(h) && !both) {
-				SB_putchar(q->sb, h->val_uint);
-			} else {
-				SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), true, q->json));
-			}
-
-			cell *tail_cell = LIST_TAIL(l);
-
-			// Rightslicing: stop at a query var in the unreified
-			// spine so mutual cycles print as L="ab"||I, I="cd"||L (#890).
-			if (is_dump_spine_var(q, tail_cell, l_ctx)) {
-				cut_var = tail_cell;
-				cut_var_ctx = l_ctx;
-				is_partial = true;
-				break;
-			}
-
-			l = tail_cell;
-			e = NULL;
-			both = 0;
-			any = false;
-
-			if (running) DEREF_VAR(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
-
-			if (both) {
-				q->cycle_error = true;
-				break;
-			}
-		}
-
-		if (closing_quote) SB_sprintf(q->sb, "%s", "\"");
-
-		if (is_partial && !done) {
-			SB_strcat(q->sb, "||");
-			if (cut_var) {
-				if (is_anon(cut_var)) {
-					SB_sprintf(q->sb, "%s", "_");
-				} else if (!dump_variable(q, cut_var, cut_var_ctx, 0)) {
-					print_variable(q, cut_var, cut_var_ctx, 0);
-				}
-			} else if (q->cycle_error) {
-				if (!dump_variable(q, v?v:c, c_ctx, !v))
-					print_variable(q, v?v:c, c_ctx, !v);
-			} else {
-				if (is_op(l)) {
-					SB_putchar(q->sb, '(');
-				}
-				print_term_to_buf_(q, l, 0, running, 0, depth+1, depth+1, NULL);
-				if (is_op(l)) {
-					SB_putchar(q->sb, ')');
-				} else if (q->last_thing) {
-					SB_putchar(q->sb, ' ');
-				}
-			}
-		}
-
+	// e2 — lists (ISO when !ignore_ops; canonical when ignore_ops)
+	if (is_iso_list(c)) {
+		print_list(q, c, c_ctx, running, cons > 0, print_depth+1, depth+1, visited);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
 
-	// LIST
-
-	if (is_iso_list(c) && !q->ignore_ops) {
-		print_iso_list(q, c, c_ctx, running, cons > 0, print_depth+1, depth+1, visited);
-		q->last_thing = WAS_OTHER;
-		return true;
-	}
-
-	if (is_iso_list(c) && q->ignore_ops) {
-		print_iso_list_canonical(q, c, c_ctx, running, cons > 0, depth+1, depth+1);
-		q->last_thing = WAS_OTHER;
-		return true;
-	}
-
-	// VAR
-
-	if (is_var(c) && q->is_dump_vars) {
-		if (!dump_variable(q, c, c_ctx, running))
-			print_variable(q, c, c_ctx, running);
-
-		return true;
-	}
-
+	// e1 $VAR / e3 {} / f canonical / h operators / atoms
 	return print_interned(q, c, c_ctx, running, depth, visited);
 }
 
@@ -1818,7 +1807,7 @@ static bool print_term_to_buf(query *q, cell *c, pl_ctx c_ctx, int running, int 
 	me.next = NULL;
 	me.c = c;
 	me.c_ctx = c_ctx;
-	return print_term_to_buf_(q, c, c_ctx, running, cons, 0, 0, &me);
+	return print_term_dispatch(q, c, c_ctx, running, cons, 0, 0, &me);
 }
 
 char *print_canonical_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
