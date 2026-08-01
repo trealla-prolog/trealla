@@ -10,6 +10,7 @@
                   type_error/2,
                   representation_error/1,
                   resource_error/1,
+                  resource_error/2,
                   instantiation_error/1,
                   domain_error/3,
                   type_error/3,
@@ -239,6 +240,9 @@ representation_error(Flag) :-
 
 resource_error(Resource) :-
     throw(error(resource_error(Resource), [])).
+
+resource_error(Resource, Context) :-
+    throw(error(resource_error(Resource), Context)).
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    The variants *with* context would not have been needed if
