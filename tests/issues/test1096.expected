@@ -1,0 +1,13 @@
+quads: FAILED setof_7_ordered, tests/issues/test1096.pl:23
+   ?- setof(1,(Y=2;Y=1),L).
+   expected: Y=2,L=[1];Y=1,L=[1]
+quads: MALFORMED oas_one_leaf, tests/issues/test1096.pl:29
+   ?- true.
+   not an answer: other_answer_sequence
+quads: MALFORMED oas_alone, tests/issues/test1096.pl:35
+   ?- true.
+   not an answer: other_answer_sequence
+quads: MALFORMED oas_conjunct, tests/issues/test1096.pl:40
+   ?- true.
+   not an answer: other_answer_sequence
+quads: 6 run, 2 passed, 4 failed.

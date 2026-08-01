@@ -65,6 +65,16 @@
 
   Alternative acceptable outcomes are separated by (|)/2.
 
+  other_answer_sequence marks that the answers of the companion
+  alternative may appear in any order (ISO setof/3, 8.10.3). It is
+  well formed only with a single alternative of at least two leaf
+  answers (issue #1096):
+
+      ?- setof(1, (Y=2 ; Y=1), L).
+         Y = 2, L = [1]
+      ;  Y = 1, L = [1]
+      |  other_answer_sequence.
+
   A quad may carry more than one answer description; all of them
   must hold.
 
@@ -148,6 +158,11 @@ run_list([q(Id, Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 % A quad passes if any (|)-alternative of its answer description
 % matches. Same-named variables of the query term and the answer
 % description term are first unified via the VarNames list.
+%
+% other_answer_sequence (issue #1096) is not itself an outcome: it
+% annotates the remaining alternative so its leaf answers may match
+% in any order. Well formed only with exactly one companion
+% alternative that has at least two leaves.
 
 check_quad(M, Id, Q, VNs, AD, File, Line) :-
 	(	Id == '$bad_quad_identifier'
@@ -156,14 +171,47 @@ check_quad(M, Id, Q, VNs, AD, File, Line) :-
 	;	malformed(AD, Bad)
 	->	report(malformed, Id, Q, VNs, Bad, File, Line),
 		fail
-	;	alternatives(AD, Alts),
-		(	member(Alt, Alts),
-			\+ \+ check_alternative(M, Q, VNs, Alt)
-		->	true
-		;	report(failed, Id, Q, VNs, AD, File, Line),
-			fail
+	;	alternatives(AD, Alts0),
+		peel_other_answer_sequence(Alts0, Alts, HasOAS),
+		(	HasOAS == true
+		->	(	Alts = [Alt],
+				solutions(Alt, Sols),
+				Sols = [_,_|_]
+			->	(	\+ \+ check_alternative_any_order(M, Q, VNs, Alt)
+				->	true
+				;	report(failed, Id, Q, VNs, AD, File, Line),
+					fail
+				)
+			;	report(malformed, Id, Q, VNs, other_answer_sequence, File, Line),
+				fail
+			)
+		;	(	member(Alt, Alts),
+				\+ \+ check_alternative(M, Q, VNs, Alt)
+			->	true
+			;	report(failed, Id, Q, VNs, AD, File, Line),
+				fail
+			)
 		)
 	).
+
+peel_other_answer_sequence([], [], false).
+peel_other_answer_sequence([Alt|T], Rest, Has) :-
+	(	Alt == other_answer_sequence
+	->	peel_other_answer_sequence(T, Rest, _),
+		Has = true
+	;	Rest = [Alt|Rest0],
+		peel_other_answer_sequence(T, Rest0, Has0),
+		Has = Has0
+	).
+
+check_alternative_any_order(M, Q, VNs, Alt) :-
+	solutions(Alt, Sols),
+	(	sols_have_output(Sols)
+	->	Mode = capture
+	;	Mode = plain
+	),
+	permutation(Sols, Perm),
+	check_solutions(Perm, M, Q, VNs, 1, Mode, []).
 
 % The parser used to reject a malformed answer description when the
 % file was consulted (issue #1074). That aborted the load (issue #1078);
@@ -186,6 +234,17 @@ malformed(AD, Bad) :-
 	;	\+ ( member(I, Items), annotation(I, sto) ),
 		unsolved(Items, Bad)
 	).
+% other_answer_sequence belongs only as a (|)-alternative of its own,
+% not as a conjunct of a leaf answer.
+malformed(AD, other_answer_sequence) :-
+	alternatives(AD, Alts),
+	member(Alt, Alts),
+	Alt \== other_answer_sequence,
+	solutions(Alt, Sols),
+	member(S, Sols),
+	conj(S, Items),
+	member(I, Items),
+	I == other_answer_sequence.
 
 answer_item(I) :- var(I), !, fail.
 answer_item(V = _) :- !, var(V).
@@ -201,6 +260,7 @@ answer_atom(ad_infinitum).
 answer_atom(sto).
 answer_atom(unexpected).
 answer_atom(inattendue).
+answer_atom(other_answer_sequence).
 
 % Report the equation that rebinds, not the one it clashes with.
 
