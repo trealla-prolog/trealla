@@ -211,47 +211,60 @@ entry against a recycled frame is the hazard — but it is only ever
 called from `commit_frame()`. The **return path recycles frame indices
 without ever cleaning the trail**, and `f->no_recov` was the plug.
 
-### The fix that worked, and why it is not in the patch
+### Three repairs, and what they each hit
 
-`drop_frame_trail()`, called on the recovery path just before
-`trim_frame()`: compact the trail, dropping entries that name the frame
-being reclaimed. Only entries above the newest choicepoint's `tp` can
-name it — below it the frame did not exist yet — and those are dead once
-the frame is, because recovery only happens when no choicepoint resumes
-into it. I asserted that directly (`ch->st.fp <= cur_ctx` at every call):
-**0 violations** across the suite and chess.pl. `trim_frame()` unshares
-the slots immediately after, so nothing leaks.
-
-It works. The pin goes, and every `\+` / if-then-else clause recovers
-its frame:
-
-| 300,000 iterations | pinned | cleaned |
-|---|---|---|
-| `( N > 0 -> true ; true )` | 600,002 frames | 3 |
-| `\+ N < 0` | 600,002 | 3 |
-| `ignore(N >= 0)` | 600,002 | 3 |
-| `N \= foo` | 600,002 | 3 |
-
-At 1,000,000 iterations, 451 MB → 5.5 MB. test338 passes, the suite is
-328/2, ASan clean including the attributed-variable tests (clpb, clpz,
-freeze, dif, when).
-
-**But the scan is unbounded, and it lands on a path that used to be
-free.** `samples/takeuchi.pl` — via `eyereasoner/eyelet`, which is where
-this surfaced — goes from 0.7 s to not finishing: few choicepoints means
+**Sweep the trail when the frame is reclaimed.** Unbounded as written —
 the window between the newest choicepoint's `tp` and the top of the
-trail is the whole trail, and the recursion pays it per frame. Capping
-the scan only trades the work for lost recoveries, which that benchmark
-feels just as badly (0.93 s at any cap, versus 0.69 s stock).
+trail is the whole trail in a program that barely branches, and
+`samples/takeuchi.pl` (via `eyereasoner/eyelet`) stops finishing. A
+per-frame count of live entries fixes that: the count is almost always
+zero — **10,580,000 recoveries in the test suite, none owing an entry**
+— so the sweep only runs when there is something to find. Passes the
+suite, chess, eyelet and ASan. Aborts Logtalk's `library/types` in
+`malloc()`, because `reuse_frame()` leaves entries behind too and
+`trim_trail()` only clears the run of them at the top.
 
-Doing it properly needs a **per-frame count of live trail entries**, so
-the common case — no entry names this frame — costs nothing and the scan
-only runs when there is something to find. That count has to be
-maintained across `add_trail()`, `undo_me()`, `trim_trail()`, retry, and
-the attributed-variable hook's saved trail window, and a missed
-decrement is silent corruption. That is its own change, so this patch
-documents the finding in place of the bare FIXME and leaves the pin
-alone.
+**Stamp each entry with a frame incarnation** and skip mismatches in
+`undo_me()`. Covers every recycler once you notice that `reuse_frame()`
+is two of them — it replaces the frame's own variables *and* moves the
+incoming frame's slots out from under the entries naming them, copied
+without a `share_cell()` so the reference travels and the source is left
+holding a dangling duplicate. Bumping both frames makes Logtalk's
+`library/types` pass 149/149, ASan clean, suite 330/1, eyelet 88/88,
+chess unchanged. Costs 4 bytes an entry (16 → 24 with alignment) and
+about 1% on chess and queens11.
+
+That one holds up for the trail. It still breaks
+`examples/threads/primes`:
+
+```prolog
+spawn([Inf-Sup| Intervals], Acc, Primes, [primes(Inf, Sup, Acc, Acc2)| Goals]) :-
+	threaded_once(primes(Inf, Sup, Acc, Acc2)),
+	spawn(Intervals, Acc2, Primes, Goals).
+```
+
+`threaded_once/1` posts a goal holding `Acc` and `Acc2` — difference-list
+variables in the caller's frames — and `collect/1` unifies the answers
+back long after `spawn/4` has returned. Recover those frames and the
+result comes back truncated in proportion to the thread count, tail
+bound to whatever landed on the index. Nothing in the engine's view
+knows the queue is holding them.
+
+### What that says
+
+The entries and references are not something these repairs introduce.
+Counting the trail entries `undo_me()` applies to a frame beyond
+`q->st.fp` — dead beyond doubt — gives **5,364 in one run of the Logtalk
+types tests, and the same number in stock, with the pin, without it, and
+under every repair above**. The pin does not stop them being made; it
+keeps the indices they name out of circulation so nothing notices.
+
+So `f->no_recov` is holding up at least three things that have no other
+protection: stale trail entries, attributed variables through those same
+entries, and frame references parked in thread queues. It stays until
+frames are no longer the only place a variable lives, or until every
+holder of a frame reference is accounted for. The patch documents this
+where the bare FIXME was.
 
 ### Two other things the dive turned up
 
@@ -270,3 +283,73 @@ alone.
   (+85) and `src/query.c` (+94/-7). The two changes are independent and
   can be split: tail-position marking, and `commit_any_choices()`.
 - `tco-then-branch-tests.pl` — regression tests
+
+## 4. The accumulator idiom, and why it is still not tail recursive
+
+An unbound output variable carried down a recursion — the most common
+shape in Prolog — gets no tail call at all:
+
+```prolog
+sum(N, A, S)  :- ( N > 0 -> A1 is A+N, M is N-1, sum(M, A1, S) ; S = A ).
+sum2(0, A, A) :- !.
+sum2(N, A, S) :- A1 is A+N, M is N-1, sum2(M, A1, S).
+```
+
+200,000 iterations: 200,003 and 200,002 frames. Drop the `S` argument
+and the same predicate runs in 3.
+
+`set_var()` is what stops it. Head unification binds the callee's fresh
+`S` to the caller's, and:
+
+```c
+if ((c_ctx == q->st.fp) && (c_ctx != v_ctx) && !is_temporary(c) && !is_void(c)) {
+        q->no_recov = true;
+```
+
+`commit_frame()` refuses TCO while `q->no_recov` is set, and
+`push_frame()` copies it onto the new frame, so the frame is not
+recovered on return either. The test is coarse: it fires for a binding
+into *any* other frame, including an ancestor that will outlive
+everything here.
+
+Three attempts to sharpen it, all wrong:
+
+1. **Restrict to targets in a frame that can be recycled** —
+   `v_ctx >= q->st.cur_ctx`, mirroring the condition the compound branch
+   right below it already uses. Both loops above then run in 2-3 frames
+   with correct results. 24 tests in the suite break.
+2. **Split the two uses** — narrow test for the TCO gate, wide one for
+   the frame pin, and the reverse. Either alone breaks the same tests, so
+   both uses are load-bearing.
+3. **Ask at reuse time instead of bind time** — scan the incoming
+   clause's slots, deref'd, for anything pointing into the frame the tail
+   call is about to take over. Different corruption, same verdict.
+
+The counterexample each time is `bagof/3`, and under (1) it narrows to
+exactly one newly-allowed tail call in the whole run:
+
+```prolog
+% library/builtins.pl
+sys_enum_runs_([K-[+V]|L], W, Q) :-
+	sys_key_run_(L, K, R, H),
+	(K = W, Q = [V|R], (H = [], !; true); sys_enum_runs_(H, W, Q)).
+```
+
+Suppressing TCO for that one predicate restores correct output, so the
+flag is doing real work there — work that is not captured by where the
+target variable lives, nor by what the incoming slots point at.
+
+Minimal case:
+
+```prolog
+foo(a,b,c). foo(a,b,d). foo(b,c,e). foo(b,c,f). foo(c,c,g). foo(d,e,g).
+?- bagof(C, foo(_,_,C), Cs), write(Cs), nl, fail.
+% [c,d] [e,f] [g] [g]      correct
+% [c,d] [e,f] [g] [_A|_B]  with (1) or (2)
+% [c,d] [e,f,g] [g]        with (3)
+```
+
+This is the same shape as the thread-queue case above: a variable of one
+frame is reachable from somewhere the engine's escape test cannot see.
+Making it precise means tracking that reachability properly, not finding
+a better predicate to evaluate at the binding.
