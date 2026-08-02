@@ -156,28 +156,28 @@ void check_pressure(query *q)
 #endif
 	if (q->st.tp < (q->trails_size / 2)) {
 		unsigned new_size = q->st.tp < INITIAL_NBR_TRAILS ? INITIAL_NBR_TRAILS : q->st.tp + 1;
-		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), new_size, new_size*3/2);
+		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), new_size, new_size*5/4);
 	}
 #if TRACE_MEM
 	printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->st.cp, (unsigned)q->choices_size);
 #endif
 	if (q->st.cp < (q->choices_size / 2)) {
 		unsigned new_size = q->st.cp < INITIAL_NBR_CHOICES ? INITIAL_NBR_CHOICES : q->st.cp + 1;
-		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), new_size, new_size*3/2);
+		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), new_size, new_size*5/4);
 	}
 #if TRACE_MEM
 	printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
 	if (q->st.fp < (q->frames_size / 2)) {
 		unsigned new_size = q->st.fp < INITIAL_NBR_FRAMES ? INITIAL_NBR_FRAMES : q->st.fp + 1;
-		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), new_size, new_size*3/2);
+		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), new_size, new_size*5/4);
 	}
 #if TRACE_MEM
 	printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
 	if (q->st.sp < (q->slots_size / 2)) {
 		unsigned new_size = q->st.sp < INITIAL_NBR_SLOTS ? INITIAL_NBR_SLOTS : q->st.sp + 1;
-		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), new_size, new_size*3/2);
+		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), new_size, new_size*5/4);
 	}
 #endif
 }
@@ -187,7 +187,7 @@ static bool check_choice(query *q)
 	if (q->st.cp < q->choices_size)
 		return true;
 
-	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->st.cp+1, q->choices_size*3/2);
+	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->st.cp+1, q->choices_size*5/4);
 
 	if (!new_choicessize) {
 		q->oom = q->error = true;
@@ -209,7 +209,7 @@ bool check_frame(query *q, unsigned max_vars)
 		return true;
 	}
 
-	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp+1, q->frames_size*3/2);
+	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp+1, q->frames_size*5/4);
 
 	if (!new_framessize) {
 		q->oom = q->error = true;
@@ -232,7 +232,7 @@ bool check_slot(query *q, unsigned cnt)
 	if (num < q->slots_size)
 		return true;
 
-	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num+1, num*3/2);
+	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num+1, num*5/4);
 
 	if (!new_slotssize) {
 		q->oom = q->error = true;
@@ -248,7 +248,7 @@ bool check_trail(query *q)
 	if (q->st.tp < q->trails_size)
 		return true;
 
-	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp+1, q->trails_size*3/2);
+	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp+1, q->trails_size*5/4);
 
 	if (!new_trailssize) {
 		q->oom = q->error = true;
