@@ -1142,6 +1142,23 @@ static bool resume_frame(query *q)
 #endif
 	Trace(q, get_head(f->instr), f->prev, EXIT);
 
+	// Call is followed by !: drop callee-internal choices the cut will
+	// kill so trim_frame can run. Stop at barriers (cut handles those,
+	// including setup_call_cleanup) and at the parent clause choice
+	// (gen < f->chgen) - that stays until the real cut.
+
+	if (f->instr && is_next_cut(f->instr)) {
+		while (q->st.cp) {
+			choice *ch = GET_CURR_CHOICE();
+
+			if (ch->barrier || (ch->gen < f->chgen))
+				break;
+
+			leave_predicate(q, ch->st.pr, false);
+			drop_choice(q);
+		}
+	}
+
 	if (q->pl->opt
 		&& !f->no_recov
 		&& (q->st.fp == (q->st.cur_ctx + 1))
@@ -1653,7 +1670,8 @@ bool match_head(query *q)
 
 			if (pr) {
 				c->match = pr;
-				c->flags = 0;
+				// Keep NEXT_CUT / TCO hints; only drop builtin tags.
+				c->flags &= ~(FLAG_INTERNED_BUILTIN | FLAG_INTERNED_EVALUABLE);
 			}
 		}
 
