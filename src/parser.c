@@ -1972,6 +1972,7 @@ static bool directive_term(parser *p, cell *c)
 
 // Mark terms immediately followed by ! in a ,/2 chain. Conjunction is
 // xfy, so bodies nest as (A, (B, !)) — tag each goal whose next is cut.
+// Also walk ;/2, ->/2, *->/2 and if/3 so cuts inside those arms are seen.
 
 static bool starts_with_cut(const cell *c)
 {
@@ -1989,17 +1990,41 @@ static bool starts_with_cut(const cell *c)
 
 static void mark_next_cut(cell *c)
 {
-	if (!is_interned(c) || (c->arity != 2) || (c->val_off != g_conjunction_s))
+	if (!is_interned(c) || !c->arity)
 		return;
 
-	cell *lhs = c + 1;
-	cell *rhs = lhs + lhs->num_cells;
+	cell *arg1 = c + 1;
+	cell *arg2 = arg1 + arg1->num_cells;
 
-	if (starts_with_cut(rhs))
-		lhs->flags |= FLAG_INTERNED_NEXT_CUT;
+	if ((c->val_off == g_conjunction_s) && (c->arity == 2)) {
+		if (starts_with_cut(arg2))
+			arg1->flags |= FLAG_INTERNED_NEXT_CUT;
 
-	mark_next_cut(lhs);
-	mark_next_cut(rhs);
+		mark_next_cut(arg1);
+		mark_next_cut(arg2);
+		return;
+	}
+
+	if ((c->val_off == g_disjunction_s) && (c->arity == 2)) {
+		mark_next_cut(arg1);
+		mark_next_cut(arg2);
+		return;
+	}
+
+	if (((c->val_off == g_if_then_s) || (c->val_off == g_soft_cut_s))
+		&& (c->arity == 2)) {
+		mark_next_cut(arg1);
+		mark_next_cut(arg2);
+		return;
+	}
+
+	if ((c->val_off == g_if_s) && (c->arity == 3)) {
+		cell *arg3 = arg2 + arg2->num_cells;
+		mark_next_cut(arg1);
+		mark_next_cut(arg2);
+		mark_next_cut(arg3);
+		return;
+	}
 }
 
 static void check_first_cut(clause *cl)
