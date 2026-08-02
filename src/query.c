@@ -660,10 +660,8 @@ static void trim_frame(query *q, const frame *f)
 
 void add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
 {
-	if (!check_trail(q)) {
-		q->error = false;
+	if (!check_trail(q))
 		return;
-	}
 
 	trail *tr = q->trails + q->st.tp++;
 	tr->val_ctx = c_ctx;
@@ -1712,7 +1710,7 @@ bool match_head(query *q)
 		cell *head = get_head(cl->cells);
 
 		if (cl->num_vars > q->st.pr->max_vars)
-			CHECKED(check_slot(q, cl->num_vars));
+			CHECKED(check_slot(q, q->st.pr->max_vars=cl->num_vars));
 
 		try_me(q, cl->num_vars);
 		q->st.dbe->attempted++;
