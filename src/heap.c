@@ -15,13 +15,28 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 	if (min_elements > max_elements)
 		max_elements = min_elements;
 
+	// Cap single allocations when memory limiting is enabled (8GB).
+	// If only the optimistic max overshoots (e.g. check_slot's num*3/2),
+	// clamp to the largest fitting size instead of failing when min fits.
+	const size_t limit_bytes = 1024ULL * 1024ULL * 1024ULL * 8ULL;
+
+	if (q->pl->limit && elem_size) {
+		size_t capped = limit_bytes / elem_size;
+
+		if (max_elements > capped) {
+			if (capped < min_elements) {
+				q->oom = true;
+				return 0;
+			}
+
+			max_elements = capped;
+		}
+	}
+
 	size_t elements = max_elements;
 	void *mem = NULL;
 
 	do {
-		if (q->pl->limit && (elem_size * elements) > (1024LL*1024*1024*4))
-			break;
-
 		mem = TPL_realloc(*addr, elem_size * elements);
 		if (mem) break;
 		elements = min_elements + (elements - min_elements) / 2;
