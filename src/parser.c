@@ -1970,6 +1970,38 @@ static bool directive_term(parser *p, cell *c)
 	return true;
 }
 
+// Mark terms immediately followed by ! in a ,/2 chain. Conjunction is
+// xfy, so bodies nest as (A, (B, !)) — tag each goal whose next is cut.
+
+static bool starts_with_cut(const cell *c)
+{
+	if (!is_interned(c))
+		return false;
+
+	if (c->val_off == g_cut_s)
+		return true;
+
+	if ((c->arity == 2) && (c->val_off == g_conjunction_s))
+		return starts_with_cut(c + 1);
+
+	return false;
+}
+
+static void mark_next_cut(cell *c)
+{
+	if (!is_interned(c) || (c->arity != 2) || (c->val_off != g_conjunction_s))
+		return;
+
+	cell *lhs = c + 1;
+	cell *rhs = lhs + lhs->num_cells;
+
+	if (starts_with_cut(rhs))
+		lhs->flags |= FLAG_INTERNED_NEXT_CUT;
+
+	mark_next_cut(lhs);
+	mark_next_cut(rhs);
+}
+
 static void check_first_cut(clause *cl)
 {
 	cell *c = get_body(cl->cells);
@@ -1977,9 +2009,10 @@ static void check_first_cut(clause *cl)
 	if (!c)
 		return;
 
+	mark_next_cut(c);
+
 	if (c->val_off == g_cut_s) {
 		cl->is_first_cut = true;
-		cl->is_cut_only = true;
 		return;
 	}
 
@@ -2081,7 +2114,6 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 
 	clause *cl = p->cl;
 	cl->is_first_cut = false;
-	cl->is_cut_only = false;
 	p->start_term = true;
 
 	if (!p->reuse) {

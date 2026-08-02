@@ -110,6 +110,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
 #define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
 #define is_recursive_call(c) ((c)->flags & FLAG_INTERNED_RECURSIVE_CALL)
+#define is_next_cut(c) ((c)->flags & FLAG_INTERNED_NEXT_CUT)
 #define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
 #define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
 #define is_void(c) ((c)->flags & FLAG_VAR_VOID)
@@ -270,6 +271,7 @@ enum {
 	FLAG_INTERNED_BUILTIN=1<<2,
 	FLAG_INTERNED_EVALUABLE=1<<3,
 	FLAG_INTERNED_GROUND=1<<4,
+	FLAG_INTERNED_NEXT_CUT=1<<5,
 
 	FLAG_LIVE=1<<11,					// used by bb_b_put/2
 	FLAG_MANAGED=1<<12,					// any ref-counted object
@@ -407,7 +409,6 @@ struct clause_ {
 	pl_idx cidx, num_allocated_cells;
 	unsigned num_vars;
 	bool is_first_cut:1;
-	bool is_cut_only:1;
 	bool is_unique:1;
 	bool is_fact:1;
 	bool is_deleted:1;
