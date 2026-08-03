@@ -8,6 +8,7 @@ trap "rm -f $TMP" EXIT
 
 failed_count=0
 succeeded_count=0
+start_time=$(date +%s)
 
 for source in tests/misc/*
 
@@ -34,6 +35,10 @@ do
 	fi
 done
 
+elapsed=$(expr $(date +%s) - $start_time)
+mins=$(expr $elapsed / 60)
+secs=$(expr $elapsed % 60)
+
 cat <<EOF
 
 ============
@@ -41,4 +46,5 @@ TEST SUMMARY
 ============
 Failed: $failed_count
 Succeeded: $succeeded_count
+Time: ${mins}m${secs}s
 EOF
