@@ -628,7 +628,8 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 		pr->idx1 = pr->idx2 = NULL;
 		pr->is_var_in_first_arg = false;
 		pr->is_var_in_second_arg = false;
-	} else if (pr->is_var_in_first_arg || pr->is_var_in_second_arg) {
+	} else if (pr->is_var_in_first_arg || pr->is_var_in_second_arg
+		|| pr->is_key_var || pr->is_key_var2) {
 		// Clauses just left the chain. If the last var-headed one was
 		// among them the flags are now stale, and being stale here is
 		// one-way: they are only ever set by assert_commit(). Safe to
@@ -1589,6 +1590,14 @@ static bool key_has_var(const cell *c)
 
 static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, bool checked)
 {
+	// merge_wild2 is set by the idx2 path: the clauses held out of idx2
+	// because their arg2 carries a var match any arg2 key, so they join
+	// every idx2 result set. Keyed on db_id like the rest, so the merge
+	// comes back in database order.
+
+	bool merge_wild2 = q->st.merge_wild2;
+	q->st.merge_wild2 = false;
+
 	skiplist *tmp_idx = NULL;
 	const rule *first = NULL;
 	const rule *r;
@@ -1623,6 +1632,28 @@ static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, bool 
 
 	if (iter)
 		sl_done(iter);
+
+	if (merge_wild2 && pr->wild2 && sl_count(pr->wild2)) {
+		sliter *w = sl_first(pr->wild2);
+
+		while (w && sl_next(w, (void*)&r)) {
+			if (!first) {
+				first = r;
+				continue;
+			}
+
+			if (!tmp_idx) {
+				tmp_idx = sl_create(NULL, NULL, NULL);
+				sl_set_tmp(tmp_idx);
+				sl_app(tmp_idx, (void*)(size_t)first->db_id, (void*)first);
+			}
+
+			sl_app(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
+		}
+
+		if (w)
+			sl_done(w);
+	}
 
 	if (g_index_check && checked) {
 		index_check(q, pr, key, chk, num_chk);
@@ -1701,6 +1732,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// node at -62, landing on one at +64, with the clauses that compare
 	// 0 further along past nodes at +115.
 
+	pr->num_lookups++;
+
 	if (pr->is_key_var) {
 		// idx1 is keyed on the whole head, so one var anywhere in a
 		// clause head bars it. idx2 is keyed on arg2 alone and is still
@@ -1714,12 +1747,25 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		cell *a1 = key->arity ? FIRST_ARG(key) : NULL;
 		cell *a2 = (a1 && key->arity > 1) ? NEXT_ARG(a1) : NULL;
 
-		if (pr->idx2 && !pr->is_key_var2 && a2 && !key_has_var(a2)) {
+		// A tenth is where merging stops paying against a chain walk,
+		// measured. Under that, the side list rides along with idx2.
+
+		size_t nwild = pr->wild2 ? sl_count(pr->wild2) : 0;
+
+		// Only a BARE var bars this: it discriminates nothing, so the
+		// chain is cheaper anyway. Vars nested inside arg2 are fine -
+		// every clause in idx2 is ground there, so the run matching the
+		// goal's ground prefix is contiguous and the descent holds.
+
+		if (pr->idx2 && a2 && !is_var(a2)
+			&& (nwild * 10 <= (size_t)pr->cnt)) {
 			q->st.dbe = NULL;
+			q->st.merge_wild2 = true;
 			sliter *it2 = sl_find_key(pr->idx2, a2);
 			return collect_hits(q, pr, key, it2, false);
 		}
 
+		pr->num_linear++;
 		iter_set_chain(q, pr->head);
 		return true;
 	}

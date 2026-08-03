@@ -368,9 +368,10 @@ static void abolish_predicate(predicate *pr)
 	}
 
 	pr->head = pr->tail = NULL;
+	sl_destroy(pr->wild2);
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx1);
-	pr->idx1 = pr->idx2 = NULL;
+	pr->idx1 = pr->idx2 = pr->wild2 = NULL;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -391,6 +392,7 @@ static void destroy_predicate(module *m, predicate *pr)
 	}
 
 	pr->head = pr->tail = NULL;
+	sl_destroy(pr->wild2);
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx1);
 
@@ -691,12 +693,51 @@ rule *find_in_db(module *m, uuid *ref)
 // point into other clauses, so freeing as you go walks the comparator
 // into memory released on an earlier iteration.
 
+// Route a clause into idx2 or the arg2 side list.
+//
+// idx2 is keyed on arg2 alone and needs every arg2 ground to stay
+// ordered. Barring the whole predicate for the few that are not is
+// what cost sarif its time: $lgt_entity_property_/2, 7293 clauses,
+// 1.1% var-bearing in arg2, every one of 66859 lookups walking the
+// chain - roughly 488 million clause steps.
+//
+// Those few go in a side list keyed on db_id and are merged into each
+// idx2 lookup instead, so the ordered index still carries the other
+// 98.9%.
+
+static void idx2_add(predicate *pr, rule *r, cell *arg2, bool append)
+{
+	bool has_var = false;
+
+	for (unsigned i = 0; i < arg2->num_cells; i++) {
+		if (is_var(arg2 + i)) { has_var = true; break; }
+	}
+
+	if (has_var) {
+		if (!pr->wild2) {
+			pr->wild2 = sl_create(NULL, NULL, NULL);
+			ENSURE(pr->wild2);
+		}
+
+		sl_app(pr->wild2, (void*)(size_t)r->db_id, r);
+		return;
+	}
+
+	if (append)
+		sl_app(pr->idx2, arg2, r);
+	else
+		sl_set(pr->idx2, arg2, r);
+}
+
 void index_remove_clause(predicate *pr, rule *r)
 {
 	if (!pr || !pr->idx1)
 		return;
 
 	cell *c = get_head(r->cl.cells);
+
+	if (pr->wild2)
+		sl_rem(pr->wild2, (void*)(size_t)r->db_id, r);
 
 	if (pr->idx2 && c->arity > 1) {
 		cell *arg1 = FIRST_ARG(c);
@@ -844,9 +885,10 @@ void clear_property(module *m, const char *name, unsigned arity)
 			// abandoned both skiplists and every node in them, and
 			// assert_commit() then built a fresh pair over the top.
 
+			sl_destroy(pr->wild2);
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1);
-			pr->idx1 = pr->idx2 = NULL;
+			pr->idx1 = pr->idx2 = pr->wild2 = NULL;
 			pr->is_var_in_first_arg = false;
 			pr->is_var_in_second_arg = false;
 #endif
@@ -1679,6 +1721,7 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 			pr->meta_args = NULL;
 			pr->alias = NULL;
 			pr->cnt = 0;
+			sl_destroy(pr->wild2);
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1);
 			pr->idx2 = pr->idx1 = NULL;
@@ -2128,12 +2171,32 @@ void recheck_var_in_indexed_args(predicate *pr)
 {
 	pr->is_var_in_first_arg = false;
 	pr->is_var_in_second_arg = false;
+	pr->is_key_var = false;
+	pr->is_key_var2 = false;
 
 	for (rule *r = pr->head; r; r = r->next) {
 		if (r->dbgen_retracted || r->cl.is_deleted)
 			continue;
 
 		cell *c = get_head(r->cl.cells);
+
+		// Recomputed, not OR'd in. These are set-only on the assert
+		// path, so one clause that has since been retracted would
+		// otherwise keep the predicate off its index forever -
+		// $directive/1 in a Logtalk run: 2131 live clauses, not one of
+		// them var-bearing, idx1 disabled regardless.
+
+		for (unsigned i = 0; i < c->num_cells; i++) {
+			if (is_var(c + i)) { pr->is_key_var = true; break; }
+		}
+
+		if (c->arity > 1) {
+			cell *a2 = NEXT_ARG(FIRST_ARG(c));
+
+			for (unsigned i = 0; i < a2->num_cells; i++) {
+				if (is_var(a2 + i)) { pr->is_key_var2 = true; break; }
+			}
+		}
 
 		if (!c->arity)
 			return;
@@ -2186,6 +2249,8 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 		pr->is_var_in_first_arg = false;
 		pr->is_var_in_second_arg = false;
+		pr->is_key_var = false;
+		pr->is_key_var2 = false;
 		unsigned num_key_var = 0;
 
 		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
@@ -2228,7 +2293,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 				if (is_var(arg2))
 					pr->is_var_in_second_arg = true;
 
-				sl_app(pr->idx2, arg2, cl2);
+				idx2_add(pr, cl2, arg2, true);
 			}
 		}
 
@@ -2272,12 +2337,12 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		sl_set(pr->idx1, c, r);
 
 		if (pr->idx2 && arg2)
-			sl_set(pr->idx2, arg2, r);
+			idx2_add(pr, r, arg2, false);
 	} else {
 		sl_app(pr->idx1, c, r);
 
 		if (pr->idx2 && arg2)
-			sl_app(pr->idx2, arg2, r);
+			idx2_add(pr, r, arg2, true);
 	}
 }
 
@@ -2949,7 +3014,7 @@ void index_stats_report(prolog *pl)
 			// have to be decremented on every retract, and getting
 			// that wrong shows up as percentages over 100.
 
-			unsigned live = 0, nvar = 0;
+			unsigned live = 0, nvar = 0, nvar1 = 0, nvar2 = 0;
 
 			for (const rule *r = pr->head; r; r = r->next) {
 				if (r->dbgen_retracted || r->cl.is_deleted)
@@ -2961,15 +3026,48 @@ void index_stats_report(prolog *pl)
 				for (unsigned i = 0; i < c->num_cells; i++) {
 					if (is_var(c + i)) { nvar++; break; }
 				}
+
+				if (!c->arity)
+					continue;
+
+				cell *a1 = FIRST_ARG(c);
+
+				for (unsigned i = 0; i < a1->num_cells; i++) {
+					if (is_var(a1 + i)) { nvar1++; break; }
+				}
+
+				if (c->arity < 2)
+					continue;
+
+				cell *a2 = NEXT_ARG(a1);
+
+				for (unsigned i = 0; i < a2->num_cells; i++) {
+					if (is_var(a2 + i)) { nvar2++; break; }
+				}
 			}
 
 			if (!live)
 				continue;
 
-			fprintf(stderr, "[idx] final %s/%u: %u clauses, %u var keys (%.1f%%)%s\n",
-				C_STR(m, &pr->key), pr->key.arity, live, nvar,
+			// head% is what bars idx1 today, keyed on the whole clause
+			// head. arg1% is what would bar it if idx1 were keyed on
+			// argument 1 alone, the textbook arrangement and symmetric
+			// with idx2. A predicate with a high head% and a low arg1%
+			// is one the current key gives up on needlessly.
+
+			// Which disabled predicate is actually hot? A high var
+			// percentage on a predicate nobody looks up costs nothing;
+			// the cost is linear lookups times clauses walked.
+
+			fprintf(stderr, "[idx] final %s/%u: %u clauses  head=%.1f%% arg1=%.1f%% arg2=%.1f%%  lookups=%llu linear=%llu (~%llu clause-steps)%s\n",
+				C_STR(m, &pr->key), pr->key.arity, live,
 				100.0 * nvar / (double)live,
-				pr->is_key_var ? "  ORDERED INDEX DISABLED" : "");
+				100.0 * nvar1 / (double)live,
+				100.0 * nvar2 / (double)live,
+				(unsigned long long)pr->num_lookups,
+				(unsigned long long)pr->num_linear,
+				(unsigned long long)(pr->num_linear * (uint64_t)live),
+				pr->is_key_var ? "  idx1 DISABLED" : "");
 		}
 	}
 }

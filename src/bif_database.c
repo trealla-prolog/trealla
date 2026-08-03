@@ -200,7 +200,8 @@ static void predicate_purge_dirty_list(predicate *pr)
 		cnt++;
 	}
 
-	if (cnt && (pr->is_var_in_first_arg || pr->is_var_in_second_arg))
+	if (cnt && (pr->is_var_in_first_arg || pr->is_var_in_second_arg
+		|| pr->is_key_var || pr->is_key_var2))
 		recheck_var_in_indexed_args(pr);
 
 #if 0

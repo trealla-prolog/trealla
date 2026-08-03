@@ -434,13 +434,14 @@ struct predicate_ {
 	predicate *alias;
 	rule *head, *tail;
 	module *m;
-	skiplist *idx1, *idx2;
+	skiplist *idx1, *idx2, *wild2;
 	const char *filename;
 	cell *meta_args;
 	list dirty;
 	cell key;
 	pl_refcnt refcnt, cnt, db_id;
 	unsigned max_vars;
+	uint64_t num_lookups, num_linear;	// TPL_INDEX_STATS
 	bool is_reload:1;
 	bool is_builtin:1;
 	bool is_public:1;
@@ -559,6 +560,7 @@ struct run_state_ {
 			pl_ctx key_ctx;
 			bool karg1_is_ground:1, karg2_is_ground:1, karg3_is_ground:1,
 			karg1_is_atomic:1, karg2_is_atomic:1, karg3_is_atomic:1;
+			bool merge_wild2:1;
 			unsigned ci_kind:2;
 		};
 		struct { uint64_t uv1, uv2; };
