@@ -554,26 +554,46 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return -1;
 	} else if (is_string(p1) && is_string(p2)) {
 		return strcmp(C_STR(m, p1), C_STR(m, p2));
-	} else if (is_list(p1)) {
-		if (is_list(p2)) {
-			LIST_HANDLER(p1);
-			LIST_HANDLER(p2);
+	} else if (is_list(p1) && is_list(p2)) {
+		// Only walk when BOTH sides are lists. Falling through to the
+		// generic compound case otherwise keeps the order antisymmetric:
+		// a list is '.'/2, and the compound branch already ranks it
+		// against another arity-2 compound by name. A blanket 1 here
+		// made cmp(list, f/2) and cmp(f/2, list) both positive, which is
+		// not a total order, so the descent walked straight past
+		// list-headed clauses.
 
-			while (is_list(p1) && is_list(p2)) {
-				cell *h1 = LIST_HEAD(p1);
-				cell *h2 = LIST_HEAD(p2);
+		LIST_HANDLER(p1);
+		LIST_HANDLER(p2);
+
+		while (is_list(p1) && is_list(p2)) {
+			cell *h1 = LIST_HEAD(p1);
+			cell *h2 = LIST_HEAD(p2);
+
+			if (l && (is_var(h1) || is_var(h2))) {
+				if (sl_is_find(l))
+					return 0;
+
+				sl_set_wild_card(l);
+			} else {
 				int ok = index_cmpkey_(h1, h2, param, l);
 
 				if (ok != 0)
 					return ok;
-
-				p1 = LIST_TAIL(p1);
-				p2 = LIST_TAIL(p2);
 			}
 
-			return index_cmpkey_(p1, p2, param, l);
-		} else
-			return 1;
+			p1 = LIST_TAIL(p1);
+			p2 = LIST_TAIL(p2);
+		}
+
+		if (l && (is_var(p1) || is_var(p2))) {
+			if (!sl_is_find(l))
+				sl_set_wild_card(l);
+
+			return 0;
+		}
+
+		return index_cmpkey_(p1, p2, param, l);
 	} else if (is_interned(p1) && !p1->arity) {
 		if (is_interned(p2) && !p2->arity) {
 			if (p1->val_off == p2->val_off)
@@ -662,6 +682,31 @@ rule *find_in_db(module *m, uuid *ref)
 	return NULL;
 }
 
+// Drop a clause's index entries. The index keys are borrowed pointers
+// into the clause's own cells, so an entry that outlives its clause
+// turns the next skiplist descent into a use-after-free.
+//
+// Callers must withdraw every doomed clause BEFORE freeing any of them:
+// sl_rem() descends by comparing against other nodes' keys, and those
+// point into other clauses, so freeing as you go walks the comparator
+// into memory released on an earlier iteration.
+
+void index_remove_clause(predicate *pr, rule *r)
+{
+	if (!pr || !pr->idx1)
+		return;
+
+	cell *c = get_head(r->cl.cells);
+
+	if (pr->idx2 && c->arity > 1) {
+		cell *arg1 = FIRST_ARG(c);
+		cell *arg2 = NEXT_ARG(arg1);
+		sl_rem(pr->idx2, arg2, r);
+	}
+
+	sl_rem(pr->idx1, c, r);
+}
+
 static void purge_properties(predicate *pr)
 {
 	cell tmp;
@@ -670,36 +715,48 @@ static void purge_properties(predicate *pr)
 	predicate *pr2 = find_predicate(pr->m, &tmp);
 	if (!pr2) return;
 
-	for (rule *r = pr2->head ; r; ) {
+	// Pass 1: mark, and withdraw index entries while the whole chain is
+	// still live.
+
+	for (rule *r = pr2->head; r; r = r->next) {
 		cell *f = r->cl.cells;
 		cell *p1 = f + 1;
 		cell *p2 = p1 + p1->num_cells;
 
-		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off)) {
-			r = r->next;
+		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off))
 			continue;
-		}
-
 
 		r->dbgen_retracted = ++pr->m->pl->dbgen;
 		pr2->cnt--;
+		index_remove_clause(pr2, r);
+	}
+
+	if (pr2->refcnt)
+		return;
+
+	// Pass 2: unlink and free. Note pr2, not pr.
+	//
+	// This loop walks the '$predicate_property'/3 chain but used to
+	// splice into pr->head / pr->tail - the predicate being purged, not
+	// the table being walked. That overwrote pr's chain with a pointer
+	// into pr2's, left pr2->head pointing at clauses about to be freed,
+	// and unload_realfile() then ran abolish_predicate(pr) over the
+	// wreckage. Only reachable on a file reload, which is why it stayed
+	// hidden.
+
+	for (rule *r = pr2->head; r; ) {
+		cell *f = r->cl.cells;
+		cell *p1 = f + 1;
+		cell *p2 = p1 + p1->num_cells;
 		rule *save = r;
 		r = r->next;
 
-		if (!pr2->refcnt) {
-			if (save->prev)
-				save->prev->next = save->next;
-			else
-				pr->head = save->next;
+		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off))
+			continue;
 
-			if (save->next)
-				save->next->prev = save->prev;
-			else
-				pr->tail = save->next;
-
-			clear_clause(&save->cl);
-			TPL_free(save);
-		}
+		predicate_delink(pr2, save);
+		clear_clause(&save->cl);
+		TPL_free(save);
 	}
 }
 
@@ -2109,7 +2166,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		return;
 
 	if (!pr->idx1) {
-		unsigned INDEX_THRESHOLD = 500;
+		unsigned INDEX_THRESHOLD = 250;
 
 		if (pr->cnt < INDEX_THRESHOLD)
 			return;

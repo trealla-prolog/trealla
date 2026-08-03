@@ -576,6 +576,18 @@ static void query_purge_dirty_list(query *q)
 	unsigned cnt = 0;
 	rule *r;
 
+	// Withdraw index entries before releasing anything. This was the one
+	// free path that dropped no entries at all - leave_predicate() only
+	// calls sl_rem() while pr->cnt is non-zero, and clauses reach here by
+	// other routes besides. An entry left pointing into a freed clause
+	// turns the next descent into a use-after-free.
+	//
+	// Two passes, because sl_rem() compares against keys borrowed from
+	// the other clauses on this same list.
+
+	for (r = list_front(&q->dirty); r; r = list_next(r))
+		index_remove_clause(r->owner, r);
+
 	while ((r = list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
 		TPL_free(r);
