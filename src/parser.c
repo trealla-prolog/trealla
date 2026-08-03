@@ -2057,7 +2057,14 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body, unsigned depth
 	size_t offset = 0;
 	unsigned i = 0, nesting_offset = p->is_consulting ? 0 : 1;
 
-	while (p->vartab.pool[offset]) {
+	// The walk is bounded by both the pool AND MAX_VARS. The pool holds
+	// MAX_VAR_POOL_SIZE bytes, so with short names it can describe far
+	// more variables than the parallel arrays have room for - 16000
+	// bytes of "_G1\0" is about 4000 against MAX_VARS of 1024 - and
+	// every one of in_head[i], in_body[i], depth[i], off[i], vars[i]
+	// was being written at that unbounded i.
+
+	while ((offset < MAX_VAR_POOL_SIZE) && (i < MAX_VARS) && p->vartab.pool[offset]) {
 		if (!strcmp(p->vartab.pool+offset, src) && !anon) {
 			if (in_body)
 				p->vartab.in_body[i]++;
@@ -2072,6 +2079,12 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body, unsigned depth
 
 		offset += strlen(p->vartab.pool+offset) + 1;
 		i++;
+	}
+
+	if (i >= MAX_VARS) {
+		fprintf(stderr, "Error: too many vars, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+		p->error = true;
+		return 0;
 	}
 
 	size_t len = strlen(src);
@@ -2102,7 +2115,7 @@ static unsigned get_in_head(parser *p, const char *name)
 	size_t offset = 0;
 	unsigned i = 0;
 
-	while (p->vartab.pool[offset]) {
+	while ((offset < MAX_VAR_POOL_SIZE) && (i < MAX_VARS) && p->vartab.pool[offset]) {
 		if (!strcmp(p->vartab.pool+offset, name) && !anon) {
 			return p->vartab.in_head[i];
 		}
@@ -2120,7 +2133,7 @@ static unsigned get_in_body(parser *p, const char *name)
 	size_t offset = 0;
 	unsigned i = 0;
 
-	while (p->vartab.pool[offset]) {
+	while ((offset < MAX_VAR_POOL_SIZE) && (i < MAX_VARS) && p->vartab.pool[offset]) {
 		if (!strcmp(p->vartab.pool+offset, name) && !anon) {
 			return p->vartab.in_body[i];
 		}
@@ -2229,7 +2242,25 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (!is_var(c))
 			continue;
 
+		// A ref is a runtime variable: val_off is NOT an offset into
+		// the global atom table, so C_STR() on it reads wherever that
+		// happens to land. ASan on a Logtalk load: 16 bytes past a
+		// 144000-byte atom table, faulting in get_in_head()'s first
+		// strcmp. The flag is the only thing distinguishing a ref from
+		// a named var, and it was being cleared one line before the
+		// name was used.
+		//
+		// A ref carries no source name, so there is nothing to count
+		// occurrences of. Classify it global - the conservative answer,
+		// costing an optimisation rather than risking a wrong one.
+
+		bool was_ref = is_ref(c);
 		c->flags &= ~FLAG_VAR_REF;
+
+		if (was_ref) {
+			c->flags |= FLAG_VAR_GLOBAL;
+			continue;
+		}
 
 		if (c->val_off == g_anon_s)
 			c->flags |= FLAG_VAR_ANON;
