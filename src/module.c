@@ -2186,6 +2186,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 		pr->is_var_in_first_arg = false;
 		pr->is_var_in_second_arg = false;
+		unsigned num_key_var = 0;
 
 		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
@@ -2204,7 +2205,15 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			// never returned.
 
 			for (unsigned i = 0; i < c->num_cells; i++) {
-				if (is_var(c + i)) { pr->is_key_var = true; break; }
+				if (is_var(c + i)) { pr->is_key_var = true; num_key_var++; break; }
+			}
+
+			if (c->arity > 1) {
+				cell *a2 = NEXT_ARG(FIRST_ARG(c));
+
+				for (unsigned i = 0; i < a2->num_cells; i++) {
+					if (is_var(a2 + i)) { pr->is_key_var2 = true; break; }
+				}
 			}
 
 			if (c->arity && is_var(FIRST_ARG(c)))
@@ -2223,6 +2232,19 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			}
 		}
 
+		// How much of the predicate is holding the ordered index back?
+		// is_key_var disqualifies the whole predicate, which is sound
+		// but costs a linear walk per call. If the count is a small
+		// fraction, those clauses could be held in a side list and
+		// merged into each lookup instead, keeping the index for the
+		// ground majority.
+
+		if (getenv("TPL_INDEX_STATS"))
+			fprintf(stderr, "[idx] %s/%u built: %u clauses, %u with a var in the key (%.1f%%)%s\n",
+				C_STR(m, &pr->key), pr->key.arity, (unsigned)pr->cnt, num_key_var,
+				pr->cnt ? (100.0 * num_key_var / (double)pr->cnt) : 0.0,
+				pr->is_key_var ? " -> ORDERED INDEX DISABLED" : "");
+
 		return;
 	}
 
@@ -2232,6 +2254,12 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 	for (unsigned i = 0; i < c->num_cells; i++) {
 		if (is_var(c + i)) { pr->is_key_var = true; break; }
+	}
+
+	if (arg2) {
+		for (unsigned i = 0; i < arg2->num_cells; i++) {
+			if (is_var(arg2 + i)) { pr->is_key_var2 = true; break; }
+		}
 	}
 
 	if (arg1 && is_var(arg1))
@@ -2900,4 +2928,48 @@ module *module_create(prolog *pl, const char *name)
 	init_lock(&m->guard);
 	list_push_back(&pl->modules, m);
 	return m;
+}
+
+// Final tally for TPL_INDEX_STATS. The count taken when an index is
+// built is only a snapshot: a predicate that grows from 500 to several
+// thousand clauses picks up most of its var-bearing keys afterwards, on
+// the incremental path.
+
+void index_stats_report(prolog *pl)
+{
+	if (!getenv("TPL_INDEX_STATS"))
+		return;
+
+	for (module *m = list_front(&pl->modules); m; m = list_next(m)) {
+		for (predicate *pr = list_front(&m->predicates); pr; pr = list_next(pr)) {
+			if (!pr->idx1 && !pr->is_key_var)
+				continue;
+
+			// Counted here rather than tracked: a running total would
+			// have to be decremented on every retract, and getting
+			// that wrong shows up as percentages over 100.
+
+			unsigned live = 0, nvar = 0;
+
+			for (const rule *r = pr->head; r; r = r->next) {
+				if (r->dbgen_retracted || r->cl.is_deleted)
+					continue;
+
+				live++;
+				cell *c = get_head(((rule*)r)->cl.cells);
+
+				for (unsigned i = 0; i < c->num_cells; i++) {
+					if (is_var(c + i)) { nvar++; break; }
+				}
+			}
+
+			if (!live)
+				continue;
+
+			fprintf(stderr, "[idx] final %s/%u: %u clauses, %u var keys (%.1f%%)%s\n",
+				C_STR(m, &pr->key), pr->key.arity, live, nvar,
+				100.0 * nvar / (double)live,
+				pr->is_key_var ? "  ORDERED INDEX DISABLED" : "");
+		}
+	}
 }

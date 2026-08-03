@@ -1574,6 +1574,83 @@ static bool key_has_var(const cell *c)
 	return false;
 }
 
+// Drain an index iterator into the query's clause iterator.
+//
+// Holds the first hit back rather than materialising unconditionally.
+// Most lookups match exactly one clause - every retract in a
+// key-per-clause table does - and for those there is nothing to sort and
+// nothing to own. Building a temporary skiplist for a single entry cost
+// an allocation per call and, because the iterator is snapshotted into
+// every choicepoint and so cannot safely be freed on a cut, it leaked:
+// 4.7MB over 14000 retracts, measured.
+//
+// checked says whether this came off idx1, which is the only path
+// --index-check knows how to verify.
+
+static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, bool checked)
+{
+	skiplist *tmp_idx = NULL;
+	const rule *first = NULL;
+	const rule *r;
+
+	const rule **chk = NULL;
+	unsigned num_chk = 0, max_chk = 0;
+
+	while (iter && sl_next_key(iter, (void*)&r)) {
+		if (g_index_check && checked) {
+			if (num_chk == max_chk) {
+				max_chk = max_chk ? max_chk * 2 : 16;
+				chk = realloc(chk, max_chk * sizeof(rule*));
+				ENSURE(chk);
+			}
+
+			chk[num_chk++] = r;
+		}
+
+		if (!first) {
+			first = r;
+			continue;
+		}
+
+		if (!tmp_idx) {
+			tmp_idx = sl_create(NULL, NULL, NULL);
+			sl_set_tmp(tmp_idx);
+			sl_app(tmp_idx, (void*)(size_t)first->db_id, (void*)first);
+		}
+
+		sl_app(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
+	}
+
+	if (iter)
+		sl_done(iter);
+
+	if (g_index_check && checked) {
+		index_check(q, pr, key, chk, num_chk);
+		free(chk);
+	}
+
+	if (!first)
+		return false;
+
+	if (!tmp_idx) {
+		iter_set_single(q, (rule*)first);
+		return true;
+	}
+
+	// More than one: results must come back in database order, so the
+	// prefetch stands.
+
+	sliter *it = sl_first(tmp_idx);
+
+	if (!sl_next(it, (void*)&q->st.dbe)) {
+		sl_done(it);
+		return false;
+	}
+
+	iter_set_sl(q, it);
+	return true;
+}
+
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
 	iter_reset(q);
@@ -1625,6 +1702,24 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// 0 further along past nodes at +115.
 
 	if (pr->is_key_var) {
+		// idx1 is keyed on the whole head, so one var anywhere in a
+		// clause head bars it. idx2 is keyed on arg2 alone and is still
+		// sound when every clause's arg2 is ground - which is the
+		// common rule shape, p(X, tag) :- ... , where arg1 is a var in
+		// every clause but arg2 discriminates perfectly. Falling
+		// straight to the chain here cost 45x on eyelet's
+		// deep-taxonomy-10000 (type/2, 30001 clauses, 30000 var keys in
+		// arg1 and every arg2 ground).
+
+		cell *a1 = key->arity ? FIRST_ARG(key) : NULL;
+		cell *a2 = (a1 && key->arity > 1) ? NEXT_ARG(a1) : NULL;
+
+		if (pr->idx2 && !pr->is_key_var2 && a2 && !key_has_var(a2)) {
+			q->st.dbe = NULL;
+			sliter *it2 = sl_find_key(pr->idx2, a2);
+			return collect_hits(q, pr, key, it2, false);
+		}
+
 		iter_set_chain(q, pr->head);
 		return true;
 	}
@@ -1665,73 +1760,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// results must be returned in database order, so prefetch all
 	// the results and return them sorted as an iterator...
 
-	// Hold the first hit back rather than materialising unconditionally.
-	// Most index lookups match exactly one clause - every retract in a
-	// key-per-clause table does - and for those there is nothing to sort
-	// and nothing to own. Building a temporary skiplist for a single
-	// entry cost an allocation per call and, because the iterator is
-	// snapshotted into every choicepoint and so cannot safely be freed
-	// on a cut, it leaked: 4.7MB over 14000 retracts, measured.
-
-	skiplist *tmp_idx = NULL;
-	const rule *first = NULL;
-	const rule *r;
-
-	const rule **chk = NULL;
-	unsigned num_chk = 0, max_chk = 0;
-
-	while (sl_next_key(iter, (void*)&r)) {
-		if (g_index_check && (idx == pr->idx1)) {
-			if (num_chk == max_chk) {
-				max_chk = max_chk ? max_chk * 2 : 16;
-				chk = realloc(chk, max_chk * sizeof(rule*));
-				ENSURE(chk);
-			}
-
-			chk[num_chk++] = r;
-		}
-
-		if (!first) {
-			first = r;
-			continue;
-		}
-
-		if (!tmp_idx) {
-			tmp_idx = sl_create(NULL, NULL, NULL);
-			sl_set_tmp(tmp_idx);
-			sl_app(tmp_idx, (void*)(size_t)first->db_id, (void*)first);
-		}
-
-		sl_app(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
-	}
-
-	sl_done(iter);
-
-	if (g_index_check && (idx == pr->idx1)) {
-		index_check(q, pr, key, chk, num_chk);
-		free(chk);
-	}
-
-	if (!first)
-		return false;
-
-	if (!tmp_idx) {
-		iter_set_single(q, (rule*)first);
-		return true;
-	}
-
-	// More than one: results must come back in database order, so the
-	// prefetch stands.
-
-	iter = sl_first(tmp_idx);
-
-	if (!sl_next(iter, (void*)&q->st.dbe)) {
-		sl_done(iter);
-		return false;
-	}
-
-	iter_set_sl(q, iter);
-	return true;
+	return collect_hits(q, pr, key, iter, idx == pr->idx1);
 }
 
 // Match HEAD :- BODY.

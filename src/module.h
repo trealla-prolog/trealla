@@ -36,6 +36,7 @@ void process_clause(module *m, clause *cl, predicate *parent);
 void process_module(module *m);
 void recheck_var_in_indexed_args(predicate *pr);
 void index_remove_clause(predicate *pr, rule *r);
+void index_stats_report(prolog *pl);
 builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function);
 void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt);

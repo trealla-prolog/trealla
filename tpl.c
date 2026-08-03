@@ -223,6 +223,7 @@ int main(int ac, char *av[], char * envp[])
 			set_quiet(pl);
 		} else if (!strcmp(av[i], "--index-check")) {
 			g_index_check = 1;
+			{ extern int g_sl_trace; if (getenv("TPL_SL_TRACE")) g_sl_trace = 1; }
 			atexit(index_check_report);
 		} else if (!strcmp(av[i], "--nolimit")) {
 			set_limit(pl, 0);
@@ -242,7 +243,8 @@ int main(int ac, char *av[], char * envp[])
 #ifndef __wasi__
 	if (daemon) {
 		if (!daemonize(ac, av)) {
-			pl_destroy(pl);
+			index_stats_report(pl);
+	pl_destroy(pl);
 			return 0;
 		}
 	} else {
@@ -293,7 +295,8 @@ int main(int ac, char *av[], char * envp[])
 #if 0
 		if ((av[i][0] == '-') && did_load) {
 			fprintf(stderr, "Error: options entered after files\n");
-			pl_destroy(pl);
+			index_stats_report(pl);
+	pl_destroy(pl);
 			return 0;
 		}
 #endif
@@ -304,7 +307,8 @@ int main(int ac, char *av[], char * envp[])
 #else
 			if (!pl_consult_fp(pl, stdin, "./")) {
 #endif
-				pl_destroy(pl);
+				index_stats_report(pl);
+	pl_destroy(pl);
 				return 1;
 			}
 		} else if (!strcmp(av[i], "--library")) {
@@ -336,14 +340,16 @@ int main(int ac, char *av[], char * envp[])
 		} else if (do_log) {
 			if (!pl_logging(pl, av[i])) {
 				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),log_save)\n", av[i]);
-				pl_destroy(pl);
+				index_stats_report(pl);
+	pl_destroy(pl);
 				return 1;
 			}
 			do_log = 0;
 		} else {
 			if (!pl_consult(pl, av[i])) {
 				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),consult/1)\n", av[i]);
-				pl_destroy(pl);
+				index_stats_report(pl);
+	pl_destroy(pl);
 				return 1;
 			}
 		}
@@ -352,7 +358,8 @@ int main(int ac, char *av[], char * envp[])
 	if (restore_file) {
 		if (!pl_restore(pl, restore_file)) {
 			fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),restore_file)\n", restore_file);
-			pl_destroy(pl);
+			index_stats_report(pl);
+	pl_destroy(pl);
 			return 1;
 		}
 	}
@@ -360,14 +367,16 @@ int main(int ac, char *av[], char * envp[])
 	if (goal) {
 		if (!pl_eval(pl, goal, false)) {
 			int halt_code = get_halt_code(pl);
-			pl_destroy(pl);
+			index_stats_report(pl);
+	pl_destroy(pl);
 			return halt_code;
 		}
 	}
 
 	if (get_halt(pl)) {
 		int halt_code = get_halt_code(pl);
-		pl_destroy(pl);
+		index_stats_report(pl);
+	pl_destroy(pl);
 		return halt_code;
 	}
 
@@ -399,7 +408,8 @@ int main(int ac, char *av[], char * envp[])
 	}
 
 	if (version) {
-		pl_destroy(pl);
+		index_stats_report(pl);
+	pl_destroy(pl);
 		return 0;
 	}
 
@@ -427,7 +437,8 @@ int main(int ac, char *av[], char * envp[])
 
 			if (len && (line[len-1] != '.')) {
 				fprintf(stderr, "Error: error(syntax_error(unterminated),read_term/3)\n");
-				pl_destroy(pl);
+				index_stats_report(pl);
+	pl_destroy(pl);
 				return 1;
 			}
 		}
@@ -473,6 +484,7 @@ int main(int ac, char *av[], char * envp[])
 		history_save();
 
 	int halt_code = get_halt_code(pl);
+	index_stats_report(pl);
 	pl_destroy(pl);
 
 	return halt_code;
