@@ -97,8 +97,17 @@ the whole head / arg1 / arg2, lookups, and linear fallbacks.
 
 **`TPL_SL_TRACE=1`** logs the `sl_find_key` descent. Noisy — one failing case at a time.
 
-Caveat: `--index-check` only verifies the **idx1** path. The idx2 and `wild2` paths are
-unverified, and extending it there is the first thing I'd do next.
+`--index-check` covers **idx1, idx2 and the `wild2` merge**, comparing against the key each index was
+built on — the whole head for idx1, arg2 alone for idx2 — with merged side-list entries
+recorded alongside the idx2 hits so the merge itself is covered. A missed clause that
+lives in the side list says so, rather than claiming it was mis-filed. Verified by
+sabotage: disabling the merge is caught and names both dropped clauses. eyelet coverage
+went 12,088 → 34,092 verified lookups on the same corpus, and sarif — which reported
+nothing at all beforehand, since idx1 is disabled for every predicate carrying its load —
+now verifies **69,001 lookups, 0 mismatches**.
+
+Checking costs roughly 45% on sarif (11.49s against 7.91s): a brute-force scan and an
+allocation per lookup. Debug aid, not something to leave on.
 
 ## What's left
 
@@ -122,20 +131,18 @@ required and the entire class of defect above becomes unrepresentable.
 
 Design sketch, in the order I would build it:
 
-1. **Extend `--index-check` to idx2 and `wild2`** before anything else. Everything below
-   is validated by it.
-2. **Prefix key.** Walk arg1 left to right emitting tokens (functor/arity, atom, small
+1. **Prefix key.** Walk arg1 left to right emitting tokens (functor/arity, atom, small
    int), stopping at the first variable or a depth cap of ~3. Clauses file under **every**
    prefix length 0..d; goals probe every prefix length 0..their own d, and results are
    unioned with dedup. Both directions are needed: a clause-side variable files shallow,
    a goal-side variable probes shallow, and only the intersection is correct.
-3. **Intrusive membership.** `idx_prev`/`idx_next` on `rule` — 144 → 168 bytes, 24MB per
+2. **Intrusive membership.** `idx_prev`/`idx_next` on `rule` — 144 → 168 bytes, 24MB per
    million clauses. Removal becomes pointer surgery. This is what makes borrowed keys
    safe: they are only dereferenced during lookup, when every clause is live. Removal
    comparing its way to a node while clauses are freed around it was the whole hazard.
-4. **Lazy k-way merge** instead of prefetch-and-sort — no allocation per lookup, and a
+3. **Lazy k-way merge** instead of prefetch-and-sort — no allocation per lookup, and a
    goal wanting one solution pays for one.
-5. **Delete** `index_cmpkey_` and the skiplist index, ~200 lines including every wildcard
+4. **Delete** `index_cmpkey_` and the skiplist index, ~200 lines including every wildcard
    special case.
 
 Smaller items, independent of the above:

@@ -1465,7 +1465,7 @@ unsigned long g_index_check_lookups = 0;
 unsigned long g_index_check_bad = 0;
 
 static void index_check(query *q, predicate *pr, cell *key,
-	const rule **got, unsigned num_got)
+	const rule **got, unsigned num_got, int which)
 {
 	unsigned missing = 0;
 	g_index_check_lookups++;
@@ -1476,7 +1476,21 @@ static void index_check(query *q, predicate *pr, cell *key,
 
 		cell *ch = get_head(c->cl.cells);
 
-		if (index_cmpkey(ch, key, q->st.m, NULL) != 0)
+		// idx1 is keyed on the whole head, idx2 on arg2 alone, so each
+		// has to be checked against the key it was actually built on.
+		// The clause head is still what gets printed - an arg2 on its
+		// own says little about which clause went missing.
+
+		cell *ck = ch;
+
+		if (which == 2) {
+			if (ch->arity < 2)
+				continue;
+
+			ck = NEXT_ARG(FIRST_ARG(ch));
+		}
+
+		if (index_cmpkey(ck, key, q->st.m, NULL) != 0)
 			continue;
 
 		bool found = false;
@@ -1487,8 +1501,8 @@ static void index_check(query *q, predicate *pr, cell *key,
 
 		if (!found) {
 			if (!missing) {
-				fprintf(stderr, "\n*** index-check FAILED for %s/%u\n",
-					C_STR(q, &pr->key), pr->key.arity);
+				fprintf(stderr, "\n*** index-check FAILED for %s/%u (idx%d)\n",
+					C_STR(q, &pr->key), pr->key.arity, which);
 				fprintf(stderr, "***   goal   ");
 				DUMP_TERM("", key, q->st.cur_ctx, 1);
 			}
@@ -1505,7 +1519,7 @@ static void index_check(query *q, predicate *pr, cell *key,
 			// unlinked on a removal. If it IS reachable, the ordering
 			// is fine and the query descent went astray.
 
-			sliter *probe = sl_find_key(pr->idx1, ch);
+			sliter *probe = sl_find_key(which == 2 ? pr->idx2 : pr->idx1, ck);
 			bool self = false;
 			const rule *pr_r;
 
@@ -1516,11 +1530,25 @@ static void index_check(query *q, predicate *pr, cell *key,
 			if (probe)
 				sl_done(probe);
 
+			// A clause held in the arg2 side list is deliberately not
+			// in idx2, so "not reachable" is expected for those - what
+			// matters there is whether the merge dropped it.
+
+			bool in_wild2 = false;
+
+			if (pr->wild2) {
+				const void *v;
+
+				if (sl_get(pr->wild2, (void*)(size_t)c->db_id, &v))
+					in_wild2 = (v == c);
+			}
+
 			fprintf(stderr, "***     reachable by its own key: %s\n",
-				self ? "YES (ordering ok, query descent went astray)"
+				in_wild2 ? "n/a - held in the arg2 side list, so the MERGE dropped it"
+				: self ? "YES (ordering ok, query descent went astray)"
 				     : "NO (mis-filed on insert, or lost on removal)");
 			fprintf(stderr, "***     cmp(clause,goal)=%d\n",
-				index_cmpkey(ch, key, q->st.m, NULL));
+				index_cmpkey(ck, key, q->st.m, NULL));
 			missing++;
 		}
 	}
@@ -1531,7 +1559,12 @@ static void index_check(query *q, predicate *pr, cell *key,
 	if (missing) {
 		for (unsigned i = 0; i < num_got; i++) {
 			cell *gh = get_head(((rule*)got[i])->cl.cells);
-			int rc = index_cmpkey(gh, key, q->st.m, NULL);
+			cell *gk = gh;
+
+			if ((which == 2) && (gh->arity > 1))
+				gk = NEXT_ARG(FIRST_ARG(gh));
+
+			int rc = index_cmpkey(gk, key, q->st.m, NULL);
 			fprintf(stderr, "***   returned db_id=%llu cmp=%d%s  ",
 				(unsigned long long)got[i]->db_id, rc,
 				rc ? " <- NOT a candidate!" : "");
@@ -1588,7 +1621,7 @@ static bool key_has_var(const cell *c)
 // checked says whether this came off idx1, which is the only path
 // --index-check knows how to verify.
 
-static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, bool checked)
+static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, int checked)
 {
 	// merge_wild2 is set by the idx2 path: the clauses held out of idx2
 	// because their arg2 carries a var match any arg2 key, so they join
@@ -1637,6 +1670,16 @@ static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, bool 
 		sliter *w = sl_first(pr->wild2);
 
 		while (w && sl_next(w, (void*)&r)) {
+			if (g_index_check && checked) {
+				if (num_chk == max_chk) {
+					max_chk = max_chk ? max_chk * 2 : 16;
+					chk = realloc(chk, max_chk * sizeof(rule*));
+					ENSURE(chk);
+				}
+
+				chk[num_chk++] = r;
+			}
+
 			if (!first) {
 				first = r;
 				continue;
@@ -1656,7 +1699,7 @@ static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, bool 
 	}
 
 	if (g_index_check && checked) {
-		index_check(q, pr, key, chk, num_chk);
+		index_check(q, pr, key, chk, num_chk, checked);
 		free(chk);
 	}
 
@@ -1762,7 +1805,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 			q->st.dbe = NULL;
 			q->st.merge_wild2 = true;
 			sliter *it2 = sl_find_key(pr->idx2, a2);
-			return collect_hits(q, pr, key, it2, false);
+			return collect_hits(q, pr, a2, it2, 2);
 		}
 
 		pr->num_linear++;
@@ -1806,7 +1849,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// results must be returned in database order, so prefetch all
 	// the results and return them sorted as an iterator...
 
-	return collect_hits(q, pr, key, iter, idx == pr->idx1);
+	return collect_hits(q, pr, key, iter, (idx == pr->idx1) ? 1 : 0);
 }
 
 // Match HEAD :- BODY.
