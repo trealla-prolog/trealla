@@ -7,6 +7,13 @@
 #include <stdbool.h>
 #include <time.h>
 
+#if (__STDC_VERSION__ >= 201112L) && USE_THREADS
+#include <stdatomic.h>
+#define sl_atomic _Atomic
+#else
+#define sl_atomic volatile
+#endif
+
 #include "skiplist.h"
 #include "threads.h"
 
@@ -54,6 +61,8 @@ static int default_cmpkey(const void *p1, const void *p2, __attribute__((unused)
 	return i1 < i2 ? -1 : i1 > i2 ? 1 : 0;
 }
 
+static int g_sl_random = -1;
+
 skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *), void(*delkey)(void*, void*, const void*), const void *p)
 {
 	skiplist *l = (skiplist*)calloc(1, sizeof(struct skiplist_));
@@ -66,7 +75,36 @@ skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *)
 		return NULL;
 	}
 
-	l->seed = (unsigned)((size_t)l + (size_t)clock());
+	// Deterministic by default. The old seed mixed in the skiplist's own
+	// heap address and clock(), so every list in every run got a different
+	// level distribution - and a comparator or removal bug that depends on
+	// the shape of the structure then shows up as flakiness rather than as
+	// a reproducible failure. That is exactly how a broken sl_rem() and a
+	// non-antisymmetric index comparator stayed hidden: they only bit on
+	// the runs where the dice fell a particular way.
+	//
+	// Seeded off a process-local counter instead, so the Nth skiplist
+	// created always gets the same sequence. Set TPL_SKIPLIST_RANDOM to
+	// bring the entropy back for soak and fuzz runs, where exploring many
+	// different shapes is the whole point.
+
+	static sl_atomic unsigned g_seq;
+	unsigned n = ++g_seq;
+
+	if (g_sl_random < 0)
+		g_sl_random = getenv("TPL_SKIPLIST_RANDOM") ? 1 : 0;
+
+	if (g_sl_random)
+		n ^= (unsigned)((size_t)l + (size_t)clock());
+
+	// Knuth multiplicative, then a round of mixing so early lists do not
+	// start from near-identical states.
+
+	l->seed = n * 2654435761u;
+	l->seed ^= l->seed >> 15;
+
+	if (!l->seed)
+		l->seed = 1;
 	l->level = 1;
 
 	// new_node_of_level(x) allocates x+1 forward slots, so the header
@@ -124,27 +162,36 @@ bool sl_is_find(skiplist *l) { return l ? l->is_find : true; }
 size_t sl_count(const skiplist *l) { return l ? l->count : 0; }
 void sl_set_tmp(skiplist *l) { l->is_tmp_list = true; }
 
-#ifdef _WIN32
-#define rand_r(p1) rand()
-#endif
+// xorshift32 on the list's own seed. Replaces log(frand())/log(0.5),
+// which needed a guard for rand_r() returning 0 (log(0.0) is -inf, and
+// the conversion to int gave INT_MIN, which asked new_node_of_level()
+// for a nonsense size and silently dropped the insert).
+//
+// It also removes a platform split: on Windows rand_r was #defined to
+// rand(), discarding the per-list seed for shared global state, which
+// is neither reproducible nor safe to call from several threads at
+// once. This is the same generator everywhere.
 
-#define frand(seedp) (((double)rand_r(seedp)) / RAND_MAX)
+static inline unsigned sl_rand(unsigned *seedp)
+{
+	unsigned x = *seedp;
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	return *seedp = x;
+}
+
+// Geometric with P=0.5, straight off the low bits - no floating point,
+// no zero case to special-case.
 
 static int random_level(unsigned *seedp)
 {
-	const double P = 0.5;
-	double r = frand(seedp);
+	int lvl = 0;
 
-	// rand_r() can legitimately return 0, and log(0.0) is -inf, whose
-	// conversion to int is undefined - in practice INT_MIN, which then
-	// asks new_node_of_level() for a nonsense size and silently loses
-	// the insert. Treat it as the level-0 case it should have been.
+	while ((sl_rand(seedp) & 1u) && (lvl < MAX_LEVEL))
+		lvl++;
 
-	if (r <= 0.0)
-		return 0;
-
-	int lvl = (int)(log(r) / log(1.0 - P));
-	return lvl < MAX_LEVEL ? lvl : MAX_LEVEL;
+	return lvl;
 }
 
 bool sl_get(skiplist *l, const void *key, const void **val)
@@ -255,47 +302,66 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
 	int k;
 
-	for (k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) <= 0)) {
-			if (l->cmpkey(q->key, key, l->p, l) == 0) {
-				if (q->val == val)
-					break;
-			}
+	// Descend on a STRICT less-than so update[] lands on the last node
+	// ahead of the run of equal keys, at every level.
+	//
+	// The old loop advanced while cmp <= 0 and broke only when it hit
+	// q->val == val. At a level where the target node is absent - which
+	// is most levels, since heights are random - that walked p past the
+	// whole equal-key run and so past the target's position. The descent
+	// then finished beyond the node it was looking for and either
+	// removed a neighbour or reported failure. With duplicate keys it
+	// failed on 394 of 400 entries, and first-argument indexing is
+	// nothing but duplicate keys: every clause sharing a principal
+	// functor lands on the same key. Entries therefore outlived the
+	// clauses they borrow their key cells from.
 
+	for (k = l->level - 1; k >= 0; k--) {
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
 			p = q;
-		}
 
 		update[k] = p;
 	}
 
-	if (!(q = p->forward[0]))
-		return false;
+	// Walk the equal-key run at level 0 for the exact pair, carrying
+	// update[] forward as nodes that are tall enough go by.
 
-	if (l->cmpkey(q->key, key, l->p, l) != 0)
+	slnode_t *t = update[0]->forward[0];
+
+	while (t && (l->cmpkey(t->key, key, l->p, l) == 0) && (t->val != val)) {
+		for (k = 0; k < l->level; k++) {
+			if (update[k]->forward[k] == t)
+				update[k] = t;
+		}
+
+		t = t->forward[0];
+	}
+
+	if (!t || (l->cmpkey(t->key, key, l->p, l) != 0) || (t->val != val))
 		return false;
 
 	if (l->delkey)
-		l->delkey(q->key, q->val, l->p);
+		l->delkey(t->key, t->val, l->p);
 
-	int m = l->level - 1;
+	// Unlink at every level the node appears on. Not a break on the
+	// first miss: a node absent from level k can still be present on
+	// k+1 is impossible, but update[] may legitimately not point at it
+	// on the upper levels, and bailing early there used to strand
+	// forward pointers.
 
-	for (k = 0; k <= m; k++) {
-		p = update[k];
-
-		if (!p || (p->forward[k] != q))
-			break;
-
-		p->forward[k] = q->forward[k];
+	for (k = 0; k < l->level; k++) {
+		if (update[k]->forward[k] == t)
+			update[k]->forward[k] = t->forward[k];
 	}
 
-	m = l->level - 1;
+	int m = l->level - 1;
 
 	while (!l->header->forward[m] && (m > 0))
 		m--;
 
 	l->level = m + 1;
 	l->count--;
-	TPL_free(q);
+	TPL_free(t);
 	return true;
 }
 
