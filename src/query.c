@@ -507,7 +507,9 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	if (!pr)
 		return;
 
-	sl_done(q->st.iter);
+	// EXPERIMENT: run_state is snapshotted whole into every choice,
+	// iter included, so freeing it here leaves those snapshots
+	// dangling. next_key() already frees it on exhaustion.
 	q->st.iter = NULL;
 
 	if (!pr->is_dynamic || !pr->refcnt)
