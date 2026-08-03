@@ -327,8 +327,10 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 
 	sl_destroy(pr->wild2);
 	sl_destroy(pr->idx2);
+	sl_destroy(pr->idx1a);
 	sl_destroy(pr->idx1);
-	pr->idx1 = pr->idx2 = pr->wild2 = NULL;
+	pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
+	pr->is_key_var = pr->is_key_var1 = pr->is_key_var2 = false;
 	pr->is_processed = false;
 	pr->head = pr->tail = NULL;
 	pr->cnt = 0;

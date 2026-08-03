@@ -603,16 +603,13 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
 
-		if (pr->idx1 && pr->cnt) {
-			cell *c = get_head(r->cl.cells);
-			sl_rem(pr->idx1, c, r);
+		// Through index_remove_clause(), not by hand: this used to
+		// withdraw from idx1 and idx2 only, so every entry a clause had
+		// in idx1a or the arg2 side list survived it. db-stress grew
+		// ~5.5MB per round of 100000 clauses where it had been flat.
 
-			if (pr->idx2) {
-				cell *arg1 = FIRST_ARG(c);
-				cell *arg2 = NEXT_ARG(arg1);
-				sl_rem(pr->idx2, arg2, r);
-			}
-		}
+		if (pr->cnt)
+			index_remove_clause(pr, r);
 
 		if (q->in_retract && !r->cl.num_vars && q->pl->opt) {
 			undo_on_backtrack(q, r, UNDO_RULE);
@@ -623,11 +620,18 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	}
 
 	if (pr->idx1 && !pr->cnt) {
+		// All four, and all four nulled. assert_commit() rebuilds off
+		// !pr->idx1, so an idx1a or wild2 left behind here is simply
+		// overwritten by the next build and lost.
+
+		sl_destroy(pr->wild2);
 		sl_destroy(pr->idx2);
+		sl_destroy(pr->idx1a);
 		sl_destroy(pr->idx1);
-		pr->idx1 = pr->idx2 = NULL;
+		pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
 		pr->is_var_in_first_arg = false;
 		pr->is_var_in_second_arg = false;
+		pr->is_key_var = pr->is_key_var1 = pr->is_key_var2 = false;
 	} else if (pr->is_var_in_first_arg || pr->is_var_in_second_arg
 		|| pr->is_key_var || pr->is_key_var2) {
 		// Clauses just left the chain. If the last var-headed one was
