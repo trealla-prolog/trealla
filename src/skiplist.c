@@ -62,6 +62,7 @@ static int default_cmpkey(const void *p1, const void *p2, __attribute__((unused)
 }
 
 static int g_sl_random = -1;
+int g_sl_trace = 0;
 
 skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *), void(*delkey)(void*, void*, const void*), const void *p)
 {
@@ -485,10 +486,31 @@ sliter *sl_find_key(skiplist *l, const void *key)
 	l->wild_card = false;
 	l->is_find = true;
 
+	// TPL_SL_TRACE: log the descent. The comparator the descent uses is
+	// not the one a caller gets by calling index_cmpkey() directly -
+	// is_find is true here and false during sl_next_key() - so a
+	// disagreement between where the descent lands and what the caller
+	// computes can only be seen from inside.
+
+	extern int g_sl_trace;
+
 	for (int k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0)) {
+			if (g_sl_trace)
+				fprintf(stderr, "[sl] L%d advance over node cmp=%d\n",
+					k, l->cmpkey(q->key, key, l->p, l));
+
 			p = q;
+		}
+
+		if (g_sl_trace && (q = p->forward[k]))
+			fprintf(stderr, "[sl] L%d stop, next cmp=%d\n",
+				k, l->cmpkey(q->key, key, l->p, l));
 	}
+
+	if (g_sl_trace && p->forward[0])
+		fprintf(stderr, "[sl] landed, cmp=%d wild_card=%d\n",
+			l->cmpkey(p->forward[0]->key, key, l->p, l), (int)l->wild_card);
 
 	if (!p || !(q = p->forward[0]))
 		return false;

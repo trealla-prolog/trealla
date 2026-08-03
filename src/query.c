@@ -1495,6 +1495,31 @@ static void index_check(query *q, predicate *pr, cell *key,
 			fprintf(stderr, "***   MISSING db_id=%llu  ",
 				(unsigned long long)c->db_id);
 			DUMP_TERM("", ch, q->st.cur_ctx, 1);
+
+			// Is the clause reachable by its OWN key? That separates a
+			// descent/ordering fault from an insertion fault: if the
+			// index cannot find a ground clause when handed that
+			// clause's exact head, the entry is not where the
+			// comparator would put it - it was mis-filed on insert or
+			// unlinked on a removal. If it IS reachable, the ordering
+			// is fine and the query descent went astray.
+
+			sliter *probe = sl_find_key(pr->idx1, ch);
+			bool self = false;
+			const rule *pr_r;
+
+			while (probe && sl_next_key(probe, (void*)&pr_r)) {
+				if (pr_r == c) { self = true; break; }
+			}
+
+			if (probe)
+				sl_done(probe);
+
+			fprintf(stderr, "***     reachable by its own key: %s\n",
+				self ? "YES (ordering ok, query descent went astray)"
+				     : "NO (mis-filed on insert, or lost on removal)");
+			fprintf(stderr, "***     cmp(clause,goal)=%d\n",
+				index_cmpkey(ch, key, q->st.m, NULL));
 			missing++;
 		}
 	}
@@ -1505,8 +1530,10 @@ static void index_check(query *q, predicate *pr, cell *key,
 	if (missing) {
 		for (unsigned i = 0; i < num_got; i++) {
 			cell *gh = get_head(((rule*)got[i])->cl.cells);
-			fprintf(stderr, "***   returned db_id=%llu  ",
-				(unsigned long long)got[i]->db_id);
+			int rc = index_cmpkey(gh, key, q->st.m, NULL);
+			fprintf(stderr, "***   returned db_id=%llu cmp=%d%s  ",
+				(unsigned long long)got[i]->db_id, rc,
+				rc ? " <- NOT a candidate!" : "");
 			DUMP_TERM("", gh, q->st.cur_ctx, 1);
 		}
 
