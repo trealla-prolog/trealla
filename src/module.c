@@ -370,8 +370,9 @@ static void abolish_predicate(predicate *pr)
 	pr->head = pr->tail = NULL;
 	sl_destroy(pr->wild2);
 	sl_destroy(pr->idx2);
+	sl_destroy(pr->idx1a);
 	sl_destroy(pr->idx1);
-	pr->idx1 = pr->idx2 = pr->wild2 = NULL;
+	pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -394,6 +395,7 @@ static void destroy_predicate(module *m, predicate *pr)
 	pr->head = pr->tail = NULL;
 	sl_destroy(pr->wild2);
 	sl_destroy(pr->idx2);
+	sl_destroy(pr->idx1a);
 	sl_destroy(pr->idx1);
 
 	if (pr->meta_args) {
@@ -705,6 +707,23 @@ rule *find_in_db(module *m, uuid *ref)
 // idx2 lookup instead, so the ordered index still carries the other
 // 98.9%.
 
+// File a clause in idx1a, keyed on arg1 alone.
+
+static void idx1a_add(predicate *pr, rule *r, cell *arg1, bool append)
+{
+	if (!pr->idx1a || !arg1)
+		return;
+
+	for (unsigned i = 0; i < arg1->num_cells; i++) {
+		if (is_var(arg1 + i)) { pr->is_key_var1 = true; return; }
+	}
+
+	if (append)
+		sl_app(pr->idx1a, arg1, r);
+	else
+		sl_set(pr->idx1a, arg1, r);
+}
+
 static void idx2_add(predicate *pr, rule *r, cell *arg2, bool append)
 {
 	bool has_var = false;
@@ -738,6 +757,9 @@ void index_remove_clause(predicate *pr, rule *r)
 
 	if (pr->wild2)
 		sl_rem(pr->wild2, (void*)(size_t)r->db_id, r);
+
+	if (pr->idx1a && get_head(r->cl.cells)->arity)
+		sl_rem(pr->idx1a, FIRST_ARG(get_head(r->cl.cells)), r);
 
 	if (pr->idx2 && c->arity > 1) {
 		cell *arg1 = FIRST_ARG(c);
@@ -887,8 +909,9 @@ void clear_property(module *m, const char *name, unsigned arity)
 
 			sl_destroy(pr->wild2);
 			sl_destroy(pr->idx2);
+			sl_destroy(pr->idx1a);
 			sl_destroy(pr->idx1);
-			pr->idx1 = pr->idx2 = pr->wild2 = NULL;
+			pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
 			pr->is_var_in_first_arg = false;
 			pr->is_var_in_second_arg = false;
 #endif
@@ -1723,6 +1746,7 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 			pr->cnt = 0;
 			sl_destroy(pr->wild2);
 			sl_destroy(pr->idx2);
+			sl_destroy(pr->idx1a);
 			sl_destroy(pr->idx1);
 			pr->idx2 = pr->idx1 = NULL;
 			TPL_free(r);
@@ -2172,6 +2196,7 @@ void recheck_var_in_indexed_args(predicate *pr)
 	pr->is_var_in_first_arg = false;
 	pr->is_var_in_second_arg = false;
 	pr->is_key_var = false;
+	pr->is_key_var1 = false;
 	pr->is_key_var2 = false;
 
 	for (rule *r = pr->head; r; r = r->next) {
@@ -2188,6 +2213,14 @@ void recheck_var_in_indexed_args(predicate *pr)
 
 		for (unsigned i = 0; i < c->num_cells; i++) {
 			if (is_var(c + i)) { pr->is_key_var = true; break; }
+		}
+
+		if (c->arity) {
+			cell *a1 = FIRST_ARG(c);
+
+			for (unsigned i = 0; i < a1->num_cells; i++) {
+				if (is_var(a1 + i)) { pr->is_key_var1 = true; break; }
+			}
 		}
 
 		if (c->arity > 1) {
@@ -2237,6 +2270,17 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		pr->idx1 = sl_create(index_cmpkey, NULL, m);
 		ENSURE(pr->idx1);
 
+		// idx1 is keyed on the whole head, so one var anywhere bars it.
+		// idx1a is keyed on arg1 alone and survives that - Logtalk
+		// compiles predicates to an extra execution-context argument
+		// that is a var in every clause, which disqualifies every head
+		// while arg1 stays ground and selective.
+
+		if (pr->key.arity) {
+			pr->idx1a = sl_create(index_cmpkey, NULL, m);
+			ENSURE(pr->idx1a);
+		}
+
 		if (pr->key.arity > 1) {
 			pr->idx2 = sl_create(index_cmpkey, NULL, m);
 			ENSURE(pr->idx2);
@@ -2250,6 +2294,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		pr->is_var_in_first_arg = false;
 		pr->is_var_in_second_arg = false;
 		pr->is_key_var = false;
+		pr->is_key_var1 = false;
 		pr->is_key_var2 = false;
 		unsigned num_key_var = 0;
 
@@ -2285,6 +2330,9 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 				pr->is_var_in_first_arg = true;
 
 			sl_app(pr->idx1, c, cl2);
+
+			if (c->arity)
+				idx1a_add(pr, cl2, FIRST_ARG(c), true);
 
 			if (pr->idx2) {
 				cell *arg1 = FIRST_ARG(c);
@@ -2335,11 +2383,13 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 	if (!append) {
 		sl_set(pr->idx1, c, r);
+		idx1a_add(pr, r, arg1, false);
 
 		if (pr->idx2 && arg2)
 			idx2_add(pr, r, arg2, false);
 	} else {
 		sl_app(pr->idx1, c, r);
+		idx1a_add(pr, r, arg1, true);
 
 		if (pr->idx2 && arg2)
 			idx2_add(pr, r, arg2, true);

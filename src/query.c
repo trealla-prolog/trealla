@@ -1488,6 +1488,11 @@ static void index_check(query *q, predicate *pr, cell *key,
 				continue;
 
 			ck = NEXT_ARG(FIRST_ARG(ch));
+		} else if (which == 3) {
+			if (!ch->arity)
+				continue;
+
+			ck = FIRST_ARG(ch);
 		}
 
 		if (index_cmpkey(ck, key, q->st.m, NULL) != 0)
@@ -1519,7 +1524,7 @@ static void index_check(query *q, predicate *pr, cell *key,
 			// unlinked on a removal. If it IS reachable, the ordering
 			// is fine and the query descent went astray.
 
-			sliter *probe = sl_find_key(which == 2 ? pr->idx2 : pr->idx1, ck);
+			sliter *probe = sl_find_key(which == 2 ? pr->idx2 : which == 3 ? pr->idx1a : pr->idx1, ck);
 			bool self = false;
 			const rule *pr_r;
 
@@ -1563,6 +1568,8 @@ static void index_check(query *q, predicate *pr, cell *key,
 
 			if ((which == 2) && (gh->arity > 1))
 				gk = NEXT_ARG(FIRST_ARG(gh));
+			else if ((which == 3) && gh->arity)
+				gk = FIRST_ARG(gh);
 
 			int rc = index_cmpkey(gk, key, q->st.m, NULL);
 			fprintf(stderr, "***   returned db_id=%llu cmp=%d%s  ",
@@ -1621,7 +1628,14 @@ static bool key_has_var(const cell *c)
 // checked says whether this came off idx1, which is the only path
 // --index-check knows how to verify.
 
-static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, int checked)
+// cap > 0 abandons the drain once the candidate set exceeds it, leaving
+// the caller to walk the chain instead. An index that hands back a large
+// fraction of the predicate has bought nothing and still pays to
+// materialise and sort - idx1a on $predicate_property/3, whose arg1 has
+// about two distinct values, measured 2.61s against 0.68s for the plain
+// chain walk it replaced.
+
+static int collect_hits_cap(query *q, predicate *pr, cell *key, sliter *iter, int checked, unsigned cap)
 {
 	// merge_wild2 is set by the idx2 path: the clauses held out of idx2
 	// because their arg2 carries a var match any arg2 key, so they join
@@ -1634,6 +1648,7 @@ static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, int c
 	skiplist *tmp_idx = NULL;
 	const rule *first = NULL;
 	const rule *r;
+	unsigned nhits = 0;
 
 	const rule **chk = NULL;
 	unsigned num_chk = 0, max_chk = 0;
@@ -1651,7 +1666,17 @@ static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, int c
 
 		if (!first) {
 			first = r;
+			nhits = 1;
 			continue;
+		}
+
+		if (cap && (++nhits > cap)) {
+			if (tmp_idx)
+				sl_destroy(tmp_idx);
+
+			sl_done(iter);
+			free(chk);
+			return -1;
 		}
 
 		if (!tmp_idx) {
@@ -1725,6 +1750,11 @@ static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, int c
 	return true;
 }
 
+static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, int checked)
+{
+	return collect_hits_cap(q, pr, key, iter, checked, 0) > 0;
+}
+
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
 	iter_reset(q);
@@ -1792,6 +1822,28 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 
 		// A tenth is where merging stops paying against a chain walk,
 		// measured. Under that, the side list rides along with idx2.
+
+		// arg1 first when it is ground across the predicate. Capped at
+		// a tenth: selective enough to be worth materialising, or not
+		// worth having.
+
+		if (pr->idx1a && !pr->is_key_var1 && a1 && !is_var(a1)) {
+			q->st.dbe = NULL;
+			sliter *it1 = sl_find_key(pr->idx1a, a1);
+			// Bail early and cheaply. A tenth of a big predicate is
+			// thousands of entries to drain and discard on every call;
+			// anything selective enough to be worth having shows itself
+			// in the first few. cnt/64 keeps a little headroom for large
+			// predicates where even 100 candidates beats a linear walk.
+
+			int rc = collect_hits_cap(q, pr, a1, it1, 3, (unsigned)(pr->cnt / 64) + 16);
+
+			if (rc > 0)
+				return true;
+
+			if (!rc)
+				return false;
+		}
 
 		size_t nwild = pr->wild2 ? sl_count(pr->wild2) : 0;
 

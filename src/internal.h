@@ -434,7 +434,7 @@ struct predicate_ {
 	predicate *alias;
 	rule *head, *tail;
 	module *m;
-	skiplist *idx1, *idx2, *wild2;
+	skiplist *idx1, *idx1a, *idx2, *wild2;
 	const char *filename;
 	cell *meta_args;
 	list dirty;
@@ -452,6 +452,7 @@ struct predicate_ {
 	bool is_abolished:1;
 	bool is_noindex:1;
 	bool is_key_var:1;				// some clause head holds a var (bars idx1)
+	bool is_key_var1:1;				// some clause arg1 holds a var (bars idx1a)
 	bool is_key_var2:1;				// some clause arg2 holds a var (bars idx2)
 	bool is_check_directive:1;
 	bool is_processed:1;
