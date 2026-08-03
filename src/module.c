@@ -2166,7 +2166,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		return;
 
 	if (!pr->idx1) {
-		unsigned INDEX_THRESHOLD = 250;
+		unsigned INDEX_THRESHOLD = 500;
 
 		if (pr->cnt < INDEX_THRESHOLD)
 			return;
