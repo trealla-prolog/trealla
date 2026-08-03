@@ -1249,6 +1249,16 @@ static void setup_key(query *q)
 
 static void next_key(query *q)
 {
+	if (q->st.iter_single) {
+		// A single-hit lookup has no iterator and must not fall through
+		// to the chain walk - the next clause in the chain is not a
+		// candidate, it just happens to be adjacent.
+
+		q->st.iter_single = false;
+		q->st.dbe = NULL;
+		return;
+	}
+
 	if (!q->st.iter) {
 		q->st.dbe = q->st.dbe->next;
 		return;
@@ -1263,6 +1273,9 @@ static void next_key(query *q)
 
 bool has_next_key(query *q)
 {
+	if (q->st.iter_single)
+		return false;
+
 	if (q->st.iter)
 		return sl_has_next(q->st.iter, NULL);
 
@@ -1367,6 +1380,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
 	q->st.iter = NULL;
+	q->st.iter_single = false;
 	q->st.karg1_is_ground = q->st.karg2_is_ground = q->st.karg3_is_ground = false;
 	q->st.karg1_is_atomic = q->st.karg2_is_atomic = q->st.karg3_is_atomic = false;
 	q->st.key = key;
@@ -1435,13 +1449,28 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// results must be returned in database order, so prefetch all
 	// the results and return them sorted as an iterator...
 
+	// Hold the first hit back rather than materialising unconditionally.
+	// Most index lookups match exactly one clause - every retract in a
+	// key-per-clause table does - and for those there is nothing to sort
+	// and nothing to own. Building a temporary skiplist for a single
+	// entry cost an allocation per call and, because the iterator is
+	// snapshotted into every choicepoint and so cannot safely be freed
+	// on a cut, it leaked: 4.7MB over 14000 retracts, measured.
+
 	skiplist *tmp_idx = NULL;
+	const rule *first = NULL;
 	const rule *r;
 
 	while (sl_next_key(iter, (void*)&r)) {
+		if (!first) {
+			first = r;
+			continue;
+		}
+
 		if (!tmp_idx) {
 			tmp_idx = sl_create(NULL, NULL, NULL);
 			sl_set_tmp(tmp_idx);
+			sl_app(tmp_idx, (void*)(size_t)first->db_id, (void*)first);
 		}
 
 		sl_app(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
@@ -1449,8 +1478,18 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 
 	sl_done(iter);
 
-	if (!tmp_idx)
+	if (!first)
 		return false;
+
+	if (!tmp_idx) {
+		q->st.dbe = (rule*)first;
+		q->st.iter = NULL;
+		q->st.iter_single = true;
+		return true;
+	}
+
+	// More than one: results must come back in database order, so the
+	// prefetch stands.
 
 	iter = sl_first(tmp_idx);
 
