@@ -5,7 +5,8 @@ the earlier speculative version of this document: everything below is measured.
 
 ## Where it stands
 
-Branch `redesign-indexing`, seven files, ~467 insertions against `9dd481c`.
+Branch `redesign-indexing`. Everything below is in the branch as of tip `19f9c3e` plus
+three files (`internal.h`, `module.c`, `query.c`) carrying the `idx1a` work.
 
 **Logtalk `tools/sarif`, 22 tests:**
 
@@ -17,8 +18,11 @@ Branch `redesign-indexing`, seven files, ~467 insertions against `9dd481c`.
 
 22% faster than the starting point, and correct. **eyelet:** 88 cases, 73,546 indexed
 lookups verified against a brute-force scan, zero mismatches; `deep-taxonomy-100000`
-2.30s against 2.38s originally. **trealla suite:** 334 pass / 1 pre-existing failure.
-**chess:** byte-identical throughout.
+2.27s against 2.38s originally. **logtalk iso_639:** 11/11. **trealla suite:** 335 pass /
+1 pre-existing failure. **chess:** byte-identical throughout.
+
+The sarif figure predates `idx1a` and wants re-measuring — it may have taken more off
+`$predicate_property/3`.
 
 ## The defects, in the order they were found
 
@@ -78,8 +82,13 @@ met, so it sits at an arbitrary point and the matching run is no longer contiguo
 - **`wild2`** — clauses whose arg2 carries a variable are held in a `db_id`-keyed side
   list and merged into each **idx2** result, so the ordered index still carries the rest.
   Falls back past a tenth of the predicate.
+- **`idx1a`** — an index keyed on **arg1 alone**, tried when idx1 is barred and sound
+  whenever every clause's arg1 is ground. Capped: it abandons after `cnt/64 + 16`
+  candidates and falls through, because an index handing back a large fraction of the
+  predicate has bought nothing and still pays to materialise and sort.
 - Deterministic skiplist: per-list seed from a process counter, xorshift32 level
   generation. `TPL_SKIPLIST_RANDOM=1` restores entropy for fuzzing.
+- Two parser fixes, pre-existing and also on `main` (see below).
 
 ## Diagnostics, and how to use them
 
@@ -109,18 +118,38 @@ now verifies **69,001 lookups, 0 mismatches**.
 Checking costs roughly 45% on sarif (11.49s against 7.91s): a brute-force scan and an
 allocation per lookup. Debug aid, not something to leave on.
 
+## Determinism — a cost I did not anticipate
+
+An index is allowed to **widen**: returning a superset is sound, because unification
+filters. That is true for *answers* and false for *determinism*. `last_match` is computed
+from `has_next_key()`, so any extra candidate leaves a choicepoint, and a goal matching
+exactly one clause then succeeds non-deterministically. Logtalk tests that explicitly.
+
+Falling back to the linear chain is the worst case of this — the chain cannot know it is
+on the last candidate at all. It cost Logtalk's `iso_639` two of eleven tests:
+
+```
+$iso_639_3#0.language#5/6:  7929 clauses  head=100.0%  arg1=0.0%  arg2=0.0%
+```
+
+Logtalk compiles every predicate with an extra execution-context argument that is a
+variable in each clause. That makes `head=100%` — barring idx1 — while arg1 stays ground
+and highly selective. `idx1a` is what recovers it.
+
 ## What's left
 
-**One predicate, ~1.1s of sarif's 8.17s.**
+**`$predicate_property/3`, ~1.1s of sarif's 8.17s** — though `idx1a` may have changed
+this and the figure wants re-measuring.
 
 ```
 $predicate_property/3:  7670 clauses  head=98.1% arg1=0.0% arg2=98.1%  7814 lookups, all linear
 ```
 
-A property variable in arg3 disqualifies every head, so idx1 is barred. Neither cheap
-index shape rescues it: arg1 is `predicate`/`function`, about two distinct values; arg2
-is 98% var-bearing. It wants the whole-head discrimination it had originally — 0.03s on
-a 20,000-lookup benchmark against 0.68s linear — which is exactly what is unsound.
+A property variable in arg3 disqualifies every head. `idx1a` applies in principle —
+arg1 is ground throughout — but arg1 is `predicate`/`function`, about two distinct
+values, so it trips the selectivity cap and falls through to the chain. It wants the
+whole-head discrimination it had originally — 0.03s on a 20,000-lookup benchmark against
+0.68s linear — which is exactly what is unsound.
 
 **That needs prefix keys**, and this is now a concrete case rather than a theoretical
 one. File each clause at the deepest **ground prefix** it supports, stopping at the first
@@ -161,8 +190,24 @@ Smaller items, independent of the above:
 | **Bar the index when the *goal* holds a var** | Correct, but 13x on assert/retract churn — `retract(f(I,_))` has a var, so every retract goes linear. The guard belongs on the clause side. |
 | **Wild bucket on arg1 with a 10% fallback** | 65x on a predicate where every clause is var-bearing; and Logtalk's tables are var-bearing in arg1 specifically, so it degenerated exactly where it was needed. Works on **arg2**, which is what shipped. |
 | **Leftmost-leaf heuristic** instead of whole-key | Kept the speed but is unsound: `f(1,_)` against a goal `f(1,2)` reaches the var once sub-arg 1 matches. No proof behind it, and the repro caught it. |
-| **idx1a, keyed on arg1 alone** | 2.61s against 0.68s for the linear walk it replaced. `$predicate_property/3`'s arg1 has ~2 distinct values, so it returns half the predicate and materialises it. Sound and useless. |
+| **idx1a *uncapped*** | 2.61s against 0.68s for the linear walk it replaced, on `$predicate_property/3` whose arg1 has ~2 distinct values. **The idea was right and I rejected it too early** — it needed a selectivity cap, not deleting. Capped it fixes `iso_639` and costs 0.72s there. |
 | **Index hysteresis / sticky `is_indexed`** | Segfaulted. Stock already keeps the index unless `cnt` hits zero, and the empty-refill case is O(n) amortised against the n asserts that refilled it — it measured as a wash. |
+
+## Two parser bugs found along the way
+
+Both pre-existing, both also on `main`, neither related to indexing — but the first was
+crashing Logtalk loads and masking the determinism regression above.
+
+- **`assign_vars()` cleared `FLAG_VAR_REF` and then called `C_STR(p, c)` on that cell's
+  `val_off` one line later.** `is_ref()` is the only thing distinguishing a runtime
+  variable — whose `val_off` is *not* an atom-table offset — from a named one. ASan: a
+  read 16 bytes past a 144,000-byte atom table, faulting in `get_in_head()`'s first
+  `strcmp`. Refs are now classified global and skipped; they carry no source name, so
+  there are no occurrences to count.
+- **`get_varno` / `get_in_head` / `get_in_body` walked `vartab.pool` unbounded.** The
+  pool is 16,000 bytes and `MAX_VARS` is 1024, so with short names it can describe ~4,000
+  variables while the parallel arrays hold 1,024. Latent, not the crash. `MAX_VARS` does
+  **not** need raising.
 
 ## A note on method
 
@@ -171,12 +216,27 @@ belonged on the **clause** side. Soundness depends on how clauses are *placed*, 
 what a particular goal looks like. Each time the goal-side version was either far slower
 or left the path unreachable for the exact shape it was written for.
 
-And `clause-steps` (linear lookups × clauses) is a good *relative* signal between
-predicates and a poor absolute one — a step is a unification attempt at roughly 18ns.
-60M steps reads as enormous next to 488M but is about 1.1s. Convert before prioritising.
+`clause-steps` (linear lookups × clauses) is a good *relative* signal between predicates
+and a poor absolute one — a step is a unification attempt at roughly 18ns. 60M steps
+reads as enormous next to 488M but is about 1.1s. Convert before prioritising.
+
+And I rejected `idx1a` outright on one predicate's evidence, when what it needed was a
+cap. A measurement that says "this shape is wrong for this predicate" is not the same as
+"this shape is wrong". Two predicates would have shown it; `$predicate_property/3` alone
+did not.
+
+**Every defect here was found by a real workload, not a synthetic one.** Logtalk found
+the comparator bug, the crash, and the determinism regression; eyelet found the 45x
+`type/2` collapse. The synthetic repros were valuable for *isolating* causes and are worth
+keeping as regressions — but not one of them found a bug first.
 
 ## Files
 
-`CURRENT/` — the seven changed files plus `all-changes.patch`.
-Repros: `nested_var_bug.pl`, `index_repro_700.pl`, `skiplist_dup_key_test.c`,
-`wild2.pl`, `predicate_property_bench.pl`.
+`MINE/` — the three files outstanding against tip `19f9c3e`, plus `changes.patch`.
+`PARSER-FIX-MAIN/` — the parser fixes against `main`, standalone.
+`CURRENT/` — the full set as of the previous tip.
+
+Repros, all kept as regressions: `nested_var_bug.pl` (clause-side var),
+`index_repro_700.pl` (mixed list/compound keys), `skiplist_dup_key_test.c` (removal under
+duplicate keys, standalone C), `wild2.pl` and `wild2_merge_check.pl` (the arg2 side list
+and its merge), `predicate_property_bench.pl` (selectivity).
