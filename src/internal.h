@@ -450,6 +450,7 @@ struct predicate_ {
 	bool is_discontiguous:1;
 	bool is_abolished:1;
 	bool is_noindex:1;
+	bool is_key_var:1;				// some clause key holds a var
 	bool is_check_directive:1;
 	bool is_processed:1;
 	bool is_var_in_first_arg:1;

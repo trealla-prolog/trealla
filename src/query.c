@@ -1551,6 +1551,29 @@ static void index_check(query *q, predicate *pr, cell *key,
 	}
 }
 
+// A goal holding a variable cannot be looked up in an ordered structure.
+//
+// index_cmpkey() returns 0 at the first var it reaches, so cmp(node,
+// goal) is not monotonic along the clause order the skiplist was built
+// on: a descent steps over a node at -62, lands on one at +64, and the
+// clauses that actually compare 0 sit further along past nodes at +115.
+// A skiplist descent is a binary search and needs monotonicity. Measured
+// on Logtalk's $lgt_entity_property_/2, 7001 clauses: two matching
+// clauses invisible on every call, two non-candidates returned instead.
+//
+// Until keys are prefix-based, the only sound answer for such a goal is
+// the linear chain.
+
+static bool key_has_var(const cell *c)
+{
+	for (unsigned i = 0; i < c->num_cells; i++) {
+		if (is_var(c + i))
+			return true;
+	}
+
+	return false;
+}
+
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
 	iter_reset(q);
@@ -1584,6 +1607,26 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		CHECKED(init_tmp_heap(q));
 		key = clone_term_to_tmp(q, key, key_ctx);
 		key_ctx = q->st.cur_ctx;
+	}
+
+	// Sound to use the index only when every clause key is ground.
+	//
+	// Then the clauses agreeing with the goal's ground prefix are
+	// contiguous - they sort together - so cmp(node, goal) runs
+	// negative, then zero, then positive along the chain, and the
+	// descent's binary search holds even though the goal has vars.
+	//
+	// One var-bearing clause key breaks that: it was placed by
+	// comparisons that called it equal to everything it met, so it sits
+	// at an arbitrary point, and the run of clauses matching a goal is
+	// no longer contiguous. Measured on Logtalk's
+	// $lgt_entity_property_/2, 7001 clauses: a descent stepping over a
+	// node at -62, landing on one at +64, with the clauses that compare
+	// 0 further along past nodes at +115.
+
+	if (pr->is_key_var) {
+		iter_set_chain(q, pr->head);
+		return true;
 	}
 
 	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;

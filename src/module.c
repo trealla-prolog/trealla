@@ -2203,6 +2203,10 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			// walk straight past the var-headed node and the clause is
 			// never returned.
 
+			for (unsigned i = 0; i < c->num_cells; i++) {
+				if (is_var(c + i)) { pr->is_key_var = true; break; }
+			}
+
 			if (c->arity && is_var(FIRST_ARG(c)))
 				pr->is_var_in_first_arg = true;
 
@@ -2225,6 +2229,10 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	cell *c = get_head(r->cl.cells);
 	cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
 	cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
+
+	for (unsigned i = 0; i < c->num_cells; i++) {
+		if (is_var(c + i)) { pr->is_key_var = true; break; }
+	}
 
 	if (arg1 && is_var(arg1))
 		pr->is_var_in_first_arg = true;
