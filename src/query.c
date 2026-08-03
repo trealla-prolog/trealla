@@ -1460,11 +1460,14 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 // Debug aid: allocates, and is O(n) per lookup. Never on by default.
 
 int g_index_check = 0;
+unsigned long g_index_check_lookups = 0;
+unsigned long g_index_check_bad = 0;
 
 static void index_check(query *q, predicate *pr, cell *key,
 	const uint64_t *got, unsigned num_got)
 {
-	unsigned missing = 0, extra = 0;
+	unsigned missing = 0;
+	g_index_check_lookups++;
 
 	for (rule *c = pr->head; c; c = c->next) {
 		if (c->dbgen_retracted)
@@ -1482,7 +1485,7 @@ static void index_check(query *q, predicate *pr, cell *key,
 		}
 
 		if (!found) {
-			if (!missing && !extra)
+			if (!missing)
 				fprintf(stderr, "\n*** index-check FAILED for %s/%u\n",
 					C_STR(q, &pr->key), pr->key.arity);
 
@@ -1500,7 +1503,13 @@ static void index_check(query *q, predicate *pr, cell *key,
 			num_got, num_got == 1 ? "y" : "ies", missing);
 		fprintf(stderr, "***   predicate has %u clauses, idx1=%s idx2=%s\n",
 			(unsigned)pr->cnt, pr->idx1 ? "yes" : "no", pr->idx2 ? "yes" : "no");
-		abort();
+
+		// Carry on rather than abort: one run should surface every
+		// mismatch in a suite, not just the first. The count at exit is
+		// what makes a clean sweep meaningful - zero mismatches over
+		// zero verified lookups says nothing at all.
+
+		g_index_check_bad++;
 	}
 }
 

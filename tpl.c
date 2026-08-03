@@ -145,6 +145,23 @@ static int daemonize(int argc, char *argv[])
 
 char **g_envp = NULL;
 
+extern int g_index_check;
+extern unsigned long g_index_check_lookups, g_index_check_bad;
+
+static void index_check_report(void)
+{
+	// Nothing verified and nothing wrong: stay silent. Sweeps run
+	// thousands of short processes that never touch an index, and some
+	// tests fold stderr into their golden output.
+
+	if (!g_index_check || (!g_index_check_lookups && !g_index_check_bad))
+		return;
+
+	fprintf(stderr, "index-check: %lu indexed lookup%s verified, %lu mismatch%s\n",
+		g_index_check_lookups, g_index_check_lookups == 1 ? "" : "s",
+		g_index_check_bad, g_index_check_bad == 1 ? "" : "es");
+}
+
 #ifdef __wasi__
 int main(int ac, char *av[])
 {
@@ -205,8 +222,8 @@ int main(int ac, char *av[], char * envp[])
 			quiet = true;
 			set_quiet(pl);
 		} else if (!strcmp(av[i], "--index-check")) {
-			extern int g_index_check;
 			g_index_check = 1;
+			atexit(index_check_report);
 		} else if (!strcmp(av[i], "--nolimit")) {
 			set_limit(pl, 0);
 		} else if (!strcmp(av[i], "-O0") || !strcmp(av[i], "--noopt")) {
