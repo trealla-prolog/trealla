@@ -1485,12 +1485,16 @@ static void index_check(query *q, predicate *pr, cell *key,
 		}
 
 		if (!found) {
-			if (!missing)
+			if (!missing) {
 				fprintf(stderr, "\n*** index-check FAILED for %s/%u\n",
 					C_STR(q, &pr->key), pr->key.arity);
+				fprintf(stderr, "***   goal   ");
+				DUMP_TERM("", key, q->st.cur_ctx, 1);
+			}
 
-			fprintf(stderr, "***   MISSING db_id=%llu (comparator says it matches,"
-				" index did not return it)\n", (unsigned long long)c->db_id);
+			fprintf(stderr, "***   MISSING db_id=%llu  ",
+				(unsigned long long)c->db_id);
+			DUMP_TERM("", ch, q->st.cur_ctx, 1);
 			missing++;
 		}
 	}
