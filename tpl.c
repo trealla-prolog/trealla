@@ -204,6 +204,9 @@ int main(int ac, char *av[], char * envp[])
 		} else if (!strcmp(av[i], "-q") || !strcmp(av[i], "--quiet")) {
 			quiet = true;
 			set_quiet(pl);
+		} else if (!strcmp(av[i], "--index-check")) {
+			extern int g_index_check;
+			g_index_check = 1;
 		} else if (!strcmp(av[i], "--nolimit")) {
 			set_limit(pl, 0);
 		} else if (!strcmp(av[i], "-O0") || !strcmp(av[i], "--noopt")) {
@@ -374,6 +377,7 @@ int main(int ac, char *av[], char * envp[])
 		fprintf(stdout, "  --consult\t\t- consult from STDIN\n");
 		fprintf(stdout, "  --log file\t\t- enable log file\n");
 		fprintf(stdout, "  --nolimit\t\t- no memory limit\n");
+		fprintf(stdout, "  --index-check\t\t- verify first-arg indexing against a linear scan (debug, slow)\n");
 		//fprintf(stdout, "  --restore file\t\t- reload log file\n");
 	}
 

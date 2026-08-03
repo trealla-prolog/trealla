@@ -61,6 +61,7 @@ where options can be:
 	--autofail         - autofail queries at the toplevel
 	--consult          - consult from STDIN
 	--nolimit          - no memory limit
+	--index-check      - verify first-arg indexing against a linear scan
 
 For example:
 

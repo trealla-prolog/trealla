@@ -1421,6 +1421,65 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	return true;
 }
 
+// --index-check: verify the index against a brute-force scan.
+//
+// The invariant is that the indexed candidate set equals the set the
+// comparator itself says should match: { c in pr->head : index_cmpkey(
+// head(c), key) == 0 }. That deliberately does NOT re-test unification -
+// it tests the *structure* against the *comparator*, which is where
+// every index defect found so far has lived. A skiplist descent that
+// walks past a node the comparator calls equal, a removal that unlinks
+// the wrong node, a key filed where a query cannot reach it: all show up
+// here as a missing db_id, on the first lookup that hits them, instead
+// of as a wrong answer somewhere downstream.
+//
+// Debug aid: allocates, and is O(n) per lookup. Never on by default.
+
+int g_index_check = 0;
+
+static void index_check(query *q, predicate *pr, cell *key,
+	const uint64_t *got, unsigned num_got)
+{
+	unsigned missing = 0, extra = 0;
+
+	for (rule *c = pr->head; c; c = c->next) {
+		if (c->dbgen_retracted)
+			continue;
+
+		cell *ch = get_head(c->cl.cells);
+
+		if (index_cmpkey(ch, key, q->st.m, NULL) != 0)
+			continue;
+
+		bool found = false;
+
+		for (unsigned i = 0; i < num_got; i++) {
+			if (got[i] == c->db_id) { found = true; break; }
+		}
+
+		if (!found) {
+			if (!missing && !extra)
+				fprintf(stderr, "\n*** index-check FAILED for %s/%u\n",
+					C_STR(q, &pr->key), pr->key.arity);
+
+			fprintf(stderr, "***   MISSING db_id=%llu (comparator says it matches,"
+				" index did not return it)\n", (unsigned long long)c->db_id);
+			missing++;
+		}
+	}
+
+	// The reverse direction is not an error - the index is allowed to
+	// widen - but a wildly over-wide result is worth seeing.
+
+	if (missing) {
+		fprintf(stderr, "***   indexed set had %u entr%s, %u missing\n",
+			num_got, num_got == 1 ? "y" : "ies", missing);
+		fprintf(stderr, "***   predicate has %u clauses, idx1=%s idx2=%s\n",
+			(unsigned)pr->cnt, pr->idx1 ? "yes" : "no", pr->idx2 ? "yes" : "no");
+		abort();
+	}
+}
+
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
 	iter_reset(q);
@@ -1504,7 +1563,20 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	const rule *first = NULL;
 	const rule *r;
 
+	uint64_t *chk = NULL;
+	unsigned num_chk = 0, max_chk = 0;
+
 	while (sl_next_key(iter, (void*)&r)) {
+		if (g_index_check && (idx == pr->idx1)) {
+			if (num_chk == max_chk) {
+				max_chk = max_chk ? max_chk * 2 : 16;
+				chk = realloc(chk, max_chk * sizeof(uint64_t));
+				ENSURE(chk);
+			}
+
+			chk[num_chk++] = r->db_id;
+		}
+
 		if (!first) {
 			first = r;
 			continue;
@@ -1520,6 +1592,11 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	}
 
 	sl_done(iter);
+
+	if (g_index_check && (idx == pr->idx1)) {
+		index_check(q, pr, key, chk, num_chk);
+		free(chk);
+	}
 
 	if (!first)
 		return false;
