@@ -1464,7 +1464,7 @@ unsigned long g_index_check_lookups = 0;
 unsigned long g_index_check_bad = 0;
 
 static void index_check(query *q, predicate *pr, cell *key,
-	const uint64_t *got, unsigned num_got)
+	const rule **got, unsigned num_got)
 {
 	unsigned missing = 0;
 	g_index_check_lookups++;
@@ -1481,7 +1481,7 @@ static void index_check(query *q, predicate *pr, cell *key,
 		bool found = false;
 
 		for (unsigned i = 0; i < num_got; i++) {
-			if (got[i] == c->db_id) { found = true; break; }
+			if (got[i] == c) { found = true; break; }
 		}
 
 		if (!found) {
@@ -1503,6 +1503,13 @@ static void index_check(query *q, predicate *pr, cell *key,
 	// widen - but a wildly over-wide result is worth seeing.
 
 	if (missing) {
+		for (unsigned i = 0; i < num_got; i++) {
+			cell *gh = get_head(((rule*)got[i])->cl.cells);
+			fprintf(stderr, "***   returned db_id=%llu  ",
+				(unsigned long long)got[i]->db_id);
+			DUMP_TERM("", gh, q->st.cur_ctx, 1);
+		}
+
 		fprintf(stderr, "***   indexed set had %u entr%s, %u missing\n",
 			num_got, num_got == 1 ? "y" : "ies", missing);
 		fprintf(stderr, "***   predicate has %u clauses, idx1=%s idx2=%s\n",
@@ -1600,18 +1607,18 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	const rule *first = NULL;
 	const rule *r;
 
-	uint64_t *chk = NULL;
+	const rule **chk = NULL;
 	unsigned num_chk = 0, max_chk = 0;
 
 	while (sl_next_key(iter, (void*)&r)) {
 		if (g_index_check && (idx == pr->idx1)) {
 			if (num_chk == max_chk) {
 				max_chk = max_chk ? max_chk * 2 : 16;
-				chk = realloc(chk, max_chk * sizeof(uint64_t));
+				chk = realloc(chk, max_chk * sizeof(rule*));
 				ENSURE(chk);
 			}
 
-			chk[num_chk++] = r->db_id;
+			chk[num_chk++] = r;
 		}
 
 		if (!first) {
