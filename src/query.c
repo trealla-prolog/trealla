@@ -502,15 +502,60 @@ static void enter_predicate(query *q, predicate *pr)
 		pr->refcnt++;
 }
 
+// The one place that knows how a clause iterator is set up, advanced and
+// released. Both the linear chain walk and the indexed walk go through
+// here, so they cannot drift apart - and step 2's --index-check has a
+// single seam to hook.
+
+static inline void iter_reset(query *q)
+{
+	q->st.iter = NULL;
+	q->st.ci_kind = CI_CHAIN;
+}
+
+static inline void iter_set_chain(query *q, rule *r)
+{
+	q->st.iter = NULL;
+	q->st.ci_kind = CI_CHAIN;
+	q->st.dbe = r;
+}
+
+static inline void iter_set_single(query *q, rule *r)
+{
+	q->st.iter = NULL;
+	q->st.ci_kind = CI_SINGLE;
+	q->st.dbe = r;
+}
+
+static inline void iter_set_sl(query *q, sliter *it)
+{
+	q->st.iter = it;
+	q->st.ci_kind = CI_SL;
+}
+
+// Released ONLY on exhaustion. A cut must not free it: run_state, and so
+// this iterator, has already been copied into any choicepoint taken
+// since it was created, and those copies would be left dangling. That
+// was the initialization_1 crash.
+
+static inline void iter_exhausted(query *q)
+{
+	if (q->st.ci_kind == CI_SL)
+		sl_done(q->st.iter);
+
+	q->st.dbe = NULL;
+	iter_reset(q);
+}
+
 void leave_predicate(query *q, predicate *pr, bool is_final)
 {
 	if (!pr)
 		return;
 
-	// EXPERIMENT: run_state is snapshotted whole into every choice,
-	// iter included, so freeing it here leaves those snapshots
-	// dangling. next_key() already frees it on exhaustion.
-	q->st.iter = NULL;
+	// Drop our handle but do NOT release: run_state has been copied into
+	// every choicepoint taken since, and those copies alias this
+	// iterator. iter_exhausted() is the only release point.
+	iter_reset(q);
 
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
@@ -907,7 +952,7 @@ static void commit_frame(query *q)
 
 	q->st.instr = cl->alt ? cl->alt : get_body(cl->cells);
 	if (!q->st.instr) q->st.instr = cl->cells + (cl->cidx-1);
-	q->st.iter = NULL;
+	iter_reset(q);
 }
 
 int retry_choice(query *q)
@@ -1249,34 +1294,33 @@ static void setup_key(query *q)
 
 static void next_key(query *q)
 {
-	if (q->st.iter_single) {
-		// A single-hit lookup has no iterator and must not fall through
-		// to the chain walk - the next clause in the chain is not a
-		// candidate, it just happens to be adjacent.
+	switch (q->st.ci_kind) {
+	case CI_SINGLE:
+		// One candidate, already consumed. Must NOT fall through to the
+		// chain - the next clause there is not a candidate, it merely
+		// happens to be adjacent.
 
-		q->st.iter_single = false;
-		q->st.dbe = NULL;
+		iter_exhausted(q);
 		return;
-	}
 
-	if (!q->st.iter) {
+	case CI_CHAIN:
 		q->st.dbe = q->st.dbe->next;
 		return;
-	}
 
-	if (!sl_next(q->st.iter, (void*)&q->st.dbe)) {
-		q->st.dbe = NULL;
-		sl_done(q->st.iter);
-		q->st.iter = NULL;
+	default:
+		if (!sl_next(q->st.iter, (void*)&q->st.dbe))
+			iter_exhausted(q);
+
+		return;
 	}
 }
 
 bool has_next_key(query *q)
 {
-	if (q->st.iter_single)
+	if (q->st.ci_kind == CI_SINGLE)
 		return false;
 
-	if (q->st.iter)
+	if (q->st.ci_kind == CI_SL)
 		return sl_has_next(q->st.iter, NULL);
 
 	if (!q->st.dbe->next)
@@ -1379,15 +1423,14 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
-	q->st.iter = NULL;
-	q->st.iter_single = false;
+	iter_reset(q);
 	q->st.karg1_is_ground = q->st.karg2_is_ground = q->st.karg3_is_ground = false;
 	q->st.karg1_is_atomic = q->st.karg2_is_atomic = q->st.karg3_is_atomic = false;
 	q->st.key = key;
 	q->st.key_ctx = key_ctx;
 
 	if (!pr->idx1) {
-		q->st.dbe = pr->head;
+		iter_set_chain(q, pr->head);
 
 		if (key->arity) {
 			if (pr->is_meta_predicate) {
@@ -1423,14 +1466,14 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		// usable index here - fall back to the linear walk.
 
 		if (!pr->idx2 || pr->is_var_in_second_arg) {
-			q->st.dbe = pr->head;
+			iter_set_chain(q, pr->head);
 			return true;
 		}
 
 		cell *arg2 = NEXT_ARG(arg1);
 
 		if (is_var(arg2)) {
-			q->st.dbe = pr->head;
+			iter_set_chain(q, pr->head);
 			return true;
 		}
 
@@ -1482,9 +1525,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		return false;
 
 	if (!tmp_idx) {
-		q->st.dbe = (rule*)first;
-		q->st.iter = NULL;
-		q->st.iter_single = true;
+		iter_set_single(q, (rule*)first);
 		return true;
 	}
 
@@ -1498,7 +1539,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		return false;
 	}
 
-	q->st.iter = iter;
+	iter_set_sl(q, iter);
 	return true;
 }
 

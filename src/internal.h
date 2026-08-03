@@ -529,6 +529,21 @@ struct frame_ {
 	bool no_recov:1;
 };
 
+// How the current goal is enumerating candidate clauses. The kind rides
+// in the run_state union alongside key/key_ctx, which are live over the
+// same window; st.iter holds the CI_SL handle.
+//
+// run_state is snapshotted whole into every choicepoint, so st.iter is
+// aliased by every choice taken since it was created. It may be released
+// only on exhaustion, never on a cut - that was the initialization_1
+// crash.
+//
+// CI_CHAIN  walk pr->head linearly; cursor is st.dbe
+// CI_SINGLE exactly one candidate, already in st.dbe; nothing to own
+// CI_SL     several candidates, prefetched and sorted by db_id
+
+enum clause_iter_kind { CI_CHAIN = 0, CI_SINGLE, CI_SL };
+
 struct run_state_ {
 	predicate *pr;
 	cell *instr;
@@ -541,8 +556,8 @@ struct run_state_ {
 			cell *key;
 			pl_ctx key_ctx;
 			bool karg1_is_ground:1, karg2_is_ground:1, karg3_is_ground:1,
-			karg1_is_atomic:1, karg2_is_atomic:1, karg3_is_atomic:1,
-			iter_single:1;
+			karg1_is_atomic:1, karg2_is_atomic:1, karg3_is_atomic:1;
+			unsigned ci_kind:2;
 		};
 		struct { uint64_t uv1, uv2; };
 		struct { int64_t v1, v2; };
