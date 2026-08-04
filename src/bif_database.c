@@ -240,6 +240,13 @@ bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 
 	if (last_match) {
+		// Before leave_predicate(), which only drops the handle. Without
+		// this, every retract that commits on a MERGED lookup abandoned
+		// its prefetch: a predicate holding even a handful of var-keyed
+		// clauses leaked on every assert/retract of any OTHER clause,
+		// because the side-list merge is what turns a single-candidate
+		// lookup into a prefetched one.
+		query_release_iter(q);
 		q->in_retract = true;
 		leave_predicate(q, q->st.pr, true);
 		q->in_retract = false;

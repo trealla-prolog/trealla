@@ -1,93 +1,89 @@
-# db-stress — checkpoint (not finished)
+# db-stress — done. Test 8 passes, and it found a real leak on the way.
 
-Stopped on a usage limit mid-way. Tests 1–7 are done and validated; test 8 needs one
-more change, described below. **Nothing has been deleted from `samples/` yet** and no
-`.expected` file exists yet, so the suite is untouched — `db-stress.sh` currently just
-sits alongside it.
+Against branch tip `31c46a59` (which already has `wild1a`). Test 8 was failing on a
+clean build; the answer was not to loosen the test.
 
-## What works
+```
+1. retractall: constant
+2. abolish: constant
+3. retract all: constant
+4. retract by key: constant
+5. clause: constant
+6. match: constant
+7. churn without emptying: constant
+8. arity 2, side lists live: constant
+9. churn var-keyed clauses: correct
+db-stress: 8/8 constant memory, 9/9 correct
+```
 
-`tests/slow/db-stress.sh` — shell test, as you chose, so no source change. `run.sh`
-already handles `*.sh` via `env TPL=$TPL bash`. The Prolog is embedded in a heredoc
-rather than living at `tests/slow/db-stress.pl`, because `run.sh` globs `tests/slow/*`
-and would otherwise pick the `.pl` up as a test in its own right and diff it against the
-same `.expected`.
+## The leak test 8 found
 
-All six original workloads are preserved. Memory is checked by running each at 2 rounds
-and at 6 and comparing peak RSS, sampled with `ps -o rss=` (KB on both Linux and macOS —
-`/usr/bin/time`'s memory flags are not portable between GNU and BSD). Fails over 1.20x;
-measured noise is ≤1.01x. Whole script runs in ~30s, well inside `timeout 300`.
+`bif_database.c`'s retract commit did `leave_predicate()` then `drop_choice()` — the
+same pair as the working commit path in `match_clause()` — but without releasing the
+clause iterator first. `leave_predicate()` opens with `iter_reset()`, which NULLs the
+handle **without freeing it**, so the prefetch was abandoned.
 
-**Test 7 is new and is the one that matters.** All six original tests drain their
-predicate to empty, and emptying it destroys every index wholesale at `cnt == 0` — which
-sweeps up any entry that was never withdrawn, hiding exactly the bug the guard is for.
-Test 7 churns without ever emptying. Validated by reintroducing the original regression
-(per-clause removal from `idx1a` deleted):
+`iter_release()` exists for exactly this and was called from **one** of the nine sites
+that pair `leave_predicate` with `drop_choice`.
 
-| | tests 1–6 | test 7 |
-|---|---|---|
-| fixed build | constant | **constant** |
-| bug reintroduced | constant — *all six miss it* | **GREW 149%** |
+It only bites on a *merged* lookup. Without a side list a ground lookup returns one
+candidate and takes `iter_set_single`, which owns nothing; with one it returns many and
+takes `iter_set_sl`, which owns a `tmp_idx` skiplist. So the trigger is: **a predicate
+holding even a handful of var-keyed clauses leaked on every assert/retract of any other
+clause.** The var-keyed clauses are never themselves retracted — their presence alone is
+enough, because they are what turns a single-candidate lookup into a prefetched one.
 
-That is the whole value of the exercise: the original six could not have caught the
-memory regression you reported.
+Fix is three lines plus an exported wrapper (`iter_release` is `static inline` in
+`query.c`, the call site is in `bif_database.c`).
 
-## What's left — test 8
-
-Test 8 covers arity 2, so `idx2` and the two side lists engage (tests 1–7 are all arity
-1). It currently reports `GREW 129%` **on the fixed build**. That is not an index leak.
-Chased it to the bottom:
-
-- Growth is *worse* with indexing disabled entirely (880 KB/round vs 215), so it is not
-  the index.
-- Isolated to: **retracting a clause that contains a variable does not reclaim, when the
-  predicate never drops to empty.** Goal side is innocent.
-
-`retract-var-clause-leak.pl` is the minimal reproducer — three variants, 6000 clauses,
-rounds 1 / 6 / 14:
-
-| | 1 | 6 | 14 |
+| | 2 rounds | 8 rounds | |
 |---|---|---|---|
-| ground clause, ground goal | 7808 KB | 7808 KB | 7808 KB |
-| ground clause, **var goal** | 7936 KB | 7936 KB | 7936 KB |
-| **var-bearing clause** | 7936 KB | 15872 KB | 28672 KB |
+| before | 13.8 MB | 37.8 MB | leaks |
+| after | 6.5 MB | 6.5 MB | flat, and lower |
 
-Pre-existing — reproduces on tip `4858906` and with no index at all. I did not get to
-confirm how far back it goes.
+`merge-prefetch-leak.pl` is the 8-line reproducer.
 
-**The fix for test 8**: split it in two, so it stops tripping on a leak it isn't meant
-to measure.
+## Verification
 
-- **t8** — churn *ground* arity-2 clauses, with a small fixed set of var-bearing clauses
-  asserted once to keep `wild1a` and `wild2` populated so the merge path stays live.
-  Memory-checked. Covers `idx1`/`idx1a`/`idx2` removal under churn.
-- **t9** — churn the var-bearing clauses. **Correctness-checked only** (exact clause
-  count after churn), memory deliberately not checked, with the reason documented
-  inline. Still catches a wrong-clause-removed bug in `wild1a`/`wild2` — the same class
-  as the original `sl_rem` duplicate-key bug.
-
-Then: write `tests/slow/db-stress.expected`, delete `samples/db-stress.pl`, run the full
-suite to confirm 336/1.
-
-## Separate finding — the side-list merge is quadratic
-
-Found while sizing test 8, worth its own look. A side list under the 1/10 cap is merged
-into **every** lookup — drained and re-sorted into a fresh `tmp_idx` skiplist each time —
-so cost per lookup scales with the predicate. Arity-2 predicate, ~5% of clauses in the
-side lists, one fill-and-drain round:
-
-| N | time |
+| check | result |
 |---|---|
-| 5000 | 0.07s |
-| 20000 | 0.56s |
-| 50000 | 7.50s |
+| trealla suite | 335 / 1 pre-existing — unchanged |
+| chess.pl | `7d198dd5` — unchanged |
+| db-stress | 8/8 constant, 9/9 correct |
+| **discrimination** | fix reverted → t8 goes 61 MB → 172 MB (2.8x) and **fails** |
 
-At 200000 it does not finish. **Pre-existing, and it is `wild2`, not `wild1a`** — tip
-`4858906` measures 7.01s against this build's 7.50s at N=50000.
+That last row is the one that matters: the test detects the bug it was written to
+detect, and the fix is what makes it pass.
 
-The implication is that the 1/10 cap being a *ratio* is wrong: for a 200k-clause
-predicate a "small" 10% side list is 20,000 entries drained on every single lookup. It
-probably wants to be `min(ratio, absolute)`. This compounds the cap finding in
-`wild1a.md`, which argued from a 20000-clause benchmark that the ratio cap was too
-*tight* — both can be true, and together they say the cap wants to be re-derived rather
-than nudged.
+## What's in the test now
+
+**Test 8** — arity 2, so `idx1`/`idx1a`/`idx2` all carry entries and all must withdraw
+them; tests 1–7 are arity 1 and cannot see a leak in `idx2` or either side list. Twenty
+var-keyed clauses of each kind are seeded once and never churned, holding `wild1a` and
+`wild2` open so the merges really run, while the churn stays ground.
+
+Twenty, not hundreds, deliberately: **a side-list clause is a candidate for every lookup
+and is head-unified on each one.** At 100 of each, test 8 cost 4.8s for 5000 clauses. That
+is the real shape of the merge cost — sharper than the "drained and re-sorted" framing in
+my earlier note, and it strengthens the case that the 1/10 cap being a *ratio* is wrong.
+
+**Test 9** — churns the var-keyed clauses themselves. Correctness only, because it still
+trips the separate pre-existing leak below. It catches the bug class that matters most
+for a side list: removing the wrong entry under duplicate keys, exactly what the original
+`sl_rem()` defect did.
+
+## Left open
+
+- **Seven more sites** pair `leave_predicate` with `drop_choice` and do not release:
+  `query.c` 2034 and 2233, `bif_database.c` 99 and 176, plus two cut/prune paths at
+  `query.c` 1197 and 1248 that act on `ch->st.pr` rather than `q->st.pr`. I fixed only
+  the retract path — the one test 8 proves — and left the rest alone rather than
+  guess. The two `ch->st.pr` ones are a different question: the choicepoint being
+  dropped may own an iterator in `ch->st.iter`, which nothing currently frees.
+- **A second, unrelated leak**: retracting a clause that *contains* a variable does not
+  reclaim while the predicate stays non-empty. Reproduces with indexing disabled
+  entirely, and worse — so not an index bug. `retract-var-clause-leak.pl`. This is why
+  test 9 is correctness-only.
+- `docs/db-stress.md` on the branch is the old checkpoint note and is now stale in three
+  ways: it says `tests/slow`, says `samples/` is undeleted, and its
+  "retracting a var-bearing clause leaks" diagnosis is superseded by the table above.

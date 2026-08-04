@@ -35,6 +35,7 @@ N=200000        # clauses per round; well over the 500 index threshold
 # still catches a leak in any of them. Pre-existing behaviour of the
 # side-list merge, not something this test is trying to measure.
 N8=20000
+N9=20000
 R_LO=2
 R_HI=6
 LIMIT=120       # hundredths: fail over 1.20x. Measured noise is <= 1.01x.
@@ -45,6 +46,7 @@ trap 'rm -f "$PL"' EXIT
 cat > "$PL" <<'PLEOF'
 :- dynamic(f/1).
 :- dynamic(h/2).
+:- dynamic(k/2).
 :- initialization(main).
 
 fill(N)  :- between(1,N,I), assertz(f(I)), fail.
@@ -65,31 +67,59 @@ t(6,N) :- fillg(N), ( f(_), fail ; true ), retractall(f(_)).
 t(7,N) :- ( f(keep) -> true ; assertz(f(keep)) ), fillg(N),
 	( between(1,N,I), retract(f(g(I))), fail ; true ).
 
-% Everything above is arity 1, so idx2 and the arg2 side list never
-% engage and a leak in either would go unseen. This one is arity 2 and
-% shaped to populate all four structures at once: mostly ground in both
-% args (idx1, idx1a, idx2), a fortieth with a var arg1 (wild1a) and a
-% thirty-seventh with a var arg2 (wild2). Both side lists stay under the
-% one-tenth cap, so the merges actually run rather than falling back to a
-% chain walk. Retracted by unique keys, and h(keep,keep) holds the
-% predicate above zero as in test 7.
+% 8. Arity 2, so idx1, idx1a and idx2 all carry entries and all must
+% withdraw them - everything above is arity 1, and a leak in idx2 or
+% either side list would go unseen there. A small FIXED set of var-keyed
+% clauses is seeded once and never churned, which holds wild1a and wild2
+% open (both far under the one-tenth cap, so the merges really do run on
+% every lookup) while the churn itself stays ground.
+%
+% Kept to 20 of each deliberately. A side-list clause is a candidate for
+% EVERY lookup and gets head-unified on each one, so seeding hundreds
+% makes this test cost seconds without testing anything more.
+%
+% Ground on purpose. Retracting a clause that CONTAINS a variable does
+% not reclaim while the predicate stays non-empty - a pre-existing leak
+% with nothing to do with indexing, which reproduces with the index
+% disabled entirely and worse. Churning var-keyed clauses here would trip
+% this guard on that rather than on anything an index did. Test 9 covers
+% their removal instead, without a memory check.
 t(8,N) :-
-	( h(keep,keep) -> true ; assertz(h(keep,keep)) ),
-	( between(1,N,I), hput(I), fail ; true ),
-	( between(1,N,I), hdel(I), fail ; true ).
+	( h(keep,keep) -> true ; hseed ),
+	( between(1,N,I), assertz(h(c(I),d(I))), fail ; true ),
+	( between(1,N,I), retract(h(c(I),d(I))), fail ; true ).
 
-hput(I) :- 0 is I mod 40, !, assertz(h(_, a(I))).
-hput(I) :- 0 is I mod 37, !, assertz(h(b(I), _)).
-hput(I) :- assertz(h(c(I), d(I))).
+hseed :-
+	assertz(h(keep,keep)),
+	( between(1,20,I), assertz(h(_,a(I))), assertz(h(b(I),_)), fail ; true ).
 
-hdel(I) :- 0 is I mod 40, !, retract(h(_, a(I))).
-hdel(I) :- 0 is I mod 37, !, retract(h(b(I), _)).
-hdel(I) :- retract(h(c(I), d(I))).
+% 9. Removal of var-keyed clauses from both side lists, churned, with the
+% predicate never emptying - the one path tests 1-8 leave uncovered. The
+% ground majority keeps both side lists under the one-tenth cap, so the
+% merge is live during the retract lookups too.
+%
+% CORRECTNESS ONLY, for the reason given above test 8. A wrong count here
+% still catches the class of bug that matters most for a side list:
+% removing the wrong entry under duplicate keys, which is exactly what
+% the original sl_rem() defect did.
+t(9,N) :-
+	( k(keep,keep) -> true ; assertz(k(keep,keep)) ),
+	( between(1,N,I), kput(I), fail ; true ),
+	( between(1,N,I), kdel(I), fail ; true ).
+
+kput(I) :- 0 is I mod 40, !, assertz(k(_,a(I))).
+kput(I) :- 0 is I mod 41, !, assertz(k(b(I),_)).
+kput(I) :- assertz(k(c(I),d(I))).
+
+kdel(I) :- 0 is I mod 40, !, retract(k(_,a(I))).
+kdel(I) :- 0 is I mod 41, !, retract(k(b(I),_)).
+kdel(I) :- retract(k(c(I),d(I))).
 
 unwind(0) :- !.
 unwind(I) :- retract(f(g(I))), I2 is I-1, unwind(I2).
 
 left(8, C) :- !, catch(findall(x, h(_,_), L), _, L = []), length(L, C).
+left(9, C) :- !, catch(findall(x, k(_,_), L), _, L = []), length(L, C).
 left(_, C) :- catch(findall(x, f(_), L), _, L = []), length(L, C).
 
 main :-
@@ -129,30 +159,53 @@ name_4='4. retract by key'
 name_5='5. clause'
 name_6='6. match'
 name_7='7. churn without emptying'
-name_8='8. arity 2, both side lists'
+name_8='8. arity 2, side lists live'
+name_9='9. churn var-keyed clauses'
 
 # clauses expected to survive a round
-want_1=0; want_2=0; want_3=0; want_4=0; want_5=0; want_6=0; want_7=1; want_8=1
+want_1=0; want_2=0; want_3=0; want_4=0; want_5=0; want_6=0
+want_7=1; want_8=41; want_9=1
 
-pass=0
-for t in 1 2 3 4 5 6 7; do
+flat=0          # ran in constant memory (tests 1-8)
+right=0         # returned the right clause count (tests 1-9)
+
+for t in 1 2 3 4 5 6 7 8 9; do
 	eval "name=\$name_$t; want=\$want_$t"
 
-	case $t in 8) size=$N8 ;; *) size=$N ;; esac
+	case $t in 8) size=$N8 ;; 9) size=$N9 ;; *) size=$N ;; esac
+
+	# Test 9 is correctness only - see the note above t(9,...).
+	if [ "$t" = 9 ]; then
+		set -- $(peak_rss "$t" "$R_HI" "$size"); got=$2
+
+		if [ "$got" != "$want" ]; then
+			echo "$name: WRONG left $got want $want"
+		else
+			echo "$name: correct"
+			right=$(( right + 1 ))
+		fi
+
+		continue
+	fi
 
 	set -- $(peak_rss "$t" "$R_LO" "$size"); lo=$1; got_lo=$2
 	set -- $(peak_rss "$t" "$R_HI" "$size"); hi=$1; got_hi=$2
 
 	if [ "$got_lo" != "$want" ] || [ "$got_hi" != "$want" ]; then
 		echo "$name: WRONG left $got_lo/$got_hi want $want"
-	elif [ "$lo" -le 0 ]; then
+		continue
+	fi
+
+	right=$(( right + 1 ))
+
+	if [ "$lo" -le 0 ]; then
 		echo "$name: NO MEASUREMENT"
 	elif [ $(( hi * 100 )) -gt $(( lo * LIMIT )) ]; then
 		echo "$name: GREW $(( hi * 100 / lo ))% of ${R_LO}-round peak over $R_HI rounds"
 	else
 		echo "$name: constant"
-		pass=$(( pass + 1 ))
+		flat=$(( flat + 1 ))
 	fi
 done
 
-echo "db-stress: $pass/8 constant memory"
+echo "db-stress: $flat/8 constant memory, $right/9 correct"

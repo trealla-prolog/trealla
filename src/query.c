@@ -569,6 +569,16 @@ static inline void iter_release(query *q)
 	iter_reset(q);
 }
 
+// Same release, for the commit paths outside this file. leave_predicate()
+// deliberately only drops the handle, so any site that pairs it with
+// drop_choice() on the goal's OWN choicepoint has to release first or the
+// prefetch is abandoned - see iter_release() above.
+
+void query_release_iter(query *q)
+{
+	iter_release(q);
+}
+
 void leave_predicate(query *q, predicate *pr, bool is_final)
 {
 	if (!pr)
