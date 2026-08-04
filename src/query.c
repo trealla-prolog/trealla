@@ -856,7 +856,16 @@ static void commit_frame(query *q)
 	f->m = q->st.m;
 
 	rule *save_dbe = q->st.dbe;
-	bool is_det = !q->has_vars && cl->is_unique;
+	// A unique clause head does not make the goal deterministic if some
+	// OTHER clause carries a variable in an indexed argument: such a
+	// clause unifies with anything, so it is still a live alternative.
+	// Logtalk's logtalk_library_path/2 is exactly this shape - a packs
+	// RULE with a var first argument sitting among 500 ground facts -
+	// and claiming determinism there dropped the alternatives
+	// choicepoint before the walk could reach the matching fact.
+
+	bool is_det = !q->has_vars && cl->is_unique
+		&& !q->st.pr->is_var_in_first_arg && !q->st.pr->is_var_in_second_arg;
 	bool last_match = is_det || cl->is_first_cut || !has_next_key(q)
 		|| (is_next_cut(q->st.instr) && cl->is_fact);
 	bool tco = false;
