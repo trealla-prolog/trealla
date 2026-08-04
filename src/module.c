@@ -1917,7 +1917,14 @@ static void process_predicate(predicate *pr)
 		process_clause(pr->m, &r->cl, pr);
 	}
 
-	if (/*pr->is_dynamic ||*/ pr->idx1)
+	// is_unique is a FORWARD scan taken once, here, and nothing
+	// invalidates it afterwards. That is sound for a static predicate,
+	// which cannot change after load, and unsound for a dynamic one: the
+	// first assertz() of a clause with a comparable key makes every
+	// earlier is_unique stale, and commit_frame() then treats a match as
+	// deterministic and drops the alternatives choicepoint.
+
+	if (pr->is_dynamic || pr->idx1)
 		return;
 
 	for (rule *r = pr->head; r; r = r->next) {
