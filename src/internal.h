@@ -534,6 +534,12 @@ struct run_state_ {
 	cell *instr;
 	rule *dbe;
 	sliter *iter, *tmp_iter;
+
+	// Which choicepoint owns *iter when it is a multi-hit prefetch.
+	// run_state is copied into every choice after find_key(), so several
+	// slots alias the same handle; only this one may free it.
+	pl_idx iter_owner;
+
 	module *m;
 
 	union {

@@ -507,9 +507,10 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	if (!pr)
 		return;
 
-	// EXPERIMENT: run_state is snapshotted whole into every choice,
-	// iter included, so freeing it here leaves those snapshots
-	// dangling. next_key() already frees it on exhaustion.
+	// Drop our handle but do not free: run_state is snapshotted into
+	// every choice after find_key(), and those copies alias the same
+	// prefetch. drop_choice() frees when the owning slot goes; next_key()
+	// frees on exhaustion (clearing any alias first).
 	q->st.iter = NULL;
 
 	if (!pr->is_dynamic || !pr->refcnt)
@@ -947,11 +948,28 @@ int retry_choice(query *q)
 			continue;
 
 		if (ch->catchme_exception || ch->fail_on_retry) {
+			// Choice abandoned without drop_choice(); free its prefetch.
+			if (ch->st.iter && (ch->st.iter_owner == q->st.cp)) {
+				if (q->st.iter == ch->st.iter)
+					q->st.iter = NULL;
+
+				sl_done(ch->st.iter);
+				ch->st.iter = NULL;
+			}
+
 			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
 
 		if (!ch->register_cleanup && q->noretry) {
+			if (ch->st.iter && (ch->st.iter_owner == q->st.cp)) {
+				if (q->st.iter == ch->st.iter)
+					q->st.iter = NULL;
+
+				sl_done(ch->st.iter);
+				ch->st.iter = NULL;
+			}
+
 			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
@@ -979,6 +997,20 @@ void drop_choice(query *q)
 		return;
 
 	choice *ch = GET_CURR_CHOICE();
+
+	// Free the multi-hit prefetch when the choice it was built for goes.
+	// Cuts and last-match commits drop that choice without exhausting the
+	// iterator; without this those prefetches are abandoned. Only the
+	// owner may free - later choices carry an aliased copy of the handle.
+
+	if (ch->st.iter && (ch->st.iter_owner == q->st.cp - 1)) {
+		if (q->st.iter == ch->st.iter)
+			q->st.iter = NULL;
+
+		sl_done(ch->st.iter);
+		ch->st.iter = NULL;
+	}
+
 	list *undo;
 
 	if (q->st.cp > 1) {
@@ -1268,6 +1300,20 @@ static void next_key(query *q)
 
 	if (!sl_next(q->st.iter, (void*)&q->st.dbe)) {
 		q->st.dbe = NULL;
+
+		// Exhausted: free here. Clear any choice alias of the same
+		// handle first so a later drop_choice() of the owning slot
+		// does not double-free. Covers the retry path where the owning
+		// choice was already popped by retry_choice() and drop_choice()
+		// will never see it.
+
+		if (q->st.cp) {
+			choice *ch = GET_CURR_CHOICE();
+
+			if (ch->st.iter == q->st.iter)
+				ch->st.iter = NULL;
+		}
+
 		sl_done(q->st.iter);
 		q->st.iter = NULL;
 	}
@@ -1504,6 +1550,12 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	}
 
 	q->st.iter = iter;
+
+	// The goal's alternatives choicepoint has not been raised yet -
+	// find_key() runs first - so it will land on the slot q->st.cp is
+	// pointing at now. That choice owns the prefetch.
+
+	q->st.iter_owner = q->st.cp;
 	return true;
 }
 
