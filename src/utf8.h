@@ -9,6 +9,13 @@
 #define BOM_UTF8 0xFEFF
 #define MAX_CODEPOINT 1114111
 #define MAX_BYTES_PER_CODEPOINT 6 // Unicode says 4, but max possible is 6
+#define REPLACEMENT_CHAR 0xFFFD
+
+// Returned by xgetc_utf8() when the octets read are not a valid UTF-8
+// encoding of a character. Distinct from EOF so callers can tell an
+// ill-formed sequence from a genuine end of file...
+
+#define UTF8_INVALID (-2)
 
 /*
  * This allows supplying a getter function...
@@ -16,12 +23,21 @@
 
 extern int xgetc_utf8(void*, void*);
 
+// As above but never fails: ill-formed input yields U+FFFD. For readers
+// that are not required to enforce the encoding...
+
+static inline int xgetc_utf8_lax(void *p0, void *p1)
+{
+	int ch = xgetc_utf8(p0, p1);
+	return ch == UTF8_INVALID ? REPLACEMENT_CHAR : ch;
+}
+
 /*
  *  These relate to similar stdc functions...
  */
 
-static inline int getc_utf8(FILE *fp) { return xgetc_utf8(fgetc, fp); }
-static inline int fgetc_utf8(FILE *fp) { return xgetc_utf8(fgetc, fp); }
+static inline int getc_utf8(FILE *fp) { return xgetc_utf8_lax(fgetc, fp); }
+static inline int fgetc_utf8(FILE *fp) { return xgetc_utf8_lax(fgetc, fp); }
 
 extern size_t strlen_utf8(const char *s);						// returns #chars
 extern size_t substrlen_utf8(const char *s, size_t n);			// returns #chars

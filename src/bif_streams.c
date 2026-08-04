@@ -1197,7 +1197,7 @@ static bool bif_iso_open_4(query *q)
 #endif
 
 	if (!strcmp(str->mode, "read") && !str->binary && (!bom_specified || use_bom)) {
-		int ch = xgetc_utf8(tpl_getc, str);
+		int ch = xgetc_utf8_lax(tpl_getc, str);
 
 		if (feof(str->fp_in))
 			clearerr(str->fp_in);
@@ -1389,7 +1389,7 @@ static bool bif_iso_at_end_of_stream_0(query *q)
 		return false;
 
 	if (!str->is_socket) {
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
 		str->ungetch = ch;
 	}
 
@@ -1422,7 +1422,7 @@ static bool bif_iso_at_end_of_stream_1(query *q)
 		return false;
 
 	if (!str->is_socket) {
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
 		str->ungetch = ch;
 	}
 
@@ -2748,6 +2748,18 @@ static bool bif_iso_put_byte_2(query *q)
 	return true;
 }
 
+// ISO 13211-1 8.12.1.3 i (and 8.12.2.3 i): "the entity input from the
+// stream is not a character". The culprit is what was read rather than
+// any argument, so the error context is just the offending goal...
+
+#define CHECK_UTF8_INPUT(q, str, ch)								\
+	if ((ch) == UTF8_INVALID) {										\
+		(str)->did_getc = false;									\
+		clearerr((str)->fp_in);										\
+		return throw_error((q), (q)->st.instr, (q)->st.cur_ctx,		\
+			"representation_error", "character");					\
+	}
+
 static bool bif_iso_get_char_1(query *q)
 {
 	GET_FIRST_ARG(p1,in_character_or_var);
@@ -2791,6 +2803,8 @@ static bool bif_iso_get_char_1(query *q)
 		clearerr(str->fp_in);
 		return do_yield(q, 1);
 	}
+
+	CHECK_UTF8_INPUT(q, str, ch);
 
 	str->did_getc = true;
 
@@ -2870,6 +2884,8 @@ static bool bif_iso_get_char_2(query *q)
 		return do_yield(q, 1);
 	}
 
+	CHECK_UTF8_INPUT(q, str, ch);
+
 	str->did_getc = true;
 
 	if (FEOF(str)) {
@@ -2947,6 +2963,8 @@ static bool bif_iso_get_code_1(query *q)
 		clearerr(str->fp_in);
 		return do_yield(q, 1);
 	}
+
+	CHECK_UTF8_INPUT(q, str, ch);
 
 	str->did_getc = true;
 
@@ -3028,6 +3046,8 @@ static bool bif_iso_get_code_2(query *q)
 		clearerr(str->fp_in);
 		return do_yield(q, 1);
 	}
+
+	CHECK_UTF8_INPUT(q, str, ch);
 
 	str->did_getc = true;
 
@@ -3373,6 +3393,8 @@ static bool bif_iso_peek_char_1(query *q)
 		return do_yield(q, 1);
 	}
 
+	CHECK_UTF8_INPUT(q, str, ch);
+
 	if (FEOF(str)) {
 		str->did_getc = false;
 		clearerr(str->fp_in);
@@ -3429,6 +3451,8 @@ static bool bif_iso_peek_char_2(query *q)
 		clearerr(str->fp_in);
 		return do_yield(q, 1);
 	}
+
+	CHECK_UTF8_INPUT(q, str, ch);
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3488,6 +3512,8 @@ static bool bif_iso_peek_code_1(query *q)
 		clearerr(str->fp_in);
 		return do_yield(q, 1);
 	}
+
+	CHECK_UTF8_INPUT(q, str, ch);
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3549,6 +3575,8 @@ static bool bif_iso_peek_code_2(query *q)
 		clearerr(str->fp_in);
 		return do_yield(q, 1);
 	}
+
+	CHECK_UTF8_INPUT(q, str, ch);
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -4100,7 +4128,7 @@ static bool bif_edin_redo_1(query *q)
 
 	for (;;) {
 		str->did_getc = true;
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
 		str->ungetch = 0;
 
 		if (errno == EINTR) {
@@ -4138,7 +4166,7 @@ static bool bif_edin_redo_2(query *q)
 
 	for (;;) {
 		str->did_getc = true;
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
 		str->ungetch = 0;
 
 		if (errno == EINTR) {
@@ -5841,7 +5869,7 @@ static bool bif_sys_get_chars_3(query *q)
 		unsigned len = 0;
 
 		for (;;) {
-			int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+			int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
 
 			if (errno == EINTR) {
 				clearerr(str->fp_in);
@@ -5899,7 +5927,7 @@ static bool bif_sys_get_chars_3(query *q)
 	char *dst = data;
 
 	while (len--) {
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
 		str->ungetch = 0;
 
 		if (errno == EINTR) {

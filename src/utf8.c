@@ -1,6 +1,8 @@
-// This code follows the "be liberal in what you accept, be strict
-// in what you emit" rule. It decodes deprecated  6-byte UTF-8
-// but will not encode them.
+// The in-memory decoders follow the "be liberal in what you accept, be
+// strict in what you emit" rule, and decode deprecated 6-byte UTF-8 but
+// will not encode them. Note xgetc_utf8() is deliberately *not* liberal:
+// it reads external data, where an ill-formed sequence must be rejected
+// rather than silently consumed (ISO 13211-1 8.12.1.3 i).
 
 #include <ctype.h>
 #include <wctype.h>
@@ -199,42 +201,68 @@ int get_char_utf8(const char **_src)
 int xgetc_utf8(void* p0, void *p1)
 {
 	int(*fn)(void*) = p0;
-	unsigned int n = 0;
-	int expect = 1, cnt = 0;
+	int _ch = fn(p1);
+
+	if (_ch == EOF)
+		return EOF;
+
+	unsigned char ch = (unsigned char)_ch;
+	unsigned int n;
+	int expect;
+
+	if (ch < 0x80)								// 0xxxxxxx
+		return ch;
+	else if ((ch & 0b11100000) == 0b11000000) {	// 110xxxxx
+		n = ch & 0b00011111;
+		expect = 1;
+	} else if ((ch & 0b11110000) == 0b11100000) {	// 1110xxxx
+		n = ch & 0b00001111;
+		expect = 2;
+	} else if ((ch & 0b11111000) == 0b11110000) {	// 11110xxx
+		n = ch & 0b00000111;
+		expect = 3;
+	} else {
+		// A continuation byte out of sequence, or 0xF8-0xFF which can
+		// never begin one. The deprecated 5 and 6 byte forms were
+		// removed by RFC 3629...
+
+		return UTF8_INVALID;
+	}
+
+	const int len = expect + 1;
 
 	while (expect--) {
-		if (cnt++ > MAX_BYTES_PER_CODEPOINT)
-			return EOF;
+		_ch = fn(p1);
 
-		int _ch = fn(p1);
+		if (_ch == EOF)							// truncated sequence
+			return UTF8_INVALID;
 
-		if (_ch == EOF)
-			return EOF;
+		ch = (unsigned char)_ch;
 
-		unsigned char ch = (unsigned char)_ch;
+		if ((ch & 0b11000000) != 0b10000000)	// bad continuation
+			return UTF8_INVALID;
 
-		if ((ch & 0b11111100) == 0b11111100) {
-			n = ch & 0b00000001;
-			expect = 5;
-		} else if ((ch & 0b11111000) == 0b11111000) {
-			n = ch & 0b00000011;
-			expect = 4;
-		} else if ((ch & 0b11110000) == 0b11110000) {
-			n = ch & 0b00000111;
-			expect = 3;
-		} else if ((ch & 0b11100000) == 0b11100000) {
-			n = ch & 0b00001111;
-			expect = 2;
-		} else if ((ch & 0b11000000) == 0b11000000) {
-			n = ch & 0b00011111;
-			expect = 1;
-		} else if ((ch & 0b10000000) == 0b10000000) {
-			n <<= 6;
-			n |= ch & 0b00111111;
-		} else {
-			n = ch;
-		}
+		n <<= 6;
+		n |= ch & 0b00111111;
 	}
+
+	// Reject overlong encodings, UTF-16 surrogates, and anything past
+	// the last codepoint...
+
+	if ((len == 2) && (n < 0x80))
+		return UTF8_INVALID;
+
+	if ((len == 3) && (n < 0x800))
+		return UTF8_INVALID;
+
+	if ((len == 4) && (n < 0x10000))
+		return UTF8_INVALID;
+
+	if ((n >= 0xD800) && (n <= 0xDFFF))
+		return UTF8_INVALID;
+
+	if (n > MAX_CODEPOINT)
+		return UTF8_INVALID;
 
 	return (int)n;
 }
