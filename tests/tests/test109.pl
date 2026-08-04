@@ -2,7 +2,7 @@
 
 % Clauses with a var in an indexed argument must still be found once a
 % predicate crosses the dynamic index threshold (500). idx1 is keyed on
-% the head and idx2 on Arg2, and index_cmpkey() calls a var equal to
+% Arg1 and idx2 on Arg2, and index_cmpkey() calls a var equal to
 % anything, so a var-headed argument breaks the skiplist's ordering and
 % the descent can walk straight past the clause.
 

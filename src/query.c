@@ -538,7 +538,8 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 
 		if (pr->idx1 && pr->cnt) {
 			cell *c = get_head(r->cl.cells);
-			sl_rem(pr->idx1, c, r);
+			cell *k1 = c->arity ? FIRST_ARG(c) : c;
+			sl_rem(pr->idx1, k1, r);
 
 			if (pr->idx2) {
 				cell *arg1 = FIRST_ARG(c);
@@ -1437,6 +1438,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 
 		key = arg2;
 		idx = pr->idx2;
+	} else if (arg1) {
+		// idx1 is keyed on Arg1 only (see assert_commit).
+		key = arg1;
 	}
 
 	q->st.dbe = NULL;

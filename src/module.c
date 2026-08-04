@@ -697,6 +697,7 @@ void index_remove_clause(predicate *pr, rule *r)
 		return;
 
 	cell *c = get_head(r->cl.cells);
+	cell *k1 = c->arity ? FIRST_ARG(c) : c;
 
 	if (pr->idx2 && c->arity > 1) {
 		cell *arg1 = FIRST_ARG(c);
@@ -704,7 +705,7 @@ void index_remove_clause(predicate *pr, rule *r)
 		sl_rem(pr->idx2, arg2, r);
 	}
 
-	sl_rem(pr->idx1, c, r);
+	sl_rem(pr->idx1, k1, r);
 }
 
 static void purge_properties(predicate *pr)
@@ -807,7 +808,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 			// The incremental path below CANNOT be enabled as it
 			// stands - tried, and it faults immediately. The index
 			// stores borrowed pointers into clause cells (see
-			// assert_commit: sl_app(pr->idx1, get_head(cl2->cl.cells),
+			// assert_commit: sl_app(pr->idx1, FIRST_ARG(head) or head,
 			// cl2)), and this loop frees clauses as it goes, so
 			// sl_rem()'s key comparisons walk into a clause freed on an
 			// earlier iteration.
@@ -2206,7 +2207,13 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			if (c->arity && is_var(FIRST_ARG(c)))
 				pr->is_var_in_first_arg = true;
 
-			sl_app(pr->idx1, c, cl2);
+			// idx1 is keyed on Arg1 only (or the atom head if arity 0),
+			// matching classic first-argument indexing. Full-head keys
+			// were redundant within a predicate (same functor/arity) and
+			// made partial probes like p(a,X) rely on var-equals-anything.
+
+			cell *k1 = c->arity ? FIRST_ARG(c) : c;
+			sl_app(pr->idx1, k1, cl2);
 
 			if (pr->idx2) {
 				cell *arg1 = FIRST_ARG(c);
@@ -2225,6 +2232,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	cell *c = get_head(r->cl.cells);
 	cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
 	cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
+	cell *k1 = arg1 ? arg1 : c;
 
 	if (arg1 && is_var(arg1))
 		pr->is_var_in_first_arg = true;
@@ -2233,12 +2241,12 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		pr->is_var_in_second_arg = true;
 
 	if (!append) {
-		sl_set(pr->idx1, c, r);
+		sl_set(pr->idx1, k1, r);
 
 		if (pr->idx2 && arg2)
 			sl_set(pr->idx2, arg2, r);
 	} else {
-		sl_app(pr->idx1, c, r);
+		sl_app(pr->idx1, k1, r);
 
 		if (pr->idx2 && arg2)
 			sl_app(pr->idx2, arg2, r);
