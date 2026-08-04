@@ -779,6 +779,22 @@ void push_property(module *m, const char *name, unsigned arity, const char *type
 	parser_destroy(p);
 }
 
+// One clause of '$predicate_property'/3 is about to be withdrawn if its
+// subject matches. Factored out because the removal now needs two passes
+// over the chain and the two must agree on what "matches" means.
+
+static bool property_matches(module *m, const rule *r, const char *name, unsigned arity)
+{
+	const cell *p0 = r->cl.cells;
+	const cell *p1 = p0 + 1;
+	const cell *p2 = p1 + p1->num_cells;
+
+	if (strcmp(C_STR(m, p2), name))
+		return false;
+
+	return p2->arity == arity;
+}
+
 void clear_property(module *m, const char *name, unsigned arity)
 {
 	cell tmp;
@@ -787,17 +803,37 @@ void clear_property(module *m, const char *name, unsigned arity)
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) return;
 
-	for (rule *r = pr->head; r;) {
-		cell *p0 = r->cl.cells;
-		cell *p1 = p0 + 1;
-		cell *p2 = p1 + p1->num_cells;
+	// Withdraw the doomed clauses' index entries FIRST, all of them,
+	// before any clause is freed. The index keys are borrowed pointers
+	// into clause cells, so a descent that runs once earlier clauses
+	// have been freed walks the comparator into released memory. That
+	// is what made the interleaved single-pass version fault, and why
+	// this used to destroy the whole index instead.
+	//
+	// The other half of that story no longer holds. Withdrawing first
+	// was previously no help either, because sl_rem() finished its
+	// descent by re-checking only the KEY and never q->val, so under
+	// duplicate keys - and first-argument indexing is nothing but
+	// duplicate keys - it unlinked a neighbour or nothing at all.
+	// sl_rem() now walks the equal-key run for the exact (key, value)
+	// pair; see the rem_pair / rem_kept_other cases in
+	// tests/misc/skiplist.c.
+	//
+	// Worth keeping incremental: re-importing a module that was already
+	// imported hit the destroy path 83 times in one load here, throwing
+	// away and rebuilding an index over ~700 clauses each time.
 
-		if (strcmp(C_STR(m, p2), name)) {
-			r = r->next;
-			continue;
+	if (pr->idx1 && !pr->refcnt) {
+		for (rule *r = pr->head; r; r = r->next) {
+			if (property_matches(m, r, name, arity))
+				index_remove_clause(pr, r);
 		}
+	}
 
-		if (p2->arity != arity) {
+	bool removed = false;
+
+	for (rule *r = pr->head; r;) {
+		if (!property_matches(m, r, name, arity)) {
 			r = r->next;
 			continue;
 		}
@@ -809,59 +845,19 @@ void clear_property(module *m, const char *name, unsigned arity)
 			retract_from_db(m, save);
 		else {
 			predicate_delink(pr, save);
-
-			// The incremental path below CANNOT be enabled as it
-			// stands - tried, and it faults immediately. The index
-			// stores borrowed pointers into clause cells (see
-			// assert_commit: sl_app(pr->idx1, FIRST_ARG(head) or head,
-			// cl2)), and this loop frees clauses as it goes, so
-			// sl_rem()'s key comparisons walk into a clause freed on an
-			// earlier iteration.
-			//
-			// Removing every entry first and freeing afterwards is not
-			// enough either: sl_rem() finishes its descent with
-			// q = p->forward[0] and then only re-checks the KEY, never
-			// q->val == val, so with duplicate keys it removes the
-			// wrong node or none at all. index_cmpkey_() calls any pair
-			// involving a var - or anything that is not a small int -
-			// equal, so '$predicate_property'/3 keys collide wholesale.
-			// The entries then outlive their clauses and the next
-			// assert's sl_app() reads freed memory.
-			//
-			// Enabling this needs either an index that owns copies of
-			// its keys, or an sl_rem() that removes an exact
-			// (key, value) pair under duplicates. Until then dropping
-			// the whole index is the only safe move: sl_destroy() never
-			// compares keys, it just walks nodes and frees them.
-
-#if 0
-			cell *c = get_head(save->cl.cells);
-			cell *k1 = c->arity ? FIRST_ARG(c) : c;
-
-			if (pr->key.arity > 1) {
-				cell *arg1 = FIRST_ARG(c);
-				cell *arg2 = NEXT_ARG(arg1);
-				sl_rem(pr->idx2, arg2, save);
-			}
-
-			sl_rem(pr->idx1, k1, save);
-#else
-			// Dropping the index so it gets rebuilt, but the old one
-			// has to be handed back first: nulling the pointers alone
-			// abandoned both skiplists and every node in them, and
-			// assert_commit() then built a fresh pair over the top.
-
-			sl_destroy(pr->idx2);
-			sl_destroy(pr->idx1);
-			pr->idx1 = pr->idx2 = NULL;
-			pr->is_var_in_first_arg = false;
-			pr->is_var_in_second_arg = false;
-#endif
-
 			clear_clause(&save->cl);
 			TPL_free(save);
+			removed = true;
 		}
 	}
+
+	// The var-in-indexed-arg flags are set-only, so clauses leaving the
+	// chain can stale them true. Stale-true only costs a fallback to the
+	// linear walk, but the destroy path used to clear them and this one
+	// should not silently be worse.
+
+	if (removed && (pr->is_var_in_first_arg || pr->is_var_in_second_arg))
+		recheck_var_in_indexed_args(pr);
 }
 
 void push_template(module *m, const char *name, unsigned arity, const builtins *ptr)
