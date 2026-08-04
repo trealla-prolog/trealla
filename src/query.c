@@ -846,7 +846,20 @@ static bool is_last_call(const query *q)
 	return barrier || !c->ret_instr;
 }
 
-static void commit_frame(query *q)
+// head_has_vars is q->has_vars as left by the head unification THIS call
+// is committing to, and is passed rather than read here.
+//
+// q->has_vars is scratch owned by unify(): it is cleared on entry and
+// set only for a goal-side variable at depth > 1, so it describes the
+// most recent unification - not the goal, and not necessarily this one.
+// Reading it inside commit_frame() was correct only because the single
+// call site happens to sit immediately after the unify(). Anything
+// unifying in between - another clause attempt, a clone - would silently
+// change the answer, and a wrong answer here is not a lost
+// optimisation: is_det makes commit_frame() drop the goal's
+// alternatives choicepoint.
+
+static void commit_frame(query *q, bool head_has_vars)
 {
 	q->st.dbe->matched++;
 	q->total_matched++;
@@ -864,7 +877,7 @@ static void commit_frame(query *q)
 	// and claiming determinism there dropped the alternatives
 	// choicepoint before the walk could reach the matching fact.
 
-	bool is_det = !q->has_vars && cl->is_unique
+	bool is_det = !head_has_vars && cl->is_unique
 		&& !q->st.pr->is_var_in_first_arg && !q->st.pr->is_var_in_second_arg;
 	bool last_match = is_det || cl->is_first_cut || !has_next_key(q)
 		|| (is_next_cut(q->st.instr) && cl->is_fact);
@@ -2023,10 +2036,13 @@ bool match_head(query *q)
 		q->st.dbe->attempted++;
 
 		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.fp)) {
+			// Take it now, while it still belongs to the unify above.
+			const bool head_has_vars = q->has_vars;
+
 			if (q->error)
 				break;
 
-			commit_frame(q);
+			commit_frame(q, head_has_vars);
 			return true;
 		}
 
