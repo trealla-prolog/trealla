@@ -531,18 +531,27 @@ static inline void iter_set_sl(query *q, sliter *it)
 {
 	q->st.iter = it;
 	q->st.ci_kind = CI_SL;
+
+	// The goal's own alternatives choicepoint has not been raised yet -
+	// find_key() runs first - so it will land on the slot q->st.cp is
+	// pointing at now. That choice owns the prefetch; drop_choice()
+	// frees it when that slot goes.
+
+	q->st.iter_owner = q->st.cp;
 }
 
-// Released ONLY on exhaustion. A cut must not free it: run_state, and so
-// this iterator, has already been copied into any choicepoint taken
-// since it was created, and those copies would be left dangling. That
-// was the initialization_1 crash.
+// Neither of the two below frees any more - drop_choice() is the single
+// owner now, keyed on iter_owner. Freeing here as well was safe only
+// while every path that abandoned a prefetch happened to be one of these
+// two, and it was not: a cut drops the owning choicepoint without going
+// through either, which leaked 8.9MB over 8000 lookups.
+//
+// They still reset the handle, because the CURRENT goal is done reading
+// it. The memory outlives that by a moment, until the owning choice
+// goes.
 
 static inline void iter_exhausted(query *q)
 {
-	if (q->st.ci_kind == CI_SL)
-		sl_done(q->st.iter);
-
 	q->st.dbe = NULL;
 	iter_reset(q);
 }
@@ -563,9 +572,6 @@ static inline void iter_exhausted(query *q)
 
 static inline void iter_release(query *q)
 {
-	if (q->st.ci_kind == CI_SL)
-		sl_done(q->st.iter);
-
 	iter_reset(q);
 }
 
@@ -1075,6 +1081,28 @@ void drop_choice(query *q)
 		return;
 
 	choice *ch = GET_CURR_CHOICE();
+
+	// The one place a prefetch is freed. Every choice raised after
+	// find_key() carries a copy of the handle; only the choice it was
+	// built for may release it, which is what iter_owner names. Frees
+	// here rather than on exhaustion so that the cut and cut-like paths,
+	// which drop this choice without either goal iterator ever being
+	// exhausted, are covered by construction.
+
+	if ((ch->st.ci_kind == CI_SL) && ch->st.iter
+		&& (ch->st.iter_owner == q->st.cp - 1)) {
+		// q->st may still alias it - defuse before the free.
+
+		if (q->st.iter == ch->st.iter) {
+			q->st.iter = NULL;
+			q->st.ci_kind = CI_CHAIN;
+		}
+
+		sl_done(ch->st.iter);
+		ch->st.iter = NULL;
+		ch->st.ci_kind = CI_CHAIN;
+	}
+
 	list *undo;
 
 	if (q->st.cp > 1) {

@@ -553,6 +553,13 @@ struct run_state_ {
 	cell *instr;
 	rule *dbe;
 	sliter *iter, *tmp_iter;
+
+	// Which choicepoint owns *iter, when ci_kind is CI_SL. run_state is
+	// copied wholesale into every choice raised after the prefetch was
+	// built, so the handle is aliased by all of them and none of those
+	// copies can be allowed to free it. This names the one that may.
+
+	pl_idx iter_owner;
 	module *m;
 
 	union {
