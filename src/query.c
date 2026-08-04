@@ -1446,6 +1446,137 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	return true;
 }
 
+// --index-check: verify an indexed lookup against the walk it replaced.
+//
+// The index is allowed to be WIDER than the linear scan - an
+// approximation must widen, never narrow - so this asserts the candidate
+// set is a SUPERSET of the clauses the linear walk would have offered,
+// and says nothing about extras. A narrowing is a wrong-answer bug; a
+// widening is only wasted unification.
+
+int g_index_check = 0;
+unsigned long g_index_check_lookups = 0, g_index_check_bad = 0;
+
+// The candidate set is snapshotted during the index walk rather than
+// read back off the prefetch skiplist. Reading it back is not possible:
+// the prefetch is an is_tmp_list, and sl_done() DESTROYS one of those
+// rather than recycling the iterator - so merely iterating it to count
+// entries freed the list the live query was about to use. The first
+// version of this check did exactly that and reported all 1639 entries
+// of a 1639-entry set as missing, which is how it was caught.
+
+static bool in_candidates(const rule **got, unsigned num_got, const rule *c)
+{
+	for (unsigned i = 0; i < num_got; i++) {
+		if (got[i] == c)
+			return true;
+	}
+
+	return false;
+}
+
+static void index_check(query *q, predicate *pr, cell *goal, cell *key,
+	const rule **got, unsigned num_got, int which)
+{
+	// The goal's own generation, NOT GET_CURR_FRAME()->dbgen. find_key()
+	// runs before check_frame(), so the current frame is still the
+	// CALLER'S and its dbgen predates every clause asserted since the
+	// caller was entered. enter_predicate() stamps q->pl->dbgen onto the
+	// frame immediately after this, and that is the view the matching
+	// loop will use. Getting this wrong is silent: can_view() rejects
+	// every clause, the walk finds no candidates to compare against and
+	// the check passes everything. It did, until a deliberately
+	// mis-filed clause failed to raise it.
+
+	const uint64_t dbgen = q->pl->dbgen;
+	unsigned missing = 0;
+
+	g_index_check_lookups++;
+
+	for (const rule *c = pr->head; c; c = c->next) {
+		// Same visibility test the matching loop uses, or this reports
+		// clauses the goal was never entitled to see.
+
+		if (!can_view(q, dbgen, c))
+			continue;
+
+		cell *ch = get_head(((rule*)c)->cl.cells);
+		cell *ck = ch;
+
+		// idx1 is keyed on Arg1, idx2 on Arg2, so each has to be
+		// checked against the key it was actually built on. The clause
+		// HEAD is still what gets printed - an arg on its own says
+		// little about which clause went missing.
+
+		if (which == 2) {
+			if (ch->arity < 2)
+				continue;
+
+			ck = NEXT_ARG(FIRST_ARG(ch));
+		} else if (ch->arity)
+			ck = FIRST_ARG(ch);
+
+		if (index_cmpkey(ck, key, q->st.m, NULL) != 0)
+			continue;
+
+		if (in_candidates(got, num_got, c))
+			continue;
+
+		if (!missing) {
+			fprintf(stderr, "\n*** index-check FAILED for %s/%u (idx%d)\n",
+				C_STR(q, &pr->key), pr->key.arity, which);
+			fprintf(stderr, "***   goal   ");
+			DUMP_TERM("", goal, q->st.cur_ctx, 1);
+		}
+
+		fprintf(stderr, "***   MISSING db_id=%llu  ",
+			(unsigned long long)c->db_id);
+		DUMP_TERM("", ch, q->st.cur_ctx, 1);
+
+		// Is the clause reachable by its OWN key? That separates a
+		// descent fault from an insertion fault: if the index cannot
+		// find it when handed that clause's exact key, the entry is not
+		// where the comparator would put it - mis-filed on insert, or
+		// lost on a removal. If it IS reachable, the ordering is fine
+		// and the query descent went astray.
+
+		sliter *probe = sl_find_key(which == 2 ? pr->idx2 : pr->idx1, ck);
+		const rule *probe_r;
+		bool self = false;
+
+		while (probe && sl_next_key(probe, (void*)&probe_r)) {
+			if (probe_r == c) {
+				self = true;
+				break;
+			}
+		}
+
+		if (probe)
+			sl_done(probe);
+
+		fprintf(stderr, "***     reachable by its own key: %s\n",
+			self ? "YES (ordering ok, query descent went astray)"
+			     : "NO (mis-filed on insert, or lost on removal)");
+		fprintf(stderr, "***     cmp(clause,goal)=%d\n",
+			index_cmpkey(ck, key, q->st.m, NULL));
+		missing++;
+	}
+
+	if (missing) {
+		fprintf(stderr, "***   indexed set had %u entr%s, %u missing\n",
+			num_got, num_got == 1 ? "y" : "ies", missing);
+		fprintf(stderr, "***   predicate has %u clauses, idx1=%s idx2=%s\n",
+			(unsigned)pr->cnt, pr->idx1 ? "yes" : "no", pr->idx2 ? "yes" : "no");
+
+		// Carry on rather than abort: one run should surface every
+		// mismatch in a suite, not just the first. The count at exit is
+		// what makes a clean sweep meaningful - zero mismatches over
+		// zero verified lookups says nothing at all.
+
+		g_index_check_bad++;
+	}
+}
+
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
 	q->st.iter = NULL;
@@ -1484,6 +1615,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 
 	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
 	skiplist *idx = pr->idx1;
+	cell *goal = key;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
 		// is_var_in_second_arg: idx2 is keyed on Arg2 and index_cmpkey
@@ -1513,8 +1645,12 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	q->st.dbe = NULL;
 	sliter *iter;
 
-	if (!(iter = sl_find_key(idx, key)))
+	if (!(iter = sl_find_key(idx, key))) {
+		if (g_index_check)
+			index_check(q, pr, goal, key, NULL, 0, idx == pr->idx2 ? 2 : 1);
+
 		return false;
+	}
 
 	// If the index search has found just one (definite) solution
 	// then we can use it with no problems. If more than one then
@@ -1532,8 +1668,19 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	skiplist *tmp_idx = NULL;
 	const rule *first = NULL;
 	const rule *r;
+	const rule **got = NULL;
+	unsigned num_got = 0, max_got = 0;
 
 	while (sl_next_key(iter, (void*)&r)) {
+		if (g_index_check) {
+			if (num_got == max_got) {
+				max_got = max_got ? max_got * 2 : 32;
+				got = TPL_realloc(got, max_got * sizeof(*got));
+			}
+
+			got[num_got++] = r;
+		}
+
 		if (!first) {
 			first = r;
 			continue;
@@ -1549,6 +1696,11 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	}
 
 	sl_done(iter);
+
+	if (g_index_check) {
+		index_check(q, pr, goal, key, got, num_got, idx == pr->idx2 ? 2 : 1);
+		TPL_free(got);
+	}
 
 	if (!first)
 		return false;
