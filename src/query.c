@@ -1907,7 +1907,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// results must be returned in database order, so prefetch all
 	// the results and return them sorted as an iterator...
 
-	return collect_hits(q, pr, key, iter, (idx == pr->idx1) ? 1 : 0);
+	return collect_hits(q, pr, key, iter, (idx == pr->idx1) ? 1 : 2);
 }
 
 // Match HEAD :- BODY.

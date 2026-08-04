@@ -373,6 +373,9 @@ static void abolish_predicate(predicate *pr)
 	sl_destroy(pr->idx1a);
 	sl_destroy(pr->idx1);
 	pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
+	pr->is_var_in_first_arg = false;
+	pr->is_var_in_second_arg = false;
+	pr->is_key_var = pr->is_key_var1 = pr->is_key_var2 = false;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -914,6 +917,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 			pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
 			pr->is_var_in_first_arg = false;
 			pr->is_var_in_second_arg = false;
+			pr->is_key_var = pr->is_key_var1 = pr->is_key_var2 = false;
 #endif
 
 			clear_clause(&save->cl);
@@ -1748,7 +1752,10 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1a);
 			sl_destroy(pr->idx1);
-			pr->idx2 = pr->idx1 = NULL;
+			pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
+			pr->is_var_in_first_arg = false;
+			pr->is_var_in_second_arg = false;
+			pr->is_key_var = pr->is_key_var1 = pr->is_key_var2 = false;
 			TPL_free(r);
 			return false;
 		}
