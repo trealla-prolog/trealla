@@ -1,0 +1,4 @@
+error(representation_error(character),get_char/2)
+error(representation_error(character),get_code/2)
+error(representation_error(character),peek_char/2)
+error(representation_error(character),peek_code/2)
