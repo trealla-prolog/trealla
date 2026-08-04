@@ -625,10 +625,11 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 		// overwritten by the next build and lost.
 
 		sl_destroy(pr->wild2);
+		sl_destroy(pr->wild1a);
 		sl_destroy(pr->idx2);
 		sl_destroy(pr->idx1a);
 		sl_destroy(pr->idx1);
-		pr->idx1 = pr->idx1a = pr->idx2 = pr->wild2 = NULL;
+		pr->idx1 = pr->idx1a = pr->idx2 = pr->wild1a = pr->wild2 = NULL;
 		pr->is_var_in_first_arg = false;
 		pr->is_var_in_second_arg = false;
 		pr->is_key_var = pr->is_key_var1 = pr->is_key_var2 = false;
@@ -1541,21 +1542,28 @@ static void index_check(query *q, predicate *pr, cell *key,
 			if (probe)
 				sl_done(probe);
 
-			// A clause held in the arg2 side list is deliberately not
-			// in idx2, so "not reachable" is expected for those - what
-			// matters there is whether the merge dropped it.
+			// A clause held in a side list is deliberately not in the
+			// index it belongs to, so "not reachable" is expected for
+			// those - what matters there is whether the merge dropped
+			// it. Check the side list that goes with the index being
+			// verified, not just wild2: a var-arg1 clause is missing
+			// from idx1a by design too.
 
-			bool in_wild2 = false;
+			skiplist *side = (which == 3) ? pr->wild1a
+				: (which == 2) ? pr->wild2 : NULL;
+			bool in_side = false;
 
-			if (pr->wild2) {
+			if (side) {
 				const void *v;
 
-				if (sl_get(pr->wild2, (void*)(size_t)c->db_id, &v))
-					in_wild2 = (v == c);
+				if (sl_get(side, (void*)(size_t)c->db_id, &v))
+					in_side = (v == c);
 			}
 
 			fprintf(stderr, "***     reachable by its own key: %s\n",
-				in_wild2 ? "n/a - held in the arg2 side list, so the MERGE dropped it"
+				in_side ? (which == 3
+					? "n/a - held in the arg1 side list, so the MERGE dropped it"
+					: "n/a - held in the arg2 side list, so the MERGE dropped it")
 				: self ? "YES (ordering ok, query descent went astray)"
 				     : "NO (mis-filed on insert, or lost on removal)");
 			fprintf(stderr, "***     cmp(clause,goal)=%d\n",
@@ -1641,15 +1649,19 @@ static bool key_has_var(const cell *c)
 // about two distinct values, measured 2.61s against 0.68s for the plain
 // chain walk it replaced.
 
-static int collect_hits_cap(query *q, predicate *pr, cell *key, sliter *iter, int checked, unsigned cap)
+static int collect_hits_cap(query *q, predicate *pr, cell *key, sliter *iter,
+	skiplist *side, int checked, unsigned cap)
 {
-	// merge_wild2 is set by the idx2 path: the clauses held out of idx2
-	// because their arg2 carries a var match any arg2 key, so they join
-	// every idx2 result set. Keyed on db_id like the rest, so the merge
-	// comes back in database order.
-
-	bool merge_wild2 = q->st.merge_wild2;
-	q->st.merge_wild2 = false;
+	// The side list, if there is one: the clauses held out of the index
+	// because their key carries a var. A var key unifies with anything,
+	// so they match whatever the goal asked for and join every result
+	// set from that index - wild1a for idx1a, wild2 for idx2. Keyed on
+	// db_id like the prefetch itself, so the union comes back in
+	// database order regardless of which list a clause came from.
+	//
+	// Passed in rather than flagged on run_state: run_state is
+	// snapshotted into every choicepoint, and a merge flag living there
+	// only has to survive one call.
 
 	skiplist *tmp_idx = NULL;
 	const rule *first = NULL;
@@ -1697,8 +1709,8 @@ static int collect_hits_cap(query *q, predicate *pr, cell *key, sliter *iter, in
 	if (iter)
 		sl_done(iter);
 
-	if (merge_wild2 && pr->wild2 && sl_count(pr->wild2)) {
-		sliter *w = sl_first(pr->wild2);
+	if (side && sl_count(side)) {
+		sliter *w = sl_first(side);
 
 		while (w && sl_next(w, (void*)&r)) {
 			if (g_index_check && checked) {
@@ -1756,9 +1768,10 @@ static int collect_hits_cap(query *q, predicate *pr, cell *key, sliter *iter, in
 	return true;
 }
 
-static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter, int checked)
+static bool collect_hits(query *q, predicate *pr, cell *key, sliter *iter,
+	skiplist *side, int checked)
 {
-	return collect_hits_cap(q, pr, key, iter, checked, 0) > 0;
+	return collect_hits_cap(q, pr, key, iter, side, checked, 0) > 0;
 }
 
 static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
@@ -1827,13 +1840,20 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		cell *a2 = (a1 && key->arity > 1) ? NEXT_ARG(a1) : NULL;
 
 		// A tenth is where merging stops paying against a chain walk,
-		// measured. Under that, the side list rides along with idx2.
+		// measured. Under that, the side list rides along with its
+		// index; over it, there are so many var keys that the index is
+		// not discriminating enough to be worth the merge.
 
-		// arg1 first when it is ground across the predicate. Capped at
-		// a tenth: selective enough to be worth materialising, or not
-		// worth having.
+		size_t nwild1a = pr->wild1a ? sl_count(pr->wild1a) : 0;
 
-		if (pr->idx1a && !pr->is_key_var1 && a1 && !is_var(a1)) {
+		// arg1 first. Only a BARE var in the goal bars this: it
+		// discriminates nothing, so the chain is cheaper anyway. Vars
+		// nested inside arg1 are fine - every clause left in idx1a is
+		// ground there, so the run matching the goal's ground prefix is
+		// contiguous and the descent holds.
+
+		if (pr->idx1a && a1 && !is_var(a1)
+			&& (nwild1a * 10 <= (size_t)pr->cnt)) {
 			q->st.dbe = NULL;
 			sliter *it1 = sl_find_key(pr->idx1a, a1);
 			// Bail early and cheaply. A tenth of a big predicate is
@@ -1842,7 +1862,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 			// in the first few. cnt/64 keeps a little headroom for large
 			// predicates where even 100 candidates beats a linear walk.
 
-			int rc = collect_hits_cap(q, pr, a1, it1, 3, (unsigned)(pr->cnt / 64) + 16);
+			int rc = collect_hits_cap(q, pr, a1, it1, pr->wild1a, 3,
+				(unsigned)(pr->cnt / 64) + 16);
 
 			if (rc > 0)
 				return true;
@@ -1861,9 +1882,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		if (pr->idx2 && a2 && !is_var(a2)
 			&& (nwild * 10 <= (size_t)pr->cnt)) {
 			q->st.dbe = NULL;
-			q->st.merge_wild2 = true;
 			sliter *it2 = sl_find_key(pr->idx2, a2);
-			return collect_hits(q, pr, a2, it2, 2);
+			return collect_hits(q, pr, a2, it2, pr->wild2, 2);
 		}
 
 		pr->num_linear++;
@@ -1907,7 +1927,11 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// results must be returned in database order, so prefetch all
 	// the results and return them sorted as an iterator...
 
-	return collect_hits(q, pr, key, iter, (idx == pr->idx1) ? 1 : 2);
+	// No side list on this path. is_key_var is false here, so no clause
+	// head holds a var anywhere, so neither wild1a nor wild2 can have
+	// anything in it - idx1 and idx2 are both complete on their own.
+
+	return collect_hits(q, pr, key, iter, NULL, (idx == pr->idx1) ? 1 : 2);
 }
 
 // Match HEAD :- BODY.
