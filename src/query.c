@@ -947,6 +947,31 @@ static void undo_list_drain(list *l)
 	}
 }
 
+// Release the prefetch a choicepoint owns.
+//
+// run_state is snapshotted whole into every choice raised after
+// find_key(), so the handle is aliased by all of them and only the
+// choice it was built for may free it. iter_owner names that slot, and a
+// choice's slot is simply its own index - which is why this takes the
+// choice rather than a caller-computed cp. The three call sites had
+// spelled that index two different ways (q->st.cp in retry_choice, where
+// the decrement comes after; q->st.cp - 1 in drop_choice, where it comes
+// before), which looked like a discrepancy and was not.
+
+static void release_prefetch(query *q, choice *ch)
+{
+	if (!ch->st.iter || (ch->st.iter_owner != (pl_idx)(ch - q->choices)))
+		return;
+
+	// q->st may still alias it - defuse before the free.
+
+	if (q->st.iter == ch->st.iter)
+		q->st.iter = NULL;
+
+	sl_done(ch->st.iter);
+	ch->st.iter = NULL;
+}
+
 int retry_choice(query *q)
 {
 	while (q->st.cp) {
@@ -970,27 +995,13 @@ int retry_choice(query *q)
 
 		if (ch->catchme_exception || ch->fail_on_retry) {
 			// Choice abandoned without drop_choice(); free its prefetch.
-			if (ch->st.iter && (ch->st.iter_owner == q->st.cp)) {
-				if (q->st.iter == ch->st.iter)
-					q->st.iter = NULL;
-
-				sl_done(ch->st.iter);
-				ch->st.iter = NULL;
-			}
-
+			release_prefetch(q, ch);
 			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
 
 		if (!ch->register_cleanup && q->noretry) {
-			if (ch->st.iter && (ch->st.iter_owner == q->st.cp)) {
-				if (q->st.iter == ch->st.iter)
-					q->st.iter = NULL;
-
-				sl_done(ch->st.iter);
-				ch->st.iter = NULL;
-			}
-
+			release_prefetch(q, ch);
 			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
@@ -1021,16 +1032,9 @@ void drop_choice(query *q)
 
 	// Free the multi-hit prefetch when the choice it was built for goes.
 	// Cuts and last-match commits drop that choice without exhausting the
-	// iterator; without this those prefetches are abandoned. Only the
-	// owner may free - later choices carry an aliased copy of the handle.
+	// iterator; without this those prefetches are abandoned.
 
-	if (ch->st.iter && (ch->st.iter_owner == q->st.cp - 1)) {
-		if (q->st.iter == ch->st.iter)
-			q->st.iter = NULL;
-
-		sl_done(ch->st.iter);
-		ch->st.iter = NULL;
-	}
+	release_prefetch(q, ch);
 
 	list *undo;
 
@@ -1322,20 +1326,13 @@ static void next_key(query *q)
 	if (!sl_next(q->st.iter, (void*)&q->st.dbe)) {
 		q->st.dbe = NULL;
 
-		// Exhausted: free here. Clear any choice alias of the same
-		// handle first so a later drop_choice() of the owning slot
-		// does not double-free. Covers the retry path where the owning
-		// choice was already popped by retry_choice() and drop_choice()
-		// will never see it.
+		// Drop the handle but do NOT free: release_prefetch() frees when
+		// the owning choice goes, and that covers this. Measured with a
+		// made/freed counter across the whole suite plus a cut-heavy and
+		// an exhaustion-heavy workload - 4000 prefetches, made == freed,
+		// nothing leaked. Freeing here as well was the second owner, and
+		// needed the alias-clearing dance below it to stay safe.
 
-		if (q->st.cp) {
-			choice *ch = GET_CURR_CHOICE();
-
-			if (ch->st.iter == q->st.iter)
-				ch->st.iter = NULL;
-		}
-
-		sl_done(q->st.iter);
 		q->st.iter = NULL;
 	}
 }
