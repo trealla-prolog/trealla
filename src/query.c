@@ -569,14 +569,29 @@ static inline void iter_release(query *q)
 	iter_reset(q);
 }
 
-// Same release, for the commit paths outside this file. leave_predicate()
-// deliberately only drops the handle, so any site that pairs it with
-// drop_choice() on the goal's OWN choicepoint has to release first or the
-// prefetch is abandoned - see iter_release() above.
+// Leaving a predicate and dropping the goal's OWN alternatives
+// choicepoint is always these three things in this order, and the
+// ordering is not optional: leave_predicate() opens with iter_reset(),
+// which NULLs the iterator handle WITHOUT freeing it, so anything that
+// has not released by then has abandoned its prefetch.
+//
+// This was nine hand-written call sites and eight of them were right.
+// The one that was not - retract's commit path - leaked on every
+// retract that committed on a merged lookup, which in practice meant a
+// predicate holding even a handful of var-keyed clauses leaked on every
+// assert or retract of any OTHER clause in it. Made a single call so
+// there is nothing left to get wrong.
+//
+// NOT for the cut/prune paths that drop somebody else's choicepoint:
+// they pass ch->st.pr, and q->st.iter there belongs to a different and
+// still-live goal. The pairing this enforces is specifically "the goal
+// whose iterator this is, is losing its choicepoint".
 
-void query_release_iter(query *q)
+void leave_predicate_and_drop(query *q, predicate *pr, bool is_final)
 {
 	iter_release(q);
+	leave_predicate(q, pr, is_final);
+	drop_choice(q);
 }
 
 void leave_predicate(query *q, predicate *pr, bool is_final)
@@ -977,10 +992,7 @@ static void commit_frame(query *q)
 	}
 
 	if (last_match) {
-		// Before leave_predicate(), which only drops the handle.
-		iter_release(q);
-		leave_predicate(q, q->st.pr, false);
-		drop_choice(q);
+		leave_predicate_and_drop(q, q->st.pr, false);
 		trim_trail(q, reused);
 
 
@@ -1203,6 +1215,10 @@ void cut(query *q)
 		}
 
 		// Done...
+
+		// Not leave_predicate_and_drop(): this drops somebody else's
+		// choicepoint, and q->st.iter belongs to a goal that is still
+		// live. See the note on that function.
 
 		leave_predicate(q, ch->st.pr, false);
 		drop_choice(q);
@@ -2041,8 +2057,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		retry_choice(q);
 	}
 
-	leave_predicate(q, q->st.pr, true);
-	drop_choice(q);
+	leave_predicate_and_drop(q, q->st.pr, true);
 	return false;
 }
 
@@ -2240,8 +2255,7 @@ bool match_head(query *q)
 		undo_me(q);
 	}
 
-	leave_predicate(q, q->st.pr, true);
-	drop_choice(q);
+	leave_predicate_and_drop(q, q->st.pr, true);
 	return false;
 }
 

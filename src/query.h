@@ -100,7 +100,7 @@ bool stream_close(query *q, int n);
 void unwind_stream(query *q, int n);
 bool throw_stream_gone(query *q, stream *str);
 void leave_predicate(query *q, predicate *pr, bool is_final);
-void query_release_iter(query *q);
+void leave_predicate_and_drop(query *q, predicate *pr, bool is_final);
 void drop_choice(query *q);
 
 #if USE_THREADS
