@@ -759,6 +759,26 @@ static void idx1a_add(predicate *pr, rule *r, cell *arg1, bool append)
 		sl_set(pr->idx1a, arg1, r);
 }
 
+// Build idx1a over the whole live chain. Called the moment is_key_var
+// first goes true, which is the only point at which find_key() can start
+// consulting it.
+
+static void idx1a_build(predicate *pr)
+{
+	pr->idx1a = sl_create(index_cmpkey, NULL, pr->m);
+	ENSURE(pr->idx1a);
+
+	for (rule *cl = pr->head; cl; cl = cl->next) {
+		if (cl->dbgen_retracted || cl->cl.is_deleted)
+			continue;
+
+		cell *ch = get_head(cl->cl.cells);
+
+		if (ch->arity)
+			idx1a_add(pr, cl, FIRST_ARG(ch), true);
+	}
+}
+
 static void idx2_add(predicate *pr, rule *r, cell *arg2, bool append)
 {
 	bool has_var = false;
@@ -2389,6 +2409,21 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			}
 		}
 
+		// idx1a is only ever READ inside find_key()'s is_key_var branch:
+		// when every head is ground, idx1 is available and strictly more
+		// selective, so idx1a is built, inserted into on every assert,
+		// removed from on every retract, and never once consulted. Dropped
+		// here rather than skipped above because is_key_var is not known
+		// until the sweep finishes. Rebuilt by idx1a_build() if a later
+		// assert brings a var into a head.
+		//
+		// Worth 26MB and 18% of the assert loop over 500k ground clauses.
+
+		if (!pr->is_key_var) {
+			sl_destroy(pr->idx1a);
+			pr->idx1a = NULL;
+		}
+
 		// How much of the predicate is holding the ordered index back?
 		// is_key_var disqualifies the whole predicate, which is sound
 		// but costs a linear walk per call. If the count is a small
@@ -2409,6 +2444,8 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
 	cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
 
+	const bool was_key_var = pr->is_key_var;
+
 	for (unsigned i = 0; i < c->num_cells; i++) {
 		if (is_var(c + i)) { pr->is_key_var = true; break; }
 	}
@@ -2425,19 +2462,34 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	if (arg2 && is_var(arg2))
 		pr->is_var_in_second_arg = true;
 
+	// This clause is the first to bring a var into a head, so idx1a goes
+	// from never-consulted to needed. r is already linked into the chain
+	// by now, so the rebuild picks it up and the per-clause add below has
+	// to stand aside or it would be indexed twice.
+
+	const bool rebuild_idx1a = !pr->idx1a && pr->key.arity
+		&& pr->is_key_var && !was_key_var;
+
 	if (!append) {
 		sl_set(pr->idx1, c, r);
-		idx1a_add(pr, r, arg1, false);
+
+		if (!rebuild_idx1a)
+			idx1a_add(pr, r, arg1, false);
 
 		if (pr->idx2 && arg2)
 			idx2_add(pr, r, arg2, false);
 	} else {
 		sl_app(pr->idx1, c, r);
-		idx1a_add(pr, r, arg1, true);
+
+		if (!rebuild_idx1a)
+			idx1a_add(pr, r, arg1, true);
 
 		if (pr->idx2 && arg2)
 			idx2_add(pr, r, arg2, true);
 	}
+
+	if (rebuild_idx1a)
+		idx1a_build(pr);
 }
 
 rule *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
