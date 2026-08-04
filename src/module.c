@@ -371,6 +371,8 @@ static void abolish_predicate(predicate *pr)
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx1);
 	pr->idx1 = pr->idx2 = NULL;
+	pr->is_var_in_first_arg = false;
+	pr->is_var_in_second_arg = false;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -393,6 +395,9 @@ static void destroy_predicate(module *m, predicate *pr)
 	pr->head = pr->tail = NULL;
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx1);
+	pr->idx1 = pr->idx2 = NULL;
+	pr->is_var_in_first_arg = false;
+	pr->is_var_in_second_arg = false;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -831,6 +836,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 
 #if 0
 			cell *c = get_head(save->cl.cells);
+			cell *k1 = c->arity ? FIRST_ARG(c) : c;
 
 			if (pr->key.arity > 1) {
 				cell *arg1 = FIRST_ARG(c);
@@ -838,7 +844,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 				sl_rem(pr->idx2, arg2, save);
 			}
 
-			sl_rem(pr->idx1, c, save);
+			sl_rem(pr->idx1, k1, save);
 #else
 			// Dropping the index so it gets rebuilt, but the old one
 			// has to be handed back first: nulling the pointers alone
@@ -1683,6 +1689,8 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1);
 			pr->idx2 = pr->idx1 = NULL;
+			pr->is_var_in_first_arg = false;
+			pr->is_var_in_second_arg = false;
 			TPL_free(r);
 			return false;
 		}
