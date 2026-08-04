@@ -2294,11 +2294,6 @@ void query_destroy(query *q)
 		unshare_cell(c);
 	}
 
-	for (pl_idx i = q->st.sp; i < q->slots_size; i++) {
-		cell *c = &q->slots[i].c;
-		unshare_cell(c);
-	}
-
 	for (int i = 0; i < MAX_QUEUES; i++) {
 		cell *c = q->queue[i];
 		for (pl_idx j = 0; j < q->qp[i]; j++, c++)
