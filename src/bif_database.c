@@ -96,8 +96,7 @@ static bool bif_clause_3(query *q)
 			}
 
 			if (last_match) {
-				leave_predicate(q, q->st.pr, true);
-				drop_choice(q);
+				leave_predicate_and_drop(q, q->st.pr, true);
 			}
 
 			return true;
@@ -173,8 +172,7 @@ static bool bif_iso_clause_2(query *q)
 			bool last_match = !has_next_key(q);
 
 			if (last_match) {
-				leave_predicate(q, q->st.pr, true);
-				drop_choice(q);
+				leave_predicate_and_drop(q, q->st.pr, true);
 			}
 
 			return true;
@@ -240,9 +238,8 @@ bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 
 	if (last_match) {
 		q->in_retract = true;
-		leave_predicate(q, q->st.pr, true);
+		leave_predicate_and_drop(q, q->st.pr, true);
 		q->in_retract = false;
-		drop_choice(q);
 	}
 
 	return true;

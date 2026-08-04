@@ -502,6 +502,21 @@ static void enter_predicate(query *q, predicate *pr)
 		pr->refcnt++;
 }
 
+// Leaving a predicate and dropping the goal's OWN alternatives
+// choicepoint is always these two, in this order. It was six
+// hand-written call sites; made one call so there is nothing left to
+// get wrong when the ordering constraint changes.
+//
+// NOT for the cut/prune paths that drop somebody ELSE'S choicepoint:
+// they pass ch->st.pr, and q->st.iter there belongs to a different and
+// still-live goal.
+
+void leave_predicate_and_drop(query *q, predicate *pr, bool is_final)
+{
+	leave_predicate(q, pr, is_final);
+	drop_choice(q);
+}
+
 void leave_predicate(query *q, predicate *pr, bool is_final)
 {
 	if (!pr)
@@ -537,17 +552,13 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
 
-		if (pr->idx1 && pr->cnt) {
-			cell *c = get_head(r->cl.cells);
-			cell *k1 = c->arity ? FIRST_ARG(c) : c;
-			sl_rem(pr->idx1, k1, r);
+		// Through index_remove_clause() rather than by hand: two
+		// copies of the same withdrawal drift apart the moment a
+		// third index or a side list is added, and this one is the
+		// copy that gets forgotten.
 
-			if (pr->idx2) {
-				cell *arg1 = FIRST_ARG(c);
-				cell *arg2 = NEXT_ARG(arg1);
-				sl_rem(pr->idx2, arg2, r);
-			}
-		}
+		if (pr->cnt)
+			index_remove_clause(pr, r);
 
 		if (q->in_retract && !r->cl.num_vars && q->pl->opt) {
 			undo_on_backtrack(q, r, UNDO_RULE);
@@ -896,8 +907,7 @@ static void commit_frame(query *q)
 	}
 
 	if (last_match) {
-		leave_predicate(q, q->st.pr, false);
-		drop_choice(q);
+		leave_predicate_and_drop(q, q->st.pr, false);
 		trim_trail(q, reused);
 
 
@@ -912,27 +922,38 @@ static void commit_frame(query *q)
 	q->st.iter = NULL;
 }
 
+// The three kinds of undo item, disposed of in one place. This dispatch
+// existed in two copies that had already drifted apart once - the
+// UNDO_RULE case was added to one and not the other, so a retracted
+// ground clause was freed as a cell block without clear_clause() and its
+// managed cells were never unshared. Now there is one copy.
+
+static void undo_list_drain(list *l)
+{
+	undo_item *u;
+
+	while ((u = list_pop_back(l)) != NULL) {
+		if (u->is_bboard)
+			sl_del(u->m->keyval, u->key);
+		else if (u->is_rule) {
+			clear_clause(&u->r->cl);
+			TPL_free(u->r);
+		} else {
+			unshare_cells(u->c, u->c->num_cells);
+			TPL_free(u->c);
+		}
+
+		TPL_free(u);
+	}
+}
+
 int retry_choice(query *q)
 {
 	while (q->st.cp) {
 		undo_me(q);
 		choice *ch = GET_CURR_CHOICE();
 		q->st.cp--;
-		undo_item *u;
-
-		while ((u = list_pop_back(&ch->undo)) != NULL) {
-			if (u->is_bboard) {
-				sl_del(u->m->keyval, u->key);
-			} else if (u->is_rule) {
-				clear_clause(&u->r->cl);
-				TPL_free(u->r);
-			} else {
-				unshare_cells(u->c, u->c->num_cells);
-				TPL_free(u->c);
-			}
-
-			TPL_free(u);
-		}
+		undo_list_drain(&ch->undo);
 
 		q->st = ch->st;
 
@@ -1656,8 +1677,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		retry_choice(q);
 	}
 
-	leave_predicate(q, q->st.pr, true);
-	drop_choice(q);
+	leave_predicate_and_drop(q, q->st.pr, true);
 	return false;
 }
 
@@ -1855,8 +1875,7 @@ bool match_head(query *q)
 		undo_me(q);
 	}
 
-	leave_predicate(q, q->st.pr, true);
-	drop_choice(q);
+	leave_predicate_and_drop(q, q->st.pr, true);
 	return false;
 }
 
@@ -2140,30 +2159,16 @@ void query_destroy(query *q)
 		q->tasks = task;
 	}
 
-	undo_item *u;
+	// Choicepoints still live at teardown hold undo items of their own.
+	// Draining q->undo alone left them behind, so a query that halted -
+	// or simply succeeded - with choicepoints outstanding leaked
+	// whatever they were holding. Deepest first, the order backtracking
+	// would have taken.
 
-	while ((u = list_pop_back(&q->undo)) != NULL) {
-		// Three kinds of undo item, and this used to handle two. A
-		// UNDO_RULE (a ground clause retracted with nothing iterating
-		// the predicate, parked here so backtracking can restore it)
-		// fell into the cells branch, which read the rule* as a cell*
-		// and freed it WITHOUT clear_clause() - so the clause's
-		// managed cells were never unshared. The backtrack path in
-		// drop_choice() has had the third case all along; this is the
-		// same dispatch, and the two copies had drifted apart.
+	for (pl_idx i = q->st.cp; i > 0; i--)
+		undo_list_drain(&GET_CHOICE(i - 1)->undo);
 
-		if (u->is_bboard)
-			sl_del(u->m->keyval, u->key);
-		else if (u->is_rule) {
-			clear_clause(&u->r->cl);
-			TPL_free(u->r);
-		} else {
-			unshare_cells(u->c, u->c->num_cells);
-			TPL_free(u->c);
-		}
-
-		TPL_free(u);
-	}
+	undo_list_drain(&q->undo);
 
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
