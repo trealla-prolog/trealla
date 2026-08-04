@@ -1,8 +1,0 @@
-1. retractall: constant
-2. abolish: constant
-3. retract all: constant
-4. retract by key: constant
-5. clause: constant
-6. match: constant
-7. churn without emptying: constant
-db-stress: 7/8 constant memory
