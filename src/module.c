@@ -425,6 +425,7 @@ bool find_goal_expansion(module *m, cell *c)
 // goal_expansion. Used to decide whether to run the expansion query in
 // user_m: only redirect when user has a SPECIFIC hook for this functor,
 // so a wildcard user:goal_expansion (eg. clpz) does not hijack every goal.
+
 bool find_goal_expansion_specific(module *m, cell *c)
 {
 	for (pi *g = m->gex_head; g; g = g->next) {
@@ -560,14 +561,6 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 	} else if (is_string(p1) && is_string(p2)) {
 		return strcmp(C_STR(m, p1), C_STR(m, p2));
 	} else if (is_list(p1) && is_list(p2)) {
-		// Only walk when BOTH sides are lists. Falling through to the
-		// generic compound case otherwise keeps the order antisymmetric:
-		// a list is '.'/2, and the compound branch already ranks it
-		// against another arity-2 compound by name. A blanket 1 here
-		// made cmp(list, f/2) and cmp(f/2, list) both positive, which is
-		// not a total order, so the descent walked straight past
-		// list-headed clauses.
-
 		LIST_HANDLER(p1);
 		LIST_HANDLER(p2);
 
@@ -740,16 +733,6 @@ static void purge_properties(predicate *pr)
 	if (pr2->refcnt)
 		return;
 
-	// Pass 2: unlink and free. Note pr2, not pr.
-	//
-	// This loop walks the '$predicate_property'/3 chain but used to
-	// splice into pr->head / pr->tail - the predicate being purged, not
-	// the table being walked. That overwrote pr's chain with a pointer
-	// into pr2's, left pr2->head pointing at clauses about to be freed,
-	// and unload_realfile() then ran abolish_predicate(pr) over the
-	// wreckage. Only reachable on a file reload, which is why it stayed
-	// hidden.
-
 	for (rule *r = pr2->head; r; ) {
 		cell *f = r->cl.cells;
 		cell *p1 = f + 1;
@@ -779,10 +762,6 @@ void push_property(module *m, const char *name, unsigned arity, const char *type
 	parser_destroy(p);
 }
 
-// One clause of '$predicate_property'/3 is about to be withdrawn if its
-// subject matches. Factored out because the removal now needs two passes
-// over the chain and the two must agree on what "matches" means.
-
 static bool property_matches(module *m, const rule *r, const char *name, unsigned arity)
 {
 	const cell *p0 = r->cl.cells;
@@ -802,26 +781,6 @@ void clear_property(module *m, const char *name, unsigned arity)
 	tmp.arity = 3;
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) return;
-
-	// Withdraw the doomed clauses' index entries FIRST, all of them,
-	// before any clause is freed. The index keys are borrowed pointers
-	// into clause cells, so a descent that runs once earlier clauses
-	// have been freed walks the comparator into released memory. That
-	// is what made the interleaved single-pass version fault, and why
-	// this used to destroy the whole index instead.
-	//
-	// The other half of that story no longer holds. Withdrawing first
-	// was previously no help either, because sl_rem() finished its
-	// descent by re-checking only the KEY and never q->val, so under
-	// duplicate keys - and first-argument indexing is nothing but
-	// duplicate keys - it unlinked a neighbour or nothing at all.
-	// sl_rem() now walks the equal-key run for the exact (key, value)
-	// pair; see the rem_pair / rem_kept_other cases in
-	// tests/misc/skiplist.c.
-	//
-	// Worth keeping incremental: re-importing a module that was already
-	// imported hit the destroy path 83 times in one load here, throwing
-	// away and rebuilding an index over ~700 clauses each time.
 
 	if (pr->idx1 && !pr->refcnt) {
 		for (rule *r = pr->head; r; r = r->next) {
@@ -850,11 +809,6 @@ void clear_property(module *m, const char *name, unsigned arity)
 			removed = true;
 		}
 	}
-
-	// The var-in-indexed-arg flags are set-only, so clauses leaving the
-	// chain can stale them true. Stale-true only costs a fallback to the
-	// linear walk, but the destroy path used to clear them and this one
-	// should not silently be worse.
 
 	if (removed && (pr->is_var_in_first_arg || pr->is_var_in_second_arg))
 		recheck_var_in_indexed_args(pr);
@@ -1811,30 +1765,6 @@ static void mark_tail_call(cell *c, predicate *parent)
 		c->flags |= FLAG_INTERNED_RECURSIVE_CALL;
 }
 
-// A goal is in tail position when nothing is left to run after it
-// succeeds. process_cell() tests that by asking whether the goal's cells
-// end where the clause's cells end, which only ever finds the textually
-// last goal. In (C -> T ; E) that is the last goal of E: T is followed
-// in the term by the whole of E, so it is never marked and commit_frame()
-// never even considers reusing its frame - the THEN branch of every
-// if-then-else recurses by growing the frame stack.
-//
-// Both branches really are tail positions though. compile_term() lays
-// the construct out as
-//
-//     $succeed_on_retry(V,N1), <C>, !, $drop_barrier(V), <T>,
-//     $jump(N2), <E>, true
-//
-// so after the last goal of T comes only a jump to the landing that ends
-// the clause. Walk the control skeleton and mark every branch that ends
-// it, rather than reading the term's last cell.
-//
-// This is a hint, not a promise: commit_frame() still calls
-// is_last_call(), which inspects the instruction stream actually
-// following the goal at run time and rejects anything but those jumps
-// and landings. A mark that compile_term() lays out differently than
-// assumed here therefore costs a failed test, not correctness.
-
 static void mark_tail_positions(cell *body, predicate *parent)
 {
 	if (!is_interned(body) || !body->arity) {
@@ -1916,13 +1846,6 @@ static void process_predicate(predicate *pr)
 	for (rule *r = pr->head; r; r = r->next) {
 		process_clause(pr->m, &r->cl, pr);
 	}
-
-	// is_unique is a FORWARD scan taken once, here, and nothing
-	// invalidates it afterwards. That is sound for a static predicate,
-	// which cannot change after load, and unsound for a dynamic one: the
-	// first assertz() of a clause with a comparable key makes every
-	// earlier is_unique stale, and commit_frame() then treats a match as
-	// deterministic and drops the alternatives choicepoint.
 
 	if (pr->is_dynamic || pr->idx1)
 		return;
@@ -2191,11 +2114,6 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			ENSURE(pr->idx2);
 		}
 
-		// Recomputed from scratch, not OR'd into whatever survived an
-		// earlier index. The flags are only ever set, never cleared, so
-		// a stale true from a since-retracted clause would otherwise
-		// outlive it and keep the predicate off the index forever.
-
 		pr->is_var_in_first_arg = false;
 		pr->is_var_in_second_arg = false;
 
@@ -2205,23 +2123,8 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			if (cl2->dbgen_retracted)
 				continue;
 
-			// Must be checked here as well as on the incremental path
-			// below: these are the clauses that already existed when
-			// the index crossed the threshold. Missing them leaves
-			// is_var_in_first_arg false with var-headed clauses in
-			// idx1, and find_key() then does an idx1 lookup whose
-			// comparator (index_cmpkey) calls a var equal to anything.
-			// That is not a total order, so the skiplist descent can
-			// walk straight past the var-headed node and the clause is
-			// never returned.
-
 			if (c->arity && is_var(FIRST_ARG(c)))
 				pr->is_var_in_first_arg = true;
-
-			// idx1 is keyed on Arg1 only (or the atom head if arity 0),
-			// matching classic first-argument indexing. Full-head keys
-			// were redundant within a predicate (same functor/arity) and
-			// made partial probes like p(a,X) rely on var-equals-anything.
 
 			cell *k1 = c->arity ? FIRST_ARG(c) : c;
 			sl_app(pr->idx1, k1, cl2);

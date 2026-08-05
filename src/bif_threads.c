@@ -81,8 +81,7 @@ typedef struct msg_ {
 #define check_mutex(c) check_mutex_or_alias(q, c)
 #define check_queue(c) check_queue_or_alias(q, c)
 
-// FIXME: this is too slow. There should be one overall
-// alias map, not one per stream.
+// FIXME: there should be one overall alias map, not one per stream
 
 static int get_named_thread(prolog *pl, const char *name, size_t len)
 {

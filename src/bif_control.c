@@ -528,11 +528,10 @@ static bool bif_iso_catch_3(query *q)
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
+
 		if (unify(q, p2, p2_ctx, q->ball, q->ball_ctx))
 			return true;
-		// Trail/slot pressure during catch ball binding must not abort
-		// delivery of the original exception. Bind without trailing —
-		// we are at the catcher choicepoint and about to run recover.
+
 		if (is_var(p2) && (q->oom || q->error || q->in_throw)) {
 			reset_var(q, p2, p2_ctx, q->ball, q->ball_ctx);
 			return true;
@@ -545,21 +544,13 @@ static bool bif_iso_catch_3(query *q)
 	if ((q->retry == QUERY_EXCEPTION) || (q->retry == QUERY_ABORT)) {
 		unsigned is_abort = q->retry == QUERY_ABORT;
 		check_pressure(q);
-		// Allocation failure sets oom (and often error) before throw_error
-		// runs. Without clearing oom here the query loop still hard-stops
-		// with "resource_error(memory). %query terminated" even after catch/3
-		// recovers — which breaks run_quads (issue #1094).
-		// Clear oom only AFTER recover is fully armed; clearing first then
-		// failing push_catcher/prepare_call re-enters throw_error and can
-		// busy-loop on the same alloc_grow failure.
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,any);
 		q->retry = QUERY_OK;
 		cell tmp2;
 		make_instr(&tmp2, g_call_s, bif_iso_call_1, 1, 0);
 		cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, p3_ctx, p3->num_cells+3+ is_abort);
-		if (!tmp)
-			return false;
+		CHECKED(tmp);
 		tmp->num_cells += p3->num_cells;
 		pl_idx num_cells = 1;
 		num_cells += dup_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
@@ -968,9 +959,6 @@ bool bif_sys_drop_barrier_1(query *q)
 
 bool bif_sys_fail_on_retry_1(query *q)
 {
-	// After OOM/catch recovery, a prior $fail_on_retry CP index can be
-	// left bound in a reused slot. Clear it so the original resource_error
-	// can propagate instead of uninstantiation_error masking it.
 	cell *c = q->st.instr + 1;
 	pl_ctx c_ctx = q->st.cur_ctx;
 	unsigned var_num;
@@ -1204,11 +1192,10 @@ static bool find_exception_handler(query *q, char *ball)
 static bool bif_iso_throw_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
+
 	if (is_var(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "var");
-	// portray_clause/2 (and friends) leave fullstop/nl set; if they throw
-	// mid-write those flags would stick a trailing ".\n" onto the ball and
-	// parse_to_heap would then append another '.', which fails to parse (#948).
+
 	q->fullstop = q->nl = false;
 	q->parens = q->numbervars = true;
 	//q->is_dump_vars = true;
@@ -1231,8 +1218,6 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 	if (/*g_tpl_interrupt ||*/ q->halt || q->pl->halt)
 		return false;
 
-	// Re-entrant throw (e.g. trail/slot OOM while unifying the ball)
-	// must not nest: that restarts catch handling and can busy-loop.
 	if (q->in_throw) {
 		q->oom = q->error = true;
 		return false;

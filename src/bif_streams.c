@@ -351,8 +351,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 }
 #endif
 
-// FIXME: this is too slow. There should be one overall
-// alias map, not one per stream.
+// FIXME: there should be one overall alias map, not one per stream
 
 int get_named_stream(prolog *pl, const char *name, size_t len)
 {

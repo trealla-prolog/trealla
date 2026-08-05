@@ -2377,7 +2377,7 @@ static void replace_double_bar(parser *p, pl_idx i, pl_idx last_idx)
 }
 
 // Reduce a vector of cells in token order to a parse tree. This is
-// done in two passes: first find the lowest priority un-applied
+// done in two passes: first find the lowest priority unapplied
 // operator then apply args to that operator. This works by swapping
 // in place the args eg. 'arg1 op arg2' becomes 'op arg1 arg2' in
 // the resultant vector. This is done as long as necessary for the
