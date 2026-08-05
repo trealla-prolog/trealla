@@ -775,6 +775,7 @@ struct query_ {
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
 	bool oom:1;
+	bool in_throw:1;
 	bool done:1;
 	bool noskip:1;
 	bool parens:1;

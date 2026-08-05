@@ -239,7 +239,8 @@ static cell *bb_reattach_attv(query *q, cell *tmp)
 					}
 				}
 
-				add_trail(q, d_ctx, d->var_num, e->c.val_attrs);
+				if (!add_trail(q, d_ctx, d->var_num, e->c.val_attrs))
+					return NULL;
 				e->c.val_attrs = attrs;
 			}
 		}

@@ -17,6 +17,13 @@ main :-
 	),
 	E2 = error(resource_error(memory), _),
 	write(catch_under_time_limit-ok), nl,
+	% After catch/3 clears oom, $fail_on_retry/1 (once/call/->) must not
+	% see a stale bound CP index (uninstantiation_error). Trail growth
+	% failure used to bind without trailing.
+	once(true),
+	( true -> true ; fail ),
+	call(true),
+	write(catch_fail_on_retry-ok), nl,
 	% And as a quad answer description.
 	use_module(library(quads)),
 	run_quads,

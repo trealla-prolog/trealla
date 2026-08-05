@@ -685,15 +685,20 @@ static void trim_frame(query *q, const frame *f)
 	q->st.fp = q->st.cur_ctx;
 }
 
-void add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
+bool add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
 {
+	// Must not bind without a trail entry: a silent failure here leaves
+	// the variable set while undo_me() cannot clear it. That resurfaces
+	// after catch/3 clears oom as uninstantiation_error(N) on
+	// $fail_on_retry/1 (and similar), because the CP index stays bound.
 	if (!check_trail(q))
-		return;
+		return false;
 
 	trail *tr = q->trails + q->st.tp++;
 	tr->val_ctx = c_ctx;
 	tr->var_num = c_var_nbr;
 	tr->attrs = attrs;
+	return true;
 }
 
 void undo_me(query *q)
@@ -1831,6 +1836,9 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		}
 
 		if (unify(q, p1, p1_ctx, c, q->st.cur_ctx)) {
+			if (q->did_throw)
+				return true;
+
 			int ok;
 
 			if (needs_true) {
@@ -1839,6 +1847,8 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 				cell tmp;
 				make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
 				ok = unify(q, p1_body, p1_body_ctx, &tmp, q->st.cur_ctx);
+				if (q->did_throw)
+					return true;
 			} else
 				ok = true;
 
@@ -1937,6 +1947,9 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **ret_body, enum claus
 		body = get_body(tmp);
 
 		if (unify(q, p1, p1_ctx, head, q->st.cur_ctx)) {
+			if (q->did_throw)
+				return true;
+
 			if (ret_body)
 				*ret_body = body;
 
@@ -2036,6 +2049,13 @@ bool match_head(query *q)
 		q->st.dbe->attempted++;
 
 		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.fp)) {
+			// throw_error() returns true when a handler was armed (via
+			// did_throw). Must not commit_frame — that would overwrite the
+			// recover goal. find_exception_handler already unwound to the
+			// catcher.
+			if (q->did_throw)
+				return true;
+
 			// Take it now, while it still belongs to the unify above.
 			const bool head_has_vars = q->has_vars;
 
@@ -2182,6 +2202,13 @@ bool start(query *q)
 				continue;
 			}
 
+			// throw_error armed a recover goal (noskip). Do not treat
+			// status as ordinary success/failure of save_cell.
+			if (q->did_throw) {
+				proceed(q);
+				goto MORE;
+			}
+
 			if (!(q->total_goals % YIELD_INTERVAL)) {
 				q->s_cnt = 0;
 
@@ -2232,6 +2259,13 @@ bool start(query *q)
 				q->retry = QUERY_RETRY;
 				q->total_backtracks++;
 				continue;
+			}
+
+			// Exception handler armed during head unify — skip hooks;
+			// recover goal is already in st.instr (noskip).
+			if (q->did_throw) {
+				proceed(q);
+				goto MORE;
 			}
 
 			if (q->run_hook)

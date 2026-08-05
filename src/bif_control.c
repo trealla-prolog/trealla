@@ -528,7 +528,16 @@ static bool bif_iso_catch_3(query *q)
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
-		return unify(q, p2, p2_ctx, q->ball, q->ball_ctx);
+		if (unify(q, p2, p2_ctx, q->ball, q->ball_ctx))
+			return true;
+		// Trail/slot pressure during catch ball binding must not abort
+		// delivery of the original exception. Bind without trailing —
+		// we are at the catcher choicepoint and about to run recover.
+		if (is_var(p2) && (q->oom || q->error || q->in_throw)) {
+			reset_var(q, p2, p2_ctx, q->ball, q->ball_ctx);
+			return true;
+		}
+		return false;
 	}
 
 	// Second time through? Try the recover goal...
@@ -540,14 +549,17 @@ static bool bif_iso_catch_3(query *q)
 		// runs. Without clearing oom here the query loop still hard-stops
 		// with "resource_error(memory). %query terminated" even after catch/3
 		// recovers — which breaks run_quads (issue #1094).
-		q->error = q->oom = false;
+		// Clear oom only AFTER recover is fully armed; clearing first then
+		// failing push_catcher/prepare_call re-enters throw_error and can
+		// busy-loop on the same alloc_grow failure.
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,any);
 		q->retry = QUERY_OK;
 		cell tmp2;
 		make_instr(&tmp2, g_call_s, bif_iso_call_1, 1, 0);
 		cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, p3_ctx, p3->num_cells+3+ is_abort);
-		CHECKED(tmp);
+		if (!tmp)
+			return false;
 		tmp->num_cells += p3->num_cells;
 		pl_idx num_cells = 1;
 		num_cells += dup_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
@@ -555,7 +567,9 @@ static bool bif_iso_catch_3(query *q)
 		make_uint(tmp+num_cells++, q->st.cp);
 		if (is_abort) make_instr(tmp+num_cells++, g_sys_abort_s, bif_sys_abort_0, 0, 0);
 		make_call(q, tmp+num_cells);
-		CHECKED(push_catcher(q, QUERY_EXCEPTION));
+		if (!push_catcher(q, QUERY_EXCEPTION))
+			return false;
+		q->error = q->oom = false;
 		q->st.instr = tmp;
 		return true;
 	}
@@ -844,8 +858,20 @@ bool bif_sys_call_cleanup_3(query *q)
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
 		cell *tmp = clone_term_to_heap(q, q->ball, q->ball_ctx);
-		CHECKED(tmp);
-		return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
+		if (!tmp) {
+			if (is_var(p2)) {
+				reset_var(q, p2, p2_ctx, q->ball, q->ball_ctx);
+				return true;
+			}
+			return false;
+		}
+		if (unify(q, p2, p2_ctx, tmp, q->st.cur_ctx))
+			return true;
+		if (is_var(p2) && (q->oom || q->error || q->in_throw)) {
+			reset_var(q, p2, p2_ctx, q->ball, q->ball_ctx);
+			return true;
+		}
+		return false;
 	}
 
 	// Second time through? Try the recover goal...
@@ -854,13 +880,20 @@ bool bif_sys_call_cleanup_3(query *q)
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,callable);
 		q->retry = QUERY_OK;
-		cell *tmp = prepare_call(q, CALL_NOSKIP, p3, p3_ctx, 3);
-		CHECKED(tmp);
-		pl_idx num_cells = p3->num_cells;
+		cell tmp2;
+		make_instr(&tmp2, g_call_s, bif_iso_call_1, 1, 0);
+		cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, p3_ctx, p3->num_cells+3);
+		if (!tmp)
+			return false;
+		tmp->num_cells += p3->num_cells;
+		pl_idx num_cells = 1;
+		num_cells += dup_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
 		make_instr(tmp+num_cells++, g_sys_cleanup_if_det_s, bif_sys_cleanup_if_det_1, 1, 1);
 		make_uint(tmp+num_cells++, q->st.cp);
 		make_call(q, tmp+num_cells);
-		CHECKED(push_catcher(q, QUERY_EXCEPTION));
+		if (!push_catcher(q, QUERY_EXCEPTION))
+			return false;
+		q->error = q->oom = false;
 		q->st.instr = tmp;
 		return true;
 	}
@@ -935,7 +968,35 @@ bool bif_sys_drop_barrier_1(query *q)
 
 bool bif_sys_fail_on_retry_1(query *q)
 {
-	GET_FIRST_ARG(p1,var);
+	// After OOM/catch recovery, a prior $fail_on_retry CP index can be
+	// left bound in a reused slot. Clear it so the original resource_error
+	// can propagate instead of uninstantiation_error masking it.
+	cell *c = q->st.instr + 1;
+	pl_ctx c_ctx = q->st.cur_ctx;
+	unsigned var_num;
+
+	if (is_ref(c)) {
+		c_ctx = c->val_ctx;
+		var_num = c->var_num;
+	} else if (is_var(c)) {
+		var_num = c->var_num;
+	} else {
+		return throw_error(q, c, c_ctx, "type_error", "var");
+	}
+
+	slot *e = get_slot(q, GET_FRAME(c_ctx), var_num);
+	cell *p1 = deref(q, c, c_ctx);
+	pl_ctx p1_ctx = q->latest_ctx;
+
+	if (!is_var(p1)) {
+		if (!is_integer(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "var");
+		unshare_cell(&e->c);
+		memset(e, 0, sizeof(slot));
+		p1 = &e->c;
+		p1_ctx = c_ctx;
+	}
+
 	cell tmp;
 	make_uint(&tmp, (pl_uint)q->st.cp);
 	CHECKED(push_fail_on_retry_with_barrier(q));
@@ -1052,7 +1113,8 @@ static bool find_exception_handler(query *q, char *ball)
 			continue;
 
 		q->ball = parse_to_heap(q, ball);
-		CHECKED(q->ball);
+		if (!q->ball)
+			return false;
 		q->ball_ctx = q->st.cur_ctx;
 
 		if (!strcmp(C_STR(q, q->ball+1), "$abort")) {
@@ -1063,18 +1125,34 @@ static bool find_exception_handler(query *q, char *ball)
 			q->retry = QUERY_EXCEPTION;
 		}
 
-		if (!bif_iso_catch_3(q)) {
+		// Use the catcher's own builtin (catch/3 or $call_cleanup/3).
+		// Hardcoding bif_iso_catch_3 breaks $call_cleanup's rethrow path.
+		builtins *bif = q->st.instr->bif_ptr;
+		bool (*fn)(query *) = (bif && bif->fn) ? bif->fn : bif_iso_catch_3;
+
+		if (!fn(q)) {
 			q->ball = NULL;
 			continue;
 		}
 
 		q->ball = NULL;
+
+		// Phase 2: arm the recover goal. A nested throw during phase 1
+		// may already have done this (retry cleared to QUERY_OK).
+		if ((q->retry == QUERY_EXCEPTION) || (q->retry == QUERY_ABORT)) {
+			if (!fn(q))
+				continue;
+		}
+
 		return true;
 	}
 
 	cell *e = parse_to_heap(q, ball);
 	pl_ctx e_ctx = q->st.cur_ctx;
 	q->did_unhandled_exception = true;
+
+	if (!e)
+		return false;
 
 	if (!strcmp(C_STR(q, e+1), "unwind") || !strcmp(C_STR(q, e+1), "$abort")) {
 		if (!q->is_thread && !q->is_task)
@@ -1086,7 +1164,8 @@ static bool find_exception_handler(query *q, char *ball)
 		return false;
 	} else {
 		q->ball = clone_term_to_heap(q, e, e_ctx);
-		CHECKED(q->ball);
+		if (!q->ball)
+			return false;
 		q->ball_ctx = q->st.cur_ctx;
 		rebase_term(q, q->ball, 0, false);
 	}
@@ -1124,7 +1203,9 @@ static bool find_exception_handler(query *q, char *ball)
 
 static bool bif_iso_throw_1(query *q)
 {
-	GET_FIRST_ARG(p1,nonvar);
+	GET_FIRST_ARG(p1,any);
+	if (is_var(p1))
+		return throw_error(q, p1, p1_ctx, "instantiation_error", "var");
 	// portray_clause/2 (and friends) leave fullstop/nl set; if they throw
 	// mid-write those flags would stick a trailing ".\n" onto the ball and
 	// parse_to_heap would then append another '.', which fails to parse (#948).
@@ -1142,7 +1223,7 @@ static bool bif_iso_throw_1(query *q)
 	}
 
 	TPL_free(ball);
-	return bif_iso_catch_3(q);
+	return true;
 }
 
 bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal)
@@ -1150,6 +1231,14 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 	if (/*g_tpl_interrupt ||*/ q->halt || q->pl->halt)
 		return false;
 
+	// Re-entrant throw (e.g. trail/slot OOM while unifying the ball)
+	// must not nest: that restarts catch handling and can busy-loop.
+	if (q->in_throw) {
+		q->oom = q->error = true;
+		return false;
+	}
+
+	q->in_throw = true;
 	q->did_throw = true;
 	q->quoted = 0;
 
@@ -1430,10 +1519,12 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 
 	if (find_exception_handler(q, ball)) {
 		TPL_free(ball);
-		return bif_iso_catch_3(q);
+		q->in_throw = false;
+		return true;
 	}
 
 	TPL_free(ball);
+	q->in_throw = false;
 	return false;
 }
 

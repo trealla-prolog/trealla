@@ -239,14 +239,18 @@ int compare(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
-static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx)
+static bool set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = get_slot(q, f, c->var_num);
 	cell *c_attrs = e->c.val_attrs;
 
-	if (is_managed(v) || (c_ctx != q->st.fp))
-		add_trail(q, c_ctx, c->var_num, c_attrs);
+	// Trail before binding. If the trail cannot grow, leave the
+	// variable unbound so undo/catch recovery stays consistent.
+	if (is_managed(v) || (c_ctx != q->st.fp)) {
+		if (!add_trail(q, c_ctx, c->var_num, c_attrs))
+			return false;
+	}
 
 	if (c_attrs)
 		q->run_hook = true;
@@ -275,6 +279,8 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 		e->c = *v;
 		share_cell(v);
 	}
+
+	return true;
 }
 
 void reset_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx)
@@ -528,7 +534,8 @@ static bool unify_var(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx
 			was_cyclic = true;
 	}
 
-	set_var(q, p1, p1_ctx, p2, p2_ctx);
+	if (!set_var(q, p1, p1_ctx, p2, p2_ctx))
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
 
 	if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
 		if (!was_cyclic && check && is_cyclic_term(q, p2, p2_ctx)) {
@@ -611,7 +618,8 @@ static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 		bool a2 = !is_ref(&e2->c) && e2->c.val_attrs != NULL;
 
 		if (a1 && !a2) {
-			set_var(q, p2, p2_ctx, p1, p1_ctx);
+			if (!set_var(q, p2, p2_ctx, p1, p1_ctx))
+				return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
 
 			if (p1_ctx > p2_ctx) {
 				frame *fa = GET_FRAME(p1_ctx);
@@ -622,7 +630,8 @@ static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 		}
 
 		if (a2 && !a1) {
-			set_var(q, p1, p1_ctx, p2, p2_ctx);
+			if (!set_var(q, p1, p1_ctx, p2, p2_ctx))
+				return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
 
 			if (p2_ctx > p1_ctx) {
 				frame *fa = GET_FRAME(p2_ctx);
@@ -632,14 +641,21 @@ static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 			return true;
 		}
 
+		bool ok;
+
 		if (p2_ctx > p1_ctx)
-			set_var(q, p2, p2_ctx, p1, p1_ctx);
+			ok = set_var(q, p2, p2_ctx, p1, p1_ctx);
 		else if (p2_ctx < p1_ctx)
-			set_var(q, p1, p1_ctx, p2, p2_ctx);
+			ok = set_var(q, p1, p1_ctx, p2, p2_ctx);
 		else if (p2->var_num > p1->var_num)
-			set_var(q, p2, p2_ctx, p1, p1_ctx);
+			ok = set_var(q, p2, p2_ctx, p1, p1_ctx);
 		else if (p2->var_num < p1->var_num)
-			set_var(q, p1, p1_ctx, p2, p2_ctx);
+			ok = set_var(q, p1, p1_ctx, p2, p2_ctx);
+		else
+			ok = true;
+
+		if (!ok)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
 
 		return true;
 	}

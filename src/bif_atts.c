@@ -45,7 +45,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
 		attr++;
 
-	add_trail(q, p1_ctx, p1->var_num, c->val_attrs);
+	CHECKED(add_trail(q, p1_ctx, p1->var_num, c->val_attrs));
 	unsigned a_arity = attr->arity;
 	bool found;
 	const char *m_name = find_attribute(q, attr, a_arity, &found);
