@@ -626,6 +626,7 @@ struct stream_ {
 	bool repo:1;
 	bool binary:1;
 	bool did_getc:1;
+	bool invalid_pending:1;				// a peeked ill-formed sequence, still unread
 	bool nodelay:1;
 	bool udp:1;
 	bool ssl:1;

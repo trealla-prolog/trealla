@@ -1152,6 +1152,7 @@ static bool bif_iso_open_4(query *q)
 	str->bom = false;
 	str->did_getc = false;
 	str->srclen = str->ungetch = 0;
+	str->invalid_pending = false;
 	str->at_end_of_file = false;
 
 	if (oldstr) {
@@ -2755,7 +2756,46 @@ static bool bif_iso_put_byte_2(query *q)
 #define CHECK_UTF8_INPUT(q, str, ch)								\
 	if ((ch) == UTF8_INVALID) {										\
 		(str)->did_getc = false;									\
+		(str)->invalid_pending = false;								\
 		clearerr((str)->fp_in);										\
+		return throw_error((q), (q)->st.instr, (q)->st.cur_ctx,		\
+			"representation_error", "character");					\
+	}
+
+// A peek must not consume what it reports on, but by the time the
+// sequence is known to be ill-formed its octets have been taken from
+// the underlying stream, and there is nowhere to put them back: ungetch
+// holds one decoded codepoint, and UTF8_INVALID is not one. Nor would a
+// single slot do, since an ill-formed sequence may be several octets.
+//
+// So the stream remembers instead that the character behind it is not a
+// character. A later peek throws again without reading anything, and
+// the get that finally takes it clears the flag - which is what
+// consuming "an entity that is not a character" amounts to. Repeated
+// peeks are then idempotent, as peeks should be.
+
+#define CHECK_UTF8_PEEK(q, str, ch)									\
+	if ((ch) == UTF8_INVALID) {										\
+		(str)->did_getc = false;									\
+		(str)->invalid_pending = true;								\
+		clearerr((str)->fp_in);										\
+		return throw_error((q), (q)->st.instr, (q)->st.cur_ctx,		\
+			"representation_error", "character");					\
+	}
+
+// Peeking again at a sequence already known to be ill-formed...
+
+#define PEEK_UTF8_PENDING(q, str)									\
+	if ((str)->invalid_pending) {									\
+		return throw_error((q), (q)->st.instr, (q)->st.cur_ctx,		\
+			"representation_error", "character");					\
+	}
+
+// ...and reading it, which consumes it.
+
+#define GET_UTF8_PENDING(q, str)									\
+	if ((str)->invalid_pending) {									\
+		(str)->invalid_pending = false;								\
 		return throw_error((q), (q)->st.instr, (q)->st.cur_ctx,		\
 			"representation_error", "character");					\
 	}
@@ -2777,6 +2817,8 @@ static bool bif_iso_get_char_1(query *q)
 		make_int(&tmp, n);
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
+
+	GET_UTF8_PENDING(q, str);
 
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
@@ -2857,6 +2899,8 @@ static bool bif_iso_get_char_2(query *q)
 		make_int(&tmp, n);
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
+
+	GET_UTF8_PENDING(q, str);
 
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
@@ -2940,6 +2984,8 @@ static bool bif_iso_get_code_1(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
 
+	GET_UTF8_PENDING(q, str);
+
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
 			int ch = get_char_utf8((const char**)&str->p->srcptr);
@@ -3022,6 +3068,8 @@ static bool bif_iso_get_code_2(query *q)
 		make_int(&tmp, n);
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
+
+	GET_UTF8_PENDING(q, str);
 
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
@@ -3374,6 +3422,8 @@ static bool bif_iso_peek_char_1(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
 
+	PEEK_UTF8_PENDING(q, str);
+
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
 			int ch = peek_char_utf8((const char*)str->p->srcptr);
@@ -3393,7 +3443,7 @@ static bool bif_iso_peek_char_1(query *q)
 		return do_yield(q, 1);
 	}
 
-	CHECK_UTF8_INPUT(q, str, ch);
+	CHECK_UTF8_PEEK(q, str, ch);
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3433,6 +3483,8 @@ static bool bif_iso_peek_char_2(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
 
+	PEEK_UTF8_PENDING(q, str);
+
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
 			int ch = peek_char_utf8((const char*)str->p->srcptr);
@@ -3452,7 +3504,7 @@ static bool bif_iso_peek_char_2(query *q)
 		return do_yield(q, 1);
 	}
 
-	CHECK_UTF8_INPUT(q, str, ch);
+	CHECK_UTF8_PEEK(q, str, ch);
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3494,6 +3546,8 @@ static bool bif_iso_peek_code_1(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
 
+	PEEK_UTF8_PENDING(q, str);
+
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
 			int ch = peek_char_utf8((const char*)str->p->srcptr);
@@ -3513,7 +3567,7 @@ static bool bif_iso_peek_code_1(query *q)
 		return do_yield(q, 1);
 	}
 
-	CHECK_UTF8_INPUT(q, str, ch);
+	CHECK_UTF8_PEEK(q, str, ch);
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3557,6 +3611,8 @@ static bool bif_iso_peek_code_2(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
 
+	PEEK_UTF8_PENDING(q, str);
+
 	if (!str->ungetch && str->p) {
 		if (str->p->srcptr && *str->p->srcptr) {
 			int ch = peek_char_utf8((const char*)str->p->srcptr);
@@ -3576,7 +3632,7 @@ static bool bif_iso_peek_code_2(query *q)
 		return do_yield(q, 1);
 	}
 
-	CHECK_UTF8_INPUT(q, str, ch);
+	CHECK_UTF8_PEEK(q, str, ch);
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3794,6 +3850,8 @@ static bool bif_iso_set_stream_position_2(query *q)
 	if (fseeko(str->fp_out, pos, SEEK_SET))
 		return throw_error(q, p1, p1_ctx, "domain_error", "position");
 
+	str->ungetch = 0;
+	str->invalid_pending = false;
 	return true;
 }
 
