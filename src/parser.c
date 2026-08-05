@@ -1151,6 +1151,15 @@ static bool quads(parser *p, cell *d)
 		m->quad_line_num = p->line_num_start ? p->line_num_start : p->line_num;
 		m->in_quad = true;
 		p->line_num_start = 0;
+
+		// Release the parser's own reference on the consumed term.
+		// Ordinary clause loading hands these cells to assertz_to_db(),
+		// which takes the reference over - which is why the caller can
+		// reset cl->cidx without unsharing. A quad instead dup_cells()
+		// its own copy, so the parser's reference is still outstanding
+		// and nothing else will ever drop it.
+
+		unshare_cells(d, d->num_cells);
 		return true;
 	}
 
@@ -1186,6 +1195,13 @@ static bool quads(parser *p, cell *d)
 	}
 
 	p->line_num_start = 0;
+
+	// As above: quad_record() dup_cells() into the '$quad'/6 it asserts,
+	// so the answer description's own cells are still held by the parser
+	// here. Every string literal in an answer description leaked one
+	// strbuf without this.
+
+	unshare_cells(d, d->num_cells);
 	return true;
 }
 
