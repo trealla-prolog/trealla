@@ -540,7 +540,7 @@ static bool bif_iso_catch_3(query *q)
 		// runs. Without clearing oom here the query loop still hard-stops
 		// with "resource_error(memory). %query terminated" even after catch/3
 		// recovers — which breaks run_quads (issue #1094).
-		q->error = /*q->oom =*/ false;
+		q->error = q->oom = false;
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,any);
 		q->retry = QUERY_OK;
