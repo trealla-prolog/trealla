@@ -720,8 +720,13 @@ static bool do_stream_property(query *q)
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "position") && !is_var(pstr)) {
+		pl_int pos = ftello(str->fp_out);
+
+		if (str->ungetch)
+			pos -= put_len_utf8(str->ungetch);
+
 		cell tmp;
-		make_int(&tmp, ftello(str->fp_out));
+		make_int(&tmp, pos);
 		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
