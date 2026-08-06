@@ -1852,13 +1852,10 @@ static void process_predicate(predicate *pr)
 
 	for (rule *r = pr->head; r; r = r->next) {
 		check_unique(pr->m, r);
+		cell *body = get_body(r->cl.cells);
 
-		if (pr->m->pl->opt) {
-			cell *body = get_body(r->cl.cells);
-
-			if (body)
-				compile_clause(pr, &r->cl, body);
-		}
+		if (body)
+			compile_clause(pr, &r->cl, body);
 	}
 }
 
