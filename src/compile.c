@@ -45,6 +45,15 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	cell *c = (*src) + 1;
 
+	// T1 , T2
+
+	if (((*src)->val_off == g_conjunction_s) && ((*src)->arity == 2)) {
+		*src += 1;
+		compile_term(pr, cl, dst, src);								// LHS
+		compile_term(pr, cl, dst, src);								// RHS
+		return;
+	}
+
 	// T1 -> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
