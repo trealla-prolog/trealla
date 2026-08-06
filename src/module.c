@@ -1847,7 +1847,7 @@ static void process_predicate(predicate *pr)
 		process_clause(pr->m, &r->cl, pr);
 	}
 
-	if (pr->is_dynamic || pr->idx1)
+	if (pr->idx1)
 		return;
 
 	for (rule *r = pr->head; r; r = r->next) {
