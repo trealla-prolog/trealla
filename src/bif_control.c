@@ -560,7 +560,12 @@ static bool bif_iso_catch_3(query *q)
 		make_call(q, tmp+num_cells);
 		if (!push_catcher(q, QUERY_EXCEPTION))
 			return false;
-		q->error = q->oom = false;
+
+		// NOT q->oom: see throw_error(). An oom still set here was never
+		// turned into a ball, so the allocation that failed is still
+		// unaccounted for and execution must not continue over it.
+
+		q->error = false;
 		q->st.instr = tmp;
 		return true;
 	}
@@ -884,7 +889,12 @@ bool bif_sys_call_cleanup_3(query *q)
 		make_call(q, tmp+num_cells);
 		if (!push_catcher(q, QUERY_EXCEPTION))
 			return false;
-		q->error = q->oom = false;
+
+		// NOT q->oom: see throw_error(). An oom still set here was never
+		// turned into a ball, so the allocation that failed is still
+		// unaccounted for and execution must not continue over it.
+
+		q->error = false;
 		q->st.instr = tmp;
 		return true;
 	}
@@ -1525,6 +1535,23 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 {
 	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
+
+	// An allocation failure becomes a catchable ball HERE, and from here
+	// on the ordinary exception machinery owns it - so drop q->oom now.
+	//
+	// The catchers used to clear it instead, unconditionally. That let
+	// catch/3 recover (issue #1094) but it also cleared an oom that had
+	// NOT been turned into a ball: the failed alloc_grow() returned 0, so
+	// the array never grew, and execution simply carried on over an
+	// undersized stack. Clearing at the throw keeps #1094 working while
+	// leaving a genuinely unhandled OOM set, so the query loop still
+	// hard-stops on it.
+	//
+	// If throw_error3()'s own allocations fail below, oom is set again -
+	// which is right: that one really is unrecoverable.
+
+	if (!strcmp(err_type, "resource_error") && expected && !strcmp(expected, "memory"))
+		q->oom = false;
 
 	q->max_depth = 10;
 	return throw_error3(q, c, c_ctx, err_type, expected, q->st.instr);
