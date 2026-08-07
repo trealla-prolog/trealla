@@ -819,7 +819,8 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			|| !strcmp(name, "sto")
 			|| !strcmp(name, "unexpected")
 			|| !strcmp(name, "inattendue")
-			|| !strcmp(name, "other_answer_sequence"))
+			|| !strcmp(name, "other_answer_sequence")
+			|| !strcmp(name, "waits"))
 			? ANSWER_OK : ANSWER_NO;
 	}
 
@@ -867,7 +868,9 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			|| !strcmp(name, "resource_error")
 			|| !strcmp(name, "evaluation_error")
 			|| !strcmp(name, "uninstantiation_error")
-			|| !strcmp(name, "outputs"))
+			|| !strcmp(name, "outputs")
+			|| !strcmp(name, "inputs")
+			|| !strcmp(name, "peeks"))
 			? ANSWER_OK : ANSWER_NO;
 
 	if (c->arity == 3)

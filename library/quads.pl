@@ -234,6 +234,76 @@ malformed(AD, Bad) :-
 	;	\+ ( member(I, Items), annotation(I, sto) ),
 		unsolved(Items, Bad)
 	).
+% Input annotations (issue #1099). An answer may say what the query
+% reads: inputs/1 is the characters it consumes, peeks/1 the single
+% character it looks at without consuming, waits that it asks for a
+% character none is there to supply. Only one of each may appear in an
+% answer, since a query is run once against one input.
+%
+% 'peeks(C), waits' cannot occur: a peek leaves C unconsumed, so every
+% later read returns it and the query can never be left waiting. To
+% wait it would have to have consumed C, which is 'inputs([C]), waits'.
+
+malformed(AD, Bad) :-
+	solution_items(AD, Items),
+	(	member(I, Items),
+		nonvar(I),
+		I = inputs(Cs),
+		\+ chars_list(Cs)
+	->	Bad = I
+	;	member(I, Items),
+		nonvar(I),
+		I = peeks(Ps),
+		\+ one_char(Ps)
+	->	Bad = I
+	;	member(Name, [inputs, peeks, outputs]),
+		twice(Items, Name, Bad)
+	->	true
+	;	twice_atom(Items, waits, Bad)
+	->	true
+	;	member(I, Items), nonvar(I), I = peeks(_),
+		member(J, Items), J == waits
+	->	Bad = (I, waits)
+	).
+
+solution_items(AD, Items) :-
+	alternatives(AD, Alts),
+	member(Alt, Alts),
+	solutions(Alt, Sols),
+	member(S, Sols),
+	conj(S, Items).
+
+% A proper list of one-character atoms. inputs/1 takes characters, not
+% a DCG body: an answer says exactly what was read, and a nonterminal
+% may stand for more than one string.
+
+chars_list(Cs) :- var(Cs), !, fail.
+chars_list([]).
+chars_list([C|Cs]) :- nonvar(C), atom(C), atom_length(C, 1), chars_list(Cs).
+
+one_char(Ps) :- nonvar(Ps), Ps = [C], nonvar(C), atom(C), atom_length(C, 1).
+
+twice(Items, Name, Bad) :-
+	named_items(Items, Name, [_,Bad|_]).
+
+named_items([], _, []).
+named_items([I|T], Name, Out) :-
+	(	nonvar(I),
+		functor(I, Name, 1)
+	->	Out = [I|Out0]
+	;	Out = Out0
+	),
+	named_items(T, Name, Out0).
+
+twice_atom(Items, Atom, Atom) :-
+	same_atoms(Items, Atom, N),
+	N > 1.
+
+same_atoms([], _, 0).
+same_atoms([I|T], Atom, N) :-
+	same_atoms(T, Atom, N0),
+	( I == Atom -> N is N0 + 1 ; N = N0 ).
+
 % other_answer_sequence belongs only as a (|)-alternative of its own,
 % not as a conjunct of a leaf answer.
 malformed(AD, other_answer_sequence) :-
@@ -250,6 +320,8 @@ answer_item(I) :- var(I), !, fail.
 answer_item(V = _) :- !, var(V).
 answer_item(I) :- atom(I), answer_atom(I), !.
 answer_item(outputs(_)) :- !.
+answer_item(inputs(_)) :- !.
+answer_item(peeks(_)) :- !.
 answer_item(I) :- expected_ball(I, _), !.
 
 answer_atom(true).
@@ -261,6 +333,7 @@ answer_atom(sto).
 answer_atom(unexpected).
 answer_atom(inattendue).
 answer_atom(other_answer_sequence).
+answer_atom(waits).
 
 % Report the equation that rebinds, not the one it clashes with.
 
@@ -430,20 +503,23 @@ check_solutions([Sol0|T], M, Q, VNs, N, Mode, PrevCs) :-
 	drop_annotation(Items, sto, Items1, Sto),
 	drop_more(Items1, Items2, More),
 	take_output(Items2, Items3, Output),
-	rebuild_conj(Items3, Sol),
-	( More == true, Items3 == [] ->
+	take_input(Items3, Items4, Input),
+	rebuild_conj(Items4, Sol),
+	( More == true, Items4 == [] ->
 		true							% any further answers accepted
 	; Sto == true ->
 		true
-	; Items3 = [loops] ->
+	; Input \== no_input ->
+		true							% described input: not yet run
+	; Items4 = [loops] ->
 		expect(Unexpected, M, Q, VNs, N, loops, Output, Mode, PrevCs, _)
-	; Items3 = [false] ->
+	; Items4 = [false] ->
 		T == [],
 		expect(Unexpected, M, Q, VNs, N, none, Output, Mode, PrevCs, _)
 	; expected_ball(Sol, Ball) ->
 		T == [],
 		expect(Unexpected, M, Q, VNs, N, ball(Ball), Output, Mode, PrevCs, _)
-	;	expect(Unexpected, M, Q, VNs, N, solution(Items3), Output, Mode, PrevCs, FullCs),
+	;	expect(Unexpected, M, Q, VNs, N, solution(Items4), Output, Mode, PrevCs, FullCs),
 		(	More == true
 		->	true					% described, then anything further
 		;	N1 is N + 1,
@@ -465,6 +541,23 @@ drop_more(Items0, Items, More) :-
 % outputs/1 is stripped before matching the rest of the answer so that
 % 'outputs("3"), instantiation_error' still classifies as a ball, and
 % the captured characters are checked separately (issue #1082).
+
+% inputs/1, peeks/1 and waits are stripped the way outputs/1 is. What
+% the query reads is not yet interpreted (issue #1099): a description
+% that names input is recognised, checked for shape, and skipped, the
+% way sto is, so it neither passes on a claim nothing verified nor
+% fails a suite that already uses the notation.
+
+take_input([], [], no_input).
+take_input([I|T], Rest, In) :-
+	take_input(T, Rest0, In0),
+	(	nonvar(I),
+		( I = inputs(_) ; I = peeks(_) )
+	->	Rest = Rest0, In = I
+	;	I == waits
+	->	Rest = Rest0, ( In0 == no_input -> In = waits ; In = In0 )
+	;	Rest = [I|Rest0], In = In0
+	).
 
 take_output([], [], no_output).
 take_output([I|T], Rest, Out) :-
