@@ -123,10 +123,21 @@ Skipping matters: a suite already written in this notation loads and
 runs, malformed uses are reported, and nothing passes on a claim that
 was not verified.
 
-**Stage 2 — interpretation.** `check_solutions/7` gains an input mode
-beside `plain` and `capture`; `attempt/6` writes the file, redirects
-current input around the call, and applies the §2 checks on the way out.
-This is the remaining work and it is all in `library/quads.pl`.
+**Stage 2 — interpretation. Implemented.**
+
+`take_input/3` collects the three annotations into one spec;
+`solution_expect/3` gives the outcome a solution describes, and
+`input_expect/3` overrides it with the sentinel's representation error
+when the answer says `waits`. `run_on_input/2` writes the file, runs the
+attempt with current input on it, and checks what is left unread.
+
+All of it is ordinary Prolog, which is the point: the harness has to run
+on the systems whose conformity it reports on.
+
+One restriction: a solution that names input must be the only one
+described, since the query is run once against one input and a second
+answer would need a second stream. Multi-answer input quads are not
+rejected outright, but they will not pass.
 
 **Stage 3 — the suite.** Encode s#1..s#4 and s#270, s#271 as quads and
 see what they say about Trealla.
@@ -151,3 +162,16 @@ on peeking at the sentinel being repeatable and non-destructive.
 - Whether a `waits` that is *not* reached — the query answered without
   asking for another character — should be reported differently from an
   ordinary mismatch. It is the interesting failure for conformity work.
+- `with_output_to/2` does not nest, so a quad using `outputs/1` cannot
+  be run inside one. `'$capture_output'` toggles `is_memory` and frees
+  the buffer rather than saving and restoring it, so an inner capture
+  cancels the outer one and its output escapes to the real stream:
+
+  ```prolog
+  ?- with_output_to(chars(O), (write(before),
+         with_output_to(chars(I), write(inner)), write(after))).
+     % writes 'innerafter' to stdout, O = [], I = []
+  ```
+
+  Worth its own issue. It bit the test for this work, which captures
+  the report to keep it independent of the path it was invoked with.

@@ -509,8 +509,12 @@ check_solutions([Sol0|T], M, Q, VNs, N, Mode, PrevCs) :-
 		true							% any further answers accepted
 	; Sto == true ->
 		true
-	; Input \== no_input ->
-		true							% described input: not yet run
+	; \+ no_input(Input) ->
+		T == [],					% one input, so one described answer
+		solution_expect(Items4, Sol, Expect0),
+		input_expect(Input, Expect0, Expect),
+		run_on_input(Input,
+			expect(Unexpected, M, Q, VNs, N, Expect, Output, Mode, PrevCs, _))
 	; Items4 = [loops] ->
 		expect(Unexpected, M, Q, VNs, N, loops, Output, Mode, PrevCs, _)
 	; Items4 = [false] ->
@@ -542,22 +546,107 @@ drop_more(Items0, Items, More) :-
 % 'outputs("3"), instantiation_error' still classifies as a ball, and
 % the captured characters are checked separately (issue #1082).
 
-% inputs/1, peeks/1 and waits are stripped the way outputs/1 is. What
-% the query reads is not yet interpreted (issue #1099): a description
-% that names input is recognised, checked for shape, and skipped, the
-% way sto is, so it neither passes on a claim nothing verified nor
-% fails a suite that already uses the notation.
+% inputs/1, peeks/1 and waits are stripped the way outputs/1 is, and
+% collected into one spec: what the query consumes, the character it
+% may look at without consuming, and whether it is left asking for a
+% character (issue #1099).
 
-take_input([], [], no_input).
-take_input([I|T], Rest, In) :-
-	take_input(T, Rest0, In0),
-	(	nonvar(I),
-		( I = inputs(_) ; I = peeks(_) )
-	->	Rest = Rest0, In = I
+take_input(Items0, Items, in(In, Peek, Waits)) :-
+	take_input_(Items0, Items, no_input, In, no_peek, Peek, false, Waits).
+
+take_input_([], [], In, In, Peek, Peek, W, W).
+take_input_([I|T], Rest, In0, In, Peek0, Peek, W0, W) :-
+	(	nonvar(I), I = inputs(Cs)
+	->	Rest = Rest0, In1 = chars(Cs), Peek1 = Peek0, W1 = W0
+	;	nonvar(I), I = peeks([P])
+	->	Rest = Rest0, In1 = In0, Peek1 = char(P), W1 = W0
 	;	I == waits
-	->	Rest = Rest0, ( In0 == no_input -> In = waits ; In = In0 )
-	;	Rest = [I|Rest0], In = In0
+	->	Rest = Rest0, In1 = In0, Peek1 = Peek0, W1 = true
+	;	Rest = [I|Rest0], In1 = In0, Peek1 = Peek0, W1 = W0
+	),
+	take_input_(T, Rest0, In1, In, Peek1, Peek, W1, W).
+
+no_input(in(no_input, no_peek, false)).
+
+% The outcome a solution describes, independently of how the query is
+% given its input.
+
+solution_expect(Items, _, loops) :- Items == [loops], !.
+solution_expect(Items, _, none) :- Items == [false], !.
+solution_expect(_, Sol, ball(Ball)) :- expected_ball(Sol, Ball), !.
+solution_expect(Items, _, solution(Items)).
+
+% 'waits' says the query asks for a character that is not there. The
+% sentinel is what answers it: a query that reads on reaches 0xff and
+% raises a representation error, and one that does not never sees it.
+% So waiting is an outcome that can be described from a plain file,
+% and it is not the timeout that 'loops' is.
+
+input_expect(in(_, _, true), _, ball(Ball)) :- !,
+	expected_ball(representation_error(character), Ball).
+input_expect(_, Expect, Expect).
+
+% Run Goal with current input on a file holding the described
+% characters, then the character the query may peek at, then 0xff.
+% Nothing in the file is a substitute for checking afterwards: the
+% sentinel catches reading too much, and what is left in the stream
+% catches reading too little.
+%
+% Standard Prolog throughout, deliberately (issue #1099): the harness
+% has to be able to run on the systems whose conformity it reports on.
+
+run_on_input(in(In, Peek, Waits), Goal) :-
+	input_chars(In, Cs),
+	input_file(Cs, Peek, File),
+	current_input(Old),
+	open(File, read, S, []),
+	setup_call_cleanup(
+		set_input(S),
+		(	call(Goal),
+			(	Waits == true
+			->	true				% the query consumed the sentinel itself
+			;	left_unread(Peek, S)
+			)
+		),
+		(	set_input(Old),
+			catch(close(S), _, true),
+			catch(delete_file(File), _, true)
+		)
 	).
+
+input_chars(no_input, []).
+input_chars(chars(Cs), Cs).
+
+input_file(Cs, Peek, File) :-
+	File = 'tmp.quads-input',
+	open(File, write, S, []),
+	put_chars(Cs, S),
+	( Peek = char(P) -> put_char(S, P) ; true ),
+	close(S),
+	open(File, append, B, [type(binary)]),
+	put_byte(B, 0xff),
+	close(B).
+
+put_chars([], _).
+put_chars([C|Cs], S) :- put_char(S, C), put_chars(Cs, S).
+
+% What the query did not consume. With peeks(P) the peeked character
+% must still be there - a peek that took it is exactly the bug #1101
+% was about - and the sentinel behind it. Without a peeks, the sentinel
+% must come at once: anything else means the query read less than the
+% answer says it did.
+
+left_unread(no_peek, S) :- !,
+	sentinel_next(S).
+left_unread(char(P), S) :-
+	catch(get_char(S, C), _, fail),
+	C == P,
+	sentinel_next(S).
+
+sentinel_next(S) :-
+	catch(( get_char(S, _), fail ),
+		error(representation_error(character), _),
+		true).
 
 take_output([], [], no_output).
 take_output([I|T], Rest, Out) :-
