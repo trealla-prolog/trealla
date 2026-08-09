@@ -1,0 +1,25 @@
+quads: FAILED test1099.pl:48
+   ?- get_char(C).
+   expected: inputs([a,b]),C=a
+quads: FAILED test1099.pl:53
+   ?- get_char(C),get_char(_54).
+   expected: inputs([a]),C=a
+quads: FAILED test1099.pl:58
+   ?- get_char(C).
+   expected: peeks([a]),C=a
+quads: FAILED test1099.pl:63
+   ?- true.
+   expected: inputs([]),waits
+quads: MALFORMED test1099.pl:68
+   ?- get_char(C).
+   not an answer: peeks([a,b])
+quads: MALFORMED test1099.pl:74
+   ?- get_char(C).
+   not an answer: inputs(seq([a]))
+quads: MALFORMED test1099.pl:79
+   ?- get_char(C).
+   not an answer: inputs([b])
+quads: MALFORMED test1099.pl:85
+   ?- peek_char(C).
+   not an answer: peeks([c]),waits
+quads: 14 run, 6 passed, 8 failed.

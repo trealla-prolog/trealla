@@ -43,6 +43,31 @@ struct visit_ {
 	pl_ctx c_ctx;
 };
 
+// May this packed string be written in "..." notation? (#1103)
+//
+// The answer must depend only on the *content* of the list and the
+// double_quotes flag in force at print time -- never on how the term
+// was built. Otherwise two terms that are == print differently, eg
+//
+//   ?- atom_codes(A,[0]), atom_codes(A,Cs), Ds = [0], Cs = Ds.
+//
+// where Cs is a packed string and Ds a cons list, yet Cs == Ds.
+//
+// A codes list is always written in list form: that matches what the
+// cons-list path does for the same content, and it is what the default
+// double_quotes=codes already did for packed strings.
+
+static bool dq_string_ok(const query *q, const cell *c)
+{
+	if (!q->st.m->flags.double_quote_chars)
+		return false;
+
+	if (is_string(c) && (c->flags & FLAG_CSTR_CODES))
+		return false;
+
+	return true;
+}
+
 static bool has_visited(visit *visited, cell *c, pl_ctx c_ctx)
 {
 	while (visited) {
@@ -870,7 +895,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 			TPL_free(tmp_src);
 			print_list++;
-		} else if (is_string(tail) && !q->double_quotes) {
+		} else if (is_string(tail) && (!q->double_quotes || !dq_string_ok(q, tail))) {
 			SB_sprintf(q->sb, "%s", ",");
 			print_string_list(q, tail, tail_ctx, running, 1, depth+1);
 			SB_sprintf(q->sb, "%s", "]");
@@ -1012,7 +1037,7 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 	bool is_needs_quoting = needs_quoting(q->st.m, src, src_len);
 	int quote = ((running <= 0) || q->quoted) && !is_var(c) && is_needs_quoting;
 	int dq = 0, braces = 0;
-	if (is_string(c) && q->double_quotes) dq = quote = 1;
+	if (is_string(c) && q->double_quotes && dq_string_ok(q, c)) dq = quote = 1;
 	if (q->quoted < 0) quote = 0;
 	if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
 	cell *c1 = c->arity && running ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
@@ -1520,7 +1545,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, unsigned depth)
 {
 	/* Trealla double_quotes / #890 rightsplice chars printing */
-	int is_chars_list = is_string(c) && q->double_quotes;
+	int is_chars_list = is_string(c) && q->double_quotes && dq_string_ok(q, c);
 	bool possible_chars = false, has_var = false, is_partial = false;
 	cell *v = NULL;
 
@@ -1780,7 +1805,7 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 		return true;
 	}
 
-	if (is_string(c) && (!q->double_quotes || q->st.m->flags.double_quote_codes)) {
+	if (is_string(c) && (!q->double_quotes || !dq_string_ok(q, c))) {
 		print_string_list(q, c, c_ctx, running, cons > 0, depth+1);
 		q->last_thing = WAS_OTHER;
 		return true;
