@@ -25,6 +25,12 @@ void unshare_cells(cell *src, pl_idx num_cells);
 
 void compile_clause(predicate *pr, clause *cl, cell *body);
 
+// bif_dcgs.c. The translator keeps its structs static; this is the one
+// entry point parser.c needs. p->cl->cells must be a (H --> B) term; on
+// success p->cl is replaced with the translated clause.
+
+bool dcg_expand_clause(parser *p);
+
 void make_uint(cell *tmp, pl_uint v);
 void make_int(cell *tmp, pl_int v);
 void make_float(cell *tmp, pl_flt v);

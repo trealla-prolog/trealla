@@ -2662,76 +2662,12 @@ static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 
 static bool term_expansion(parser *p);
 
-static bool dcg_expansion(parser *p)
-{
-	query *q = query_create(p->m);
-	check_error(q);
-
-	q->trace = false;
-	cell *c = p->cl->cells;
-	cell *tmp = alloc_heap(q, 1+c->num_cells+1+1);
-	make_instr(tmp, g_dcg_translate_s, NULL, 2, c->num_cells+1);
-	dup_cells(tmp+1, p->cl->cells, c->num_cells);
-	make_ref(tmp+1+c->num_cells, p->cl->num_vars, 0);
-	make_end(tmp+1+c->num_cells+1);
-	bool ok = execute(q, tmp, p->cl->num_vars+MAX_ARITY);
-
-	if (!ok || q->abort) {
-		query_destroy(q);
-		p->error = true;
-		return false;
-	}
-
-	cell *arg1 = tmp + 1;
-	cell *arg2 = arg1 + arg1->num_cells;
-	c = deref(q, arg2, 0);
-	q->max_depth = -1;
-	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
-
-	if (!src) {
-		query_destroy(q);
-		p->error = true;
-		return false;
-	}
-
-	strcat(src, ".");
-	query_destroy(q);
-
-	parser *p2 = parser_create(p->m);
-	check_error(p2);
-	p2->srcptr = src;
-	tokenize(p2, false, false);
-
-	if (p2->error) {
-		parser_destroy(p2);
-		TPL_free(src);	// FIX: q already destroyed above (removed double query_destroy); free leaked src
-		p->error = true;
-		return false;
-	}
-
-	process_clause(p2->m, p2->cl, NULL);
-	TPL_free(src);
-
-	clear_clause(p->cl);
-	TPL_free(p->cl);
-	p->cl = p2->cl;					// Take the completed clause
-	p->num_vars = p2->num_vars;
-	p2->cl = NULL;
-	parser_destroy(p2);
-
-	return true;
-}
-
 static bool term_expansion(parser *p)
 {
 	if (p->error || p->internal || !is_interned(p->cl->cells))
 		return false;
 
 	cell *c = p->cl->cells;
-
-	if ((c->val_off == g_dcg_s) && (c->arity == 2)) {
-		dcg_expansion(p); // FIXME: need to term_expand & may be a list?
-	}
 
 	c = p->cl->cells;
 	module *m = p->m;
@@ -3136,6 +3072,12 @@ static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 {
 	int arity = goal->arity;
 
+	// Both `goal` and `k` point into p->cl->cells, which make_room()
+	// below can grow and hence move. Their indices survive the realloc
+	// where the pointers do not.
+
+	const unsigned goal_idx = goal - p->cl->cells;
+
 	for (cell *k = goal+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
 		cell tmpbuf[2];
 
@@ -3161,6 +3103,15 @@ static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 		unsigned new_cells = 2, k_idx = k - p->cl->cells;
 		unsigned trailing = (p->cl->cidx - k_idx) + 1;
 		make_room(p, new_cells);
+
+		// ... and re-derive, because that may have moved the clause.
+		// k_idx was already being computed for the trailing count; the
+		// pointers were simply never refreshed from it. A parsed clause
+		// usually arrives with enough slack that make_room() returns
+		// without reallocating, which is why this stayed latent.
+
+		k = p->cl->cells + k_idx;
+		goal = p->cl->cells + goal_idx;
 
 		// shift up...
 
@@ -3304,8 +3255,13 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			if (pr->alias)
 				pr = pr->alias;
 
-			if (pr->is_meta_predicate)
+			if (pr->is_meta_predicate) {
 				expand_meta_predicate(p, pr, c);
+
+				// It inserts cells, so the clause may have moved.
+
+				c = p->cl->cells + c_idx;
+			}
 		}
 
 		if (meta) {
@@ -4673,6 +4629,28 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					return 0;
 				}
 
+				// DCG translation happens HERE, ahead of assign_vars(),
+				// so the translated clause goes through the ENTIRE
+				// pipeline exactly as a hand-written one would.
+				//
+				// This is not a free choice. goal_expansion() prints a
+				// goal and re-parses it, carrying variable identity
+				// across that boundary by NAME through the inherited
+				// vartab (p2->vartab = p->vartab, reuse = true). Fresh
+				// variables invented after assign_vars() have no vartab
+				// entry, so that re-parse hands them new slots and the
+				// S0/S threading is silently lost. Letting assign_vars()
+				// see them is what registers the names.
+
+				if (p->is_consulting && !p->skip && !p->internal
+					&& is_interned(p->cl->cells)
+					&& (p->cl->cells->val_off == g_dcg_s)
+					&& (p->cl->cells->arity == 2)) {
+					dcg_expand_clause(p); // FIXME: need to term_expand & may be a list?
+
+					if (p->error) return 0;
+				}
+
 				assign_vars(p, p->read_term_slots, false);
 
 				if (p->error) return 0;
@@ -4685,6 +4663,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					p->error = true;
 					return 0;
 				}
+
 
 				process_clause(p->m, p->cl, NULL);
 

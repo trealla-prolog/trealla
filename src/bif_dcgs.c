@@ -56,7 +56,23 @@ typedef struct {
 	dcg_arena ar;
 	prolog *pl;
 	module *m;
-	query *q;		// deref + fresh vars; NULL at consult time
+
+	// Exactly one of these is set. The query path derefs, makes fresh
+	// variables with create_vars(), and emits variables as REFS carrying
+	// a context. The parser path has no bindings to deref, numbers fresh
+	// variables straight off p->cl->num_vars, and must emit plain clause
+	// variables - a ref in a consulted clause would be nonsense.
+
+	query *q;
+	parser *p;
+	bool by_ref;		// true on the query path
+
+	// The context fresh variables carry. q->st.cur_ctx on the query
+	// path, 0 at consult time. Held here rather than fetched from the
+	// query, so nothing below has to know which path it is on.
+
+	pl_ctx v_ctx;
+	unsigned nvars;		// consult-time fresh-variable counter
 	unsigned depth;
 	bool oom;
 
@@ -211,7 +227,11 @@ static bool emit_term(dcg_ctx *c, const cell *t, pl_ctx t_ctx)
 	if (!dst)
 		return false;
 
-	dup_cells_by_ref(dst, t, t_ctx, t->num_cells);
+	if (c->by_ref)
+		dup_cells_by_ref(dst, t, t_ctx, t->num_cells);
+	else
+		dup_cells(dst, t, t->num_cells);
+
 	return true;
 }
 
@@ -415,19 +435,55 @@ static bool dcg_is_constr(const cell *t)
 
 static bool new_var(dcg_ctx *c, cell *out)
 {
-	if (!c->q) {
+	if (c->q) {
+		int n = create_vars(c->q, 1);
+
+		if (n < 0) {
+			c->oom = true;
+			return false;
+		}
+
+		make_ref(out, (unsigned)n, c->v_ctx);
+		return true;
+	}
+
+	// Consult time. Section 10 option (b): anonymous and temporary, with
+	// no vartab entry. That is safe because assign_vars() has already run
+	// by the time term_expansion() is reached (parser.c: assign_vars at
+	// 4676, term_expansion at 4695) and process_clause() does not call
+	// it, so nothing renumbers these from their names afterwards. If
+	// phase 4 ever reorders expansion ahead of assign_vars, revisit.
+
+	if (c->p->cl->num_vars >= MAX_VARS) {
+		set_error(c, "resource_error", "max_vars", NULL, 0);
+		return false;
+	}
+
+	// Emitted NAMED and unnumbered: assign_vars() runs after this and
+	// assigns the slot, registering the name in the vartab as it goes.
+	//
+	// That registration is the whole point. goal_expansion() prints a
+	// goal and re-parses it, reconnecting variables by name through the
+	// inherited vartab; a variable with no entry there comes back as a
+	// different one, which silently unthreads S0/S. Section 10 option (b)
+	// - anonymous, temporary, no vartab entry - cannot work for that
+	// reason, and FLAG_VAR_TEMPORARY separately breaks head-argument
+	// sharing.
+	//
+	// The name only has to be unique within this clause. A user variable
+	// literally named _S<n> in the same clause would merge with ours;
+	// the old round trip had the same exposure with its generated names.
+
+	char name[32];
+	snprintf(name, sizeof(name), "_S%u", c->nvars++);
+	pl_idx off = new_atom(c->pl, name);
+
+	if (off == ERR_IDX) {
 		c->oom = true;
 		return false;
 	}
 
-	int n = create_vars(c->q, 1);
-
-	if (n < 0) {
-		c->oom = true;
-		return false;
-	}
-
-	make_ref(out, (unsigned)n, c->q->st.cur_ctx);
+	make_var(out, off, 0);
 	return true;
 }
 
@@ -635,12 +691,12 @@ static dcg_rc xlate_pair(dcg_ctx *c, pl_idx functor, const cell *b, pl_ctx b_ctx
 	if (c->oom)
 		return DCG_ERROR;
 
-	dcg_rc rc = xlate_body(c, lhs, l_ctx, s0, s0_ctx, &s1, c->q->st.cur_ctx);
+	dcg_rc rc = xlate_body(c, lhs, l_ctx, s0, s0_ctx, &s1, c->v_ctx);
 
 	if (rc != DCG_OK)
 		return rc;
 
-	rc = xlate_body(c, rhs, r_ctx, &s1, c->q->st.cur_ctx, s, s_ctx);
+	rc = xlate_body(c, rhs, r_ctx, &s1, c->v_ctx, s, s_ctx);
 
 	if (rc != DCG_OK)
 		return rc;
@@ -948,6 +1004,8 @@ static void dcg_ctx_init(dcg_ctx *c, query *q)
 	c->pl = q->pl;
 	c->m = q->st.m;
 	c->q = q;
+	c->by_ref = true;
+	c->v_ctx = q->st.cur_ctx;
 	dcg_init_atoms(q->pl);
 }
 
@@ -1004,6 +1062,88 @@ static bool bif_dcg_body_4(query *q)
 // dcg_terminals(Terminals, S, S1, Goal2), i.e. S = <PB ++ S1>, not the
 // other way round.
 
+// Translate (Head --> Body) into (Head' :- Body') in the arena. Shared
+// by both front-ends; on anything but DCG_OK the arena still belongs to
+// the caller, which must release it or hand it to dcg_raise().
+//
+// Head shapes, per the reference's four dcg_rule/2 clauses:
+//
+//   H --> B            ->  H(S0,S) :- B'(S0,S)
+//   H, PB --> B        ->  H(S0,S) :- B'(S0,S1), S = <PB ++ S1>
+//   M:H --> B, and M:H, PB --> B
+//
+// Note the argument order in the pushback case: the reference has
+// dcg_terminals(Terminals, S, S1, Goal2), i.e. S = <PB ++ S1>, not the
+// other way round.
+
+static dcg_rc xlate_rule(dcg_ctx *c, const cell *rule, pl_ctx rule_ctx, pl_ctx v_ctx)
+{
+	pl_ctx head_ctx, body_ctx;
+	cell *head = dcg_deref(c, nth_arg(rule, 0), rule_ctx, &head_ctx);
+	cell *body = dcg_deref(c, nth_arg(rule, 1), rule_ctx, &body_ctx);
+
+	// Split an optional pushback list off the head.
+
+	cell *pushback = NULL;
+	pl_ctx pushback_ctx = 0;
+
+	if (is_functor(head, g_conjunction_s, 2)) {
+		pl_ctx nt_ctx;
+		cell *nt = dcg_deref(c, nth_arg(head, 0), head_ctx, &nt_ctx);
+		pushback = dcg_deref(c, nth_arg(head, 1), head_ctx, &pushback_ctx);
+		head = nt;
+		head_ctx = nt_ctx;
+	}
+
+	cell s0, s, s1;
+
+	if (!new_var(c, &s0) || !new_var(c, &s))
+		return DCG_ERROR;
+
+	bool have_s1 = false;
+
+	if (pushback) {
+		if (!new_var(c, &s1))
+			return DCG_ERROR;
+
+		have_s1 = true;
+	}
+
+	unsigned neck = emit_open(c, g_neck_s, 2);
+	dcg_rc rc = c->oom ? DCG_ERROR : xlate_nonterminal(c, head, head_ctx, &s0, v_ctx, &s, v_ctx);
+
+	if (rc != DCG_OK)
+		return rc;
+
+	if (!have_s1) {
+		rc = xlate_body(c, body, body_ctx, &s0, v_ctx, &s, v_ctx);
+	} else {
+		unsigned conj = emit_open(c, g_conjunction_s, 2);
+		rc = c->oom ? DCG_ERROR : xlate_body(c, body, body_ctx, &s0, v_ctx, &s1, v_ctx);
+
+		if (rc == DCG_OK) {
+			unsigned eq = emit_open(c, g_unify_s, 2);
+
+			if (c->oom || !emit_cell(c, &s))
+				rc = DCG_ERROR;
+			else {
+				rc = emit_terminals(c, pushback, pushback_ctx, &s1, v_ctx, pushback, pushback_ctx);
+
+				if (rc == DCG_OK) {
+					emit_close(c, eq);
+					emit_close(c, conj);
+				}
+			}
+		}
+	}
+
+	if (rc != DCG_OK)
+		return rc;
+
+	emit_close(c, neck);
+	return DCG_OK;
+}
+
 static bool bif_dcg_rule_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -1017,47 +1157,7 @@ static bool bif_dcg_rule_2(query *q)
 
 	dcg_ctx c;
 	dcg_ctx_init(&c, q);
-
-	pl_ctx head_ctx, body_ctx;
-	cell *head = dcg_deref(&c, nth_arg(p1, 0), p1_ctx, &head_ctx);
-	cell *body = dcg_deref(&c, nth_arg(p1, 1), p1_ctx, &body_ctx);
-
-	// Split an optional pushback list off the head.
-
-	cell *pushback = NULL;
-	pl_ctx pushback_ctx = 0;
-
-	if (is_functor(head, g_conjunction_s, 2)) {
-		pl_ctx nt_ctx;
-		cell *nt = dcg_deref(&c, nth_arg(head, 0), head_ctx, &nt_ctx);
-		pushback = dcg_deref(&c, nth_arg(head, 1), head_ctx, &pushback_ctx);
-		head = nt;
-		head_ctx = nt_ctx;
-	}
-
-	cell s0, s, s1;
-
-	if (!new_var(&c, &s0) || !new_var(&c, &s)) {
-		arena_release(&c);
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
-	}
-
-	const pl_ctx v_ctx = q->st.cur_ctx;
-	bool have_s1 = false;
-
-	if (pushback) {
-		if (!new_var(&c, &s1)) {
-			arena_release(&c);
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
-		}
-
-		have_s1 = true;
-	}
-
-	// (Head :- Body)
-
-	unsigned neck = emit_open(&c, g_neck_s, 2);
-	dcg_rc rc = c.oom ? DCG_ERROR : xlate_nonterminal(&c, head, head_ctx, &s0, v_ctx, &s, v_ctx);
+	dcg_rc rc = xlate_rule(&c, p1, p1_ctx, c.v_ctx);
 
 	if (rc != DCG_OK) {
 		if (rc == DCG_DECLINE) {
@@ -1068,46 +1168,124 @@ static bool bif_dcg_rule_2(query *q)
 		return dcg_raise(q, &c);	// owns the arena
 	}
 
-	if (!have_s1) {
-		rc = xlate_body(&c, body, body_ctx, &s0, v_ctx, &s, v_ctx);
-	} else {
-		unsigned conj = emit_open(&c, g_conjunction_s, 2);
-		rc = c.oom ? DCG_ERROR : xlate_body(&c, body, body_ctx, &s0, v_ctx, &s1, v_ctx);
+	cell *out = arena_to_heap(&c, q);
 
-		if (rc == DCG_OK) {
-			unsigned eq = emit_open(&c, g_unify_s, 2);
-
-			if (c.oom || !emit_cell(&c, &s))
-				rc = DCG_ERROR;
-			else {
-				rc = emit_terminals(&c, pushback, pushback_ctx, &s1, v_ctx, pushback, pushback_ctx);
-
-				if (rc == DCG_OK) {
-					emit_close(&c, eq);
-					emit_close(&c, conj);
-				}
-			}
-		}
-	}
-
-	if (rc != DCG_OK) {
-		if (rc == DCG_DECLINE) {
-			arena_release(&c);
-			return false;
-		}
-
-		return dcg_raise(q, &c);	// owns the arena
-	}
-
-	emit_close(&c, neck);
-	cell *clause = arena_to_heap(&c, q);
-
-	if (!clause) {
+	if (!out) {
 		arena_release(&c);
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
 	}
 
-	return unify(q, p2, p2_ctx, clause, q->st.cur_ctx);
+	return unify(q, p2, p2_ctx, out, q->st.cur_ctx);
+}
+
+// --- consult-time front end ------------------------------------------
+//
+// Replaces dcg_expansion(), which created a query, ran dcg_translate/2,
+// printed the result canonically, spun up a fresh parser and re-tokenized
+// it - per DCG clause. Everything in section 1.1's hazard table came from
+// that round trip; none of it survives here.
+
+static clause *arena_to_clause(dcg_ctx *c)
+{
+	// Headroom, so the first in-place growth downstream
+	// (expand_meta_predicate, goal_expansion, insert_call_here) does not
+	// immediately realloc. Correctness no longer depends on it - the two
+	// stale-pointer bugs in parser.c that an exactly-sized clause used to
+	// expose are fixed - but a parsed clause arrives with slack from
+	// make_room()'s 3/2 growth and there is no reason to be stingier.
+
+	const unsigned cap = c->ar.len + 64;
+	clause *cl = TPL_calloc(1, sizeof(clause) + (sizeof(cell) * cap));
+
+	if (!cl)
+		return NULL;
+
+	cl->num_allocated_cells = cap;
+	cl->cidx = c->ar.len;
+
+	// assign_vars() runs next and recomputes num_vars from scratch.
+
+	cl->num_vars = 0;
+
+	// A plain copy: the arena's references transfer wholesale, so the
+	// arena must NOT be unshared afterwards. clear_clause() will release
+	// exactly these cidx cells when the clause dies.
+
+	copy_cells(cl->cells, c->ar.buf, c->ar.len);
+	free(c->ar.buf);
+	c->ar.buf = NULL;
+	c->ar.len = c->ar.cap = 0;
+	return cl;
+}
+
+bool dcg_expand_clause(parser *p)
+{
+	dcg_ctx c;
+	memset(&c, 0, sizeof(c));
+	c.pl = p->m->pl;
+	c.m = p->m;
+	c.p = p;
+	c.by_ref = false;
+	dcg_init_atoms(c.pl);
+
+	dcg_rc rc = xlate_rule(&c, p->cl->cells, 0, c.v_ctx);
+
+	if (rc != DCG_OK) {
+		arena_release(&c);
+
+		// The parser has no exception channel - that is section 1.1's
+		// last row, and fixing it is not this phase's job. But it can at
+		// least say what went wrong, where; dcg_expansion() set the flag
+		// and said nothing at all.
+
+		if (c.oom)
+			fprintf(stderr, "Error: DCG translation out of memory, %s:%d\n",
+				get_loaded(p->m, p->m->filename), p->line_num);
+		else
+			fprintf(stderr, "Error: %s in DCG rule, %s:%d\n",
+				c.has_ball ? "representation_error(dcg_body) or type_error" :
+				c.err_type ? c.err_type : "malformed DCG rule",
+				get_loaded(p->m, p->m->filename), p->line_num);
+
+		p->error_desc = "dcg_body";
+		p->error = true;
+		return false;
+	}
+
+	// term_to_body() computes cells->num_cells as cidx-1, i.e. it expects
+	// a trailing TAG_END the way a tokenized clause has one.
+
+	cell *end = arena_alloc(&c, 1);
+
+	if (!end) {
+		arena_release(&c);
+		p->error_desc = "memory";
+		p->error = true;
+		return false;
+	}
+
+	make_end(end);
+
+	// At THIS point in tokenize() - before assign_vars() - the root cell's
+	// num_cells still counts the trailing TAG_END; the check just above
+	// assign_vars rejects a clause where num_cells < cidx, and
+	// term_to_body() subtracts the END later ("Drops TAG_END"). Insert
+	// after term_to_body instead and the opposite convention applies.
+
+	c.ar.buf[0].num_cells = c.ar.len;
+	clause *cl = arena_to_clause(&c);
+
+	if (!cl) {
+		arena_release(&c);
+		p->error_desc = "memory";
+		p->error = true;
+		return false;
+	}
+
+	clear_clause(p->cl);
+	TPL_free(p->cl);
+	p->cl = cl;
+	return true;
 }
 
 builtins g_dcgs_bifs[] =
