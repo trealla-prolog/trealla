@@ -437,12 +437,19 @@ static bool bif_iso_asserta_1(query *q)
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
-	parser_destroy(p);
 
 	if (!r) {
+		// h points into p->cl, so copy it out BEFORE parser_destroy()
+		// frees that. Only the static-procedure error path reads h,
+		// which is why this stayed latent.
+
 		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		parser_destroy(p);
+		CHECKED(h);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
+
+	parser_destroy(p);
 
 	db_log(q, r, LOG_ASSERTA);
 	return true;
@@ -495,12 +502,19 @@ static bool do_assertz_1(query *q, bool consulting)
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
-	parser_destroy(p);
 
 	if (!r) {
+		// h points into p->cl, so copy it out BEFORE parser_destroy()
+		// frees that. Only the static-procedure error path reads h,
+		// which is why this stayed latent.
+
 		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		parser_destroy(p);
+		CHECKED(h);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
+
+	parser_destroy(p);
 
 	db_log(q, r, LOG_ASSERTZ);
 	return true;
@@ -571,12 +585,19 @@ static bool do_asserta_2(query *q)
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
-	parser_destroy(p);
 
 	if (!r) {
+		// h points into p->cl, so copy it out BEFORE parser_destroy()
+		// frees that. Only the static-procedure error path reads h,
+		// which is why this stayed latent.
+
 		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		parser_destroy(p);
+		CHECKED(h);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
+
+	parser_destroy(p);
 
 	if (!is_var(p2)) {
 		uuid u;
@@ -665,12 +686,19 @@ static bool do_assertz_2(query *q)
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
-	parser_destroy(p);
 
 	if (!r) {
+		// h points into p->cl, so copy it out BEFORE parser_destroy()
+		// frees that. Only the static-procedure error path reads h,
+		// which is why this stayed latent.
+
 		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		parser_destroy(p);
+		CHECKED(h);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
+
+	parser_destroy(p);
 
 	if (!is_var(p2)) {
 		uuid u;
