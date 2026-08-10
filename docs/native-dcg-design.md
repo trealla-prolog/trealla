@@ -9,10 +9,17 @@ interface is preserved exactly; the shared reference implementation is not.
 `goal_expansion` region), `src/heap.c`, `src/heap.h`, `src/query.h`,
 `src/builtins.h`, `src/internal.h`. Also
 [`phrase_quad.pl`](https://www.complang.tuwien.ac.at/ulrich/iso-prolog/phrase_quad.pl)
-and issues #1102, #1103. Not read: `src/prolog.c`, `src/module.c`, `src/unify.c`,
-the rest of `src/parser.c`. Assumptions resting on those are marked **[verify]**.
+and issues #1102, #1103.
 
-Behaviour confirmed on v3.1.28 by direct test is marked **[tested]**.
+**Second pass.** The originally unread files — `src/prolog.c`, `src/module.c`,
+`src/unify.c`, `src/query.c` and the rest of `src/parser.c` — have since been
+worked through, and seven of the nine open questions in §13 are now answered.
+Three of those answers changed the design rather than confirming it: §6 (slices
+verified, option 1 safe), §8.1 (the cross-module binding, and one struck claim)
+and §10 (the variable strategy, and the phase-4 dependency it creates). A
+No **[verify]** markers remain. **[tested]** marks behaviour confirmed by direct
+test, on v3.1.28 or on this tree as noted. What is still open in §13 is a design
+decision (5) and one thing that cannot be known before the code exists (6).
 
 ---
 
@@ -232,6 +239,18 @@ a --> (b -> c ; d).      % translates fine
 Quad 22 (`phrase('|'(([x]->[y]),[z]),L)` → `representation_error(dcg_body)`) and
 quad 23 (`;` form → `L=[x,y]`) pin this down. Reproduce it exactly.
 
+**[tested]** on this tree, via `dcgs:dcg_rule/2` directly:
+
+```prolog
+a --> \+ b        →  error(representation_error(dcg_body), [culprit-(\+b)])
+a --> (b -> c)    →  error(representation_error(dcg_body), [culprit-(b->c)])
+a --> (b -> c;d)  →  a(A,B) :- b(A,C) -> c(C,B) ; d(A,B)
+```
+
+Note the **context is `[culprit-X]`, a list**, not a conventional error context.
+"Reproduce it exactly" includes that shape — reproducing only the formal class
+will silently change any test that matches on the whole ball.
+
 ### 5.2 Instantiation errors are deliberately deferred — preserve
 
 The reference's `error_goal/2` swallows `instantiation_error` so the construct is
@@ -313,6 +332,26 @@ Every non-terminal either threads both or raises.
 implicated; quad 2 already passes. The defect is confined to non-callables
 *inside a compound body*.
 
+**[tested]** on this tree, the three failing quads as they stand today:
+
+```prolog
+13  error(type_error(callable,((fail,_=_),1)),call/1)
+46  error(type_error(callable,(1,2,_=[])),call/1)
+47  error(type_error(callable,((2,[]=_),1)),call/1)
+```
+
+Right class, whole-body culprit, `call/1` as context — exactly the analysis
+above, confirmed rather than assumed.
+
+**There is already a test for this, and it is too weak to catch the fix.**
+`tests/issues/test832.pl` is literally `phrase(({fail},1),_)` — quad 13 — and
+`tests/issues/test832.expected` is the single line `Error: main`, which passes
+on *any* error whatsoever. That is a large part of why the defect survived: git
+history shows the reference realignment (`60f1811b`) landing and being reverted
+the next morning (`1cf402bf`), with the test files kept. Phase 3 must tighten
+that `.expected` to the specific term, or the one existing regression test for
+#1102 will pass both before and after.
+
 ### 5.4 Divergence is now permanent
 
 Because the reference `.pl` keeps the bug until UWN and Scryer change it
@@ -339,21 +378,37 @@ Options for `S0 = "abc" ++ S`:
 
 1. **Materialise at translate time.** Matches today's `append/3`. A 4 KB literal
    becomes ~8000 cells. Does *not* forfeit the consuming fast path: unifying
-   `[a,b,c|S]` against `"abcdef"` must bind `S` to `"def"`, a legal complete
-   string, so the slice happens inside `unify.c` — **[verify]** that it does.
+   `[a,b,c|S]` against `"abcdef"` binds `S` to `"def"`, a legal complete string,
+   with the slice happening inside `unify.c`. **Confirmed** — see below.
 2. `lists:append(Str, S, S0)` — small clause, traversal per call, `lists`
    dependency in every DCG.
 3. `'$string_prefix'(Str, S, S0)`, a native builtin switching on mode: `memcmp` +
    `make_slice` when `S0` is a string, materialise otherwise.
 
-**Recommendation: option 1 by default**, option 3 above ~64 chars as a
-clause-size mitigation. Assuming `unify.c` slices, option 3 is not a speed
-optimisation — it is about not embedding multi-kilobyte literals as tens of
-thousands of cells.
+**`unify.c` does slice — verified, so option 1 is safe.** The chain:
 
-Also handle `[]` vs `'[]'` (**[verify]** that Trealla distinguishes them), nested
-strings under all three `double_quotes` settings, and improper lists (quad 5:
-`phrase([a|b],L)` → `type_error(list,[a|b])`).
+* `unify_internal` dispatches string × iso-list to `unify_string_to_list`
+  (`unify.c` line 686).
+* That walks with `LIST_TAIL`, and `list_tail` on a string is a pure offset bump
+  — `parser.c` lines 74–113 handle the slice, strbuf and small-string cases and
+  return a string cell in every one. No allocation, no cons.
+* When the list side runs out into a variable, the closing `unify_internal`
+  binds it through `set_var`, which for a non-compound does
+  `e->c = *v; share_cell(v)` (`unify.c` line 279) — copied by value, refcount
+  bumped. The slice is stored directly in the slot.
+
+**[tested]**: 100,000 successive prefix peels off a 200,000-character literal
+run in 0.06s. Materialising the tail would be quadratic.
+
+**Recommendation: option 1 by default**, option 3 above ~64 chars as a
+clause-size mitigation. Option 3 is therefore *not* a speed optimisation — it is
+only about not embedding multi-kilobyte literals as tens of thousands of cells.
+
+On `[]` vs `'[]'`: **[tested]** Trealla does *not* distinguish them — `[] == '[]'`
+succeeds, both print as `[]`, and `atom([])` is true. So there is no second nil to
+handle, unlike Scryer. Still handle nested strings under all three
+`double_quotes` settings, and improper lists (quad 5: `phrase([a|b],L)` →
+`type_error(list,[a|b])`).
 
 ---
 
@@ -368,9 +423,15 @@ Watch:
 * **`'|'` vs `;`.** The module declares `op(1105, xfy, '|')` and the reference has
   *separate* `dcg_constr` clauses for `(_;_)` and `(_'|'_)`, so `|` does not
   collapse to `;` at read time. Quad 12 (`phrase('|'([],[a]),[a])` → `true`) and
-  quad 22 both exercise it. **[verify]** against the tokenizer's `double_bar`.
+  quad 22 both exercise it. **[tested]** — both `'|'(a,b)` and the operator form
+  `(a|b)` read back with functor `(|)/2`, and unification against `';'(_,_)`
+  fails. No collapse; the two clauses are genuinely needed.
 * `{}` is `g_braces_s`/1; `call/N` is any arity ≥ 1; `phrase/1..3` only (other
   arities are ordinary non-terminals); `:`/2 composes with all of the above.
+* **`g_braces_s` is registered twice** — `prolog.c` line 570 as `"braces"` and
+  line 577 as `"{}"`, the second winning. §7 depends on it meaning `{}`/1, which
+  it does, but by ordering accident rather than intent. Worth not disturbing, and
+  worth not relying on silently.
 
 ---
 
@@ -379,9 +440,13 @@ Watch:
 The module survives; only its contents change. Keeping it means
 `use_module(library(dcgs))` needs no special-casing in `module.c`,
 `op(1105, xfy, '|')` stays scoped to the module exactly as it is today rather
-than becoming a global operator, `dcgs:`-qualified calls keep resolving, and
-`prolog_`'s `module *dcgs` field keeps its meaning. The whole file is
-Trealla-authored, so the §1.2 constraint does not apply to it.
+than becoming a global operator, and `dcgs:`-qualified calls keep resolving. The
+whole file is Trealla-authored, so the §1.2 constraint does not apply to it.
+
+(An earlier draft also cited `prolog_`'s `module *dcgs` field. That field
+— `internal.h` line 937 — is **declared and never assigned or read anywhere in
+`src/`**. It is vestigial and is not a reason for anything. Left alone here;
+deleting it is someone else's tidy-up.)
 
 In full, more or less:
 
@@ -435,8 +500,10 @@ Two details carried over from the reference that are easy to lose:
 inside the very module that used to define DCG translation — today that works
 only because `dcg_translate/2` in `builtins.pl` is already loaded and calls back
 into `dcgs.pl` as it is being consulted. With translation native, the file is
-just a consumer like any other. **[verify]** bif registration precedes the
-`g_libs` consult.
+just a consumer like any other. **Confirmed**: `load_builtins(pl)` runs at
+`prolog.c` line 793, the `g_libs` bootstrap consult at line 847, same function —
+bifs are registered first. Note also that only `builtins` is bootstrapped there;
+`dcgs` arrives later and transitively, which matters in §8.1.
 
 ### 8.1 `expand_term/2` and `dcg_translate/2`
 
@@ -474,18 +541,33 @@ Three things change around them.
   unused and its atom registration can go with it. `expand_term/2` and
   `dcg_translate/2` cease to be load-bearing and become ordinary user-callable
   utilities — their behaviour can no longer break a consult.
-* **A silent cross-module dependency disappears.** `dcg_translate/2` currently
-  calls `dcg_rule/2` *unqualified*, and `dcg_rule/2` is defined in the `dcgs`
-  module and **is not in its export list**. That resolves only by whatever
-  fallback Trealla uses for unqualified cross-module calls, and it means
-  `builtins.pl` quietly depends on `library(dcgs)` having been loaded first. As a
-  bif, `'$dcg_rule'/2` is globally visible by construction and the dependency
-  becomes explicit. **[verify]** how the current call resolves — if it relies on a
-  search-all-modules fallback, that is worth knowing about independently.
-* **They start working before `library(dcgs)` is loaded**, since a bif is always
-  present. Today `expand_term((a-->b), X)` presumably errors or fails without
-  dcgs; afterwards it works. A behaviour change, and an improvement, but check no
-  test asserts the old behaviour.
+* **A silent cross-module dependency disappears — and it is worse than a
+  fallback.** `dcg_translate/2` calls `dcg_rule/2` *unqualified*, and `dcg_rule/2`
+  is defined in the `dcgs` module and **is not in its export list**. Three things
+  are now established:
+
+  - `search_predicate` has **no** search-all-modules fallback. It tries the
+    given module, then `pl->user_m`, and stops (`module.c` lines 308–322).
+  - **[tested]** unqualified `dcg_rule/2` from `user` raises
+    `existence_error(procedure, dcg_rule/2)`; `user:dcg_rule` and
+    `builtins:dcg_rule` both raise; only `dcgs:dcg_rule` resolves.
+  - **[tested]** defining `dcg_rule/2` in `user` does **not** shadow it —
+    `dcg_translate/2` still reaches the `dcgs` one.
+
+  So the binding is neither lexical nor shadowable, and `search_predicate` alone
+  cannot account for it. The mechanism in the code capable of producing this is
+  the per-cell `c->match` cache (`query.c` lines 1978–1986), fixed at whatever
+  module happened to be current on the first successful resolution and never
+  revisited. That makes this an order-dependent cached binding to a non-exported
+  predicate in another module — a stronger argument for the bif than "a fallback
+  we should look up". As a bif, `'$dcg_rule'/2` is globally visible by
+  construction and the whole question stops existing.
+* ~~**They start working before `library(dcgs)` is loaded.**~~ **Struck — this is
+  wrong.** **[tested]** `expand_term((a-->b), X)` and `dcg_translate((a-->b), X)`
+  both already succeed in a bare `tpl` with no `use_module(library(dcgs))`,
+  because `dcgs` is loaded transitively at startup: `format`, `pio`, `dif` and
+  `freeze` all `use_module(library(dcgs))`, and they are loaded anyway. There is
+  no behaviour change here and no test to check.
 
 **Sequencing.** Make this edit in **phase 0**, not phase 3. `'$dcg_rule'/2`
 exists from phase 0, `dcg_rule/2` is still there as the fallback if it needs
@@ -514,8 +596,17 @@ Steps 3–4 make the reference a baseline, not an authority. Without step 5 the
 harness converts every known bug into a regression test.
 
 **ISO conformance gate.** #1102 reports 54/57 phrase quads passing. Wire
-`phrase_quad.pl` in and require 57/57 before the module switches over. Guard
-especially against over-eager checking:
+`phrase_quad.pl` in and require 57/57 before the module switches over.
+
+Two practical notes before that can happen. **`phrase_quad.pl` is not in the
+tree** — it has to be fetched from the URL in the source-basis list and vendored,
+and the whole gate depends on it, so do that in phase 0 rather than discovering
+it at phase 3. And **do not confuse it with the RDF quads work**: `library/quads.pl`,
+`tests/misc/quads.pl`, `docs/quads-proposal.md` and `docs/quads-input-proposal.md`
+are an unrelated in-progress feature that happens to share the word. Give the
+vendored file an unambiguous name (`tests/phrase_quads.pl`).
+
+Guard especially against over-eager checking:
 
 | Quad | Query | Required | Guards against |
 |---|---|---|---|
@@ -528,7 +619,10 @@ especially against over-eager checking:
 
 Plus:
 
-* The repo's existing DCG tests, unchanged — the real contract.
+* The repo's existing DCG tests, unchanged — the real contract. **One exception:**
+  `tests/issues/test832.expected` must be tightened (§5.3). As it stands it
+  asserts only `Error: main` and would pass both before and after the fix, so
+  leaving it alone would mean shipping #1102's fix with no test that can fail.
 * Targeted: pushback lists; module-qualified head and body; `!` inside `{}` vs
   bare; `double_quotes` = `codes`/`chars`/`atom`; `[]` vs `'[]'`; a 100k-element
   terminal list; `phrase/3` with an unbound body; a body that is a bigint.
@@ -562,9 +656,38 @@ already performs — then `process_clause(p->m, p->cl, NULL)`. Fresh vars are
 
 Vartab: either (a) register `_S0`, `_S1`, … — costs `MAX_VAR_POOL_SIZE` headroom
 and pollutes `listing/1`; or (b) emit them `FLAG_VAR_ANON | FLAG_VAR_TEMPORARY`
-and skip the vartab. Recommend (b), which also keeps singleton warnings quiet.
-**[verify]** against `assign_vars()`, which may assume every `var_num <
-num_vars` has an entry.
+and skip the vartab. **(b), and it is safe — but for a different reason than
+the one above.**
+
+`assign_vars()` does not *require* vartab entries; it builds them, renumbering
+every variable in the clause from its **name** (`parser.c` line 2167 onward).
+That would indeed clobber hand-assigned var numbers. It never gets the chance,
+because of the order in `tokenize`:
+
+```
+line 4676   assign_vars(p, p->read_term_slots, false)
+line 4689   process_clause(p->m, p->cl, NULL)
+line 4695   term_expansion(p)          ← DCG expansion happens here
+```
+
+`assign_vars` runs *before* expansion, and `process_clause` (`module.c` line
+1805) does not call it — it only walks cells through `process_cell` and
+`mark_tail_positions`. So vars the translator emits after that point are never
+renumbered and never need an entry.
+
+Two consequences worth holding onto:
+
+* This is also why today's text round-trip needs generated `_G<n>` names (§1.1):
+  it re-parses, so the second parser runs its own full `assign_vars`. Native
+  translation removes the requirement outright.
+* **This is an ordering dependency, and phase 4 is what threatens it.** "Fix the
+  `term_expansion` ordering FIXME" is precisely the change that could move
+  expansion relative to `assign_vars`. If it ever runs first, every fresh `S0`
+  gets renumbered by name — and note that `get_varno` treats `"_"` as
+  never-matching (`parser.c` lines 2075, 2087), so anonymous vars would each take
+  a fresh pool entry and a `MAX_VARS` slot rather than being free. Option (b)
+  saves that headroom only for as long as the ordering holds. Re-check §10 as
+  part of phase 4, not after it.
 
 **Runtime.** `create_vars(q,n)` returns the base var number; emit
 `make_ref(cell, base+i, q->st.cur_ctx)`, mirroring the existing
@@ -590,11 +713,11 @@ Prolog clauses. Separate, later change.
 
 | Phase | Change | Risk |
 |---|---|---|
-| 0 | `src/bif_dcgs.c` with the translator, `'$dcg_rule'/2`, `'$dcg_body'/4`. Point `expand_term/2` and `dcg_translate/2` in `builtins.pl` at `'$dcg_rule'/2` (§8.1). The reference `library/dcgs.pl` still live. Land the differential harness so both run side by side. | Low — new code, one small live path, easily reverted |
-| 1 | Rewire `parser.c: term_expansion()` to call `dcg_translate_rule` directly; delete `dcg_expansion()` and the now-unused `g_dcg_translate_s`. | Medium — where the speedup lands |
+| 0 | `src/bif_dcgs.c` with the translator, `'$dcg_rule'/2`, `'$dcg_body'/4`. Point `expand_term/2` and `dcg_translate/2` in `builtins.pl` at `'$dcg_rule'/2` (§8.1). The reference `library/dcgs.pl` still live. Land the differential harness so both run side by side, and **vendor `phrase_quad.pl`** (§9) — the phase 3 gate depends on it. | Low — new code, one small live path, easily reverted |
+| 1 | Rewire `parser.c: term_expansion()` to call `dcg_translate_rule` directly; delete `dcg_expansion()` and the now-unused `g_dcg_translate_s` — note it is registered **twice**, `prolog.c` lines 563 and 596, so that is two lines to remove, not one. | Medium — where the speedup lands |
 | 2 | Native `goal_expansion` for `phrase/2,3`, replacing the print-and-reparse path there too. | Low |
-| 3 | **Replace `library/dcgs.pl`** with the simplified version (§8); move the reference to `tests/dcg_reference.pl`. Module, exports, op and `meta_predicate` declarations unchanged. Gate on 57/57 quads. | High — the switchover; #1102 closes here |
-| 4 | Fix the `term_expansion` ordering FIXME: user expansion first, then DCG, then handle a list result. | Medium — behaviour change, own tests |
+| 3 | **Replace `library/dcgs.pl`** with the simplified version (§8); move the reference to `tests/dcg_reference.pl`. Module, exports, op and `meta_predicate` declarations unchanged. Gate on 57/57 quads. Tighten `tests/issues/test832.expected` (§5.3). | High — the switchover; #1102/#832 close here |
+| 4 | Fix the `term_expansion` ordering FIXME: user expansion first, then DCG, then handle a list result. | Medium — behaviour change, own tests, **and it is what can invalidate §10's variable strategy**: the fresh-var scheme is safe only while expansion runs after `assign_vars` |
 | 5 | Optional: `'$string_prefix'`, native `seq//1` / `...//0`, `dcg_optimise` flag. | Low, opt-in |
 
 Phases 0–2 are independently revertable and leave the `.pl` in charge. Phase 3
@@ -604,33 +727,43 @@ is the commitment.
 
 ## 13. Open questions
 
-Resolved along the way, kept for the record: `use_module(library(dcgs))` needs no
-special-casing now the module survives; `op(1105, xfy, '|')` stays module-scoped
-rather than becoming a global operator; `call/N` reports the right culprit and is
-not implicated in #1102; Trealla has no partial strings.
+Resolved earlier: `use_module(library(dcgs))` needs no special-casing now the
+module survives; `op(1105, xfy, '|')` stays module-scoped rather than becoming a
+global operator; `call/N` reports the right culprit and is not implicated in
+#1102; Trealla has no partial strings.
+
+**Resolved against the source since.** Recorded here because several of these
+changed the design, not just confirmed it:
+
+1. **String slices — yes.** `unify.c` binds the tail to a slice, O(1), refcounted.
+   §6 option 1 is safe and option 3 is a clause-size mitigation only. See §6 for
+   the chain and the timing evidence.
+2. **`assign_vars()` — the question was mis-framed.** It builds the vartab rather
+   than requiring it, but it runs *before* `term_expansion`, so the translator's
+   fresh vars are never renumbered. Option (b), with an ordering caveat that
+   phase 4 must respect. See §10.
+3. **`'|'` vs `;` — distinct.** Both the canonical and operator forms read back as
+   `(|)/2`. See §7.
+4. **Bif registration precedes the `g_libs` consult — yes.** `prolog.c` 793 vs
+   847. See §8.
+7. **#832 *is* #1102.** `tests/issues/test832.pl` is `phrase(({fail},1),_)` —
+   quad 13 exactly. Not "closely related": the same defect, with a test already
+   in the tree whose `.expected` is too weak to fail. See §5.3.
+8. **No other dependents.** `library/builtins.pl` line 88 is the only reference to
+   the removed internals anywhere in `library/`, `tests/` or `samples/`.
+   `clpz.pl`'s `duodcg_body` is its own predicate, not a dependency.
+9. **The unqualified `dcg_rule/2` binding is not a fallback.** It is not lexical,
+   not shadowable, and `search_predicate` cannot account for it. See §8.1 — and
+   this one does matter beyond this design.
 
 Still open:
 
-1. Does `unify.c` bind the tail to a string *slice* (not a cons chain) when
-   `[a,b,c|S]` meets `"abcdef"`? Decides whether §6 option 1 keeps the consuming
-   fast path. Highest priority — it is the difference between a large literal
-   costing one `memcmp` or thousands of cells per call.
-2. Does `assign_vars()` require a vartab entry for every slot? Decides §10 (a) vs (b).
-3. Does `'|'`/2 survive read as a distinct functor from `;`/2, given
-   `op(1105,xfy,'|')` and the tokenizer's `double_bar` flag? Quads 12 and 22
-   exercise it.
-4. Does bif registration precede the `g_libs` consult, so the simplified
-   `dcgs.pl` can contain DCG rules (§8)?
 5. Should `\+ G` keep the `representation_error`, or translate as
    `(\+ phrase(G,S0,_), S0 = S)` as SWI does? Quads 27–30 accept both. Suggest
-   keeping the error by default, behind the `dcg_optimise`-style flag.
+   keeping the error by default, behind the `dcg_optimise`-style flag. (A design
+   decision, not a fact to look up. Current behaviour is recorded in §5.1.)
 6. Do quads 19, 20, 21 and 48 still pass once the eager check lands? They accept
    several answers and the fix changes *which* one Trealla gives. Both are listed,
    so it should hold — but it is the likeliest place to move a passing result.
-7. Does #832 overlap with #1102? Cited as closely related; not read.
-8. Does anything else in the tree depend on `dcgs:dcg_rule/2`, `dcgs:dcg_body/4`
-   or the other removed internals by name? `library/builtins.pl` is handled in
-   §8.1; there may be others.
-9. How does `builtins.pl`'s unqualified call to `dcg_rule/2` currently resolve,
-   given it is neither local nor exported from `dcgs`? See §8.1 — the answer
-   matters beyond this design.
+   Genuinely cannot be answered before the implementation exists; it is the first
+   thing to check when it does.
