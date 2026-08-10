@@ -3136,6 +3136,12 @@ static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 {
 	int arity = goal->arity;
 
+	// Both `goal` and `k` point into p->cl->cells, which make_room()
+	// below can grow and hence move. Their indices survive the realloc
+	// where the pointers do not.
+
+	const unsigned goal_idx = goal - p->cl->cells;
+
 	for (cell *k = goal+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
 		cell tmpbuf[2];
 
@@ -3161,6 +3167,13 @@ static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 		unsigned new_cells = 2, k_idx = k - p->cl->cells;
 		unsigned trailing = (p->cl->cidx - k_idx) + 1;
 		make_room(p, new_cells);
+
+		// ... and re-derive, because that may have moved the clause.
+		// k_idx was already being computed for the trailing count; the
+		// pointers were simply never refreshed from it.
+
+		k = p->cl->cells + k_idx;
+		goal = p->cl->cells + goal_idx;
 
 		// shift up...
 
@@ -3304,8 +3317,13 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			if (pr->alias)
 				pr = pr->alias;
 
-			if (pr->is_meta_predicate)
+			if (pr->is_meta_predicate) {
 				expand_meta_predicate(p, pr, c);
+
+				// It inserts cells, so the clause may have moved.
+
+				c = p->cl->cells + c_idx;
+			}
 		}
 
 		if (meta) {
