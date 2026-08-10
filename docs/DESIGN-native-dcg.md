@@ -61,6 +61,7 @@ Beyond speed, the text round-trip is semantically fragile:
 | Operator table | The body is printed with current ops and re-read with current ops. A user `:- op(...)` between print and read is impossible, but a *body containing* a term whose canonical form depends on op priorities must round-trip exactly. |
 | `double_quotes` flag | String literals in terminals print according to the flag and re-read according to the flag; the two must agree. |
 | Non-textual cells | Bigints, rationals, blobs, attributed vars, and stream handles inside `{Goal}` arguments must survive print → read. Blobs cannot. |
+| Embedded NUL | `dcg_expansion()` does `strcat(src, ".")` and hands `src` to the tokenizer as a C string. A NUL character anywhere in the printed clause truncates it. Any term that does not round-trip faithfully through the writer corrupts the clause — cf. issue #1103, where `atom_codes(A,[0])` produces an answer the reader will not accept back. |
 | Variable identity | Preserved only via generated `_G<n>` names. |
 | Var names | The original clause's `vartab` is discarded; `listing/1` and error messages lose user variable names. |
 | Error reporting | The only channel out is `p->error = true`; DCG errors do not surface as ISO exceptions with a culprit. |
@@ -201,7 +202,7 @@ output, so that the existing test suite and `listing/1` are unaffected.
 | 12 | `(If -> Then)` (7.14.12) | `representation_error` at top level; `(If' -> Then')` inside `;` | see §5 |
 | 13 | `M:Body` | translate `Body`, wrap as `M:Goal` | |
 | 14 | other callable | nonterminal: `NT(..., S0, S)` | one alloc + memcpy + `arity += 2`; this is the hot path |
-| 15 | non-callable | emit unchanged, let `call/N` throw at runtime | matches the `.pl` comment |
+| 15 | nonvar, non-callable | **raise `type_error(callable, T)` during translation** — never emit the bare term, never defer to `call/N` | fixes #1102; see §5b |
 
 Head translation (`dcg_rule/2`):
 
@@ -246,6 +247,116 @@ runtime, where the variable may by then be bound. The C code must emit
 `(must_be(list, L), append(L, S, S0))` for a terminal position that is a partial
 list rather than rejecting the clause. Same for `must_be/2` and `(=..)/2`
 errors, which `error_goal/2` *does* re-raise.
+
+---
+
+## 5b. Divergences from the reference: bugs not to replicate
+
+§5 lists behaviour to preserve. This section lists behaviour to **change**. The
+distinction matters because the verification plan (§10) compares against the
+Prolog implementation, and without an explicit divergence list that harness
+would enforce the current bugs.
+
+### Issue #1102 — `phrase/2` gives the wrong error (relates to #832)
+
+`1` in a non-terminal position is neither a variable nor callable, so
+[8.18.1.3 b] requires `type_error(callable, 1)`. Trealla currently produces
+something else, and the cause is in `dcg_non_terminal/4`:
+
+```prolog
+dcg_non_terminal(NonTerminal, S0, S, Goal) :-
+    NonTerminal =.. NonTerminalUniv,
+    append(NonTerminalUniv, [S0, S], GoalUniv),
+    (  callable(NonTerminal) -> Goal =.. GoalUniv
+    ;  Goal = NonTerminal   % let call/N throw an error instead of throwing one here
+    ).
+```
+
+`GoalUniv` is computed as `[1, S0, S]` and then **thrown away**: the fallback
+binds `Goal` to the bare term `1`, dropping both threaded arguments. A
+non-terminal `1//0` has become a goal `1/0` — precisely UWN's diagnosis. The
+comment's intent (defer to `call/N`) is right; the code does not implement it,
+because there is no longer a `call/N` in the output to do the deferring.
+
+The three failing quads pin down what "wrong error" means:
+
+```prolog
+13 ?- phrase(({fail},1),L).     type_error(callable,1).
+46 ?- phrase((1,{2}),[]).       type_error(callable,1).
+47 ?- phrase(({2},1),[]).       type_error(callable,1).
+```
+
+Each admits exactly **one** answer, with the bare `1` as culprit. Contrast the
+neighbouring quads that permit alternatives — 19, 20, 21 and 48 all accept
+`instantiation_error` or a different culprit, which is why they pass today.
+
+The reason the single-answer form is hard is that ISO makes `call/1` report the
+**whole body** as the culprit, not the offending subterm:
+
+```prolog
+c2 ?- call((1,fail)).     type_error(callable,(1,fail)).
+c3 ?- call((fail,1)).     type_error(callable,(fail,1)).
+```
+
+`call/1` also performs that check *eagerly*, before executing anything — which
+is why c3 errors rather than failing on `fail`. So with the bare-term expansion,
+quad 46 becomes `call(((1,(2,[]=_))))` and yields
+`type_error(callable,(1,(2,[]=_)))`. Right error class, wrong culprit. Quad 15
+confirms the whole-term culprit is correct *when the non-callable sits inside
+`{}`*, since `{}` contents are passed to `call/1` unexpanded:
+
+```prolog
+15 ?- phrase({fail,1},L).   type_error(callable,((fail,1),[]=_A)).
+```
+
+The distinction the standard draws is therefore: a non-callable inside `{}` is
+call/1's problem and gets the whole-term culprit; a non-callable **in a
+non-terminal position** is the *expansion's* problem, must be detected by
+8.18.1.3 b, and gets the bare term as culprit. Deferring it to `call/N` conflates
+the two.
+
+**Native behaviour.** In a non-terminal position, a nonvar non-callable term is
+a permanent condition — unlike a variable, `1` can never become callable — so it
+is decidable at translation time and must be raised there:
+
+* **`'$dcg_body'/4` (runtime, driving `phrase/2..5`):** throw
+  `type_error(callable, T)` immediately on encountering the node, with `T` the
+  bare subterm. Do not emit a goal and do not defer. This is what fixes 13, 46
+  and 47.
+* **`goal_expansion` fast path (compile time):** must *not* throw. Compile-time
+  expansion is an optimisation and may not raise an error the runtime would have
+  raised at a different moment. If translation would throw, **decline** and emit
+  the ordinary `phrase(Body, S0, S)` call, letting `'$dcg_body'/4` raise it at
+  runtime with the correct culprit.
+* **`-->` clause translation (consult time):** no conformance constraint — quads
+  24–26 only cover `-->` as a predicate. A consult-time `type_error(callable, T)`
+  against the offending clause is the friendlier choice.
+
+Scope of the eager check — narrower than it first appears. It applies **only** to
+the non-terminal case (§4 rows 14–15). It must *not* reach into:
+
+* `{Goal}` — contents are never expanded (quads 10, 15);
+* `call/N` arguments — quad 32, `phrase(call([]),[])`, permits
+  `existence_error(procedure,[]/2)`, so no eager type check;
+* `phrase/1..3` constructs — quad 45, `phrase(([a],phrase(2)),[])`, expects
+  `false`, because `[a]` fails against `[]` before the nested `phrase(2)` is ever
+  reached. Eagerly checking through a `phrase` construct would turn that into an
+  error and break a passing quad.
+
+The invariant to hold onto: **the translator never emits a goal that silently
+drops `S0`/`S`.** Every non-terminal either threads both or raises.
+
+Resolved by testing on v3.1.28: `call/3` on a number reports
+`type_error(callable, 1)`, and so do `call/1` and top-level `phrase(1, "abc")`.
+So `call/N` is not implicated — the atomic case (quad 2) already passes, and the
+defect is confined to non-callables appearing *inside* a compound body.
+
+### Others under consideration
+
+* The `\+` / `->` `representation_error` asymmetry (§5) — preserved by default,
+  changeable behind a flag.
+* The `term_expansion` ordering FIXME (§11 phase 4) — a deliberate behaviour
+  change with its own tests.
 
 ---
 
@@ -407,7 +518,8 @@ separate, later change.
 
 ## 10. Verification plan
 
-The differential test is the important one, and it is cheap:
+The differential test is the important one, and it is cheap — but it must be
+built so that it cannot enforce the bugs in §5b.
 
 1. Keep the existing Prolog translator, renamed, in `tests/dcg_reference.pl`.
 2. Generate a corpus of DCG bodies — enumerate the constructs to depth 3, plus
@@ -415,6 +527,31 @@ The differential test is the important one, and it is cheap:
 3. Assert `'$dcg_rule'(T, X), dcg_reference:dcg_rule(T, Y), X =@= Y` (variant,
    not `==`, since fresh variable numbering will differ).
 4. Assert error equivalence: both throw the same term, or both defer.
+5. **Maintain an explicit divergence list**, and check corpus entries against it
+   *first*. For a listed case the reference is not the oracle: assert the
+   required behaviour directly (for #1102, that `phrase(1, L)` raises
+   `type_error(callable, 1)`), and assert that the native and reference outputs
+   **differ**, so the entry fails loudly if someone later "fixes" the native
+   translator back into agreement.
+
+Steps 3–4 make the reference a baseline, not an authority. Without step 5 the
+harness silently converts every known bug into a regression test.
+
+**ISO conformance gate.** #1102 reports 54 of 57 `phrase` quads from the
+complang test set passing, with ph#13, ph#46 and ph#47 outstanding. Wire
+[`phrase_quad.pl`](https://www.complang.tuwien.ac.at/ulrich/iso-prolog/phrase_quad.pl)
+in as a gate and require 57/57 before phase 2 lands; it is a far sharper
+instrument than a hand-written case list, and several quads encode distinctions
+this design turns on. In particular, guard against over-eager checking — these
+must keep their current answers, not become errors:
+
+| Quad | Query | Required | Guards against |
+|---|---|---|---|
+| 45 | `phrase(([a],phrase(2)),[])` | `false` | checking through a `phrase/1..3` construct |
+| 32 | `phrase(call([]),[])` | `existence_error(procedure,[]/2)` | checking `call/N` arguments |
+| 15 | `phrase({fail,1},L)` | `type_error(callable,((fail,1),[]=_))` | checking inside `{}`, and the whole-term culprit there |
+| 10, 37 | `phrase(([a],{1}),[])` | `type_error(callable,(...,...))` | same, with the culprit staying the whole conjunction |
+| 19, 20, 21, 48 | mixed non-callable + partial list | several alternatives accepted | over-constraining; the eager check must not preempt `instantiation_error` where the quad allows it |
 
 Plus:
 
@@ -481,3 +618,14 @@ Build integration: add `src/dcgs.c` to the Makefile source list and register
    default, with the translation behind the same `dcg_optimise`-style flag.
 5. Does `'|'`/2 survive read as a distinct functor from `;`/2 in Trealla, given
    `op(1105, xfy, '|')` and the tokenizer's `double_bar` flag?
+6. ~~Does `call/3` on a number report `type_error(callable, 1)`?~~ **Answered:
+   it does, on v3.1.28, as do `call/1` and top-level `phrase(1, "abc")`.**
+   `call/N` is not implicated; the defect is confined to non-callables inside a
+   compound body, where ISO's whole-term culprit rule for `call/1` collides with
+   8.18.1.3 b's bare-term requirement. See §5b.
+7. Do quads 19, 20, 21 and 48 still pass once the eager check lands? They accept
+   several answers, and the eager check will change *which* one Trealla gives —
+   from `instantiation_error` to `type_error(callable,1)` in some. Both are
+   listed as acceptable, so this should be fine, but it is the most likely place
+   for the fix to move a currently-passing result.
+8. Does #832 overlap? #1102 cites it as closely related and it was not read.
