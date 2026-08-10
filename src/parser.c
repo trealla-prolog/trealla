@@ -4655,7 +4655,28 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					&& is_interned(p->cl->cells)
 					&& (p->cl->cells->val_off == g_dcg_s)
 					&& (p->cl->cells->arity == 2)) {
-					dcg_expand_clause(p); // FIXME: need to term_expand & may be a list?
+					// The old FIXME here read "need to term_expand &
+					// may be a list?". The list half is done: a user
+					// term_expansion/2 returning a list is handled by
+					// expand_term() below, and the original term is
+					// replaced rather than also asserted.
+					//
+					// What remains is that a --> term never reaches a
+					// user term_expansion/2 hook, because translation
+					// happens here and term_expansion() runs later.
+					// Swapping the order is not a small change:
+					// term_expansion() produces a fully processed
+					// clause via its own print-and-reparse, so it
+					// cannot simply move ahead of assign_vars(), and
+					// translation cannot move after it without losing
+					// the variable registration that goal_expansion
+					// depends on (see §10 of docs/native-dcg-design.md).
+					//
+					// Note also that tabled DCG rules work *because*
+					// the rename in library/tabling.pl's
+					// user:term_expansion runs after translation.
+
+					dcg_expand_clause(p);
 
 					if (p->error) return 0;
 				}
