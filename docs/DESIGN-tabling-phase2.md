@@ -7,9 +7,9 @@ nested-SCC completion, thread-private tables, `abolish_table/1`. The
 as-built architecture and its deliberate limits are in
 `HANDOFF-native-tabling.md` §3–4; this picks up at §5.
 
-Everything below is grounded in the shipped `bif_tabling.c` (~1343
+Everything below is grounded in the shipped `src/bif_tabling.c` (1310
 lines, 16 `$tbl_*` builtins) and `library/tabling.pl`. Line references
-are to the reference copy in this folder.
+are to those two files as of commit `0a2d9917`.
 
 ---
 
@@ -67,7 +67,11 @@ on a duplicate. Three counters, all cheap:
 - *answer size* — `trie_insert_` visits every cell; thread a depth and
   a node count through `twalk` (it already carries state, line 217) and
   fail the insert past the limit.
-- *subgoal size* — same walk, in `$tbl_variant_table` instead.
+- *subgoal size* — same walk, in `$tbl_variant_table` instead. Place
+  the check before the table is created, not after: `$tbl_variant_table`
+  is called from `native_start_tabling` (`tabling.pl` line 75), which is
+  outside `'$tbl_push_scc'`, so a throw from there has nothing to roll
+  back. Check after creation and it does.
 
 **Flags.** Follow SWI's names so existing code and documentation
 transfer: `max_table_answer_size`, `max_table_subgoal_size`, and
@@ -80,29 +84,69 @@ item 7, and `abstract` needs subgoal abstraction, which changes what a
 variant *is* — both are their own projects. An honest
 `resource_error` is the whole win here; the rest is polish.
 
-**Risk.** Low. Nothing in the completion algorithm changes. The one
-subtlety: raising from inside `'$tbl_add_answer'` unwinds through the
-`delim/3` in `library/tabling.pl`, so the table is left incomplete and
-must be cleaned up. `'$tbl_reset_incomplete'` (line 1302) already
-exists for exactly this and is already wired to the exception path —
-confirm it covers the new throw rather than assuming it does.
+**Risk.** Low for the machinery — nothing in the completion algorithm
+changes. But there is a semantic decision to make first, and it is not
+optional.
 
-**Test.** The `as//0` case must raise instead of being killed; a
-bounded table must be unaffected; `phrase(as,[a,a,a])` must still be
-`true`. Add to `tests/misc/tabling.pl`. Worth asserting the *exit
-code* too — the current failure mode is 137, and a test that only
-checks output would pass on a killed process.
+*The direct case works already.* `'$tbl_add_answer'` at `tabling.pl`
+line 135 sits *outside* the `catch/3` on line 133, so a throw from
+there propagates to `run_scc`'s handler (line 104), which runs
+`'$tbl_reset_incomplete'`, pops the SCC and rethrows. Same for the
+`delim/3` call inside `completion/0` (line 147). The canonical `as//0`
+case is directly recursive — the recursive call suspends via `shift`
+rather than opening a new SCC — so it takes this path and the user
+gets the error.
 
-**Size.** Small. A day, most of it testing.
+*The nested case does not.* Line 133 is a blanket
+`catch(reset(Worker, Ball, Cont), _, ('$tbl_note_exception', fail))`.
+When a worker calls a *different* tabled predicate, that opens a nested
+SCC, and the inner `run_scc` rethrow lands inside `reset/3` — where it
+is caught by the `_`, noted, and turned into `fail`. The outer table
+then hits `saw_exception` (line 156), resets incomplete, and the query
+fails silently. So for nested tabled calls this item as sketched
+replaces an OOM kill with a silent failure, which is *worse*: an OOM at
+least tells you something happened, whereas a silent `fail` is
+indistinguishable from a legitimate one.
+
+*The decision.* `delim/3` must distinguish restraint errors (rethrow —
+the table is unsalvageable and the user needs to know) from ordinary
+worker exceptions (fail this producer branch). The blanket catch is
+deliberate — the comment at `tabling.pl` lines 126–130 explains it
+exists so that
+Trealla's ISO-strict `setof/3` throwing where lenient systems fail does
+not surface as a tabling difference — so the narrowing has to be
+explicit and justified, not a quiet widening of what escapes. Match on
+`error(resource_error(_), _)` and leave everything else failing.
+
+**Test.** The `as//0` case must raise instead of being killed; the same
+divergence reached *through* a second tabled predicate must also raise,
+not fail (this is the nested case above, and it is the test that would
+have caught the problem); a bounded table must be unaffected;
+`phrase(as,[a,a,a])` must still be `true`. Add to
+`tests/misc/tabling.pl`. Worth asserting the *exit code* too — the
+current failure mode is 137, and a test that only checks output would
+pass on a killed process.
+
+**Size.** Small, but not a day. The counters are an afternoon; the
+`delim/3` exception policy and its tests are the rest.
 
 ---
 
 ## 2. Shared completed tables
 
 **What it gives.** Tables are thread-private today, so N threads
-tabling the same predicate do N times the work. For a server answering
-similar queries on many threads this is the single biggest win
-available.
+tabling the same predicate do N times the work. A long-lived server
+answering similar queries stops recomputing the same tables for the
+life of the process.
+
+**What it does not give — and this bounds the win.** Publication
+happens at completion, and nothing registers a table as *in progress*.
+So N threads that all start before any of them finishes will each still
+compute the table in full; sharing helps the *next* query, not the
+concurrent burst. That is not an oversight to be fixed later: making a
+late arrival wait for an in-flight table means blocking it across
+`completion/0`, which is the lock the next paragraph rules out. The
+honest claim is steady-state, not peak.
 
 **The invariant that must not break.** Phase 1 rejected locking shared
 tables, and that reasoning still holds: the leader's critical section
@@ -125,6 +169,24 @@ Only publication and lookup touch shared state, and both are short,
 bounded operations with no user code inside them — so a mutex there is
 sound in a way it is not around `completion/0`.
 
+**The immutability claim checks out, and it is worth recording why**,
+because it is the load-bearing assumption and it is not obvious from a
+glance at the code:
+
+- The answer trie's lazy hash index would be a mutation on the read
+  path if it were built during lookup. It is not: `trie_index_children`
+  (line 199) is reached only from line 311, past the
+  `if (!w->create) return false;` early-out in `trie_step` (line 289),
+  so a lookup on a completed table never writes to it.
+- Reading another thread's answer means `import_term` on the stored
+  image, which calls `share_cell` on refcounted strings and bigints —
+  a cross-thread refcount bump. That is safe because `pl_refcnt` is
+  `pl_atomic int64_t` (`internal.h` line 41) under `USE_THREADS`.
+
+Both of those are properties of code outside `bif_tabling.c` that
+nothing currently forces to stay true. If either changes, lock-free
+reads become a data race silently.
+
 **What needs designing carefully.**
 
 *Lifetime.* Once a table is shared, "free it when the thread retires"
@@ -135,9 +197,19 @@ use-after-free; budget for it.
 
 *Abolish.* `abolish_all_tables/0` and `abolish_table/1` must
 invalidate published tables while other threads may be enumerating
-them. There is already a `generation` counter on `tbl_state` (int64_t,
-matched to `q->st.v2`) for exactly this hazard within a thread —
-extend that idea rather than inventing a second mechanism.
+them. The existing `generation` counter (line 516) is the right *idea*
+but cannot be extended in place, and the difference is a day's work:
+
+- It lives on the per-thread `tbl_state` and is bumped by that thread's
+  abolish. A thread enumerating a table published by another thread
+  compares against its own counter and never notices. The shared
+  registry needs its own global epoch, and enumeration over a published
+  table must validate against *that*, not the local one.
+- `q->st.v2` is already spoken for — it stashes the thread-local
+  generation in `bif_tbl_get_answer_2` (line 814) and
+  `bif_tbl_wkl_work_3` (line 949). An enumeration that must check both
+  epochs needs a second stash slot or a packed value. Decide which
+  before writing the registry, not after.
 
 *What to publish.* Only tables that completed without an exception,
 and (if item 1 lands first) only those that completed without hitting
@@ -150,18 +222,32 @@ observable behaviour for anyone relying on per-thread tables. Ship it
 as opt-in, default private, matching today.
 
 **Test.** Extend `test_threads` in `tests/misc/tabling.pl`. It
-currently asserts four threads agree *and* that each did its own work —
-a marker count proves the answers didn't just come from a shared table.
-For this item that test inverts: with sharing on, the marker count
-should show exactly *one* thread did the work. Keep both tests; they
-are each other's negative control.
+currently asserts four threads agree *and* that each did its own work:
+`NW =:= 4` (line 415), a marker count proving the answers didn't just
+come from a shared table.
+
+The obvious inversion — with sharing on, assert exactly one thread did
+the work — **would be flaky**, for the reason in "what it does not
+give" above. The four threads race, and any that start before the first
+publication duplicate the work, so the marker count is nondeterministic
+in 1..4. Two options, and the first is better:
+
+- Stagger the threads: let one complete, join it, *then* start the
+  other three and assert `NW =:= 1`. This tests the thing sharing
+  actually promises, and it is deterministic.
+- Or keep them concurrent and assert `NW < 4`, which is weaker but
+  still fails if publication is broken.
+
+Keep the private-table test as-is alongside it; they are each other's
+negative control.
 
 **Measure.** Wall time for N threads tabling the same predicate,
 shared vs private, plus peak RSS. Phase 1's per-thread free took 200
 sequential tabling threads from 59 MB to 9 MB; the sharing number
 should be reported the same way.
 
-**Size.** Medium. The mechanism is small; the lifetime rules are not.
+**Size.** Medium. The mechanism is small; the lifetime rules and the
+global epoch are not.
 
 ---
 
@@ -338,13 +424,19 @@ together are probably smaller.
 
 ## Cross-cutting notes
 
-**The `throw_error()` trap.** It returns TRUE — it raises by setting
-`q->did_throw` and the builtin returns that value. The natural helper
-idiom `if (!check(q)) return false;` reads backwards: the check
-"succeeds", control falls into the body, and the pending ball is lost.
-Symptom is a silent *failure* where a throw was expected. This cost an
-hour in Phase 1 and items 1 and 3 both add new error paths to
-`bif_tbl_add_answer_2`, so it will come up again.
+**The `throw_error()` trap.** It raises by setting `q->did_throw`
+(`bif_control.c` line 1237) and then returns whatever
+`find_exception_handler` decided: TRUE if a handler was found, FALSE if
+the ball is uncaught. Neither value means what a caller reading it as a
+success flag would assume. The natural helper idiom
+`if (!check(q)) return false;` reads backwards on the common path: the
+check "succeeds", control falls into the body, and the pending ball is
+lost. Symptom is a silent *failure* where a throw was expected.
+
+The rule that always holds: never consume the return value as a
+success flag — `return throw_error(...)` immediately, on the same line.
+This cost an hour in Phase 1 and items 1 and 3 both add new error paths
+to `bif_tbl_add_answer_2`, so it will come up again.
 
 **ASAN cannot see peak memory.** The `pl_destroy()` sweep frees
 everything at exit, so a per-thread or per-table lifetime bug shows up
@@ -353,11 +445,17 @@ measure RSS, do not trust a clean ASAN run.
 
 **Leaks that are not ours.** The tabling suite reports ~53 KB under
 ASAN from a string-slice-on-backtrack issue that reproduces on a
-pristine checkout with no tabling module at all
-(`LEAK-string-slice-on-backtrack.md`). Do not chase it while working
-on these items, and do not accept "clean with tabling off" as evidence
-of anything — the flag-off run of that test is exponential and dies on
-the timeout before ASAN reports.
+pristine checkout with no tabling module at all. Do not chase it while
+working on these items, and do not accept "clean with tabling off" as
+evidence of anything — the flag-off run of that test is exponential and
+dies on the timeout before ASAN reports, so it is not a control.
+
+(`HANDOFF-native-tabling.md` line 349 and an earlier draft of this
+document both cite a `LEAK-string-slice-on-backtrack.md` for the full
+write-up. That file is not in the repo. Either it was never committed
+or it was lost; the summary above is what survives. Worth reconstructing
+if the leak ever needs to be worked on, since the reproduction details
+are gone.)
 
 **Test-first is cheap here.** Every item above has a failing test that
 can be written before the implementation: the `as//0` divergence, the
