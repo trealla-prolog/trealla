@@ -606,6 +606,15 @@ reference's bugs.
      corpus file, so it cannot go stale. Currently **829 rules across 375
      files** — clpz alone contributes 414, then abnf 86, json 75, format 70,
      clpb 57.
+   - `tests/misc/dcg_consult.pl`, the **consult** path. Both of the above drive
+     `'$dcg_rule'/2`, which is the *runtime* path; from phase 1 the consult path
+     is a separate one (named variables registered by `assign_vars`, plain
+     `dup_cells`), so 829 rules could agree while consult was broken — and in
+     phase 1 they did, with every regression surfacing through unrelated tests.
+     These 24 rules are consulted for real and read back with `clause/2`. Three
+     are asserted to *differ*, because the consult pipeline does more than
+     translate: `phrase/3` gets inlined by `goal_expansion` and meta-arguments
+     get module-qualified by `expand_meta_predicate`.
 3. Assert variant equality, not `==`, since fresh variable numbering differs.
 4. Assert error equivalence: both throw the same term, or both defer.
 5. **Divergence list, checked first.** For a listed case the reference is not the
@@ -799,7 +808,7 @@ Prolog clauses. Separate, later change.
 |---|---|---|
 | 0 | `src/bif_dcgs.c` with the translator, `'$dcg_rule'/2`, `'$dcg_body'/4`. Point `expand_term/2` and `dcg_translate/2` in `builtins.pl` at `'$dcg_rule'/2` (§8.1). The reference `library/dcgs.pl` still live. Land the differential harness so both run side by side, and **vendor `phrase_quad.pl`** (§9) — the phase 3 gate depends on it. | Low — new code, one small live path, easily reverted |
 | 1 | **Done.** Hook moved ahead of `assign_vars()` (not into `term_expansion()` — see §10); `dcg_expansion()` and both `g_dcg_translate_s` registrations deleted. clpz consult 0.78s → 0.31s; a 2000-rule synthetic grammar 0.22s → 0.12s. Also fixed two pre-existing stale-pointer bugs in `parser.c` that an exactly-sized clause exposes. | Medium — and the medium was in the parser's realloc invariants, not the translator |
-| 2 | Native `goal_expansion` for `phrase/2,3`, replacing the print-and-reparse path there too. | Low |
+| 2 | Native `goal_expansion` for `phrase/2,3`. **Measured, and the case is weaker than this row implies:** ~200 `phrase/2,3` goals exist tree-wide and the expansion costs ~35µs each, so ~7ms across the whole library — against the 470ms phase 1 saved on clpz alone. The real reason to do it is that phase 3 deletes the Prolog hook, and without a replacement that regresses *runtime* inlining. Doing it natively also needs fresh variables registered in the vartab at a point after `assign_vars` has run, which is the exact hazard §10 got wrong. **Recommend folding into phase 3** rather than shipping standalone. | Low value alone; the risk is §10's again |
 | 3 | **Replace `library/dcgs.pl`** with the simplified version (§8); move the reference to `tests/dcg_reference.pl`. Module, exports, op and `meta_predicate` declarations unchanged. Gate on 57/57 quads. Tighten `tests/issues/test832.expected` (§5.3). | High — the switchover; #1102/#832 close here |
 | 4 | Fix the `term_expansion` ordering FIXME: user expansion first, then DCG, then handle a list result. | Medium — behaviour change, own tests, **and it is what can invalidate §10's variable strategy**: the fresh-var scheme is safe only while expansion runs after `assign_vars` |
 | 5 | Optional: `'$string_prefix'`, native `seq//1` / `...//0`, `dcg_optimise` flag. | Low, opt-in |
