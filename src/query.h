@@ -112,6 +112,7 @@ bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
 
 bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running);
 bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running);
+bool find_exception_handler(query *q, char *ball);
 char *print_term_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running);
 void clear_write_options(query *q);
 void partial_clear_write_options(query *q);

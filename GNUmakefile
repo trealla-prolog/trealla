@@ -141,6 +141,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_sort.o \
 	src/bif_sregex.o \
 	src/bif_streams.o \
+	src/bif_dcgs.o \
 	src/bif_tabling.o \
 	src/bif_tasks.o \
 	src/bif_threads.o \

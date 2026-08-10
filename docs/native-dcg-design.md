@@ -236,8 +236,21 @@ a --> (b -> c).          % representation_error(dcg_body)
 a --> (b -> c ; d).      % translates fine
 ```
 
-Quad 22 (`phrase('|'(([x]->[y]),[z]),L)` → `representation_error(dcg_body)`) and
-quad 23 (`;` form → `L=[x,y]`) pin this down. Reproduce it exactly.
+**The quads do not require this — an earlier draft said they did.** Now that
+`phrase_quad.pl` is vendored (`tests/phrase_quad.pl`), quad 22 reads:
+
+```
+22 ?- phrase('|'(([x]->[y]),[z]),L).
+      representation_error(dcg_body)
+   |  L=[x,y].
+```
+
+Both answers are accepted. Only quad 23 (`;` form → `L=[x,y]`) constrains
+anything, and it constrains the *permissive* side. So the asymmetry is
+**permitted, not mandated**. Preserving it is a compatibility choice with the
+reference implementation — a good reason, and the one to state — not a
+conformance obligation. Anyone later deciding to drop it is not breaking the
+standard, only the reference alignment.
 
 **[tested]** on this tree, via `dcgs:dcg_rule/2` directly:
 
@@ -595,16 +608,36 @@ reference's bugs.
 Steps 3–4 make the reference a baseline, not an authority. Without step 5 the
 harness converts every known bug into a regression test.
 
-**ISO conformance gate.** #1102 reports 54/57 phrase quads passing. Wire
-`phrase_quad.pl` in and require 57/57 before the module switches over.
+**ISO conformance gate.** Now vendored at `tests/phrase_quad.pl` (upstream name
+kept, from the URL in the source basis). Reading it changes this section in two
+ways.
 
-Two practical notes before that can happen. **`phrase_quad.pl` is not in the
-tree** — it has to be fetched from the URL in the source-basis list and vendored,
-and the whole gate depends on it, so do that in phase 0 rather than discovering
-it at phase 3. And **do not confuse it with the RDF quads work**: `library/quads.pl`,
-`tests/misc/quads.pl`, `docs/quads-proposal.md` and `docs/quads-input-proposal.md`
-are an unrelated in-progress feature that happens to share the word. Give the
-vendored file an unambiguous name (`tests/phrase_quads.pl`).
+**It is not executable Prolog.** It is a specification in a `<id> ?- Query.` /
+expected-answer notation:
+
+```
+19 ?- phrase(([a|L],1),[]).
+      type_error(callable,1)
+   |  instantiation_error.
+```
+
+`|` separates *acceptable alternative* answers, and `...` appears as a literal
+wildcard (quads 10, 15, 37). "Wire it in" is therefore not a consult: it needs a
+reader for this notation plus a driver that runs each query and matches the
+result against a set of permitted answers with wildcard support. That is a real
+component and it should be budgeted as one, in phase 0, not discovered at
+phase 3.
+
+**The 54/57 from #1102 does not correspond to the file as it stands.** It holds
+58 entries: 48 numbered phrase cases, 7 `c`-prefixed (`call/1`), 3 `f`-prefixed
+(`functor/3`). Neither 48 nor 58 is 57, so #1102 was probably counting an older
+revision. Restate the gate against what is actually there — "all 48 numbered
+phrase entries" — rather than carrying a number that cannot be reconciled.
+
+(The file is placed directly in `tests/`, which `tests/run.sh` does not glob, so
+it is inert until the driver exists. Also: do not confuse it with the RDF quads
+work — `library/quads.pl`, `tests/misc/quads.pl`, `docs/quads-proposal.md` — an
+unrelated in-progress feature that happens to share the word.)
 
 Guard especially against over-eager checking:
 
@@ -614,7 +647,8 @@ Guard especially against over-eager checking:
 | 32 | `phrase(call([]),[])` | `existence_error(procedure,[]/2)` | checking `call/N` arguments |
 | 15 | `phrase({fail,1},L)` | `type_error(callable,((fail,1),[]=_))` | checking inside `{}`; whole-term culprit there |
 | 10, 37 | `phrase(([a],{1}),[])` | `type_error(callable,(...,...))` | as above |
-| 22, 23 | `'\|'`/`;` with `->` | `representation_error` / `L=[x,y]` | losing the §5.1 asymmetry |
+| 23 | `;` with `->` | `L=[x,y]` | breaking the permissive side of §5.1 (quad 22 accepts *either* answer and constrains nothing) |
+| 41–44 | `phrase([], non_list)`, `phrase([], L, [a\|non_list])` | `false` or `type_error(list, …)` | the S0/S arguments themselves being non-lists — not covered anywhere else in this design, and not currently checked |
 | 19, 20, 21, 48 | non-callable + partial list | several accepted | over-constraining; the eager check must not preempt `instantiation_error` where the quad allows it |
 
 Plus:

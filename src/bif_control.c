@@ -1097,7 +1097,13 @@ static cell *parse_to_heap(query *q, const char *src)
 	return tmp;
 }
 
-static bool find_exception_handler(query *q, char *ball)
+// Non-static so a bif can raise a ball it built itself, rather than one
+// throw_error3() composes from a type/expected pair. bif_dcgs.c needs
+// this to reproduce library/dcgs.pl's [culprit-Term] error context,
+// which is not a Name/Arity context and so cannot come from
+// throw_error3(). Ownership of `ball` stays with the caller.
+
+bool find_exception_handler(query *q, char *ball)
 {
 	errno = 0;
 

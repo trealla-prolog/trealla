@@ -45,6 +45,7 @@ extern void g_sigfn(int s);
 
 extern builtins g_atts_bifs[];
 extern builtins g_bboard_bifs[];
+extern builtins g_dcgs_bifs[];
 extern builtins g_tabling_bifs[];
 extern builtins g_database_bifs[];
 extern builtins g_csv_bifs[];

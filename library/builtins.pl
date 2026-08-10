@@ -80,12 +80,17 @@ bb_update(K, O, N) :-
 	'$bb_get'(K, '$bb'(O)),
 	bb_put(K, N).
 
+% dcg_rule/2 lived in library(dcgs) and was never exported: the call
+% below resolved by a cached, unshadowable cross-module binding, so this
+% file quietly depended on that module being loaded. '$dcg_rule'/2 is a
+% bif, so it is visible by construction and the dependency is gone.
+
 expand_term((H --> B), Out) :-
-	dcg_translate((H --> B), Out), !.
+	'$dcg_rule'((H --> B), Out), !.
 
 dcg_translate(TermIn, Term) :-
 	nonvar(TermIn),
-	dcg_rule(TermIn, Term).
+	'$dcg_rule'(TermIn, Term).
 
 :- help(writeln(+term), [iso(false),deprecated(true)]).
 :- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
