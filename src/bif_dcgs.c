@@ -86,7 +86,7 @@ typedef struct {
 
 static pl_idx g_bar_s, g_phrase_s;
 static pl_idx g_repr_err_s, g_dcg_body_s, g_culprit_s;
-static pl_idx g_inst_err_s, g_must_be_s;
+static pl_idx g_inst_err_s, g_must_be_s, g_type_error_s, g_list_s;
 static bool s_atoms_done = false;
 
 static void dcg_init_atoms(prolog *pl)
@@ -101,6 +101,8 @@ static void dcg_init_atoms(prolog *pl)
 	g_culprit_s = new_atom(pl, "culprit");
 	g_inst_err_s = new_atom(pl, "instantiation_error");
 	g_must_be_s = new_atom(pl, "must_be");
+	g_type_error_s = new_atom(pl, "type_error");
+	g_list_s = new_atom(pl, "list");
 	s_atoms_done = true;
 }
 
@@ -281,19 +283,14 @@ static void set_ball_repr(dcg_ctx *c, const cell *culprit, pl_ctx culprit_ctx)
 	c->has_ball = true;
 }
 
-// error(instantiation_error, must_be/2) - what the reference's
-// must_be(list, [T|Ts]) raises on a partial terminal list.
+// The reference reaches both of these through must_be(list, [T|Ts]) in
+// dcg_cbody/4, so both carry a must_be/2 context:
+//
+//   partial list  [x|_]  ->  error(instantiation_error, must_be/2)
+//   improper list [x|y]  ->  error(type_error(list,[x|y]), must_be/2)
 
-static void set_ball_must_be(dcg_ctx *c)
+static void emit_must_be_context(dcg_ctx *c)
 {
-	if (!start_ball(c))
-		return;
-
-	unsigned err = emit_open(c, g_error_s, 2);
-
-	if (c->oom || !emit_atom(c, g_inst_err_s))
-		return;
-
 	unsigned sl = emit_open(c, g_slash_s, 2);
 
 	if (c->oom || !emit_atom(c, g_must_be_s))
@@ -306,6 +303,46 @@ static void set_ball_must_be(dcg_ctx *c)
 		return;
 
 	emit_close(c, sl);
+}
+
+static void set_ball_must_be_inst(dcg_ctx *c)
+{
+	if (!start_ball(c))
+		return;
+
+	unsigned err = emit_open(c, g_error_s, 2);
+
+	if (c->oom || !emit_atom(c, g_inst_err_s))
+		return;
+
+	emit_must_be_context(c);
+
+	if (c->oom)
+		return;
+
+	emit_close(c, err);
+	c->has_ball = true;
+}
+
+static void set_ball_must_be_list(dcg_ctx *c, const cell *culprit, pl_ctx culprit_ctx)
+{
+	if (!start_ball(c))
+		return;
+
+	unsigned err = emit_open(c, g_error_s, 2);
+	unsigned te = emit_open(c, g_type_error_s, 2);
+
+	if (c->oom
+		|| !emit_atom(c, g_list_s)
+		|| !emit_term(c, culprit, culprit_ctx))
+		return;
+
+	emit_close(c, te);
+	emit_must_be_context(c);
+
+	if (c->oom)
+		return;
+
 	emit_close(c, err);
 	c->has_ball = true;
 }
@@ -463,13 +500,13 @@ static dcg_rc emit_terminals(dcg_ctx *c, const cell *l, pl_ctx l_ctx,
 		// implemented - see the phase 0 note in the design. Until it
 		// is, '$dcg_body'/4 raises where dcg_body/4 under
 		// goal_expansion would have deferred.
-		set_ball_must_be(c);
+		set_ball_must_be_inst(c);
 		rc = DCG_ERROR;
 		goto done;
 	}
 
 	if (!is_nil(p)) {
-		set_error(c, "type_error", "list", whole, whole_ctx);
+		set_ball_must_be_list(c, whole, whole_ctx);
 		rc = DCG_ERROR;
 		goto done;
 	}
@@ -625,14 +662,24 @@ static dcg_rc xlate_alt(dcg_ctx *c, const cell *b, pl_ctx b_ctx,
 	if (c->oom)
 		return DCG_ERROR;
 
-	// Section 5.1, the asymmetry that must be preserved: the reference
-	// reaches an if-then CONDITION through dcg_cbody directly, bypassing
-	// dcg_constr/1 and therefore its throw. So (b -> c ; d) translates
-	// while a bare (b -> c) raises. Quads 22 and 23 pin this down.
+	// Section 5.1, the asymmetry that must be preserved - and it is
+	// narrower than "an if-then condition inside an alternation".
+	//
+	// The reference's ;-with-if-then clause calls dcg_cbody/4 directly
+	// on the condition, bypassing dcg_constr/1 and therefore its throw.
+	// Its '|' clause does NOT: it calls dcg_body/4 on both branches, and
+	// dcg_body/4 goes through dcg_constr/1, which throws. So:
+	//
+	//     a --> (b -> c ; d)     translates
+	//     a --> (b -> c | d)     representation_error(dcg_body)
+	//
+	// Quad 22 is exactly the '|' form and accepts either answer; quad 23
+	// is the ';' form and requires the permissive one. Reproducing the
+	// reference means applying the bypass to ';' ONLY.
 
 	dcg_rc rc;
 
-	if (is_functor(lhs, g_if_then_s, 2))
+	if ((b->val_off == g_disjunction_s) && is_functor(lhs, g_if_then_s, 2))
 		rc = xlate_pair(c, g_if_then_s, lhs, l_ctx, s0, s0_ctx, s, s_ctx);
 	else
 		rc = xlate_body(c, lhs, l_ctx, s0, s0_ctx, s, s_ctx);

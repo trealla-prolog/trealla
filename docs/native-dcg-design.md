@@ -608,9 +608,13 @@ reference's bugs.
 Steps 3–4 make the reference a baseline, not an authority. Without step 5 the
 harness converts every known bug into a regression test.
 
-**ISO conformance gate.** Now vendored at `tests/phrase_quad.pl` (upstream name
-kept, from the URL in the source basis). Reading it changes this section in two
-ways.
+**ISO conformance gate.** Now vendored at `tests/misc/phrase_quad.txt`, from the
+URL in the source basis. The extension is deliberately not `.pl`: `tests/run.sh`
+globs `tests/misc/*` and executes everything matching `*.pl` or `*.sh`, and this
+file is not executable Prolog (see below). `skiplist.c` in the same directory is
+the existing precedent for a support file that lives there without being run.
+
+Reading it changes this section in two ways.
 
 **It is not executable Prolog.** It is a specification in a `<id> ?- Query.` /
 expected-answer notation:
