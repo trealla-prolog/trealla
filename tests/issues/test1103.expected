@@ -1,7 +1,7 @@
    true.
-   A = '\x0\', Cs = "\x0\", Null = 0, Ds = [0].
+   A = '\x0\', Cs = [0], Null = 0, Ds = [0].
    false.
-   A = ab, Cs = "ab".
+   A = ab, Cs = [97,98].
    A = ab, Cs = "ab".
    X = [97,98].
    X = "ab".
@@ -14,8 +14,8 @@
    X = [97,98].
    X = [a,b].
    true.
-   A = '\x0\', Cs = "\x0\", Null = 0, Ds = [0].
-   A = ab, Cs = "ab".
-   A = ab, Cs = "ab".
+   A = '\x0\', Cs = [0], Null = 0, Ds = [0].
+   A = ab, Cs = [97,98].
+   A = ab, Cs = [a,b].
    X = [a,b].
    X = ab.

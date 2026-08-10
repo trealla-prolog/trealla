@@ -334,8 +334,6 @@ Non-standard predicates
 	chars_urlenc/3              # currently options are ignored
 	hex_chars/2                 # as number_chars, but in hex
 	octal_chars/2               # as number_chars, but in octal
-	partial_string/2            # partial_string(+string,-String)
-	partial_string/3            # partial_string(+string,-String,-Var)
 	if/3, (*->)/2               # soft-cut
 	call_det/2					# call_det(+call,?boolean)
 	copy_term_nat/2             # doesn't copy attrs (same as copy_term/2)
