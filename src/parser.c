@@ -3198,9 +3198,18 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			extra = 0;
 			c = p->cl->cells + c_idx;
 
-			if (is_var(rhs))
+			if (is_var(rhs)) {
+				// insert_call_here() grows the clause, so lhs and rhs
+				// go stale here just as they do in the else branch -
+				// and both are dereferenced below to size c. Only c was
+				// being refreshed.
+
+				const pl_idx lhs_idx = lhs - p->cl->cells;
+				const pl_idx rhs_idx = rhs - p->cl->cells;
 				c = insert_call_here(p, c, rhs);
-			else {
+				lhs = p->cl->cells + lhs_idx;
+				rhs = p->cl->cells + rhs_idx;
+			} else {
 				pl_idx lhs_idx = lhs - p->cl->cells;
 				rhs->arity += extra;
 				rhs = goal_expansion(p, rhs);
