@@ -736,38 +736,42 @@ already performs — then `process_clause(p->m, p->cl, NULL)`. Fresh vars are
 
 Vartab: either (a) register `_S0`, `_S1`, … — costs `MAX_VAR_POOL_SIZE` headroom
 and pollutes `listing/1`; or (b) emit them `FLAG_VAR_ANON | FLAG_VAR_TEMPORARY`
-and skip the vartab. **(b), and it is safe — but for a different reason than
-the one above.**
+and skip the vartab.
 
-`assign_vars()` does not *require* vartab entries; it builds them, renumbering
-every variable in the clause from its **name** (`parser.c` line 2167 onward).
-That would indeed clobber hand-assigned var numbers. It never gets the chance,
-because of the order in `tokenize`:
+**Option (b) does not work. Built, and it is (a).** Three separate reasons, in
+increasing order of how long each took to find:
 
-```
-line 4676   assign_vars(p, p->read_term_slots, false)
-line 4689   process_clause(p->m, p->cl, NULL)
-line 4695   term_expansion(p)          ← DCG expansion happens here
-```
+* `FLAG_VAR_TEMPORARY` breaks head-argument sharing outright. `greet --> [h,i]`
+  gave `phrase(greet,L)` → `[h,i|_]`: the head's `S` and the body's `S` stopped
+  being the same variable.
+* `FLAG_VAR_ANON` makes `listing/1` print these as `_` where the old round trip
+  produced ordinary positional names, which several tests pin.
+* **The vartab entry is not optional.** `goal_expansion()` prints a goal and
+  *re-parses* it (`parser.c` ~2894 and ~2996), inheriting `p2->vartab = p->vartab`
+  with `reuse = true`, so variable identity across that boundary is carried **by
+  name**. A variable with no vartab entry comes back from that round trip as a
+  *different* variable. Symptom: `format_//2` expanded to
+  `format_cells(...,_,_)` with the S0/S thread silently dropped, and the grammar
+  just failed. This is what the old expansion's generated `_G<n>` names were
+  quietly doing, and it is why the hook must run **before** `assign_vars()` —
+  letting it register the names is the whole mechanism.
 
-`assign_vars` runs *before* expansion, and `process_clause` (`module.c` line
-1805) does not call it — it only walks cells through `process_cell` and
-`mark_tail_positions`. So vars the translator emits after that point are never
-renumbered and never need an entry.
+So the ordering dependency flagged earlier is real but inverted: the translator
+must run *ahead* of `assign_vars`, not after it, and phase 4 must preserve that.
 
-Two consequences worth holding onto:
+**The clause must arrive with slack.** `expand_meta_predicate()`,
+`goal_expansion()` and `insert_call_here()` all grow the clause in place. A
+clause sized exactly to fit makes `make_room()` realloc on the first growth,
+which exposed two pre-existing stale-pointer bugs in `parser.c` (both fixed in
+phase 1): `expand_meta_predicate()` memmoves through a `k` invalidated by its own
+`make_room()`, and `term_to_body_conversion()` reads `c->arity` after calling it.
+Neither fired before because a parsed clause carries `make_room()`'s 3/2 slack.
 
-* This is also why today's text round-trip needs generated `_G<n>` names (§1.1):
-  it re-parses, so the second parser runs its own full `assign_vars`. Native
-  translation removes the requirement outright.
-* **This is an ordering dependency, and phase 4 is what threatens it.** "Fix the
-  `term_expansion` ordering FIXME" is precisely the change that could move
-  expansion relative to `assign_vars`. If it ever runs first, every fresh `S0`
-  gets renumbered by name — and note that `get_varno` treats `"_"` as
-  never-matching (`parser.c` lines 2075, 2087), so anonymous vars would each take
-  a fresh pool entry and a `MAX_VARS` slot rather than being free. Option (b)
-  saves that headroom only for as long as the ordering holds. Re-check §10 as
-  part of phase 4, not after it.
+**A note on finding that.** It presented as a segfault that *disappeared under
+lldb* — heap layout differs enough there that the corrupted read landed on
+mapped memory. `-fsanitize=address` (`make debug`) named it in one run. Section 9
+predicted this seam; it just predicted the wrong direction, expecting leaks from
+arena refcounts rather than clause-growth invariants.
 
 **Runtime.** `create_vars(q,n)` returns the base var number; emit
 `make_ref(cell, base+i, q->st.cur_ctx)`, mirroring the existing
@@ -794,7 +798,7 @@ Prolog clauses. Separate, later change.
 | Phase | Change | Risk |
 |---|---|---|
 | 0 | `src/bif_dcgs.c` with the translator, `'$dcg_rule'/2`, `'$dcg_body'/4`. Point `expand_term/2` and `dcg_translate/2` in `builtins.pl` at `'$dcg_rule'/2` (§8.1). The reference `library/dcgs.pl` still live. Land the differential harness so both run side by side, and **vendor `phrase_quad.pl`** (§9) — the phase 3 gate depends on it. | Low — new code, one small live path, easily reverted |
-| 1 | Rewire `parser.c: term_expansion()` to call `dcg_translate_rule` directly; delete `dcg_expansion()` and the now-unused `g_dcg_translate_s` — note it is registered **twice**, `prolog.c` lines 563 and 596, so that is two lines to remove, not one. | Medium — where the speedup lands |
+| 1 | **Done.** Hook moved ahead of `assign_vars()` (not into `term_expansion()` — see §10); `dcg_expansion()` and both `g_dcg_translate_s` registrations deleted. clpz consult 0.78s → 0.31s; a 2000-rule synthetic grammar 0.22s → 0.12s. Also fixed two pre-existing stale-pointer bugs in `parser.c` that an exactly-sized clause exposes. | Medium — and the medium was in the parser's realloc invariants, not the translator |
 | 2 | Native `goal_expansion` for `phrase/2,3`, replacing the print-and-reparse path there too. | Low |
 | 3 | **Replace `library/dcgs.pl`** with the simplified version (§8); move the reference to `tests/dcg_reference.pl`. Module, exports, op and `meta_predicate` declarations unchanged. Gate on 57/57 quads. Tighten `tests/issues/test832.expected` (§5.3). | High — the switchover; #1102/#832 close here |
 | 4 | Fix the `term_expansion` ordering FIXME: user expansion first, then DCG, then handle a list result. | Medium — behaviour change, own tests, **and it is what can invalidate §10's variable strategy**: the fresh-var scheme is safe only while expansion runs after `assign_vars` |
