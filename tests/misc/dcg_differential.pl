@@ -8,12 +8,13 @@
 % that, a harness like this quietly converts every known defect into a
 % regression test.
 %
-% When library/dcgs.pl is replaced in phase 3 the reference moves to
-% tests/dcg_reference.pl and the dcgs:dcg_rule/2 calls below become
-% dcg_reference:dcg_rule/2. Nothing else here changes.
+% The oracle is tests/dcg_reference.pl, a frozen copy of the shared
+% implementation's translation core. It is loaded only by these tests,
+% never by the system.
 
 :- initialization(main).
 :- use_module(library(dcgs)).
+:- ensure_loaded('tests/dcg_reference').
 
 % --- divergence list -------------------------------------------------
 %
@@ -84,7 +85,7 @@ run_native(R, X) :-
 	).
 
 run_ref(R, Y) :-
-	(  catch(dcgs:dcg_rule(R, Out), E, true)
+	(  catch(dcg_reference:dcg_rule(R, Out), E, true)
 	-> (var(E) -> Y = ok(Out) ; Y = err(E))
 	;  Y = failed
 	).

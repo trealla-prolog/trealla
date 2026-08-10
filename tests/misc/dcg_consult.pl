@@ -20,6 +20,7 @@
 
 :- initialization(main).
 :- use_module(library(dcgs)).
+:- ensure_loaded('tests/dcg_reference').
 :- use_module(library(lists)).
 
 :- dynamic(c01/2).
@@ -142,7 +143,7 @@ check(Name, Status) :-
 	A2 is A + 2,
 	functor(Head, F, A2),
 	(  clause(Head, Body) -> Got = (Head :- Body) ; Got = no_clause ),
-	(  catch(dcgs:dcg_rule(Rule, Ref0), E, (Ref0 = err(E)))
+	(  catch(dcg_reference:dcg_rule(Rule, Ref0), E, (Ref0 = err(E)))
 	-> Ref = Ref0
 	;  Ref = no_reference
 	),

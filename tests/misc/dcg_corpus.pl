@@ -20,6 +20,7 @@
 
 :- initialization(main).
 :- use_module(library(dcgs)).
+:- ensure_loaded('tests/dcg_reference').
 :- use_module(library(lists)).
 
 % Any file whose rules should be exercised. Directories, not files, so
@@ -49,7 +50,7 @@ run_native(R, X) :-
 	).
 
 run_ref(R, Y) :-
-	(  catch(dcgs:dcg_rule(R, Out), E, true)
+	(  catch(dcg_reference:dcg_rule(R, Out), E, true)
 	-> (var(E) -> Y = ok(Out) ; Y = err(E))
 	;  Y = failed
 	).
