@@ -654,15 +654,31 @@ expected-answer notation:
 `|` separates *acceptable alternative* answers, and `...` appears as a literal
 wildcard (quads 10, 15, 37). "Wire it in" is therefore not a consult: it needs a
 reader for this notation plus a driver that runs each query and matches the
-result against a set of permitted answers with wildcard support. That is a real
-component and it should be budgeted as one, in phase 0, not discovered at
-phase 3.
+result against a set of permitted answers with wildcard support.
+
+**Built, as `tests/misc/dcg_quads.pl`.** Three notes for whoever touches it:
+
+- Alternatives are split on *lines whose first non-blank character is* `|`, not
+  on the `|` character — answers legitimately contain it (`type_error(list,[a|b])`
+  in quad 21).
+- `...` parses as an ordinary atom, so wildcarding is just a walk replacing it
+  with fresh variables, then `subsumes_term/2`.
+- Answers describing *bindings* rather than an error or `true`/`false` are
+  checked only as far as "did it succeed", and counted separately as `shallow`
+  so the weaker check stays visible instead of inflating the pass count.
+
+**Current state: 55 of 58 acceptable — 43 full, 12 shallow, 0 unreadable.** The
+three failures are quads 13, 46 and 47, which is #1102 exactly and nothing else.
+They still fail because the quads exercise `phrase/2,3` at *runtime*, which goes
+through the reference's `dcg_body/4` until phase 3 swaps the module; the native
+fix so far only covers `-->` translation. **Closing those three is the phase 3
+gate**, and it is now a measurement rather than an aspiration.
 
 **The 54/57 from #1102 does not correspond to the file as it stands.** It holds
 58 entries: 48 numbered phrase cases, 7 `c`-prefixed (`call/1`), 3 `f`-prefixed
-(`functor/3`). Neither 48 nor 58 is 57, so #1102 was probably counting an older
-revision. Restate the gate against what is actually there — "all 48 numbered
-phrase entries" — rather than carrying a number that cannot be reconciled.
+(`functor/3`), all 58 of which the driver reads. #1102 was probably counting an
+older revision. The gate is now stated as the driver measures it — 55 of 58
+today, 58 of 58 after phase 3 — rather than a number that cannot be reconciled.
 
 (The file is placed directly in `tests/`, which `tests/run.sh` does not glob, so
 it is inert until the driver exists. Also: do not confuse it with the RDF quads
