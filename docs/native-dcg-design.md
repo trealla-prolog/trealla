@@ -814,10 +814,23 @@ Rewriting `...//0` as two rules instead of one `\|` rule took skip-to-marker on
 an 80k string from 19.16s to 0.05s, and made it linear. Same solutions, same
 order.
 
-**That leaves a general engine finding worth its own investigation**, unrelated
-to DCGs: an in-body disjunction appears to cost O(depth) per backtrack where
-clause indexing costs O(1). Any recursive predicate written with `;` pays it.
-Working around it in `...//0` is not a fix for that.
+**And the disjunction is not special either** — that was still one level short.
+Two clauses with a single trailing no-op after the recursive call are just as
+slow:
+
+```prolog
+two_t(A,B) :- A = [_|C], two_t(C,B), true.    % 1164 ms at n=20000
+two(A,B)   :- A = [_|C], two(C,B).            %    4 ms
+```
+
+`;` compiles to `$succeed_on_retry, LHS, $jump, RHS, true`, where the trailing
+`true` is the jump target — so the recursive call is never last and every frame
+keeps a continuation of its own. That is the whole of it. The full diagnosis,
+what it is *not*, and why the two obvious fixes fail is written up in
+`tco-then-branch-report.md`; the repro is `disj_quadratic.pl` in the repo root.
+
+Rewriting `...//0` as two rules sidesteps it and is worth doing on its own
+merits, but it is a workaround, not a fix.
 
 `seq//1` has no disjunction and needs nothing.
 
