@@ -212,5 +212,4 @@ main :-
 	format(user_error,
 	       "quad driver: ~w entries, ~w full, ~w shallow, ~w failed, ~w unreadable~n",
 	       [N, Full, Shallow, Failed, Unreadable]),
-	format("quad driver: ~w of ~w acceptable~n", [Ok, N]),
-	halt.
+	format("quad driver: ~w of ~w acceptable~n", [Ok, N]).

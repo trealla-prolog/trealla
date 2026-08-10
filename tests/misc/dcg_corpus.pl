@@ -133,5 +133,4 @@ main :-
 	-> format("CORPUS-TOO-SMALL: only ~w rules found~n", [Rules])
 	;  true
 	),
-	format("dcg corpus: all rules agree~n"),
-	halt.
+	format("dcg corpus: all rules agree~n").

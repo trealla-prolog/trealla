@@ -138,5 +138,4 @@ main :-
 	findall(x, divergence(_,_,_), Ds), length(Ds, ND),
 	findall(x, case(_,_), Cs), length(Cs, NC),
 	findall(x, expected_diff(_,_), Es), length(Es, NE),
-	format("dcg differential: ~w cases, ~w divergences, ~w expected diffs~n", [NC, ND, NE]),
-	halt.
+	format("dcg differential: ~w cases, ~w divergences, ~w expected diffs~n", [NC, ND, NE]).

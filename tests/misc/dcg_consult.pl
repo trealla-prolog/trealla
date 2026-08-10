@@ -175,5 +175,4 @@ main :-
 	(  NBad =:= 0
 	-> format("dcg consult: all rules agree~n")
 	;  format("dcg consult: ~w of ~w disagree~n", [NBad, N])
-	),
-	halt.
+	).
