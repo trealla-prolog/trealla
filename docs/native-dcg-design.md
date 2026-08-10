@@ -790,15 +790,36 @@ arena refcounts rather than clause-growth invariants.
 
 ---
 
-## 11. Optional: native `seq//1` and `...//0`
+## 11. `seq//1` and `...//0` — the premise was wrong
 
-Little gain as pure translations, but worth native implementations for a
-different reason. This is the consuming direction of §6, where the
-no-partial-strings rule does not bite: with `S0` a string cell, each step of
-`...//0` yields a suffix — a complete string — so `make_slice` advances in O(1)
-instead of allocating a cons cell per character. Turns "skip to a marker in a
-large text" from O(n) cells to O(1). The generating direction falls back to the
-Prolog clauses. Separate, later change.
+**The diagnosis here was incorrect, and the fix turned out to need no C at all.**
+
+The reasoning was: consuming via `...//0` costs a cons cell per character, so a
+native implementation using `make_slice` would turn O(n) cells into O(1). The
+first half is false. Plain recursion over an 80k-character string is already
+linear and fast (0.04s), because `list_tail()` slices strbuf-backed strings in
+place — the same property §6 verified for `unify.c`. Cells were never the cost.
+
+The actual cost was `... --> [] | [_], ... .` compiling to an **in-body
+disjunction**, which is quadratic under deep recursion in this engine. Measured
+with the same predicate written three ways, n=40000:
+
+| form | time |
+|---|---|
+| `(A=B ; A=[_\|C], dots(C,B))` | 4.66s |
+| two clauses | 0.04s |
+| head unification | 0.04s |
+
+Rewriting `...//0` as two rules instead of one `\|` rule took skip-to-marker on
+an 80k string from 19.16s to 0.05s, and made it linear. Same solutions, same
+order.
+
+**That leaves a general engine finding worth its own investigation**, unrelated
+to DCGs: an in-body disjunction appears to cost O(depth) per backtrack where
+clause indexing costs O(1). Any recursive predicate written with `;` pays it.
+Working around it in `...//0` is not a fix for that.
+
+`seq//1` has no disjunction and needs nothing.
 
 ---
 
@@ -811,7 +832,7 @@ Prolog clauses. Separate, later change.
 | 2 | Native `goal_expansion` for `phrase/2,3`. **Measured, and the case is weaker than this row implies:** ~200 `phrase/2,3` goals exist tree-wide and the expansion costs ~35µs each, so ~7ms across the whole library — against the 470ms phase 1 saved on clpz alone. The real reason to do it is that phase 3 deletes the Prolog hook, and without a replacement that regresses *runtime* inlining. Doing it natively also needs fresh variables registered in the vartab at a point after `assign_vars` has run, which is the exact hazard §10 got wrong. **Folded into phase 3**, where the hook was being rewritten anyway — kept in Prolog over `'$dcg_body'/4` rather than moved into `parser.c`, since ~7ms does not justify vartab surgery. | Low value alone; done as part of 3 |
 | 3 | **Done.** `library/dcgs.pl` replaced; reference frozen as `tests/dcg_reference.pl`; module, exports, op and `meta_predicate` declarations unchanged. **58 of 58 quads**, up from 55; #1102/#832 closed and `test832.expected` tightened from "any error" to the specific term. Three things the design missed, all recorded in §8: synthesized cells need `bif_ptr`/OP resolution before they can be *called*; `'$dcg_body'/4` declining for non-terminals pushes them onto a fallback that does not work, so `phrase/N` appends the arguments itself; and the `goal_expansion` hook must **decline** on a throwing translation rather than fall back to appending. | High — and the height was in what happens to a synthesized goal, not in the translation |
 | 4 | **Half of this is already done, and the other half is bigger than "medium".** A user `term_expansion/2` returning a **list** already works — verified: the expansion is asserted and the original term is replaced. What remains is that a `-->` term never reaches a user hook. Swapping the order is not small: `term_expansion()` builds a fully processed clause through its *own* print-and-reparse, so it cannot move ahead of `assign_vars()`, and translation cannot move after it without losing the variable registration `goal_expansion` needs (§10). Doing it properly means giving `term_expansion()` the phase-1 treatment first. **Value is low** — nothing in the tree intercepts `-->`, and `library/tabling.pl` works *because* its rename runs after translation. | Was mis-sized; and note §10's dependency is the **opposite** of what an earlier draft said — translation must run BEFORE `assign_vars`, and phase 4 must preserve that |
-| 5 | Optional: `'$string_prefix'`, native `seq//1` / `...//0`, `dcg_optimise` flag. | Low, opt-in |
+| 5 | **Two of three done.** `'$string_prefix'/3` lands: 200 rules with a 4 KB literal drop from 2.36s / 100 MB RSS to 0.04s / 14 MB. `...//0` is 380x faster — but *not* for §11's reason, see below. `dcg_optimise` not done. | Low, opt-in — and §11's premise was wrong |
 
 Phases 0–2 are independently revertable and leave the `.pl` in charge. Phase 3
 is the commitment.

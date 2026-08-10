@@ -100,7 +100,7 @@ typedef struct {
 // g_cut_s, g_call_s, g_colon_s, g_unify_s, g_dot_s, g_nil_s,
 // g_braces_s, g_neck_s, g_dcg_s) are used directly.
 
-static pl_idx g_bar_s, g_phrase_s;
+static pl_idx g_bar_s, g_phrase_s, g_string_prefix_s;
 static pl_idx g_repr_err_s, g_dcg_body_s, g_culprit_s;
 static pl_idx g_inst_err_s, g_must_be_s, g_type_error_s, g_list_s;
 static bool s_atoms_done = false;
@@ -112,6 +112,7 @@ static void dcg_init_atoms(prolog *pl)
 
 	g_bar_s = new_atom(pl, "|");
 	g_phrase_s = new_atom(pl, "phrase");
+	g_string_prefix_s = new_atom(pl, "$string_prefix");
 	g_repr_err_s = new_atom(pl, "representation_error");
 	g_dcg_body_s = new_atom(pl, "dcg_body");
 	g_culprit_s = new_atom(pl, "culprit");
@@ -126,6 +127,13 @@ static void dcg_init_atoms(prolog *pl)
 // nest. The terminal-list walk is iterative and not covered by this.
 
 #define MAX_DCG_DEPTH 2000
+
+// Above this many bytes a string terminal is emitted as a
+// '$string_prefix'/3 call rather than materialised into the clause as
+// two cells per character. Section 6 picked ~64 as the crossover; the
+// cost being avoided is clause size, not speed - see the bif's comment.
+
+#define DCG_STRING_INLINE_MAX 64
 
 // --- arena ---
 //
@@ -795,6 +803,24 @@ static dcg_rc xlate_body(dcg_ctx *c, const cell *b, pl_ctx b_ctx,
 	// 3. [T|Ts] and string cells (7.14.2): S0 = <Ts ++ S>
 
 	if (is_iso_list(b) || is_string(b)) {
+		// A long literal becomes a call rather than thousands of cells.
+
+		if (is_string(b) && (_CSTRING_LEN(b) > DCG_STRING_INLINE_MAX)) {
+			unsigned at = emit_open(c, g_string_prefix_s, 3);
+
+			if (c->oom
+				|| !emit_term(c, b, b_ctx)
+				|| !emit_term(c, s, s_ctx)
+				|| !emit_term(c, s0, s0_ctx)) {
+				c->depth--;
+				return DCG_ERROR;
+			}
+
+			emit_close(c, at);
+			c->depth--;
+			return DCG_OK;
+		}
+
 		unsigned at = emit_open(c, g_unify_s, 2);
 
 		if (c->oom || !emit_term(c, s0, s0_ctx)) {
@@ -1333,10 +1359,121 @@ bool dcg_expand_clause(parser *p)
 	return true;
 }
 
+// '$string_prefix'(+Str, ?Tail, ?S0)   -- S0 = Str ++ Tail
+//
+// Emitted instead of materialising a long string terminal into the
+// clause. Section 6 chose to materialise, which is correct but stores
+// two cells per character IN THE CLAUSE: 200 rules with a 4 KB literal
+// cost 100 MB of RSS and 2.4s to consult, against 11.7 MB and 0.06s for
+// a one-character literal.
+//
+// Consuming walks Str and S0 in lockstep. That is O(1) per character
+// even for a huge S0, because list_tail() slices a string in place
+// rather than copying (the same property section 6 verified for
+// unify.c). Only the generating direction materialises, and then on the
+// heap per call rather than permanently in the clause.
+
+static bool sp_construct(query *q, cell *l, pl_ctx l_ctx, cell *tail, pl_ctx tail_ctx, cell **out)
+{
+	unsigned n = 0;
+
+	{
+		cell *p = l;
+		LIST_HANDLER(p);
+
+		while (is_list(p)) {
+			n++;
+			p = LIST_TAIL(p);
+		}
+	}
+
+	cell *dst = alloc_heap(q, (n * 2) + tail->num_cells);
+
+	if (!dst)
+		return false;
+
+	cell *w = dst;
+	cell *p = l;
+	LIST_HANDLER(p);
+
+	while (is_list(p)) {
+		cell *h = LIST_HEAD(p);
+		make_struct(w, g_dot_s, 2, 0);
+		w->num_cells = 1 + 1 + 0;	// patched below
+		w++;
+		*w = *h;
+		share_cell(w);
+		w++;
+		p = LIST_TAIL(p);
+	}
+
+	dup_cells_by_ref(w, tail, tail_ctx, tail->num_cells);
+
+	// Patch each cons cell's extent, innermost last: cell i spans
+	// everything from itself to the end.
+
+	cell *end = dst + (n * 2) + tail->num_cells;
+
+	for (unsigned i = 0; i < n; i++) {
+		cell *c = dst + (i * 2);
+		c->num_cells = (unsigned)(end - c);
+	}
+
+	*out = dst;
+	return true;
+}
+
+static bool bif_dcg_string_prefix_3(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
+
+	cell *l = p1;
+	pl_ctx l_ctx = p1_ctx;
+	cell *s = p3;
+	pl_ctx s_ctx = p3_ctx;
+	LIST_HANDLER(l);
+	LIST_HANDLER(s);
+
+	while (is_list(l)) {
+		if (is_var(s)) {
+			// Ran out of bound input: build what is left plus the tail
+			// and bind it. Covers both an unbound S0 and a partial one.
+
+			cell *tmp = NULL;
+
+			if (!sp_construct(q, l, l_ctx, p2, p2_ctx, &tmp))
+				return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+
+			return unify(q, s, s_ctx, tmp, q->st.cur_ctx);
+		}
+
+		if (!is_list(s))
+			return false;
+
+		cell *lh = LIST_HEAD(l);
+		cell *sh = LIST_HEAD(s);
+		sh = deref(q, sh, s_ctx);
+		pl_ctx sh_ctx = q->latest_ctx;
+
+		if (!unify(q, lh, l_ctx, sh, sh_ctx))
+			return false;
+
+		l = LIST_TAIL(l);
+		s = LIST_TAIL(s);
+		s = deref(q, s, s_ctx);
+		s_ctx = q->latest_ctx;
+	}
+
+	return unify(q, p2, p2_ctx, s, s_ctx);
+}
+
 builtins g_dcgs_bifs[] =
 {
 	{"$dcg_rule", 2, bif_dcg_rule_2, "+term,-term", false, false, BLAH},
 	{"$dcg_body", 4, bif_dcg_body_4, "+term,?term,?term,-term", false, false, BLAH},
+	{"$string_prefix", 3, bif_dcg_string_prefix_3, "+term,?term,?term", false, false, BLAH},
 
 	{0}
 };

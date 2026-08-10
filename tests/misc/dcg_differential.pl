@@ -73,6 +73,19 @@ case(negation,       (a --> \+ b)).
 case(ite_toplevel,   (a --> (b -> c))).
 case(string_conj,    (a --> "ab", c, "de")).
 
+% Long string terminal: emitted as '$string_prefix'/3 rather than
+% materialised, so this one is EXPECTED to differ from the reference.
+% Without it the optimisation would be untested here - no rule anywhere
+% in the tree has a terminal over the 64-byte threshold.
+
+case(long_literal,   (a --> "0123456789012345678901234567890123456789012345678901234567890123456789")).
+
+% Cases where native and reference SHOULD differ for a reason other than
+% a defect. Asserted as differences, so that the optimisation silently
+% ceasing to fire is a failure rather than a quiet pass.
+
+expected_diff(long_literal, 'long terminal emitted as $string_prefix/3, not materialised').
+
 % --- runners ---------------------------------------------------------
 
 outcome(G, ok(G)) :- catch(G, E, (throw(caught(E)))), !.
@@ -109,7 +122,12 @@ check_case(Name) :-
 	case(Name, Rule),
 	run_native(Rule, X),
 	run_ref(Rule, Y),
-	(  variant(X, Y)
+	(  expected_diff(Name, Why)
+	-> (  variant(X, Y)
+	   -> format("EXPECTED-DIFF-GONE ~w: should differ (~w) but matched~n", [Name, Why])
+	   ;  true
+	   )
+	;  variant(X, Y)
 	-> true
 	;  format("DIFF ~w~n   native ~q~n   ref    ~q~n", [Name, X, Y])
 	).
@@ -119,5 +137,6 @@ main :-
 	forall(case(Name, _), check_case(Name)),
 	findall(x, divergence(_,_,_), Ds), length(Ds, ND),
 	findall(x, case(_,_), Cs), length(Cs, NC),
-	format("dcg differential: ~w cases, ~w divergences~n", [NC, ND]),
+	findall(x, expected_diff(_,_), Es), length(Es, NE),
+	format("dcg differential: ~w cases, ~w divergences, ~w expected diffs~n", [NC, ND, NE]),
 	halt.
