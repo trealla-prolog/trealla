@@ -7,6 +7,20 @@ Check [The Power of Prolog chapter on DCGs](https://www.metalevel.at/prolog/dcg)
 to learn more about them.
 */
 
+% Trealla's own implementation. The translation itself is native - see
+% src/bif_dcgs.c - and what remains here is the handful of predicates
+% that are genuinely better in Prolog, plus the declarations.
+%
+% This file used to be a copy of the reference implementation shared with
+% Scryer and UWN's specification work, which meant Trealla could not
+% carry a local patch to it. Issue #1102 (== #832) is a defect in that
+% file, so the only way to fix it was to stop using it. A frozen copy
+% survives as tests/dcg_reference.pl, loaded only by the differential
+% tests, so "do we still agree with the reference?" stays answerable.
+%
+% The module, its exports and its operator are unchanged, so
+% use_module(library(dcgs)) and dcgs:-qualified calls behave exactly as
+% before.
 
 :- module(dcgs,
           [op(1105, xfy, '|'),
@@ -21,43 +35,15 @@ to learn more about them.
           ]).
 
 :- use_module(library(error)).
-:- use_module(library(iso_ext)).
-:- use_module(library(lists), [append/3, member/2]).
+:- use_module(library(lists), [append/3]).
 :- use_module(library(loader), [strip_module/3]).
 
 :- meta_predicate(phrase(2, ?)).
-
 :- meta_predicate(phrase(2, ?, ?)).
-
 :- meta_predicate(phrase(3, ?, ?, ?)).
-
 :- meta_predicate(phrase(4, ?, ?, ?, ?)).
 
-:- meta_predicate(','(2, 2, ?, ?)).
-
-:- meta_predicate(;(2, 2, ?, ?)).
-
 %% phrase(+Body, ?Ls).
-%
-% True iff Body describes the list Ls. Body must be a DCG body.
-% It is equivalent to `phrase(Body, Ls, [])`.
-%
-% Examples:
-%
-% ```
-% as --> [].
-% as --> [a], as.
-%
-% ?- phrase(as, Ls).
-%    Ls = []
-% ;  Ls = "a"
-% ;  Ls = "aa"
-% ;  Ls = "aaa"
-% ;  ... .
-%
-% ?- phrase(as, "aaa").
-%    true.
-% ```
 
 phrase(GRBody, S0) :-
     phrase(GRBody, S0, []).
@@ -75,156 +61,66 @@ phrase(GRBody, S0) :-
 % ;  X = "aa", Y = "a"
 % ;  X = "aaa", Y = [].
 % ```
+
+% '$dcg_body'/4 FAILS for anything that is not a 7.14 construct, which is
+% what lets the last branch handle an ordinary non-terminal by appending
+% the two arguments - so phrase(1, L) still reaches call/3 and reports
+% type_error(callable, 1) from there. It throws only where ISO requires,
+% including type_error(callable, T) for a non-callable in non-terminal
+% position, which is the #1102 fix.
+
 phrase(GRBody, S0, S) :-
-    strip_module(GRBody, M, GRBody1),
-    (  var(GRBody) ->
-       instantiation_error(phrase/3)
-    ;  nonvar(GRBody1),
-       dcg_constr(GRBody1),
-       dcg_body(GRBody1, S0, S, GRBody2) ->
-       call(M:GRBody2)
-    ;  call(M:GRBody1, S0, S)
+    strip_module(GRBody, M, B),
+    (   var(GRBody) ->
+        instantiation_error(phrase/3)
+    ;   '$dcg_body'(B, S0, S, Goal) ->
+        call(M:Goal)
+    ;   extend(B, [S0,S], Goal) ->
+        call(M:Goal)
+    ;   call(M:B, S0, S)
     ).
 
 phrase(GRBody, Arg, S0, S) :-
-    strip_module(GRBody, M, GRBody1),
-    (  var(GRBody) ->
-       instantiation_error(phrase/4)
-    ;  nonvar(GRBody1),
-       GRBody1 =.. GRBodys1,
-       append(GRBodys1, [Arg], GRBodys2),
-       GRBody2 =.. GRBodys2,
-       dcg_constr(GRBody2),
-       dcg_body(GRBody2, S0, S, GRBody3) ->
-       call(M:GRBody3)
-    ;  call(M:GRBody1, Arg, S0, S)
+    strip_module(GRBody, M, B),
+    (   var(GRBody) ->
+        instantiation_error(phrase/4)
+    ;   extend(B, [Arg], B2),
+        '$dcg_body'(B2, S0, S, Goal) ->
+        call(M:Goal)
+    ;   extend(B, [Arg,S0,S], Goal) ->
+        call(M:Goal)
+    ;   call(M:B, Arg, S0, S)
     ).
 
 phrase(GRBody, Arg1, Arg2, S0, S) :-
-    strip_module(GRBody, M, GRBody1),
-    (  var(GRBody) ->
-       instantiation_error(phrase/5)
-    ;  nonvar(GRBody1),
-       GRBody1 =.. GRBodys1,
-       append(GRBodys1, [Arg1,Arg2], GRBodys2),
-       GRBody2 =.. GRBodys2,
-       dcg_constr(GRBody2),
-       dcg_body(GRBody2, S0, S, GRBody3) ->
-       call(M:GRBody3)
-    ;  call(M:GRBody1, Arg1, Arg2, S0, S)
+    strip_module(GRBody, M, B),
+    (   var(GRBody) ->
+        instantiation_error(phrase/5)
+    ;   extend(B, [Arg1,Arg2], B2),
+        '$dcg_body'(B2, S0, S, Goal) ->
+        call(M:Goal)
+    ;   extend(B, [Arg1,Arg2,S0,S], Goal) ->
+        call(M:Goal)
+    ;   call(M:B, Arg1, Arg2, S0, S)
     ).
 
-% The same version of the below two dcg_rule clauses, but with module scoping.
-dcg_rule(( M:NonTerminal, Terminals --> GRBody ), ( M:Head :- Body )) :-
-    dcg_non_terminal(NonTerminal, S0, S, Head),
-    dcg_body(GRBody, S0, S1, Goal1),
-    dcg_terminals(Terminals, S, S1, Goal2),
-    Body = ( Goal1, Goal2 ).
-dcg_rule(( M:NonTerminal --> GRBody ), ( M:Head :- Body )) :-
-    NonTerminal \= ( _, _ ),
-    dcg_non_terminal(NonTerminal, S0, S, Head),
-    dcg_body(GRBody, S0, S, Body).
+% As the reference does it: append the extra arguments to the body term
+% first, then translate the result.
 
-% This program uses append/3 as defined in the Prolog prologue.
-% Expands a DCG rule into a Prolog rule, when no error condition applies.
-dcg_rule(( NonTerminal, Terminals --> GRBody ), ( Head :- Body )) :-
-    dcg_non_terminal(NonTerminal, S0, S, Head),
-    dcg_body(GRBody, S0, S1, Goal1),
-    dcg_terminals(Terminals, S, S1, Goal2),
-    Body = ( Goal1, Goal2 ).
-dcg_rule(( NonTerminal --> GRBody ), ( Head :- Body )) :-
-    NonTerminal \= ( _, _ ),
-    dcg_non_terminal(NonTerminal, S0, S, Head),
-    dcg_body(GRBody, S0, S, Body).
-
-dcg_non_terminal(NonTerminal, S0, S, Goal) :-
-    NonTerminal =.. NonTerminalUniv,
-    append(NonTerminalUniv, [S0, S], GoalUniv),
-    (  callable(NonTerminal) ->
-       Goal =.. GoalUniv
-    ;  Goal = NonTerminal % let call/N throw an error instead of throwing one here.
-    ).
-
-dcg_terminals(Terminals, S0, S, S0 = List) :-
-    append(Terminals, S, List).
-
-dcg_body(Var, S0, S, Body) :-
-    var(Var),
-    Body = phrase(Var, S0, S).
-dcg_body(GRBody, S0, S, Body) :-
-    nonvar(GRBody),
-    dcg_constr(GRBody),
-    dcg_cbody(GRBody, S0, S, Body).
-dcg_body(NonTerminal, S0, S, Goal1) :-
-    nonvar(NonTerminal),
-    \+ dcg_constr(NonTerminal),
-    loader:strip_module(NonTerminal, M, NonTerminal0),
-    dcg_non_terminal(NonTerminal0, S0, S, Goal0),
-    (  functor(NonTerminal, (:), 2) ->
-       Goal1 = M:Goal0
-    ;  Goal1 = Goal0
-    ).
-
-% The following constructs in a grammar rule body
-% are defined in the corresponding subclauses.
-dcg_constr([]). % 7.14.1
-dcg_constr([_|_]). % 7.14.2 - terminal sequence
-dcg_constr(( _, _ )). % 7.14.3 - concatenation
-dcg_constr(( _ ; _ )). % 7.14.4 - alternative
-dcg_constr(( _'|'_ )). % 7.14.6 - alternative
-dcg_constr({_}). % 7.14.7
-dcg_constr(call(_)). % 7.14.8
-dcg_constr(phrase(_)). % 7.14.9
-dcg_constr(phrase(_,_)). % extension of 7.14.9
-dcg_constr(phrase(_,_,_)). % extension of 7.14.9
-dcg_constr(!). % 7.14.10
-dcg_constr(\+ G_0) :- % 7.14.11 - not (existence implementation def.)
-    throw(error(representation_error(dcg_body), [culprit- (\+ G_0)])).
-dcg_constr((If->Then)) :- % 7.14.12 - if-then (existence implementation def.)
-    throw(error(representation_error(dcg_body), [culprit- (If->Then)])).
-
-% The principal functor of the first argument indicates
-% the construct to be expanded.
-dcg_cbody([], S0, S, S0 = S).
-dcg_cbody([T|Ts], S0, S, Goal) :-
-    must_be(list, [T|Ts]),
-    dcg_terminals([T|Ts], S0, S, Goal).
-dcg_cbody(( GRFirst, GRSecond ), S0, S, ( First, Second )) :-
-    dcg_body(GRFirst, S0, S1, First),
-    dcg_body(GRSecond, S1, S, Second).
-dcg_cbody(( GREither ; GROr ), S0, S, ( Either ; Or )) :-
-    \+ subsumes_term(( _ -> _ ), GREither),
-    dcg_body(GREither, S0, S, Either),
-    dcg_body(GROr, S0, S, Or).
-dcg_cbody(( GRCond ; GRElse ), S0, S, ( Cond ; Else )) :-
-    subsumes_term(( _GRIf -> _GRThen ), GRCond),
-    dcg_cbody(GRCond, S0, S, Cond),
-    dcg_body(GRElse, S0, S, Else).
-dcg_cbody(( GREither '|' GROr ), S0, S, ( Either ; Or )) :-
-    dcg_body(GREither, S0, S, Either),
-    dcg_body(GROr, S0, S, Or).
-dcg_cbody({Goal}, S0, S, ( Goal, S0 = S )).
-dcg_cbody(call(Cont), S0, S, call(Cont, S0, S)).
-dcg_cbody(phrase(Body), S0, S, phrase(Body, S0, S)).
-dcg_cbody(phrase(Body, Arg), S0, S, phrase(Body, Arg, S0, S)).
-dcg_cbody(phrase(Body, Arg1, Arg2), S0, S, phrase(Body, Arg1, Arg2, S0, S)).
-dcg_cbody(!, S0, S, ( !, S0 = S )).
-% dcg_cbody(\+ GRBody, S0, S, ( \+ phrase(GRBody,S0,_), S0 = S )).
-dcg_cbody(( GRIf -> GRThen ), S0, S, ( If -> Then )) :-
-    dcg_body(GRIf, S0, S1, If),
-    dcg_body(GRThen, S1, S, Then).
-
-
-% When DCG expansion throws an exception – remove offending term and rethrow.
-user:term_expansion(throw_dcg_expansion_error(E), _) :-
-    throw(E).
-user:term_expansion(Term0, Term) :-
-    nonvar(Term0),
-    catch(dcg_rule(Term0, Term), E, Term = throw_dcg_expansion_error(E)).
+extend(B, Extra, B2) :-
+    callable(B),
+    B =.. L0,
+    append(L0, Extra, L),
+    B2 =.. L.
 
 %% seq(Seq)//
-% 
-% Describes a sequence
+%
+% Describes a sequence.
+%
+% The first clause is deliberately NOT a DCG rule: it is a hand-written
+% seq/3 guarding var(Xs), Cs0 == [], which is what terminates generation.
+% Carried over from the reference verbatim.
+
 seq(Xs, Cs0,Cs) :-
    var(Xs),
    Cs0 == [],
@@ -236,46 +132,57 @@ seq([E|Es]) --> [E], seq(Es).
 
 %% seqq(SeqOfSeqs)//
 %
-% Describes a sequence of sequences
+% Describes a sequence of sequences.
+
 seqq([]) --> [].
 seqq([Es|Ess]) --> seq(Es), seqq(Ess).
 
 %% ...//
 %
-% Describes an arbitrary number of elements
+% Describes an arbitrary number of elements. The hand-written .../2
+% clause below terminates generation, as with seq//1. Note this rule is
+% written with '|', the module's own exported operator - the file depends
+% on its own op/3 export being in effect while it is consulted.
+
 ...(Cs0,Cs) :-
    Cs0 == [],
    !,
    Cs0 = Cs.
 ... --> [] | [_], ... .
 
-% defer instantiation errors until runtime. instantiations may be made
-% then.
-error_goal(error(instantiation_error, _Context), _).
-error_goal(error(E, must_be/2), error(E, must_be/2)).
-error_goal(error(E, (=..)/2), error(E, (=..)/2)).
-error_goal(error(representation_error(dcg_body), Context),
-           error(representation_error(dcg_body), Context)).
-error_goal(E, _) :- throw(E).
+% Inline phrase/3 at consult time, as the reference did. This MUST NOT
+% throw: a compile-time expansion may not raise an error at a different
+% moment than the runtime would, so a body whose translation would throw
+% is declined here and left to fail at runtime instead, where it belongs
+% (see section 5.3 of docs/native-dcg-design.md). Declining is just
+% failing the hook, which leaves the ordinary phrase/3 call in place.
 
-user:goal_expansion(phrase(GRBody, S, S0), GRBody2) :-
-    loader:strip_module(GRBody, M, GRBody0),
-    nonvar(GRBody0),
-    catch(dcgs:dcg_body(GRBody0, S, S0, GRBody1),
-          E,
-          dcgs:error_goal(E, GRBody1)
-         ),
-    (  E = error(instantiation_error, _),
-       GRBody0 = [T|Ts] ->
-       GRBody2 = (error:must_be(list, [T|Ts]),
-                  lists:append([T|Ts], S0, S))
-    ;  GRBody = (_:_) ->
-       GRBody2 = M:GRBody1
-    ;  GRBody2 = GRBody1
+user:goal_expansion(phrase(GRBody, S0, S), Goal) :-
+    nonvar(GRBody),
+    strip_module(GRBody, M, B),
+    nonvar(B),
+    catch(dcg_inline(B, S0, S, G), _, fail),
+    (   GRBody = (_:_) ->
+        Goal = M:G
+    ;   Goal = G
     ).
 
-user:goal_expansion(phrase(GRBody, S), phrase(GRBody, S, [])).
+% Translate a construct, or append the two arguments to an ordinary
+% non-terminal. Deliberately NOT wrapped in its own catch: a body whose
+% translation throws must propagate out to the catch above, which
+% declines the expansion and leaves the runtime phrase/3 call in place.
+%
+% Falling back to extend/3 on a throw would be silently wrong - the body
+% is a construct, so appending arguments to it builds nonsense like
+% ','(A,B,S0,S). That is what issue #832's own test caught.
 
+dcg_inline(B, S0, S, G) :-
+    (   '$dcg_body'(B, S0, S, G0) ->
+        G = G0
+    ;   extend(B, [S0,S], G)
+    ).
+
+user:goal_expansion(phrase(GRBody, S0), phrase(GRBody, S0, [])).
 
 % (-->)/2 behaves as if it didn't exist. We export (and define) it
 % only so that clauses for (-->)/2 cannot be asserted when

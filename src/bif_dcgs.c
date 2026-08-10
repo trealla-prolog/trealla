@@ -943,8 +943,53 @@ static dcg_rc xlate_body(dcg_ctx *c, const cell *b, pl_ctx b_ctx,
 // wholesale, so a plain copy is right and the arena must NOT be
 // unshared afterwards.
 
+// A term synthesized cell-by-cell carries no builtin pointer and no
+// operator specifier, so calling it raises existence_error even for
+// something as ordinary as =/2. On the consult path process_clause()
+// supplies both; on the runtime path nothing does, and the output of
+// '$dcg_body'/4 is meant to be CALLED. =../2 does exactly this after
+// building its term (bif_predicates.c) - same three steps, same order.
+//
+// The reference implementation never needed it: its goals were copies of
+// cells from its own compiled clauses, which already carried the flags.
+
+static void arena_resolve(dcg_ctx *c, query *q)
+{
+	for (unsigned i = 0; i < c->ar.len; i++) {
+		cell *x = c->ar.buf + i;
+
+		if (!is_interned(x) || !is_callable(x))
+			continue;
+
+		bool found = false;
+		builtins *ptr = get_builtin_term(q->st.m, x, &found, NULL);
+
+		if (found) {
+			x->bif_ptr = ptr;
+
+			if (ptr->evaluable)
+				x->flags |= FLAG_INTERNED_EVALUABLE;
+			else
+				x->flags |= FLAG_INTERNED_BUILTIN;
+		}
+
+		unsigned specifier;
+
+		if (!GET_OP(x) && search_op(q->st.m, C_STR(q, x), &specifier, x->arity == 1)) {
+			if ((x->arity == 2) && IS_INFIX(specifier))
+				SET_OP(x, specifier);
+			else if ((x->arity == 1) && IS_POSTFIX(specifier))
+				SET_OP(x, specifier);
+			else if ((x->arity == 1) && IS_PREFIX(specifier))
+				SET_OP(x, specifier);
+		}
+	}
+}
+
 static cell *arena_to_heap(dcg_ctx *c, query *q)
 {
+	arena_resolve(c, q);
+
 	cell *dst = alloc_heap(q, c->ar.len);
 
 	if (!dst)
