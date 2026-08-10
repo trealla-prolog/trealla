@@ -140,15 +140,22 @@ seqq([Es|Ess]) --> seq(Es), seqq(Ess).
 %% ...//
 %
 % Describes an arbitrary number of elements. The hand-written .../2
-% clause below terminates generation, as with seq//1. Note this rule is
-% written with '|', the module's own exported operator - the file depends
-% on its own op/3 export being in effect while it is consulted.
+% clause below terminates generation, as with seq//1.
+%
+% Written as TWO rules rather than the reference's `[] | [_], ...`.
+% Same solutions in the same order, but an in-body disjunction under deep
+% recursion is quadratic in this engine, where two clauses are linear:
+% skipping to a marker in an 80k-character string took 19s as a
+% disjunction and is linear without it. Measured with the disjunction
+% reproduced in plain Prolog, so this is not a DCG effect - see the note
+% in docs/native-dcg-design.md §11.
 
 ...(Cs0,Cs) :-
    Cs0 == [],
    !,
    Cs0 = Cs.
-... --> [] | [_], ... .
+... --> [].
+... --> [_], ... .
 
 % Inline phrase/3 at consult time, as the reference did. This MUST NOT
 % throw: a compile-time expansion may not raise an error at a different
