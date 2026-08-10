@@ -595,15 +595,41 @@ The differential test is the important one, built so it cannot enforce the
 reference's bugs.
 
 1. Keep the deleted implementation as `tests/dcg_reference.pl` (never loaded).
-2. Corpus: constructs enumerated to depth 3, plus every DCG body in
-   `library/*.pl` and `tests/`.
-3. Assert `'$dcg_rule'(T,X), dcg_reference:dcg_rule(T,Y), X =@= Y` — variant, not
-   `==`, since fresh variable numbering differs.
+   *Not needed until phase 3* — through phases 0–2 `library/dcgs.pl` is still
+   live, so the oracle is just `dcgs:dcg_rule/2`. Both tests below call it that
+   way and need a one-line change at the switchover.
+2. Corpus, in two halves — **both built**:
+   - `tests/misc/dcg_differential.pl`, 37 hand-written cases covering ISO 7.14
+     alone and nested, plus the head forms.
+   - `tests/misc/dcg_corpus.pl`, every `-->` rule actually in the tree. It reads
+     `library/` and `tests/` with the real reader rather than generating a
+     corpus file, so it cannot go stale. Currently **829 rules across 375
+     files** — clpz alone contributes 414, then abnf 86, json 75, format 70,
+     clpb 57.
+3. Assert variant equality, not `==`, since fresh variable numbering differs.
 4. Assert error equivalence: both throw the same term, or both defer.
 5. **Divergence list, checked first.** For a listed case the reference is not the
    oracle: assert the required behaviour directly, and assert that native and
    reference outputs **differ**, so the entry fails loudly if the two ever agree
    again. Currently one entry: #1102 (§5.3, §5.4).
+
+**Two things learned building these.** The hand-written corpus passed 24 cases
+before the tree corpus existed, and the *first* run of the fuller harness found
+two real bugs — one of them the `'|'`-vs-`;` distinction in §5.1, which no
+conformance test could have caught because quad 22 accepts either answer. A
+hand-built corpus is necessary and nowhere near sufficient.
+
+And `dcg_corpus.pl` executes no directives from the files it reads except `op/3`
+and `set_prolog_flag/2`, without which a file's own operators and
+`double_quotes` setting are not in effect and its terms either fail to read or
+read as something else. Unreadable terms are counted, not dropped silently. The
+count is currently 157, and essentially all of it is `tests/tests/*` — files
+that are deliberately malformed to test the reader, and contain no DCG rules.
+Library files read clean apart from 22 in `clpb.pl` and 9 in `when.pl`.
+
+Counts go to **stderr**, which `tests/run.sh` does not capture, so stdout stays
+stable as files come and go; a `Rules < 100` guard on stdout catches the
+silent-zero failure mode where the scan stops finding anything.
 
 Steps 3–4 make the reference a baseline, not an authority. Without step 5 the
 harness converts every known bug into a regression test.
