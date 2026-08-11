@@ -22,4 +22,10 @@ quads: MALFORMED test1099.pl:79
 quads: MALFORMED test1099.pl:85
    ?- peek_char(C).
    not an answer: peeks([c]),waits
-quads: 14 run, 6 passed, 8 failed.
+quads: FAILED test1099.pl:96
+   ?- read(X).
+   expected: inputs(['1','.']),peeks(['\n']),X=1,unexpected
+quads: FAILED test1099.pl:99
+   ?- read(X).
+   expected: inputs(['1','.','\n']),X=1
+quads: 18 run, 8 passed, 10 failed.

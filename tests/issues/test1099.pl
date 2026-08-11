@@ -85,6 +85,23 @@
 ?- peek_char(C).
    peeks("c"), waits.
 
+% 'unexpected' negates the whole answer, input claims included. These
+% two describe the same run, one of them negated, so exactly one of
+% them holds whatever read/1 does. Trealla's read/1 leaves the layout
+% character after the end token unread, so it is the second.
+
+?- read(X).
+   inputs("1."), peeks("\n"), X = 1.
+
+?- read(X).
+   inputs("1."), peeks("\n"), X = 1, unexpected.
+
+?- read(X).
+   inputs("1.\n"), X = 1.
+
+?- read(X).
+   inputs("1.\n"), X = 1, unexpected.
+
 % run_quads names the file as it was consulted, so the report would
 % otherwise depend on the path this was invoked with. Keep the base
 % name only.
