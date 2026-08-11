@@ -1,0 +1,5 @@
+dcg tabling: left_recursion_parses ok
+dcg tabling: left_recursion_rejects ok
+dcg tabling: plain_tabled_dcg ok
+dcg tabling: plain_tabled_rejects ok
+dcg tabling: rename_ran_on_translated_clause ok
