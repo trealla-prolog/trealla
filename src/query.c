@@ -729,11 +729,35 @@ static void try_me(query *q, unsigned num_vars)
 	}
 }
 
+// Skip the branch join points compile_term() emits on the way to the
+// clause end: a bare `true` landing, or a forward `$jump` to one. Both
+// are no-ops for machine state (bif_sys_jump_1 only moves q->st.instr),
+// so a goal followed by nothing but these is followed by nothing.
+// is_end() on the result means the clause is over.
+
+static const cell *skip_landings(const cell *c)
+{
+	while (!is_end(c)) {
+		if (!is_interned(c))
+			break;
+
+		if ((c->val_off == g_true_s) && !c->arity)
+			c += c->num_cells;						// landing
+		else if ((c->val_off == g_sys_jump_s) && (c->arity == 1)
+			&& is_smallint(c+1) && (get_smallint(c+1) > 0))
+			c += get_smallint(c+1);					// jump to a landing
+		else
+			break;
+	}
+
+	return c;
+}
+
 static void push_frame(query *q)
 {
 	const frame *f_cur = GET_CURR_FRAME();
 	frame *f_new = GET_NEW_FRAME();
-	const cell *next_cell = q->st.instr + q->st.instr->num_cells;
+	const cell *next_cell = skip_landings(q->st.instr + q->st.instr->num_cells);
 
 	// Avoid long chains of useless returns...
 
@@ -830,18 +854,10 @@ static bool is_last_call(const query *q)
 	// Past that, only the branch join points that compile_term() emits
 	// on the way to the clause end may be skipped: they do nothing.
 
-	while (!is_end(c)) {
-		if (!is_interned(c))
-			return false;
+	c = skip_landings(c);
 
-		if ((c->val_off == g_true_s) && !c->arity)
-			c += c->num_cells;						// landing
-		else if ((c->val_off == g_sys_jump_s) && (c->arity == 1)
-			&& is_smallint(c+1) && (get_smallint(c+1) > 0))
-			c += get_smallint(c+1);					// jump to a landing
-		else
-			return false;
-	}
+	if (!is_end(c))
+		return false;
 
 	// The clause's own end cell means nothing is left to do. The end
 	// cell of a heap continuation instead carries a return address and
