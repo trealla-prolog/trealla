@@ -1,6 +1,20 @@
 # TCO in the THEN branch of if-then-else
 
-Against `trealla-prolog/trealla` @ `b932785` ("Tidy up parser.c a bit").
+Originally against `trealla-prolog/trealla` @ `b932785` ("Tidy up
+parser.c a bit"). Re-verified against `1954a4e`.
+
+## Status
+
+| section | state |
+|---|---|
+| 1-2. Tail-position marking, `commit_any_choices()` | **landed** |
+| 3. The `no_recov` pin | **open** - the FIXME is still at `src/query.c:1173` |
+| 4. The accumulator idiom | **open** - unchanged |
+| Addendum. Disjunction quadratic (#1106) | **landed** |
+
+Sections 3 and 4 are the live ones and were re-measured on `1954a4e`;
+their numbers below are current. Sections 1, 2 and the addendum are kept
+as a record of what was done and why.
 
 ## The symptom
 
@@ -110,17 +124,39 @@ The frames answer it directly. `ch->st.fp` is the frame count when the
 choicepoint was pushed, so `ch->st.fp > q->st.cur_ctx` means this frame
 was already live and a retry restores into it; anything pushed earlier
 belongs to an ancestor, and retrying that throws this frame away whole.
-`commit_frame()` only reaches the test with `q->st.fp == cur_ctx + 1`,
-so it reads:
+`commit_frame()` only reaches the test with `q->st.fp == cur_ctx + 1`.
+
+The comparison is only half of it. `skip` counts the choicepoints
+`commit_frame()` drops itself — the in-progress clause choice, plus the
+`call/N` barrier when `is_last_call()` found one, which is why
+`p(N) :- M is N-1, call(p, M)` keeps its TCO. **The comparison without
+the skip count is not a smaller version of this fix, it is a crash**:
+`call/N`'s barrier then reads as a choicepoint that needs the frame, TCO
+is refused for the shape above, and `t4/1` in `tests/tests/test107.pl`
+dies in `undo_me()` backtracking through what it left behind. So it
+takes the count, and `is_last_call()` has to report the barrier it
+skipped:
 
 ```c
-return ch->st.fp >= q->st.fp;
+static bool commit_any_choices(const query *q, unsigned skip)
+{
+        if (q->st.cp <= skip)
+                return false;
+
+        const choice *ch = GET_CHOICE(q->st.cp - 1 - skip);
+        return ch->st.fp >= q->st.fp;
+}
+
+// in commit_frame():
+bool barrier = false;
+bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q, &barrier);
+bool choices = commit_any_choices(q, barrier ? 2 : 1);
 ```
 
-`skip` counts the choicepoints `commit_frame()` drops itself — the
-in-progress clause choice, plus the `call/N` barrier when
-`is_last_call()` found one, which is why `p(N) :- M is N-1, call(p, M)`
-keeps its TCO.
+That crash also says something about the suite: `test107` printed every
+expected line and *then* died, so `tests/run.sh` — which diffed the
+output and never looked at the exit status — scored it as a pass. The
+runners now check both.
 
 ## Result
 
@@ -139,7 +175,10 @@ At 200,000 iterations, patched:
 - `tests/run.sh`: 329 passed / 1 failed, identical to the unpatched
   build. The one failure is `tests/issues-OLD/test056.pl`, which wants
   `crypto_data_hash/3` — an artefact of building `NOSSL=1` in this
-  sandbox, and it fails the same way on stock.
+  sandbox, and it fails the same way on stock. (On `1954a4e` the suite
+  reads 342/2; the two failures are `tests/issues/test556.pl` and
+  `tests/issues-OLD/test252.pl`, both long-standing Unicode
+  tokenising bugs in `writeq`, and both unrelated to anything here.)
 - The same suite under `make debug` (`-fsanitize=address`): no
   AddressSanitizer reports across the ~327 programs it completed.
 - `tco-then-branch-tests.pl` (attached): deep recursion in `->`, `*->`
@@ -174,6 +213,16 @@ loop(N) :- foo(N), M is N-1, loop(M).
 With the if-then-else: 600,002 frames per 300,000 iterations, 0 TCOs.
 Same for `\+`, `ignore/1` and `\=`. (`once/1` escapes — it uses the
 fail-on-retry barrier, which never set the pin.)
+
+Still current on `1954a4e`. Two frames per iteration, and the memory
+that implies — at 3,000,000 iterations:
+
+| `foo/1`'s body | frames | peak RSS |
+|---|---|---|
+| `true` | 4 | 6 MB |
+| `once(G)` | 4 | 6 MB |
+| `( N > 0 -> true ; true )` | 6,000,003 | 897 MB |
+| `\+ G`, `ignore(G)`, `N \= zzz` | 6,000,003 | 897 MB |
 
 ### What it was actually protecting
 
@@ -271,7 +320,8 @@ where the bare FIXME was.
 - `tests/tests/test104.pl`'s expected output hardcodes variable numbers
   (`freeze:freeze(_398,true)`). Anything that changes how many frames get
   recovered renumbers them, so that test will fail on any future work
-  here for cosmetic reasons.
+  here for cosmetic reasons. Confirmed on `1954a4e`: `-O0` alone shifts
+  `_119` to `_122`.
 - `once/1` escapes the pin entirely — it compiles to the fail-on-retry
   barrier, which never set it. So `once(G)` already costs its caller
   nothing, while `ignore(G)` and `\+ G` cost it everything. That
@@ -279,10 +329,11 @@ where the bare FIXME was.
 
 ## Files
 
-- `trealla-then-branch-tco.patch` — against `b932785`, `src/module.c`
-  (+85) and `src/query.c` (+94/-7). The two changes are independent and
-  can be split: tail-position marking, and `commit_any_choices()`.
-- `tco-then-branch-tests.pl` — regression tests
+Both changes are in the tree. The regression tests landed as
+`tests/tests/test108.pl`; `tests/tests/test107.pl` covers the cut and
+barrier cases that `is_last_call()` must not swallow. The patch files
+this section used to name (`trealla-then-branch-tco.patch`,
+`tco-then-branch-tests.pl`) were working files and are not in the repo.
 
 ## 4. The accumulator idiom, and why it is still not tail recursive
 
@@ -297,6 +348,12 @@ sum2(N, A, S) :- A1 is A+N, M is N-1, sum2(M, A1, S).
 
 200,000 iterations: 200,003 and 200,002 frames. Drop the `S` argument
 and the same predicate runs in 3.
+
+Still current on `1954a4e`: at 3,000,000 iterations `sum/3` reaches
+3,000,004 frames and 920 MB, against 4 frames and 6 MB for the same
+predicate without the output argument. This is the most common shape in
+Prolog, which makes it the costlier of the two open sections even though
+the pin above is the more visible one.
 
 `set_var()` is what stops it. Head unification binds the callee's fresh
 `S` to the caller's, and:
@@ -439,19 +496,40 @@ target, and a barrier that keeps TCO honest.
 
 **Skipping its dispatch** in the main loop is safe - it leaves the cell
 in place so both mechanisms still see it - but only recovers 25%,
-because the frame walk remains.
+because the frame walk remains. The fix below leaves the cell in place
+too, and addresses the frame walk instead.
 
-## What would work
+## What would work, and what was done
 
 Collapse the continuation: when setting up a call whose only remaining
-continuation is no-op landings, point the new frame's `ret_instr` past
-them at the parent's continuation. That is exactly the information
-`is_last_call()` already computes, applied to `ret_instr` rather than to
-frame reuse.
+continuation is no-op landings, point the new frame past them at the
+parent's continuation. That is exactly the information `is_last_call()`
+already computes, applied to the return chain rather than to frame
+reuse.
 
-It is a change in the call-setup path, with the same class of risk that
-broke those 19 tests, so it wants doing deliberately and with
-`tests/misc/tabling.pl` watched throughout.
+**Done** (`1954a4e`), and smaller than expected, because `push_frame()`
+already had the optimisation — the block commented "Avoid long chains of
+useless returns" — but tested only whether the cell immediately after
+the call was the clause end. The two mechanisms differed only in reach.
+The walk is now factored out as `skip_landings()` and shared by both, so
+they cannot drift apart again:
 
-`dots_trail` in `disj_quadratic.pl` is the better case to hand to other
-systems, having no disjunction in it at all.
+```c
+const cell *next_cell = skip_landings(q->st.instr + q->st.instr->num_cells);
+```
+
+Nothing is removed from the instruction stream, so `process_cell()`'s
+positional test and `is_last_call()` still see every cell — which is what
+broke 19 tests when the landing itself was deleted.
+
+n=40000: `dots_disj` 6426ms -> 14ms, `dots_trail` 6545ms -> 16ms, all
+four forms now within noise of each other. Solution sets and their order
+are unchanged, `tests/misc/tabling.pl` passes, and differential testing
+across `samples/` and `library/` found no output differences. Regression
+test: `tests/issues/test1106.pl`, which asserts the ratio between the
+trailing-goal form and the last-call form rather than any absolute time.
+
+`dots_trail` in `disj_quadratic.pl` is still the better case to hand to
+other systems, having no disjunction in it at all — and note Trealla now
+runs it in 16ms where SWI takes 1655ms and Scryer 3712ms, both of which
+are quadratic on that shape.
