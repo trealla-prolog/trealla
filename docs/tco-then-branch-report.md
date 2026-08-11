@@ -353,3 +353,105 @@ This is the same shape as the thread-queue case above: a variable of one
 frame is reachable from somewhere the engine's escape test cannot see.
 Making it precise means tracking that reachability properly, not finding
 a better predicate to evaluate at the binding.
+
+---
+
+# Addendum: the same subsystem, found from the other end
+
+Found while working on native DCGs, which is how `...//0` came into it —
+nothing here is DCG-specific. Repro: `disj_quadratic.pl` in the repo root.
+
+## The symptom
+
+A recursive predicate with **any goal after the recursive call** is
+quadratic. n=20000, same logic three ways:
+
+```prolog
+two(A,B)   :- A = [_|C], two(C,B).            %    4 ms
+two_t(A,B) :- A = [_|C], two_t(C,B), true.    % 1164 ms
+fwd(A,B)   :- ( A = B ; A = [_|C], fwd(C,B) ). % 1215 ms
+```
+
+Driven by `call(G), R == []` with `R` unbound, so the caller backtracks
+into every intermediate choice point. Calling `P(L,[])` directly prunes
+the search and all three look linear — the cost only appears on re-entry.
+
+`fwd` is not a disjunction problem: `;` compiles to
+`$succeed_on_retry, LHS, $jump, RHS, true`, and that landing `true` is
+simply a goal after the recursive call. `two_t` reproduces it with no
+disjunction at all.
+
+Not universal. Scryer runs the disjunction form at 1.06x its two-clause
+form; SWI shows no difference. Trealla is 300-700x.
+
+## What it is not
+
+Ruled out by measurement, so as not to be re-tried:
+
+- **Memory.** Byte-identical maximum RSS between the fast and slow forms.
+- **`trim_heap()` in `retry_choice()`.** Disabling it outright changes
+  nothing (1186ms -> 1239ms).
+- **`trim_trail()`.** Breaks on the first retained entry; bounded.
+- **The `no_recov` pin** that `succeed_on_retry` sets (see
+  `norecov-notes.md`). Disabling it changes nothing (1163 -> 1173ms).
+- **TCO.** Zero TCOs in *both* forms - `commit_any_choices()` correctly
+  blocks frame reuse while the alternative branch or clause is live. The
+  fast form is not winning by getting TCO.
+- **Retries, backtracks, choice points, frame counts.** All identical:
+  frames 20004, choices 6, backtracks 10000, retries 20101.
+- **Goal dispatch.** Short-circuiting the no-op `true` in the main loop
+  takes goals from 50,085,023 to 80,021 - level with the fast form - and
+  time only from 1163ms to 889ms. The goal counter was the visible
+  symptom, not the mechanism.
+
+## What it is
+
+The frame-unwind loop in `start()`:
+
+```c
+while (!q->st.instr || is_end(q->st.instr)) {
+    if (resume_frame(q)) { proceed(q); continue; }
+    ...
+}
+```
+
+It walks the frame chain on every return and increments no counter,
+which is why it survived all of the above.
+
+When the recursive call is genuinely last, the frame's `ret_instr`
+points straight at the caller's continuation and the loop exits after
+about one iteration. With anything after the call - a user's `true`, or
+the landing the compiler plants - each frame owns a distinct
+continuation, so the chain unwinds one level at a time: O(depth) per
+return, O(n^2) over O(n) returns.
+
+## Two fixes that do not work
+
+**Removing the landing** from `compile_term()`'s disjunction case gives
+the full speedup (1163ms -> 4ms) and breaks 19 tests, including
+`tests/misc/tabling.pl` and a dozen core control tests. Two mechanisms
+read the instruction stream to decide whether a call is really last -
+the positional test in `process_cell()` and `is_last_call()` in
+`query.c` - so deleting the cell makes calls that were not last look
+last, and `reuse_frame()` then discards continuations that were needed.
+Wrong answers, not just slowness. The landing is doing two jobs: jump
+target, and a barrier that keeps TCO honest.
+
+**Skipping its dispatch** in the main loop is safe - it leaves the cell
+in place so both mechanisms still see it - but only recovers 25%,
+because the frame walk remains.
+
+## What would work
+
+Collapse the continuation: when setting up a call whose only remaining
+continuation is no-op landings, point the new frame's `ret_instr` past
+them at the parent's continuation. That is exactly the information
+`is_last_call()` already computes, applied to `ret_instr` rather than to
+frame reuse.
+
+It is a change in the call-setup path, with the same class of risk that
+broke those 19 tests, so it wants doing deliberately and with
+`tests/misc/tabling.pl` watched throughout.
+
+`dots_trail` in `disj_quadratic.pl` is the better case to hand to other
+systems, having no disjunction in it at all.
