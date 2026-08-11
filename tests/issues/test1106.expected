@@ -1,0 +1,12 @@
+disj_len: ok
+clauses_agree: ok
+head_agree: ok
+trail_agree: ok
+nested_agree: ok
+ite_det: ok
+soft_det: ok
+after_goal: ok
+deep_backtrack: ok
+deep_disj: ok
+throw_unwind: ok
+not_quadratic: ok
