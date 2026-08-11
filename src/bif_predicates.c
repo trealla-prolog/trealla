@@ -5966,50 +5966,150 @@ static bool bif_sys_countall_2(query *q)
 	return true;
 }
 
+// Compare two integer cells by value, across the small/big divide.
+
+static int cmp_int_cells(const cell *c1, const cell *c2)
+{
+	if (is_bigint(c1) && is_bigint(c2))
+		return mp_int_compare(&c1->val_bigint->ival, &c2->val_bigint->ival);
+
+	if (is_bigint(c1))
+		return mp_int_compare_value(&c1->val_bigint->ival, get_smallint(c2));
+
+	if (is_bigint(c2))
+		return -mp_int_compare_value(&c2->val_bigint->ival, get_smallint(c1));
+
+	pl_int v1 = get_smallint(c1), v2 = get_smallint(c2);
+	return v1 < v2 ? -1 : v1 > v2 ? 1 : 0;
+}
+
+// Make an integer cell from an mpz, demoting to a smallint when it fits.
+// On success the caller owns the cell and must unshare_cell() it.
+
+static bool make_int_from_mpz(cell *tmp, mpz_t *v)
+{
+	*tmp = (cell){0};
+	mp_small val;
+
+	if (mp_int_to_int(v, &val) == MP_RANGE) {
+		tmp->tag = TAG_INT;
+		tmp->val_bigint = TPL_malloc(sizeof(bigint));
+
+		if (!tmp->val_bigint)
+			return false;
+
+		tmp->val_bigint->refcnt = 1;
+
+		if (mp_int_init_copy(&tmp->val_bigint->ival, v) == MP_MEMORY) {
+			TPL_free(tmp->val_bigint);
+			return false;
+		}
+
+		tmp->flags |= FLAG_INT_BIG | FLAG_MANAGED;
+	} else
+		make_int(tmp, (pl_int)val);
+
+	return true;
+}
+
 static bool bif_between_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
 	GET_NEXT_ARG(p3,integer_or_var);
 
-	if (is_bigint(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
+	// Fast path: all bounds are smallints, so the counter can hold the
+	// value itself. This is the hot path (loops over small ranges).
 
-	if (is_bigint(p2))
-		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
+	if (!is_bigint(p1) && !is_bigint(p2) && !is_bigint(p3)) {
+		if (!q->retry) {
+			if (get_smallint(p1) > get_smallint(p2))
+				return false;
 
-	if (is_bigint(p3))
-		return throw_error(q, p3, p3_ctx, "domain_error", "small_integer_range");
+			if (!is_var(p3)) {
+				if (get_smallint(p3) > get_smallint(p2))
+					return false;
+
+				if (get_smallint(p3) < get_smallint(p1))
+					return false;
+
+				return true;
+			}
+
+			if (get_smallint(p1) != get_smallint(p2)) {
+				q->st.cnt = get_smallint(p1);
+				CHECKED(push_choice(q));
+			}
+
+			return unify(q, p3, p3_ctx, p1, p1_ctx);
+		}
+
+		cell tmp;
+		make_int(&tmp, ++q->st.cnt);
+
+		if (q->st.cnt != get_smallint(p2))
+			CHECKED(push_choice(q));
+
+		return unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
+	}
+
+	// General path: a bound (or the value) is a bigint. Rather than keep a
+	// bigint counter in the query state, q->st.cnt holds the *offset* from
+	// Low and each value is recomputed as Low+offset. An int64 offset is
+	// ample: no enumeration will ever reach 2^63 steps. (#1105)
 
 	if (!q->retry) {
-		if (get_smallint(p1) > get_smallint(p2))
+		if (cmp_int_cells(p1, p2) > 0)
 			return false;
 
 		if (!is_var(p3)) {
-			if (get_smallint(p3) > get_smallint(p2))
+			if (cmp_int_cells(p3, p2) > 0)
 				return false;
 
-			if (get_smallint(p3) < get_smallint(p1))
+			if (cmp_int_cells(p3, p1) < 0)
 				return false;
 
 			return true;
 		}
 
-		if (get_smallint(p1) != get_smallint(p2)) {
-			q->st.cnt = get_smallint(p1);
+		if (cmp_int_cells(p1, p2) != 0) {
+			q->st.cnt = 0;
 			CHECKED(push_choice(q));
 		}
 
 		return unify(q, p3, p3_ctx, p1, p1_ctx);
 	}
 
+	q->st.cnt++;
+
+	mpz_t v;
+
+	if (is_bigint(p1))
+		mp_int_init_copy(&v, &p1->val_bigint->ival);
+	else
+		mp_int_init_value(&v, get_smallint(p1));
+
+	mp_int_add_value(&v, q->st.cnt, &v);
+
 	cell tmp;
-	make_int(&tmp, ++q->st.cnt);
 
-	if (q->st.cnt != get_smallint(p2))
-		CHECKED(push_choice(q));
+	if (!make_int_from_mpz(&tmp, &v)) {
+		mp_int_clear(&v);
+		return throw_error(q, p1, p1_ctx, "resource_error", "memory");
+	}
 
-	return unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
+	mp_int_clear(&v);
+
+	if (cmp_int_cells(&tmp, p2) != 0) {
+		if (!push_choice(q)) {
+			unshare_cell(&tmp);
+			return false;
+		}
+	}
+
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
+	unshare_cell(&tmp);
+	return ok;
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)

@@ -513,8 +513,8 @@ check_solutions([Sol0|T], M, Q, VNs, N, Mode, PrevCs) :-
 		T == [],					% one input, so one described answer
 		solution_expect(Items4, Sol, Expect0),
 		input_expect(Input, Expect0, Expect),
-		run_on_input(Input,
-			expect(Unexpected, M, Q, VNs, N, Expect, Output, Mode, PrevCs, _))
+		expect_on_input(Unexpected, Input,
+			expect(no, M, Q, VNs, N, Expect, Output, Mode, PrevCs, _))
 	; Items4 = [loops] ->
 		expect(Unexpected, M, Q, VNs, N, loops, Output, Mode, PrevCs, _)
 	; Items4 = [false] ->
@@ -594,6 +594,24 @@ input_expect(_, Expect, Expect).
 %
 % Standard Prolog throughout, deliberately (issue #1099): the harness
 % has to be able to run on the systems whose conformity it reports on.
+
+% What an answer describes now includes what the query read, so
+% 'unexpected' has to negate the whole of it. Negating only the answer
+% and then conjoining the input checks makes an answer and its
+% unexpected twin *both* fail whenever the input claim is the wrong
+% part:
+%
+%     ?- read(X).
+%        inputs("1. "), X = 1.
+%        inputs("1. "), X = 1, unexpected.
+%
+% Trealla's read/1 leaves the layout character after the end token
+% unread, so the first is wrong. Exactly one of the two has to hold.
+
+expect_on_input(true, Input, Goal) :- !,
+	\+ run_on_input(Input, Goal).
+expect_on_input(_, Input, Goal) :-
+	run_on_input(Input, Goal).
 
 run_on_input(in(In, Peek, Waits), Goal) :-
 	input_chars(In, Cs),
