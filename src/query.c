@@ -813,13 +813,32 @@ static void reuse_frame(query *q, unsigned num_vars)
 	trim_heap(q);
 }
 
-static bool commit_any_choices(const query *q, const frame *f)
+// Does any choicepoint still need this frame?
+//
+// Generations do not order frames, so ch->gen > f->chgen was wrong in
+// both directions: a choicepoint pushed by an earlier goal of the same
+// clause carries gen == f->chgen and was invisible, while an ancestor's
+// choicepoint can carry gen == f->chgen while having nothing to do with
+// this frame.
+//
+// The frames answer it directly. ch->st.fp is the frame count when the
+// choicepoint was pushed, so ch->st.fp >= q->st.fp means this frame was
+// already live and a retry restores into it; anything pushed earlier
+// belongs to an ancestor, and retrying that throws this frame away
+// whole.
+//
+// skip counts the choicepoints commit_frame() drops itself: the
+// in-progress clause choice, plus the call/N barrier when is_last_call()
+// found one - reuse_frame() performs that bookkeeping directly, which is
+// what keeps p(N) :- M is N-1, call(p, M) tail recursive.
+
+static bool commit_any_choices(const query *q, unsigned skip)
 {
-	if (q->st.cp == 1)							// Skip in-progress choice
+	if (q->st.cp <= skip)
 		return false;
 
-	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
-	return ch->gen > f->chgen;
+	const choice *ch = GET_CHOICE(q->st.cp - 1 - skip);
+	return ch->st.fp >= q->st.fp;
 }
 
 // Is the goal about to be called really the last thing this frame has
@@ -838,7 +857,7 @@ static bool commit_any_choices(const query *q, const frame *f)
 // continuation - e.g. \+ G would lose its `!, $drop_barrier, fail'
 // and so succeed for a provable G.
 
-static bool is_last_call(const query *q)
+static bool is_last_call(const query *q, bool *has_barrier)
 {
 	const cell *c = q->st.instr + q->st.instr->num_cells;
 	bool barrier = false;
@@ -850,6 +869,9 @@ static bool is_last_call(const query *q)
 		c += c->num_cells;
 		barrier = true;
 	}
+
+	if (has_barrier)
+		*has_barrier = barrier;
 
 	// Past that, only the branch join points that compile_term() emits
 	// on the way to the clause end may be skipped: they do nothing.
@@ -918,9 +940,10 @@ static void commit_frame(query *q, bool head_has_vars)
 		&& last_match
 		&& (q->st.fp == (q->st.cur_ctx + 1))
 		) {
-		bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q);
+		bool barrier = false;
+		bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q, &barrier);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
-		bool choices = commit_any_choices(q, f);
+		bool choices = commit_any_choices(q, barrier ? 2 : 1);
 		tco = slots_ok && tail_recursive && !choices;
 
 #if 0
