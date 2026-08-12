@@ -143,7 +143,7 @@ static unsigned key_hash(query *q, const cell *c)
 			return h;
 		}
 
-		return (unsigned)(c->val_int ^ (c->val_int >> 32));
+		return (unsigned)((uint64_t)c->val_int ^ ((uint64_t)c->val_int >> 32));
 	case TAG_FLOAT: {
 		union { double d; uint64_t u; } u = { .d = c->val_float };
 		return (unsigned)(u.u ^ (u.u >> 32));
@@ -171,6 +171,21 @@ static void thash_insert(thash *h, tnode *n, unsigned hv)
 	n->hnext = h->buckets[b];
 	h->buckets[b] = n;
 	h->count++;
+}
+
+static void thash_remove(query *q, thash *h, tnode *n)
+{
+	tnode **pp = &h->buckets[key_hash(q, &n->key) % h->nbuckets];
+
+	while (*pp) {
+		if (*pp == n) {
+			*pp = n->hnext;
+			h->count--;
+			return;
+		}
+
+		pp = &(*pp)->hnext;
+	}
 }
 
 static bool thash_grow(query *q, thash *h)
@@ -222,6 +237,13 @@ typedef struct {
 	unsigned num_vars, max_vars;
 	bool create;			// insert vs lookup
 	bool created_any;
+
+	// The first node this walk created, and where it hangs. Everything
+	// created afterwards is inside its subtree, so unlinking this one
+	// discards exactly what the walk added - see trie_insert_().
+
+	tnode **first_slot;
+	tnode *first_node, *first_parent;
 	bool oom;
 	bool attvar;			// hit an attributed variable
 } twalk;
@@ -296,20 +318,33 @@ static bool trie_step(twalk *w, const cell *key)
 	n->sibling = *slot;
 	*slot = n;
 	w->node = n;
+
+	if (!w->created_any) {
+		w->first_slot = slot;
+		w->first_node = n;
+		w->first_parent = parent;
+	}
+
 	w->created_any = true;
 
 	if (parent) {
 		parent->nchildren++;
 
+		// Both of these are best-effort: the index is only an
+		// optimisation, and the sibling chain is always correct on its
+		// own. Failing the insert here used to be worse than useless -
+		// a failed grow returned before thash_insert(), leaving the new
+		// node in the sibling chain but absent from the index, so the
+		// next lookup missed it and created a DUPLICATE key. That
+		// breaks the dedup the answer trie exists for.
+
 		if (h) {
-			if (h->count >= h->nbuckets - h->nbuckets/4) {
-				if (!thash_grow(w->q, h)) { w->oom = true; return false; }
-			}
+			if (h->count >= h->nbuckets - h->nbuckets/4)
+				thash_grow(w->q, h);		// denser if it fails, still correct
 
 			thash_insert(h, n, key_hash(w->q, key));
-		} else if (parent->nchildren > TRIE_INDEX_THRESHOLD) {
-			if (!trie_index_children(w->q, parent)) { w->oom = true; return false; }
-		}
+		} else if (parent->nchildren > TRIE_INDEX_THRESHOLD)
+			trie_index_children(w->q, parent);	// unindexed if it fails
 	}
 
 	return true;
@@ -400,6 +435,8 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 // Full-term insert: returns leaf node, sets *existed when this exact
 // canonical term had been inserted before (the dedup signal).
 
+static void trie_free(tnode *n);
+
 static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed, bool *attvar)
 {
 	twalk w;
@@ -410,8 +447,30 @@ static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *ex
 	if (attvar) *attvar = w.attvar;
 	twalk_done(&w);
 
-	if (!ok || !leaf)
+	if (!ok || !leaf) {
+		// The walk failed part-way - an attributed variable, a blob, or
+		// OOM - after possibly creating nodes for the arguments it did
+		// get through. Those are unreachable (never marked is_leaf) but
+		// they were never reclaimed either, so a program looping on a
+		// tabled call with an untabelable answer grew the trie on every
+		// throw. Discard what this walk added.
+
+		if (w.first_node) {
+			*w.first_slot = w.first_node->sibling;
+
+			if (w.first_parent) {
+				w.first_parent->nchildren--;
+
+				if (w.first_parent->index)
+					thash_remove(q, w.first_parent->index, w.first_node);
+			}
+
+			w.first_node->sibling = NULL;	// don't walk into the live trie
+			trie_free(w.first_node);
+		}
+
 		return NULL;
+	}
 
 	*existed = !fresh && leaf->is_leaf;
 	leaf->is_leaf = true;
@@ -500,6 +559,7 @@ typedef struct table_ {
 	pl_idx functor;
 	unsigned arity;
 	tnode *leaf;
+	unsigned slot;			// index into tbl_state.slots (handle identity)
 
 	struct table_ *wl_next, *all_next, *fresh_next;
 } table;
@@ -558,6 +618,14 @@ typedef struct {
 	tnode *variants;
 	table *all_tables, *wl_head, *fresh_head;
 	bool leader;
+
+	// Handles are (serial, index) pairs into this array rather than raw
+	// pointers, so a handle held across abolish_all_tables/0 is detected
+	// instead of dereferenced. Releasing a slot bumps its serial, which
+	// invalidates every handle that referred to it.
+
+	struct { table *t; uint32_t serial; } *slots;
+	unsigned nslots, slots_cap;
 
 #if USE_THREADS
 #endif
@@ -687,23 +755,74 @@ static void tbl_destroy(table *t)
 //
 //     ?- '$tbl_set_status'(0, complete).
 //
-// That used to cast 0 to a table* and dereference it. Tag the cell the
-// way streams do with FLAG_INT_STREAM, and refuse anything that did
-// not come out of make_tbl_handle(). A forged *value* is now rejected;
-// a genuine handle used after abolish is a separate problem.
+// That used to cast 0 to a table* and dereference it. Worse, a handle
+// obtained legitimately and then used after abolish_all_tables/0 was a
+// use-after-free, which ASAN confirms at '$tbl_get_answer'.
+//
+// So a handle is no longer a pointer. It is a (serial, index) pair into
+// tbl_state.slots: the index finds the slot, and the serial must match
+// the one the slot held when the handle was made. Releasing a slot
+// bumps its serial, so every handle to it stops validating. The cell is
+// also tagged FLAG_INT_TABLE, the way streams use FLAG_INT_STREAM, so a
+// plain integer is rejected before any of that.
 
-static void make_tbl_handle(cell *tmp, const table *t)
+#define TBL_HANDLE(idx, ser) (((pl_uint)(ser) << 32) | (pl_uint)(idx))
+
+static bool tbl_slot_alloc(tbl_state *s, table *t)
 {
-	make_uint(tmp, (pl_uint)(size_t)t);
+	for (unsigned i = 0; i < s->nslots; i++) {
+		if (!s->slots[i].t) {
+			s->slots[i].t = t;
+			t->slot = i;
+			return true;
+		}
+	}
+
+	if (s->nslots >= s->slots_cap) {
+		unsigned cap = s->slots_cap ? s->slots_cap * 2 : 16;
+		void *tmp = realloc(s->slots, sizeof(*s->slots) * cap);
+		if (!tmp) return false;
+		s->slots = tmp;
+		memset(&s->slots[s->slots_cap], 0,
+			sizeof(*s->slots) * (cap - s->slots_cap));
+		s->slots_cap = cap;
+	}
+
+	s->slots[s->nslots].t = t;
+	s->slots[s->nslots].serial = 1;
+	t->slot = s->nslots++;
+	return true;
+}
+
+static void tbl_slot_release(tbl_state *s, const table *t)
+{
+	if (!s->slots || (t->slot >= s->nslots) || (s->slots[t->slot].t != t))
+		return;
+
+	s->slots[t->slot].t = NULL;
+	s->slots[t->slot].serial++;		// invalidates outstanding handles
+}
+
+static void make_tbl_handle(tbl_state *s, cell *tmp, const table *t)
+{
+	make_uint(tmp, TBL_HANDLE(t->slot, s->slots[t->slot].serial));
 	tmp->flags |= FLAG_INT_TABLE;
 }
 
-static table *tbl_handle(cell *c)
+static table *tbl_handle(tbl_state *s, cell *c)
 {
-	if (!is_integer(c) || !(c->flags & FLAG_INT_TABLE))
+	if (!s || !is_integer(c) || !(c->flags & FLAG_INT_TABLE))
 		return NULL;
 
-	return (table*)(size_t)c->val_uint;
+	pl_uint v = c->val_uint;
+	unsigned idx = (unsigned)(v & 0xffffffffu);
+	uint32_t ser = (uint32_t)(v >> 32);
+
+	if ((idx >= s->nslots) || !s->slots[idx].t
+		|| (s->slots[idx].serial != ser))
+		return NULL;
+
+	return s->slots[idx].t;
 }
 
 // Does this term image contain variables? Imported answers that are
@@ -773,16 +892,28 @@ static bool bif_tbl_variant_table_3(query *q)
 		t = calloc(1, sizeof(table));
 		CHECKED(t);
 		t->status = TBL_FRESH;
+		// A non-interned callable would record functor 0 and then be
+		// invisible to abolish_table/1. Callables reaching here are
+		// interned in practice; if that ever changes this needs a real
+		// key rather than a silent 0.
+
 		t->functor = is_interned(p1) ? p1->val_off : 0;
 		t->arity = p1->arity;
 		t->leaf = leaf;
 		t->all_next = s->all_tables;
 		s->all_tables = t;
 		leaf->value = t;
+
+		if (!tbl_slot_alloc(s, t)) {
+			s->all_tables = t->all_next;
+			leaf->value = NULL;
+			free(t);
+			return throw_error(q, p1, p1_ctx, "resource_error", "memory");
+		}
 	}
 
 	cell tmp;
-	make_tbl_handle(&tmp, t);
+	make_tbl_handle(s, &tmp, t);
 
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
 		return false;
@@ -796,10 +927,13 @@ static bool bif_tbl_variant_table_3(query *q)
 
 static bool bif_tbl_set_status_2(query *q)
 {
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
 	tbl_intern_atoms(q);
-	table *t = tbl_handle(p1);
+	table *t = tbl_handle(s, p1);
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
@@ -821,7 +955,7 @@ static bool bif_tbl_add_answer_2(query *q)
 
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
-	table *t = tbl_handle(p1);
+	table *t = tbl_handle(s, p1);
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
@@ -864,7 +998,7 @@ static bool bif_tbl_get_answer_2(query *q)
 
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
-	table *t = tbl_handle(p1);
+	table *t = tbl_handle(s, p1);
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
@@ -878,6 +1012,13 @@ static bool bif_tbl_get_answer_2(query *q)
 
 	if (!a)
 		return false;
+
+	// No choice point on the last answer. That is only sound because a
+	// COMPLETE table is immutable: nothing appends after completion, so
+	// the answer that has no successor now will not acquire one. Phase 2
+	// breaks this in two places - answer subsumption *updates* existing
+	// answers, and batched scheduling posts answers before completion -
+	// and either would silently drop answers here.
 
 	if (a->next) {
 		q->st.v1 = (uint64_t)(size_t)a->next;
@@ -900,7 +1041,7 @@ static bool bif_tbl_add_suspension_2(query *q)
 
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
-	table *t = tbl_handle(p1);
+	table *t = tbl_handle(s, p1);
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
@@ -969,10 +1110,10 @@ static bool bif_tbl_pop_worklist_1(query *q)
 	// (new answers x all suspensions)
 
 	for (tbl_ans *a = t->unproc_ans; a; a = a->next) {
-		for (tbl_susp *s = t->first_susp; s; s = s->next) {
+		for (tbl_susp *sp = t->first_susp; sp; sp = sp->next) {
 			tbl_pair *p = malloc(sizeof(tbl_pair));
 			CHECKED(p);
-			p->a = a; p->s = s; p->next = NULL;
+			p->a = a; p->s = sp; p->next = NULL;
 			*tail = p; tail = &p->next;
 		}
 	}
@@ -992,7 +1133,7 @@ static bool bif_tbl_pop_worklist_1(query *q)
 	t->unproc_susp = NULL;
 
 	cell tmp;
-	make_tbl_handle(&tmp, t);
+	make_tbl_handle(s, &tmp, t);
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -1007,7 +1148,7 @@ static bool bif_tbl_wkl_work_3(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
-	table *t = tbl_handle(p1);
+	table *t = tbl_handle(s, p1);
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
@@ -1056,7 +1197,7 @@ static bool bif_tbl_push_scc_1(query *q)
 	CHECKED(s);
 
 	GET_FIRST_ARG(p1,integer);
-	table *t = tbl_handle(p1);
+	table *t = tbl_handle(s, p1);
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
@@ -1241,6 +1382,7 @@ static void tbl_clear_all(tbl_state *s)
 {
 	for (table *t = s->all_tables; t; ) {
 		table *next = t->all_next;
+		tbl_slot_release(s, t);
 		tbl_destroy(t);
 		t = next;
 	}
@@ -1271,6 +1413,7 @@ void tabling_destroy_thread(thread *t)
 		return;
 
 	tbl_clear_all(s);
+	free(s->slots);
 	free(s);
 	t->tabling_state = NULL;
 }
@@ -1323,6 +1466,7 @@ static bool bif_tbl_abolish_1(query *q)
 			else
 				s->all_tables = next;
 
+			tbl_slot_release(s, t);
 			tbl_destroy(t);
 			dropped++;
 		} else
