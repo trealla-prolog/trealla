@@ -122,15 +122,19 @@ main :-
 	findall(P, pl_file(P), Ps0),
 	msort(Ps0, Ps),
 	scan_all(Ps, 0, Rules, 0, Skipped, 0, Files),
-	format(user_error, "dcg corpus: ~w files, ~w rules, ~w unreadable terms~n",
-	       [Files, Rules, Skipped]),
 
 	% Guard the silent-zero failure mode: if the scan stops finding
 	% rules (a reader change, a moved directory), this test would
 	% otherwise pass by doing nothing.
+	%
+	% A clean run says nothing on stderr - the counts are only a
+	% diagnostic for a run that has already failed, and a DIFF prints
+	% the offending file and both translations itself.
 
 	(  Rules < 100
-	-> format("CORPUS-TOO-SMALL: only ~w rules found~n", [Rules])
+	-> format("CORPUS-TOO-SMALL: only ~w rules found~n", [Rules]),
+	   format(user_error, "dcg corpus: ~w files, ~w rules, ~w unreadable terms~n",
+	          [Files, Rules, Skipped])
 	;  true
 	),
 	format("dcg corpus: all rules agree~n").

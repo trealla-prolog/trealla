@@ -209,7 +209,15 @@ main :-
 	tally(Rs, Full, Shallow, Failed, Unreadable),
 	length(Es, N),
 	Ok is Full + Shallow,
-	format(user_error,
-	       "quad driver: ~w entries, ~w full, ~w shallow, ~w failed, ~w unreadable~n",
-	       [N, Full, Shallow, Failed, Unreadable]),
+
+	% A clean run says nothing on stderr. The breakdown matters when
+	% something is failing or unreadable; otherwise stdout's "N of N
+	% acceptable" is the whole story, and it is what .expected pins.
+
+	(  Ok =:= N
+	-> true
+	;  format(user_error,
+	          "quad driver: ~w entries, ~w full, ~w shallow, ~w failed, ~w unreadable~n",
+	          [N, Full, Shallow, Failed, Unreadable])
+	),
 	format("quad driver: ~w of ~w acceptable~n", [Ok, N]).

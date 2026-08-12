@@ -167,7 +167,15 @@ main :-
 	length(Ss, N),
 	findall(x, member(bad, Ss), Bad),
 	length(Bad, NBad),
-	format(user_error, "dcg consult: ~w rules, ~w bad~n", [N, NBad]),
+	% A clean run says nothing on stderr. The counts are diagnostics for
+	% a run that already has something wrong with it; the guard against
+	% the corpus silently collapsing to nothing is the floor below, which
+	% goes to stdout where it fails the test.
+
+	(  NBad =:= 0
+	-> true
+	;  format(user_error, "dcg consult: ~w rules, ~w bad~n", [N, NBad])
+	),
 	(  N < 20
 	-> format("CONSULT-CORPUS-TOO-SMALL: ~w~n", [N])
 	;  true
