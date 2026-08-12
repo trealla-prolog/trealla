@@ -16,8 +16,13 @@
 // The one concession to Layer 1 "has no query dependency": ctx->q is
 // used for deref() and for fresh variables, and only when non-NULL. At
 // consult time the clause cells carry no bindings and the parser
-// supplies its own variables; that path arrives with the parser hook in
-// phase 1.
+// supplies its own variables; that path is dcg_expand_clause(), at the
+// foot of this file.
+//
+// Note that DCG_DECLINE is never returned from here. Layer 1 always
+// translates or errors; the decline decision is dcg_is_constr(), which
+// '$dcg_body'/4 tests before calling in. The DECLINE branches in both
+// bifs are belt and braces.
 //
 // This reproduces library/dcgs.pl's translation, with ONE deliberate
 // divergence: a nonvar non-callable in non-terminal position raises
@@ -461,12 +466,11 @@ static bool new_var(dcg_ctx *c, cell *out)
 		return true;
 	}
 
-	// Consult time. Section 10 option (b): anonymous and temporary, with
-	// no vartab entry. That is safe because assign_vars() has already run
-	// by the time term_expansion() is reached (parser.c: assign_vars at
-	// 4676, term_expansion at 4695) and process_clause() does not call
-	// it, so nothing renumbers these from their names afterwards. If
-	// phase 4 ever reorders expansion ahead of assign_vars, revisit.
+	// Consult time. Section 10 option (a): named, and registered in the
+	// vartab by the assign_vars() that runs after us - see the note below
+	// for why option (b) cannot work. dcg_expand_clause() is called from
+	// tokenize() immediately BEFORE assign_vars(), and phase 4 must
+	// preserve that order.
 
 	if (c->p->cl->num_vars >= MAX_VARS) {
 		set_error(c, "resource_error", "max_vars", NULL, 0);
@@ -564,12 +568,14 @@ static dcg_rc emit_terminals(dcg_ctx *c, const cell *l, pl_ctx l_ctx,
 		// On the term_expansion path that propagates, so '$dcg_rule'/2
 		// must raise here too.
 		//
-		// The goal_expansion path is different: error_goal/2 swallows
-		// instantiation_error and defers to runtime, where the tail may
-		// be bound by then (section 5.2). That deferral is NOT yet
-		// implemented - see the phase 0 note in the design. Until it
-		// is, '$dcg_body'/4 raises where dcg_body/4 under
-		// goal_expansion would have deferred.
+		// The goal_expansion path defers instead, where the tail may be
+		// bound by runtime (section 5.2). Raising unconditionally here
+		// is still right: the deferral is the CALLER's, and lives in
+		// library/dcgs.pl's user:goal_expansion, which catches a
+		// throwing translation and declines the hook so the ordinary
+		// phrase/3 call survives to runtime. That is broader than the
+		// reference's error_goal/2, which defers instantiation_error
+		// and rethrows the rest.
 		set_ball_must_be_inst(c);
 		rc = DCG_ERROR;
 		goto done;
