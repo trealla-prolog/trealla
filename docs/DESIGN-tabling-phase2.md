@@ -1,47 +1,54 @@
-# Tabling, Phase 2 — design
+# Tabling, Phase 2 — design (v2)
 
 Design only. No Trealla source is modified by this document.
 
-Phase 1 shipped: native tries, variant tabling, least-model semantics,
-nested-SCC completion, thread-private tables, `abolish_table/1`. The
-as-built architecture and its deliberate limits are in
-`HANDOFF-native-tabling.md` §3–4; this picks up at §5.
+**v2 folds in two things:** the self-review in
+`REVIEW-tabling-phase2.md`, and the effect of the Phase 1 review fixes
+now landed on v3.2.0 (`tabling-review-fixes-all.patch` — handle
+validation, iterative trie walks, best-effort indexing, failed-insert
+unwind). Sections marked **[changed in v2]** differ materially from v1;
+the rest is carried over.
 
-Everything below is grounded in the shipped `src/bif_tabling.c` (1310
-lines, 16 `$tbl_*` builtins) and `library/tabling.pl`. Line references
-are to those two files as of commit `0a2d9917`.
+Baseline: v3.2.0 plus that patch. Suite 349 passed / 0 failed; the
+tabling suite is 17 checks including a four-thread concurrency test
+with a marker-count negative control.
 
 ---
 
-## Summary and recommended order
+## Order **[changed in v2]**
 
 | # | Item | Gives | Size | Risk |
 |---|------|-------|------|------|
-| 1 | Restraints | runaway table → `resource_error`, not OOM-kill | S | low |
-| 2 | Shared completed tables | threads stop recomputing | M | medium |
-| 3 | Answer subsumption | aggregate at insert; bounded tables | M | medium |
-| 4 | Incremental tabling | tables survive assert/retract | L | medium |
-| 5 | General continuations | lifts the if-then-else-condition limit | M | high |
-| 6 | Trie-path reconstruction | drops per-answer images (memory) | M | medium |
-| 7 | `tnot` / well-founded semantics | correct negation through recursion | XL | high |
+| 1 | Restraints | runaway answer *set* → `resource_error` | S | low |
+| 2 | Answer subsumption | aggregate at insert; bounded tables | M | medium |
+| 3 | Incremental tabling | tables survive assert/retract | L | medium |
+| 4 | Shared completed tables | threads stop recomputing | M | **high** |
+| 5 | Trie-path reconstruction | drops per-answer images | M | medium |
+| 6 | `tnot` / well-founded semantics | correct negation through recursion | XL | high |
 
-Do them in that order. The ordering is not by importance — WFS is the
-most *valuable* item on the list — it is by how much each one
-destabilises what already works. Restraints and sharing are additive.
-WFS rewrites completion. Putting it last means the first six ship and
-stay shipped.
+v1 had sharing second, on the grounds that it was "the single biggest
+win available". That was wrong on three counts: it has the most
+dangerous failure mode (a cross-thread use-after-free, silent and
+intermittent, and invisible to ASAN because the `pl_destroy()` sweep
+hides it), it is worth nothing to single-threaded users or any WASM
+embedding, and it was the one item whose central design question v1
+failed to answer. It is now fourth and its risk is marked high.
 
-Two of these (1, 3) touch the same twenty lines of
-`bif_tbl_add_answer_2`. Doing 1 first makes 3 easier, not harder.
+Items 1 and 2 both touch `bif_tbl_add_answer_2`, and are now adjacent
+so that work is done once.
+
+General nondeterministic continuations were a separate item in v1.
+They are not scheduled on their own merits — the limit they lift (a
+worker suspending inside an if-then-else *condition*) is narrow and
+documented. They are now the first step of item 6, which is the only
+thing likely to require them.
 
 ---
 
 ## 1. Restraints
 
-**What it gives.** Today a tabled predicate whose answer set is
-infinite does not hang — it stores answers until the OOM killer takes
-the process (rc 137). The canonical case, verified to behave as Scryer
-#573 describes:
+**What it gives.** A tabled predicate whose answer set is infinite
+stores answers until the process is OOM-killed:
 
     :- table as//0.
     as --> [].
@@ -49,416 +56,331 @@ the process (rc 137). The canonical case, verified to behave as Scryer
 
     ?- phrase(as, Ls).      % unbound: diverges, killed on memory
 
-The value is not the limit itself. It is that **a diverging table
-currently looks exactly like a bug in the user's program**. There is
-no message, no partial output, and the exit code is the same one you
-get from any other OOM. Turning that into
+The value is diagnostic. A diverging table is currently
+indistinguishable from a bug in the user's program: no message, no
+partial output, and exit code 137 like any other OOM.
 
-    error(resource_error(tabled_answer_count), phrase/2)
+**[changed in v2] The justification is narrower than v1 claimed.** v1
+also leaned on stack overflow from deep answers. That is fixed —
+`trie_walk` iterates on the last argument and `trie_free` uses an
+explicit worklist, so a 1,000,000-element answer now inserts and tears
+down cleanly where 100,000 used to segfault. Restraints are still
+needed for unbounded answer *sets*; they are no longer needed to
+prevent that particular crash.
 
-converts an unbounded debugging session into a one-line diagnosis.
+**Where it goes.** `bif_tbl_add_answer_2` → `trie_insert_` → `twalk`.
+Three counters:
 
-**Where it goes.** `bif_tbl_add_answer_2` (line 763) already walks the
-whole answer term through `trie_insert_`, and already returns `false`
-on a duplicate. Three counters, all cheap:
+- *answer count per table* — `unsigned n_answers` on `struct table_`.
+- *answer size* — `twalk` already carries `oom`, `attvar` and the
+  unwind bookkeeping; add depth and node counters alongside.
+- *subgoal size* — the same walk, from `'$tbl_variant_table'`.
 
-- *answer count per table* — a `unsigned n_answers` on `struct table_`,
-  incremented next to the existing `first_ans/last_ans` append.
-- *answer size* — `trie_insert_` visits every cell; thread a depth and
-  a node count through `twalk` (it already carries state, line 217) and
-  fail the insert past the limit.
-- *subgoal size* — same walk, in `$tbl_variant_table` instead. Place
-  the check before the table is created, not after: `$tbl_variant_table`
-  is called from `native_start_tabling` (`tabling.pl` line 75), which is
-  outside `'$tbl_push_scc'`, so a throw from there has nothing to roll
-  back. Check after creation and it does.
+**[changed in v2] The failure path is now free.** `trie_insert_`
+unwinds whatever a failed walk created (Phase 1 review #4), so a
+restraint breach can simply fail the walk the way `attvar` does and
+cleanup happens automatically. In v1 this needed its own handling.
 
-**Flags.** Follow SWI's names so existing code and documentation
-transfer: `max_table_answer_size`, `max_table_subgoal_size`, and
-`max_answers_for_subgoal`. Default `infinite` (current behaviour), so
-this is opt-in and nothing changes for existing programs.
+**Flags.** SWI's names, so documentation transfers:
+`max_table_answer_size`, `max_table_subgoal_size`,
+`max_answers_for_subgoal`. Default `infinite`; opt-in, nothing changes
+for existing programs.
 
-**Behaviour on breach.** SWI offers error / suspend / abstract. Ship
-`error` only. `suspend` needs the answer-completion machinery from
-item 7, and `abstract` needs subgoal abstraction, which changes what a
-variant *is* — both are their own projects. An honest
-`resource_error` is the whole win here; the rest is polish.
+**Behaviour on breach.** `error` only. `suspend` needs answer
+completion from item 6; `abstract` needs subgoal abstraction, which
+changes what a variant *is*. An honest `resource_error` is the win.
 
-**Risk.** Low for the machinery — nothing in the completion algorithm
-changes. But there is a semantic decision to make first, and it is not
-optional.
+**[changed in v2] Open question — restraints inside a merged SCC.** A
+breach raises, and `'$tbl_reset_incomplete'` is wired to the exception
+path. That covers the simple case. It does *not* obviously cover a
+fresh variant completed in a nested SCC whose tables were merged into
+the parent on pop. Which tables are incomplete then — the inner set,
+or the merged set? This needs answering by reading the merge path, not
+by reasoning about it. It is the one part of this item that is not
+routine, and it is where Phase 1's bugs lived.
 
-*The direct case works already.* `'$tbl_add_answer'` at `tabling.pl`
-line 135 sits *outside* the `catch/3` on line 133, so a throw from
-there propagates to `run_scc`'s handler (line 104), which runs
-`'$tbl_reset_incomplete'`, pops the SCC and rethrows. Same for the
-`delim/3` call inside `completion/0` (line 147). The canonical `as//0`
-case is directly recursive — the recursive call suspends via `shift`
-rather than opening a new SCC — so it takes this path and the user
-gets the error.
+**Test.** `as//0` must raise instead of being killed — assert the
+*exit code*, since the current failure is 137 and an output-only check
+passes on a killed process. A bounded table must be unaffected;
+`phrase(as,[a,a,a])` must still be true.
 
-*The nested case does not.* Line 133 is a blanket
-`catch(reset(Worker, Ball, Cont), _, ('$tbl_note_exception', fail))`.
-When a worker calls a *different* tabled predicate, that opens a nested
-SCC, and the inner `run_scc` rethrow lands inside `reset/3` — where it
-is caught by the `_`, noted, and turned into `fail`. The outer table
-then hits `saw_exception` (line 156), resets incomplete, and the query
-fails silently. So for nested tabled calls this item as sketched
-replaces an OOM kill with a silent failure, which is *worse*: an OOM at
-least tells you something happened, whereas a silent `fail` is
-indistinguishable from a legitimate one.
-
-*The decision.* `delim/3` must distinguish restraint errors (rethrow —
-the table is unsalvageable and the user needs to know) from ordinary
-worker exceptions (fail this producer branch). The blanket catch is
-deliberate — the comment at `tabling.pl` lines 126–130 explains it
-exists so that
-Trealla's ISO-strict `setof/3` throwing where lenient systems fail does
-not surface as a tabling difference — so the narrowing has to be
-explicit and justified, not a quiet widening of what escapes. Match on
-`error(resource_error(_), _)` and leave everything else failing.
-
-**Test.** The `as//0` case must raise instead of being killed; the same
-divergence reached *through* a second tabled predicate must also raise,
-not fail (this is the nested case above, and it is the test that would
-have caught the problem); a bounded table must be unaffected;
-`phrase(as,[a,a,a])` must still be `true`. Add to
-`tests/misc/tabling.pl`. Worth asserting the *exit code* too — the
-current failure mode is 137, and a test that only checks output would
-pass on a killed process.
-
-**Size.** Small, but not a day. The counters are an afternoon; the
-`delim/3` exception policy and its tests are the rest.
+**Size.** Small, except for the SCC question above.
 
 ---
 
-## 2. Shared completed tables
+## 2. Answer subsumption
 
-**What it gives.** Tables are thread-private today, so N threads
-tabling the same predicate do N times the work. A long-lived server
-answering similar queries stops recomputing the same tables for the
-life of the process.
-
-**What it does not give — and this bounds the win.** Publication
-happens at completion, and nothing registers a table as *in progress*.
-So N threads that all start before any of them finishes will each still
-compute the table in full; sharing helps the *next* query, not the
-concurrent burst. That is not an oversight to be fixed later: making a
-late arrival wait for an in-flight table means blocking it across
-`completion/0`, which is the lock the next paragraph rules out. The
-honest claim is steady-state, not peak.
-
-**The invariant that must not break.** Phase 1 rejected locking shared
-tables, and that reasoning still holds: the leader's critical section
-spans `completion/0`, a *Prolog* loop that runs arbitrary user code
-between `'$tbl_*'` calls. No lock survives that. Per-builtin locks
-would make the tries memory-safe while still letting thread B read
-thread A's half-built table as complete — quietly wrong instead of
-loudly refused.
-
-The way through is that **completed tables are immutable**. Nothing
-writes to a table once `'$tbl_mark_all_complete'` has run. So:
-
-- threads build tables privately, exactly as now, with no locking;
-- on completion, the leader *publishes* the table to a registry hanging
-  off `prolog` (not `thread`);
-- another thread looking up a variant checks the registry first and, on
-  a hit, reads it without a lock.
-
-Only publication and lookup touch shared state, and both are short,
-bounded operations with no user code inside them — so a mutex there is
-sound in a way it is not around `completion/0`.
-
-**The immutability claim checks out, and it is worth recording why**,
-because it is the load-bearing assumption and it is not obvious from a
-glance at the code:
-
-- The answer trie's lazy hash index would be a mutation on the read
-  path if it were built during lookup. It is not: `trie_index_children`
-  (line 199) is reached only from line 311, past the
-  `if (!w->create) return false;` early-out in `trie_step` (line 289),
-  so a lookup on a completed table never writes to it.
-- Reading another thread's answer means `import_term` on the stored
-  image, which calls `share_cell` on refcounted strings and bigints —
-  a cross-thread refcount bump. That is safe because `pl_refcnt` is
-  `pl_atomic int64_t` (`internal.h` line 41) under `USE_THREADS`.
-
-Both of those are properties of code outside `bif_tabling.c` that
-nothing currently forces to stay true. If either changes, lock-free
-reads become a data race silently.
-
-**What needs designing carefully.**
-
-*Lifetime.* Once a table is shared, "free it when the thread retires"
-is wrong. `tabling_destroy_thread()` currently frees everything the
-thread built. Published tables need a refcount, or an epoch scheme, so
-the last reader frees. This is the part most likely to produce a
-use-after-free; budget for it.
-
-*Abolish.* `abolish_all_tables/0` and `abolish_table/1` must
-invalidate published tables while other threads may be enumerating
-them. The existing `generation` counter (line 516) is the right *idea*
-but cannot be extended in place, and the difference is a day's work:
-
-- It lives on the per-thread `tbl_state` and is bumped by that thread's
-  abolish. A thread enumerating a table published by another thread
-  compares against its own counter and never notices. The shared
-  registry needs its own global epoch, and enumeration over a published
-  table must validate against *that*, not the local one.
-- `q->st.v2` is already spoken for — it stashes the thread-local
-  generation in `bif_tbl_get_answer_2` (line 814) and
-  `bif_tbl_wkl_work_3` (line 949). An enumeration that must check both
-  epochs needs a second stash slot or a packed value. Decide which
-  before writing the registry, not after.
-
-*What to publish.* Only tables that completed without an exception,
-and (if item 1 lands first) only those that completed without hitting
-a restraint. A table truncated by a restraint is not a complete table
-and must never be shared.
-
-*Opt-in.* SWI distinguishes shared from thread-local tables
-(`:- table p/1 as shared`). Making sharing the default changes
-observable behaviour for anyone relying on per-thread tables. Ship it
-as opt-in, default private, matching today.
-
-**Test.** Extend `test_threads` in `tests/misc/tabling.pl`. It
-currently asserts four threads agree *and* that each did its own work:
-`NW =:= 4` (line 415), a marker count proving the answers didn't just
-come from a shared table.
-
-The obvious inversion — with sharing on, assert exactly one thread did
-the work — **would be flaky**, for the reason in "what it does not
-give" above. The four threads race, and any that start before the first
-publication duplicate the work, so the marker count is nondeterministic
-in 1..4. Two options, and the first is better:
-
-- Stagger the threads: let one complete, join it, *then* start the
-  other three and assert `NW =:= 1`. This tests the thing sharing
-  actually promises, and it is deterministic.
-- Or keep them concurrent and assert `NW < 4`, which is weaker but
-  still fails if publication is broken.
-
-Keep the private-table test as-is alongside it; they are each other's
-negative control.
-
-**Measure.** Wall time for N threads tabling the same predicate,
-shared vs private, plus peak RSS. Phase 1's per-thread free took 200
-sequential tabling threads from 59 MB to 9 MB; the sharing number
-should be reported the same way.
-
-**Size.** Medium. The mechanism is small; the lifetime rules and the
-global epoch are not.
-
----
-
-## 3. Answer subsumption
-
-**What it gives.** Aggregation at insert time instead of storing every
-answer, e.g. shortest-path where only the minimum matters:
+**What it gives.** Aggregation at insert instead of storing every
+answer:
 
     :- table path(_,_,min).
 
-Without it, a path table stores every route and the program filters
-afterwards. With it, the table stores one answer per key. This also
-*bounds* tables that would otherwise be unbounded, which makes it a
-partial answer to the same problem restraints address — from the other
-direction.
+Also *bounds* tables that would otherwise be unbounded, approaching the
+same problem as item 1 from the other side.
 
-**Where it goes.** `bif_tbl_add_answer_2` again. Instead of "insert
-into dedup trie, fail if it existed", the shape becomes: look up the
-key part of the answer; if absent, insert; if present, apply the
-lattice operation to the old and new answer, and if the result differs
-from the old one, *replace* it and re-post the answer to consumers.
+**[changed in v2] It is not just insert logic.** The answer trie is
+keyed on the **whole answer term** — that is what makes duplicate
+detection free. Subsumption needs it keyed on the *non-aggregated*
+arguments, so `path(a,b,3)` and `path(a,b,5)` collide and can be
+combined. That is a structural change to how the trie is used, possibly
+a second index or a per-predicate key construction. v1 framed this as a
+change to what happens after a lookup, which would send an implementer
+to the wrong place.
 
-**The hard part is that last clause.** Today an answer is added once
-and never changes, so a consumer that has seen it is done. With
-subsumption an existing answer can be *updated*, and every consumer
-that already consumed the old value must run again. That is a real
-change to the worklist protocol in `'$tbl_wkl_work'` (line 1297) — the
-existing `unproc_ans` / `unproc_susp` pairing assumes answers are
+**The other hard part.** Today answers are append-only: a consumer that
+has seen one is done. Subsumption lets an existing answer be
+*updated*, so every consumer that read the old value must run again.
+That changes the worklist protocol in `'$tbl_pop_worklist'` /
+`'$tbl_wkl_work'`, whose `unproc_ans`/`unproc_susp` pairing assumes
 append-only.
 
-**Recommendation.** Ship `min`/`max` over standard order first. They
-are monotone, which means an update always moves in one direction and
-the fixpoint argument stays simple. General user-supplied lattices
-open the question of whether the operation is monotone at all — and a
-non-monotone one will not terminate. If general lattices are wanted
-later, they need a documented obligation on the user.
+**[changed in v2]** The invariant this breaks is now documented in the
+code, at the choice-point elision in `'$tbl_get_answer'` — that
+elision is only sound because completed tables are immutable. The
+implementer will meet the comment where they need it.
 
-**Size.** Medium. The insert logic is small; the re-posting is not.
+**Recommendation.** `min`/`max` over standard order first: monotone, so
+updates move one way and the fixpoint argument stays simple. General
+user-supplied lattices raise the question of whether the operation is
+monotone at all, and a non-monotone one will not terminate — if wanted
+later, it needs a documented obligation on the user.
+
+**Size.** Medium.
 
 ---
 
-## 4. Incremental tabling
+## 3. Incremental tabling
 
 **What it gives.** Tables survive changes to the dynamic predicates
-they depend on. Today any assert or retract means the answers are
-stale and there is no mechanism to notice — the user must call
-`abolish_all_tables/0` and pay for full recomputation. For a tabled
-query over a slowly-changing fact base this is the difference between
-usable and not.
+they depend on, instead of the user calling `abolish_all_tables/0` and
+paying for full recomputation.
 
-**What it needs.**
+**What it needs.** A dependency graph (which dynamic predicates a table
+consulted), invalidation on assert/retract, lazy re-evaluation on next
+call, and `:- table p/1 as incremental` / `:- dynamic q/1 as
+incremental`.
 
-*A dependency graph.* Record, per table, which dynamic predicates were
-consulted while it was being computed. The natural capture point is
-wherever a tabled evaluation calls a dynamic predicate — which means a
-hook in the clause-retrieval path, not in `bif_tabling.c`.
+**[changed in v2] The hard part is attribution, not the graph.** v1
+said "a hook in the clause-retrieval path" and left it there. The
+difficulty is knowing *which table you are currently computing*, and it
+is not "the top of a stack": a suspended consumer resumes later via
+`delim/3`, running on behalf of a table that is not lexically current
+at that moment. The dependency must be attributed to the table the
+*continuation* belongs to. That needs designing before any hook is
+written.
 
-*Invalidation.* `assertz`/`retract` on a predicate marked incremental
-walks the IDG and marks dependent tables invalid. `bif_database.c` is
-where this lands, and it is a hot path — the check must be near-free
-when nothing is incremental (a flag on `struct predicate_` tested
-before any graph walk).
-
-*Re-evaluation.* Lazy is right: an invalid table is recomputed on next
-call, not at invalidation time. Eager re-evaluation would make an
-innocuous `assertz` arbitrarily expensive.
-
-*Declaration.* `:- table p/1 as incremental` and
-`:- dynamic q/1 as incremental`, per SWI.
-
-**Risk.** The graph itself is straightforward. The risk is the hook in
-the dynamic-predicate path: it touches code far outside tabling, on a
-path everything uses. Measure `make test` wall time before and after
-with no incremental predicates declared — the null case must be free.
+**Risk.** The graph is straightforward; the hook is in a hot path
+everything uses. Measure `make test` wall time with no incremental
+predicates declared — the null case must be free. A flag on
+`struct predicate_` tested before any graph walk.
 
 **Size.** Large.
 
 ---
 
-## 5. General nondeterministic continuations
+## 4. Shared completed tables **[changed in v2 — substantially]**
 
-**What it gives.** Lifts the documented Phase 1 limit that a worker
-cannot suspend inside an if-then-else *condition* (the then/else
-branches are fine). Also the groundwork for anything else that needs a
-real captured continuation rather than a goal list.
+**What it gives.** N threads tabling the same predicate currently do N
+times the work.
 
-**Why it is listed here.** The handoff notes this as "chunk-list
-`call_continuation` for general nondeterministic continuations", and
-records that Phase 1 *deliberately retreated* from continuation
-capture. Reopening it reopens the hardest part of the original work.
+**The invariant.** Phase 1 rejected locking shared tables and that
+reasoning holds: the leader's critical section spans `completion/0`, a
+*Prolog* loop running arbitrary user code between `'$tbl_*'` calls, and
+no lock survives that. Per-builtin locks would make the tries
+memory-safe while still letting thread B read thread A's half-built
+table as complete — quietly wrong instead of loudly refused.
 
-**Recommendation.** Do not schedule this on its own merits — the
-current limit is narrow and documented. Do it only if item 7 (WFS)
-turns out to require it, which is likely, in which case it becomes the
-first step of that project rather than a separate one.
+The way through is that completed tables are immutable: build
+privately with no locking, publish on completion, read after lookup.
+
+**[changed in v2] Say the locking precisely.** v1 said a reader
+"checks the registry first and, on a hit, reads it without a lock".
+Taken literally that is a data race — the registry is mutable shared
+state, and reading a pointer out of it unsynchronised gives no
+happens-before edge to the table contents. The correct statement:
+
+- the table is fully built and never written again **before**
+  publication;
+- publication happens under a mutex;
+- **lookup also happens under that mutex** — it is the acquire against
+  the publisher's release that makes the contents visible;
+- only after lookup returns does the reader touch the table, and by
+  then it is immutable.
+
+Not "read without a lock" — "one short lock to find it, then no lock to
+use it". Publication and lookup are short and contain no user code,
+which is what makes a mutex sound there and unsound around
+`completion/0`.
+
+**[changed in v2] Reclamation: decided, not enumerated.** v1 offered
+"a refcount, or an epoch scheme". Refcounting fails for a specific
+reason: a reader can hold a table across `completion/0`, which runs
+arbitrary user code and may block on I/O, suspend or throw. A refcount
+can therefore be held for unbounded time, and `abolish_all_tables/0`
+cannot wait on it without risking deadlock against user code. **Use
+deferred reclamation keyed on the existing `generation` counter.**
+
+**[changed in v2] Half of that mechanism now exists.** The Phase 1
+review fix replaced raw-pointer handles with `(serial, index)` pairs
+into a slot array: releasing a slot bumps its serial, so a stale handle
+validates as `type_error(table_handle, _)` instead of dereferencing
+freed memory. That is exactly the stale-handle detection deferred
+reclamation needs — a published table can be retired without waiting
+for readers, because readers that come back late are detected.
+
+**[changed in v2] But the slot array is per-thread, and that is now the
+main obstacle.** It hangs off `tbl_state`, which hangs off `thread`.
+A handle minted by thread A is meaningless in thread B by construction.
+Sharing therefore needs a handle redesign, one of:
+
+- a **shared slot table** for published tables, with thread-private
+  slots for unpublished ones, and a bit in the handle saying which;
+- a **two-level handle** — owner thread id plus slot — validated
+  against the owner's array.
+
+Decide this before writing any of the registry. It was invisible when
+v1 was written because handles were raw pointers, which are
+thread-agnostic and unsafe for a different reason.
+
+**Other requirements.** Publish only tables that completed without an
+exception, and — once item 1 lands — without hitting a restraint; a
+truncated table is not a complete table. Opt-in
+(`:- table p/1 as shared`), default private, matching today.
+
+**Test.** `test_threads` currently asserts four threads agree *and*
+that each did its own work via a marker count. With sharing on, that
+count should show exactly one thread did the work. Keep both; they are
+each other's negative control.
+
+**[changed in v2] Threadless build.** `bif_tabling.c` already has
+`#if USE_THREADS` around the per-thread state. This item is meaningless
+under `NOTHREADS` and must compile out cleanly — and `NOTHREADS` is the
+WASI configuration, which is what embedders ship. v1 never mentioned
+it.
+
+**Measure.** Wall time for N threads on the same predicate, shared vs
+private, plus peak RSS — reported the way Phase 1 reported 200
+sequential tabling threads at 9 MB vs 59 MB.
+
+**Size.** Medium mechanism, high risk, and the handle question is a
+prerequisite.
 
 ---
 
-## 6. Trie-path answer reconstruction
+## 5. Trie-path answer reconstruction
 
-**What it gives.** Memory. Every answer currently stores a full
-`cell *image` (`struct tbl_ans_`, line 440) *in addition to* its path
-in the answer trie. The trie already contains the answer; the image is
-a second copy kept because reconstructing a term from a trie path is
-work and copying is not.
+**What it gives.** Every answer stores a full `cell *image` — a real
+second copy, `copy_term_to_tmp` then `TPL_malloc` then `dup_cells` — in
+addition to its path in the answer trie. Dropping the image means
+`'$tbl_get_answer'` rebuilds each answer by walking the trie path.
 
-Dropping the image means `'$tbl_get_answer'` rebuilds each answer by
-walking the trie path on demand.
+**[changed in v2] The memory win is unconditional; only the time cost
+is a trade.** v1 said "which way that goes depends entirely on the
+ratio of answers stored to answers consumed", which is true of the time
+and false of the memory — the trie exists either way. The question is
+only whether reconstruction cost is acceptable, not whether the saving
+is real.
 
-**Trade.** Less memory per stored answer, more work per answer
-*retrieved*. Which way that goes depends entirely on the ratio of
-answers stored to answers consumed, and on how often a table is
-re-consumed after completion. A table consumed once favours
-reconstruction; a table consumed repeatedly favours images.
+**[changed in v2] There is no parent pointer.** `struct tnode_` has
+`child`, `sibling`, `hnext`, `index`, `nchildren`, `value`, `is_leaf` —
+nothing pointing up. Reconstruction walks leaf-to-root, so it needs
+either a parent pointer on every node (8 bytes each, partly cancelling
+the saving) or the path recorded another way. This was not in v1 and it
+is the thing to settle first.
 
-**Recommendation.** Measure before building. Instrument a build to
-report total image bytes vs total answers for the existing benchmark
-set, and get the retrieval count. If images are a small fraction of
-tabling's footprint this item is not worth its risk — it touches the
-hot retrieval path for a memory win that may not be there. This is the
-one item on the list I would be prepared to drop after measuring.
+**[changed in v2] The case is stronger than it was.** Answers of
+1,000,000 cells are now reachable, since the recursion limit is gone.
+Each one carries a full image.
+
+**Recommendation.** Still measure first, but measure the right thing:
+reconstruction time per answer, and the parent-pointer overhead against
+the image bytes saved.
+
+**Size.** Medium.
 
 ---
 
-## 7. `tnot` and well-founded semantics
+## 6. `tnot` and well-founded semantics
 
 **What it gives.** Correct semantics for negation through recursion.
 Today tabling is least-model only: a program with a negative loop has
-no answer under Phase 1, where WFS gives `undefined`. This is the item
-that takes Trealla's tabling from "useful for transitive closure" to
-"complete", and it is what most of SWI's tabling complexity exists to
-support.
+no answer where WFS gives `undefined`. This is what most of SWI's
+tabling complexity exists to support, and it is the most valuable item
+on the list.
 
-**What it needs.** Roughly, in order:
+**What it needs**, roughly in order:
 
-- *Delay lists* — an answer may be conditional on the truth of another
-  literal not yet known. `struct tbl_ans_` grows a delay list, and the
-  answer trie must distinguish conditional from unconditional answers.
-- *Answer completion* — after an SCC fixpoint, decide which conditional
-  answers become true, false, or stay undefined. This is a second
-  fixpoint over the delay structure.
-- *Negation-aware scheduling* — the SCC machinery (`tscc`, line 494)
-  must understand negative dependencies, which are what make an SCC
-  non-stratified.
-- *`undefined`* as a third truth value, visible to the user, with
-  decisions about how it prints and how it interacts with `call/1`.
+- *General nondeterministic continuations* (v1's separate item 5).
+  Phase 1 deliberately retreated from continuation capture; this
+  reopens it, and is the likely first step.
+- *Delay lists* — an answer conditional on a literal not yet known.
+  `struct tbl_ans_` grows a delay list and the answer trie must
+  distinguish conditional from unconditional answers.
+- *Answer completion* — a second fixpoint over the delay structure,
+  deciding which conditional answers become true, false or undefined.
+- *Negation-aware scheduling* — the `tscc` machinery must understand
+  negative dependencies, which are what make an SCC non-stratified.
+- *`undefined`* as a third truth value, with decisions about printing
+  and interaction with `call/1`.
 
-**Risk.** High, and specifically: this is the one item that **changes
-existing behaviour**. Everything else on this list is additive. WFS
-rewrites completion, which is the part of Phase 1 that took the longest
-to get right and has the most subtle tests behind it.
+**Risk.** High, and specifically: **this is the only item that changes
+existing behaviour.** Everything else is additive. It rewrites
+completion, the part of Phase 1 that took longest to get right.
 
-**Recommendation.** Last, on its own branch, with the existing tabling
-suite green throughout. Do not start it until items 1–4 have shipped
-and settled, because debugging a WFS regression on top of an unsettled
-incremental-tabling change would be miserable.
+**[changed in v2] It needs a flag.** v1 flagged the behaviour change
+and then offered no way back. Phase 1 gated native tabling behind a
+flag checked in `start_tabling`; WFS should be gated the same way,
+because "correct" and "what your program did last release" may differ.
 
-**Size.** Extra large. This is the multi-week item; the other six
-together are probably smaller.
+**Recommendation.** Last, own branch, existing tabling suite green
+throughout. Do not start until 1–3 have shipped and settled.
+
+**Size.** Extra large — probably larger than the other five combined.
 
 ---
 
 ## Explicitly not doing
 
 - **GMP.** Declined in Phase 1, still declined.
-- **Subgoal abstraction.** Changes what a variant is; would need to be
-  designed against the trie's canonical-cell representation. Only
-  worth revisiting if restraints prove insufficient in practice.
-- **Call subsumption (as opposed to answer subsumption).** Variant
-  tabling only, as documented. A different indexing strategy on the
-  variant trie, and a large project for a narrow gain.
+- **Subgoal abstraction.** Changes what a variant is, and would have to
+  be designed against the trie's canonical-cell representation. Revisit
+  only if restraints prove insufficient in practice.
+- **Call subsumption** (as opposed to answer subsumption). Variant
+  tabling only, as documented — a different indexing strategy on the
+  variant trie, large project, narrow gain.
 
 ---
 
-## Cross-cutting notes
+## Cross-cutting
 
-**The `throw_error()` trap.** It raises by setting `q->did_throw`
-(`bif_control.c` line 1237) and then returns whatever
-`find_exception_handler` decided: TRUE if a handler was found, FALSE if
-the ball is uncaught. Neither value means what a caller reading it as a
-success flag would assume. The natural helper idiom
-`if (!check(q)) return false;` reads backwards on the common path: the
-check "succeeds", control falls into the body, and the pending ball is
-lost. Symptom is a silent *failure* where a throw was expected.
-
-The rule that always holds: never consume the return value as a
-success flag — `return throw_error(...)` immediately, on the same line.
-This cost an hour in Phase 1 and items 1 and 3 both add new error paths
-to `bif_tbl_add_answer_2`, so it will come up again.
+**`throw_error()` returns TRUE.** It raises by setting `q->did_throw`
+and the builtin returns that value, so the natural helper idiom
+`if (!check(q)) return false;` reads backwards: the check "succeeds",
+control falls into the body, and the pending ball is lost. Symptom is a
+silent *failure* where a throw was expected. Items 1 and 2 both add
+error paths to `bif_tbl_add_answer_2`.
 
 **ASAN cannot see peak memory.** The `pl_destroy()` sweep frees
-everything at exit, so a per-thread or per-table lifetime bug shows up
-as RSS, not as a leak report. Items 2 and 6 are both memory work —
-measure RSS, do not trust a clean ASAN run.
+everything at exit, so a lifetime bug shows up as RSS, not as a leak
+report. Items 4 and 5 are both memory work — measure RSS, do not trust
+a clean ASAN run.
+
+**[changed in v2] Do not trust an unexercised test either.** While
+fixing Phase 1 review #4 I wrote a memory test whose failing insert
+rejected on the *first* argument, so nothing was created before the
+failure and the A/B came back byte-identical. The fix was fine; the
+test proved nothing. For each item below, check the test actually
+reaches the code before believing its result.
 
 **Leaks that are not ours.** The tabling suite reports ~53 KB under
 ASAN from a string-slice-on-backtrack issue that reproduces on a
-pristine checkout with no tabling module at all. Do not chase it while
-working on these items, and do not accept "clean with tabling off" as
-evidence of anything — the flag-off run of that test is exponential and
-dies on the timeout before ASAN reports, so it is not a control.
+pristine checkout with no tabling module
+(`LEAK-string-slice-on-backtrack.md`). Do not chase it here, and do not
+accept "clean with tabling off" as evidence — the flag-off run of that
+test is exponential and dies on the timeout before ASAN reports.
 
-(`HANDOFF-native-tabling.md` line 349 and an earlier draft of this
-document both cite a `LEAK-string-slice-on-backtrack.md` for the full
-write-up. That file is not in the repo. Either it was never committed
-or it was lost; the summary above is what survives. Worth reconstructing
-if the leak ever needs to be worked on, since the reproduction details
-are gone.)
-
-**Test-first is cheap here.** Every item above has a failing test that
-can be written before the implementation: the `as//0` divergence, the
-thread marker count, a min-aggregated path table, a table that should
-survive an `assertz`. Writing those first also settles the surface
-syntax, which is the part hardest to change after release.
+**Test-first is cheap here.** Every item has a failing test writable
+before implementation: the `as//0` divergence, a min-aggregated path
+table, a table surviving an `assertz`, the thread marker count.
+Writing them first also settles the surface syntax while it is still
+cheap to change.
