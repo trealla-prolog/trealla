@@ -196,3 +196,7 @@ user:goal_expansion(phrase(GRBody, S0), phrase(GRBody, S0, [])).
 % library(dcgs) is loaded.
 
 (_-->_) :- throw(error(existence_error(procedure,(-->)/2),(-->)/2)).
+
+user:expand_term((H --> B), Out) :-
+	'$dcg_rule'((H --> B), Out), !.
+
