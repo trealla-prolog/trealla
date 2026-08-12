@@ -320,6 +320,14 @@ static bool trie_step(twalk *w, const cell *key)
 
 static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 {
+	// The last argument is handled by looping rather than recursing.
+	// Recursion here is bounded by term depth, and while a tabled CALL
+	// is shallow an ANSWER need not be: a list is right-nested '.'/2,
+	// so a 100k-element answer recursed 100k frames and overflowed the
+	// stack (SIGSEGV, no error term). Iterating on the final argument
+	// makes any right-nested term O(1) deep.
+
+	for (;;) {
 	c = deref(w->q, c, ctx);
 	ctx = w->q->latest_ctx;
 
@@ -357,16 +365,21 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 		if (!trie_step(w, &key))
 			return false;
 
-		cell *arg = c + 1;
+		if (!c->arity)
+			return true;
 
-		for (unsigned i = 0; i < c->arity; i++) {
+		cell *arg = c + 1;
+		const unsigned last = c->arity - 1;	// arity >= 1, checked above
+
+		for (unsigned i = 0; i < last; i++) {
 			if (!trie_walk(w, arg, ctx))
 				return false;
 
 			arg += arg->num_cells;
 		}
 
-		return true;
+		c = arg;				// last argument: loop, don't recurse
+		continue;
 	}
 
 	switch (c->tag) {
@@ -380,6 +393,7 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 	}
 	default:
 		return false;			// blobs, streams etc: not tableable
+	}
 	}
 }
 
@@ -404,20 +418,35 @@ static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *ex
 	return leaf;
 }
 
+// Explicit worklist rather than recursion on ->child. Siblings already
+// iterated, but children recursed, so the trie for one long-list answer
+// - a chain one node wide and as deep as the list is long - overflowed
+// the stack on teardown for the same reason trie_walk did on insert.
+//
+// The nodes are being freed anyway, so ->sibling is reused as the
+// worklist link. Each child is pushed individually: linear overall.
+
 static void trie_free(tnode *n)
 {
-	while (n) {
-		tnode *sib = n->sibling;
-		trie_free(n->child);
+	tnode *stack = n;
 
-		if (n->index) {
-			free(n->index->buckets);
-			free(n->index);
+	while (stack) {
+		tnode *cur = stack;
+		stack = cur->sibling;
+
+		for (tnode *ch = cur->child, *next; ch; ch = next) {
+			next = ch->sibling;
+			ch->sibling = stack;
+			stack = ch;
 		}
 
-		unshare_cell(&n->key);
-		free(n);
-		n = sib;
+		if (cur->index) {
+			free(cur->index->buckets);
+			free(cur->index);
+		}
+
+		unshare_cell(&cur->key);
+		free(cur);
 	}
 }
 
@@ -650,8 +679,30 @@ static void tbl_destroy(table *t)
 	free(t);
 }
 
+// Table handles cross into Prolog as integers. The '$tbl_*' builtins
+// are ordinary entries in the builtins table - the '$' is a naming
+// convention, not access control, and the README documents users
+// calling other '$' predicates directly - so any program can reach
+// them with an integer of its choosing:
+//
+//     ?- '$tbl_set_status'(0, complete).
+//
+// That used to cast 0 to a table* and dereference it. Tag the cell the
+// way streams do with FLAG_INT_STREAM, and refuse anything that did
+// not come out of make_tbl_handle(). A forged *value* is now rejected;
+// a genuine handle used after abolish is a separate problem.
+
+static void make_tbl_handle(cell *tmp, const table *t)
+{
+	make_uint(tmp, (pl_uint)(size_t)t);
+	tmp->flags |= FLAG_INT_TABLE;
+}
+
 static table *tbl_handle(cell *c)
 {
+	if (!is_integer(c) || !(c->flags & FLAG_INT_TABLE))
+		return NULL;
+
 	return (table*)(size_t)c->val_uint;
 }
 
@@ -731,7 +782,7 @@ static bool bif_tbl_variant_table_3(query *q)
 	}
 
 	cell tmp;
-	make_uint(&tmp, (pl_uint)(size_t)t);
+	make_tbl_handle(&tmp, t);
 
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
 		return false;
@@ -749,6 +800,9 @@ static bool bif_tbl_set_status_2(query *q)
 	GET_NEXT_ARG(p2,atom);
 	tbl_intern_atoms(q);
 	table *t = tbl_handle(p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
 
 	if (p2->val_off == s_fresh) t->status = TBL_FRESH;
 	else if (p2->val_off == s_active) t->status = TBL_ACTIVE;
@@ -768,6 +822,9 @@ static bool bif_tbl_add_answer_2(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
 	bool existed = false, attvar = false;
 	tnode *leaf = trie_insert_(q, &t->answers, p2, p2_ctx, &existed, &attvar);
 
@@ -809,6 +866,9 @@ static bool bif_tbl_get_answer_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
 
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
+
 	// Stop cleanly if the tables were abolished under a live enumeration.
 
 	if (q->retry && (q->st.v2 != s->generation))
@@ -841,6 +901,9 @@ static bool bif_tbl_add_suspension_2(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	table *t = tbl_handle(p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
 
 	// Depending on a table owned by an outer SCC means this SCC cannot
 	// complete on its own (see the SCC comment above).
@@ -929,7 +992,7 @@ static bool bif_tbl_pop_worklist_1(query *q)
 	t->unproc_susp = NULL;
 
 	cell tmp;
-	make_uint(&tmp, (pl_uint)(size_t)t);
+	make_tbl_handle(&tmp, t);
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -945,6 +1008,9 @@ static bool bif_tbl_wkl_work_3(query *q)
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 	table *t = tbl_handle(p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
 
 	if (q->retry && (q->st.v2 != s->generation))
 		return false;
@@ -991,6 +1057,9 @@ static bool bif_tbl_push_scc_1(query *q)
 
 	GET_FIRST_ARG(p1,integer);
 	table *t = tbl_handle(p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
 
 	if (s->scc_depth >= s->scc_max) {
 		unsigned nmax = s->scc_max ? s->scc_max*2 : 64;
