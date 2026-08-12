@@ -14,18 +14,19 @@ and using a plain old Makefile.
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
-	Concurrency via tasks / linda / futures / engines (generators)
-	Full multi-threading
+	Concurrency via threads / tasks / futures / engines (generators)
+	Definite Clause Grammar (DCGs)
 	Attributed variables with freeze/2 dif/2, when/2
-	Constraint libraries: CLP(B), CLP(Z)
+	Constraints: CLP(B) via *use_module(library(clpb))*
+	Constraints: CLP(Z) via *use_module(library(clpz))*
 	Blackboarding primitives
+	Delimited continuations
+	Thread-local variant tabling
 	Sockets library
 	...
 	Windows build is of indeterminate state ##UNSUPPORTED##
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
-	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
-	Thread-local variant tabling ##EXPERIMENTAL##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
@@ -1304,13 +1305,6 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 </details>
 
 <!-- END GENERATED PREDICATE REFERENCE -->
-
-Definite Clause Grammars
-========================
-
-Uses Ulrich Neumerkel's standard reference library.
-
-	:- use_module(library(dcgs)).
 
 
 Blackboard functions
