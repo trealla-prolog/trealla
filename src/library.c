@@ -11,8 +11,6 @@ extern unsigned char library_http_pl[];
 extern unsigned int library_http_pl_len;
 extern unsigned char library_atts_pl[];
 extern unsigned int library_atts_pl_len;
-extern unsigned char library_dcgs_pl[];
-extern unsigned int library_dcgs_pl_len;
 extern unsigned char library_pio_pl[];
 extern unsigned int library_pio_pl_len;
 extern unsigned char library_si_pl[];
@@ -104,7 +102,6 @@ library g_libs[] = {
 	 {"clpb", library_clpb_pl, &library_clpb_pl_len},
 	 {"clpz", library_clpz_pl, &library_clpz_pl_len},
 	 {"curl", library_curl_pl, &library_curl_pl_len},
-	 {"dcgs", library_dcgs_pl, &library_dcgs_pl_len},
 	 {"debug", library_debug_pl, &library_debug_pl_len},
 	 {"dif", library_dif_pl, &library_dif_pl_len},
 	 {"error", library_error_pl, &library_error_pl_len},

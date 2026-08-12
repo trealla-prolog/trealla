@@ -178,7 +178,6 @@ LIBOBJECTS +=  \
 	library/clpb.o \
 	library/clpz.o \
 	library/curl.o \
-	library/dcgs.o \
 	library/debug.o \
 	library/dif.o \
 	library/error.o \

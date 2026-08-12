@@ -972,6 +972,7 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 		// but the predicates probably pop up somewhere else.
 
 		if (!strcmp(name, "between")
+		    || !strcmp(name, "dcgs")
 		    || !strcmp(name, "samsort")
 		    || !strcmp(name, "terms")
 		    || !strcmp(name, "types")
