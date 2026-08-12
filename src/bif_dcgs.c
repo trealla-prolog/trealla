@@ -1,4 +1,4 @@
-// Native DCG translation: Phase 0, the translator plus its two bifs.
+// Native DCG translation: the translator and its bifs.
 //
 // This is a cell -> cell rewrite of what library/dcgs.pl does with =..,
 // append/3 and subsumes_term/2. Nothing here creates a query, prints a
@@ -19,7 +19,7 @@
 // supplies its own variables; that path arrives with the parser hook in
 // phase 1.
 //
-// Phase 0 reproduces library/dcgs.pl exactly, with ONE deliberate
+// This reproduces library/dcgs.pl's translation, with ONE deliberate
 // divergence: a nonvar non-callable in non-terminal position raises
 // type_error(callable, T) here, where the reference silently drops the
 // S0/S arguments and lets call/1 report the whole body instead. That is
@@ -103,13 +103,20 @@ typedef struct {
 static pl_idx g_bar_s, g_phrase_s, g_string_prefix_s;
 static pl_idx g_repr_err_s, g_dcg_body_s, g_culprit_s;
 static pl_idx g_inst_err_s, g_must_be_s, g_type_error_s, g_list_s;
-static bool s_atoms_done = false;
+// new_atom() is idempotent and takes g_symtab_guard, and the symbol
+// table is process-global, so caching the offsets in statics is sound
+// across prolog instances. The ordering was not: writing the "done"
+// flag last did not stop the compiler or CPU making that store visible
+// before the g_* stores, so a second thread could skip initialisation
+// and then read an offset that had not been assigned - a zero pl_idx,
+// i.e. silently building terms with the wrong functor.
+//
+// Interning is cheap and idempotent, so the fix is to drop the fast
+// path and let every caller run it. bif_tabling.c's tbl_intern_atoms()
+// had the same shape and the same change.
 
 static void dcg_init_atoms(prolog *pl)
 {
-	if (s_atoms_done)
-		return;
-
 	g_bar_s = new_atom(pl, "|");
 	g_phrase_s = new_atom(pl, "phrase");
 	g_string_prefix_s = new_atom(pl, "$string_prefix");
@@ -120,7 +127,6 @@ static void dcg_init_atoms(prolog *pl)
 	g_must_be_s = new_atom(pl, "must_be");
 	g_type_error_s = new_atom(pl, "type_error");
 	g_list_s = new_atom(pl, "list");
-	s_atoms_done = true;
 }
 
 // Bounds the conjunction/alternation spine and the module-qualification
