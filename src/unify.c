@@ -404,31 +404,86 @@ static bool unify_cstrings(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 	return false;
 }
 
-// True if this compound pair was already visited this unify(); else record it.
-static bool unify_pair_seen(query *q, cell *c1, pl_ctx ctx1, cell *c2, pl_ctx ctx2)
+// Probe for (c1,ctx1)/(c2,ctx2). Returns the slot to use and sets
+// *found. Entries from an earlier unify() have a stale gen and read as
+// empty, which is safe with linear probing: an entry inserted this
+// generation can never sit behind a stale slot in its own probe chain,
+// because the insert that placed it would have stopped at that slot.
+//
+// Terminates because the caller keeps at least half the table free.
+
+static unsigned unify_seen_slot(const unify_seen_pair *tab, unsigned size,
+	cell *c1, pl_ctx ctx1, cell *c2, pl_ctx ctx2, uint32_t gen, bool *found)
 {
 	uintptr_t h = ((uintptr_t)c1 >> 3) ^ ((uintptr_t)c2 >> 2)
 		^ ((uintptr_t)ctx1 << 9) ^ (uintptr_t)ctx2;
-	h &= UNIFY_SEEN_SIZE - 1;
+	unsigned i = (unsigned)(h & (size - 1));
 
-	for (unsigned n = 0; n < UNIFY_SEEN_SIZE; n++) {
-		unsigned i = (unsigned)((h + n) & (UNIFY_SEEN_SIZE - 1));
-		unify_seen_pair *p = &q->unify_seen[i];
-
-		if (p->gen != q->vgen) {
-			p->c1 = c1;
-			p->c2 = c2;
-			p->ctx1 = ctx1;
-			p->ctx2 = ctx2;
-			p->gen = q->vgen;
-			return false;
+	while (tab[i].gen == gen) {
+		if ((tab[i].c1 == c1) && (tab[i].c2 == c2)
+			&& (tab[i].ctx1 == ctx1) && (tab[i].ctx2 == ctx2)) {
+			*found = true;
+			return i;
 		}
 
-		if ((p->c1 == c1) && (p->c2 == c2) && (p->ctx1 == ctx1) && (p->ctx2 == ctx2))
-			return true;
+		i = (i + 1) & (size - 1);
 	}
 
-	return false; // table full — skip memo, still correct
+	*found = false;
+	return i;
+}
+
+// Allocate, or double and rehash the live entries. False on OOM, where
+// the caller skips the memo: slower, never wrong.
+
+static bool unify_seen_grow(query *q)
+{
+	unsigned newsize = q->unify_seen_size ? q->unify_seen_size * 2 : UNIFY_SEEN_SIZE;
+	unify_seen_pair *tab = TPL_calloc(newsize, sizeof(unify_seen_pair));
+
+	if (!tab)
+		return false;
+
+	for (unsigned i = 0; i < q->unify_seen_size; i++) {
+		unify_seen_pair *p = &q->unify_seen[i];
+
+		if (p->gen != q->vgen)
+			continue;
+
+		bool found = false;
+		unsigned j = unify_seen_slot(tab, newsize, p->c1, p->ctx1, p->c2, p->ctx2, q->vgen, &found);
+		tab[j] = *p;
+	}
+
+	TPL_free(q->unify_seen);
+	q->unify_seen = tab;
+	q->unify_seen_size = newsize;
+	return true;
+}
+
+// True if this compound pair was already visited this unify(); else record it.
+
+static bool unify_pair_seen(query *q, cell *c1, pl_ctx ctx1, cell *c2, pl_ctx ctx2)
+{
+	if (((q->unify_seen_used + 1) * 2) > q->unify_seen_size) {
+		if (!unify_seen_grow(q))
+			return false;
+	}
+
+	bool found = false;
+	unsigned i = unify_seen_slot(q->unify_seen, q->unify_seen_size, c1, ctx1, c2, ctx2, q->vgen, &found);
+
+	if (found)
+		return true;
+
+	unify_seen_pair *p = &q->unify_seen[i];
+	p->c1 = c1;
+	p->c2 = c2;
+	p->ctx1 = ctx1;
+	p->ctx2 = ctx2;
+	p->gen = q->vgen;
+	q->unify_seen_used++;
+	return false;
 }
 
 static bool unify_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
@@ -714,6 +769,13 @@ bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 	q->run_hook = false;
 	q->before_hook_tp = q->st.tp;
 	if (++q->vgen == 0) q->vgen = 1;
+
+	// The memo is keyed by vgen, so every entry is invalidated by the
+	// bump above and the table is reused as-is; only the occupancy
+	// count has to reset, and doing it here keeps that branch out of
+	// unify_pair_seen()'s per-pair path.
+
+	q->unify_seen_used = 0;
 	bool ok;
 
 	if (!is_var(p1) && is_var(p2))

@@ -714,7 +714,14 @@ typedef struct {
 
 // Ephemeral compound-pair memo for one unify() call (keyed by q->vgen).
 // Avoids re-walking shared DAG nodes (e.g. issue #855 blam/1).
-#define UNIFY_SEEN_SIZE 256
+//
+// It GROWS. A fixed table stops memoizing once full, and the walk it
+// exists to prevent is exponential - so a capacity is not a slowdown
+// threshold, it is the bug returning at the next size up. Held at load
+// factor <= 1/2 (which is also what lets the linear probe terminate),
+// doubling, and allocated on first use so a query that never unifies a
+// compound pair pays nothing.
+#define UNIFY_SEEN_SIZE 256		// initial capacity, power of two
 
 typedef struct {
 	cell *c1, *c2;
@@ -771,7 +778,8 @@ struct query_ {
 	enum q_retry retry;
 	int is_cyclic1, is_cyclic2;
 	uint32_t vgen;
-	unify_seen_pair unify_seen[UNIFY_SEEN_SIZE];
+	unify_seen_pair *unify_seen;
+	unsigned unify_seen_size, unify_seen_used;
 	int8_t halt_code;
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;

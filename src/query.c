@@ -2427,6 +2427,7 @@ void query_destroy(query *q)
 	TPL_free(q->frames);
 	TPL_free(q->tmp_heap);
 	TPL_free(q->tabs);
+	TPL_free(q->unify_seen);
 	q->pl->q_cnt--;
 	TPL_free(q);
 }
