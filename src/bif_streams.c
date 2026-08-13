@@ -6709,7 +6709,7 @@ static bool bif_portray_clause_1(query *q)
 	stream *str = &q->pl->streams[n];
 	q->quoted = 1;
 	q->portray_vars = true;
-	q->print_idx = 0;
+	q->print_idx = q->name_idx = 0;
 	q->double_quotes = true;
 	q->max_depth = 0;
 	q->fullstop = q->nl = true;
@@ -6728,7 +6728,7 @@ static bool bif_portray_clause_2(query *q)
 	GET_NEXT_ARG(p1,any);
 	q->quoted = 1;
 	q->portray_vars = true;
-	q->print_idx = 0;
+	q->print_idx = q->name_idx = 0;
 	q->max_depth = 0;
 	q->fullstop = q->nl = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);

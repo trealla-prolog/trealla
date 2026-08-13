@@ -406,7 +406,7 @@ void dump_vars(query *q, bool partial)
 	bool want_space = false, any = false, anons = false;
 	q->variable_names = vlist;
 	q->variable_names_ctx = 0;
-	q->print_idx = 0;
+	q->print_idx = q->name_idx = 0;
 
 	for (unsigned i = 0; i < p->num_vars; i++) {
 		if (!strcmp(GET_POOL(q, p->vartab.off[i]), "__G_"))
@@ -525,7 +525,7 @@ void dump_vars(query *q, bool partial)
 	partial_clear_write_options(q);
 	q->variable_names = vlist;
 	q->variable_names_ctx = 0;
-	q->print_idx = 0;
+	q->print_idx = q->name_idx = 0;
 
 	if (any_atts) {
 		cell p1[2];

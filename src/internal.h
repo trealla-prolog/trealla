@@ -763,6 +763,7 @@ struct query_ {
 	uint64_t cpu_time;					// time/1 baseline, kept out of st so it survives backtracking
 	uint64_t time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
+	unsigned name_idx;		// next free generated-name number, see get_slot_name()
 	unsigned varno, tab0_varno, cur_engine, cur_chan, my_chan;
 	unsigned s_cnt, retries, popp, rand_seed;
 	int autofail_n;

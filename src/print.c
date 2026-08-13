@@ -485,6 +485,21 @@ static const char *varformat(char *tmpbuf, size_t tmplen, unsigned long long num
 	return tmpbuf;
 }
 
+// Map a slot to a stable printed name, generating one on first sight.
+//
+// q->ignores[] marks name numbers that are already spoken for by
+// variables the user wrote as _A, _B1 and so on, so a generated name
+// never collides with a source one. Numbers are taken and never
+// released within one print, so the search for a free one only ever
+// moves forward: q->name_idx is that cursor, reset alongside print_idx.
+//
+// Past MAX_IGNORES the cursor keeps counting with nothing to record,
+// which is safe because varunformat() rejects anything above _Z26 - no
+// source name can reserve a number that high. It used to stop dead at
+// MAX_IGNORES and hand every later variable that same number, so a term
+// with more than 8192 distinct variables printed them all as _C315
+// (= varformat(8192)). That is issue #1108.
+
 static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing, char tmpbuf[256])
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
@@ -493,18 +508,31 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing, char t
 		}
 	}
 
-	unsigned j, i = q->print_idx++;
+	// tab1/tab2 are fixed at MAX_TABS and were written without a bound
+	// check, so a term with more distinct variables than that corrupted
+	// whatever followed - silently just above the limit, fatally a
+	// little further out. Beyond it, derive the name from the slot
+	// instead: still stable across occurrences of the same variable,
+	// and offset past every number the cursor above can reach so it
+	// cannot collide with a recorded one.
+
+	if (q->print_idx >= MAX_TABS)
+		return varformat(tmpbuf, 256,
+			(unsigned long long)MAX_IGNORES + MAX_TABS + slot_nbr, listing);
+
+	unsigned i = q->print_idx++;
 	q->pl->tab1[i] = slot_nbr;
 
-	for (j = 0; j < MAX_IGNORES; j++) {
-		if (!q->ignores[j]) {
-			q->ignores[j] = true;
-			break;
-		}
-	}
+	while ((q->name_idx < MAX_IGNORES) && q->ignores[q->name_idx])
+		q->name_idx++;
+
+	unsigned j = q->name_idx++;
+
+	if (j < MAX_IGNORES)
+		q->ignores[j] = true;
 
 	q->pl->tab2[i] = j;
-	return varformat(tmpbuf, 256, i, listing);
+	return varformat(tmpbuf, 256, j, listing);
 }
 
 static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
@@ -2024,6 +2052,6 @@ void partial_clear_write_options(query *q)
 void clear_write_options(query *q)
 {
 	partial_clear_write_options(q);
-	q->print_idx = 0;
+	q->print_idx = q->name_idx = 0;
 	memset(q->ignores, 0, sizeof(q->ignores));
 }
