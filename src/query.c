@@ -209,7 +209,7 @@ bool check_frame(query *q, unsigned max_vars)
 
 	if (page_idx >= q->frame_pages_size) {
 		pl_idx pages = alloc_grow(q, (void**)&q->frame_pages, sizeof(frame *),
-			page_idx + 1, (page_idx + 1) * 5 / 4);
+			page_idx + 1, (page_idx + 1) * 2);
 
 		if (!pages) {
 			q->oom = q->error = true;
@@ -249,7 +249,7 @@ bool check_slot(query *q, unsigned cnt)
 	if (num < q->slots_size)
 		return true;
 
-	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num+1, num*5/4);
+	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num+1, num * 2);
 
 	if (!new_slotssize) {
 		q->oom = q->error = true;
