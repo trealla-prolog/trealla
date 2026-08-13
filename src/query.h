@@ -258,7 +258,7 @@ inline static cell *get_body(cell *c)
 
 inline static pl_idx get_ordered_slot_num(const query *q, const frame *f, unsigned var_num)
 {
-	return ((f - q->frames) * 100) + var_num;
+	return (f->idx * 100) + var_num;
 }
 
 inline static pl_idx get_actual_slot_num(const query *q, const frame *f, unsigned var_num)

@@ -205,15 +205,34 @@ static bool check_choice(query *q)
 bool check_frame(query *q, unsigned max_vars)
 {
 	CHECKED(check_slot(q, max_vars));
-	if (q->st.fp < q->frames_size) {
-		frame *f = GET_NEW_FRAME();
-		f->max_vars = max_vars;
-		f->base = q->st.sp;
-		return true;
+	pl_idx page_idx = q->st.fp >> FRAME_PAGE_SHIFT;
+
+	if (page_idx >= q->frame_pages_size) {
+		pl_idx pages = alloc_grow(q, (void**)&q->frame_pages, sizeof(frame *),
+			page_idx + 1, (page_idx + 1) * 5 / 4);
+
+		if (!pages) {
+			q->oom = q->error = true;
+			return false;
+		}
+
+		memset(q->frame_pages + q->frame_pages_size, 0,
+			(pages - q->frame_pages_size) * sizeof(frame *));
+		q->frame_pages_size = pages;
 	}
-	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp+1, q->frames_size*5/4);
-	if (!new_framessize) { q->oom = q->error = true; return false; }
-	q->frames_size = new_framessize;
+
+	if (!q->frame_pages[page_idx]) {
+		frame *frames = TPL_calloc(FRAME_PAGE_SIZE, sizeof(frame));
+		if (!frames) {
+			q->oom = q->error = true;
+			return false;
+		}
+
+		for (unsigned i = 0; i < FRAME_PAGE_SIZE; i++)
+			frames[i].idx = (page_idx << FRAME_PAGE_SHIFT) + i;
+
+		q->frame_pages[page_idx] = frames;
+	}
 
 	frame *f = GET_NEW_FRAME();
 	f->max_vars = max_vars;
@@ -2400,7 +2419,7 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 
 	q->st.fp = 1;
 
-	frame *f = q->frames;
+	frame *f = GET_FRAME(0);
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
 	return start(q);
@@ -2474,7 +2493,9 @@ void query_destroy(query *q)
 		TPL_free(save);
 	}
 	TPL_free(q->slots);
-	TPL_free(q->frames);
+	for (pl_idx i = 0; i < q->frame_pages_size; i++)
+		TPL_free(q->frame_pages[i]);
+	TPL_free(q->frame_pages);
 	TPL_free(q->tmp_heap);
 	TPL_free(q->tabs);
 	TPL_free(q->unify_seen);
@@ -2522,10 +2543,13 @@ static query *query_create_(module *m, bool is_toplevel)
 
 	// Allocate these now...
 
-	q->frames_size = INITIAL_NBR_FRAMES;
 	q->slots_size = INITIAL_NBR_SLOTS;
 
-	ENSURE(q->frames = TPL_calloc(q->frames_size, sizeof(frame)), NULL);
+	q->frame_pages_size = 1;
+	ENSURE(q->frame_pages = TPL_calloc(q->frame_pages_size, sizeof(frame *)), NULL);
+	ENSURE(q->frame_pages[0] = TPL_calloc(FRAME_PAGE_SIZE, sizeof(frame)), NULL);
+	for (unsigned i = 0; i < FRAME_PAGE_SIZE; i++)
+		q->frame_pages[0][i].idx = i;
 	ENSURE(q->slots = TPL_calloc(q->slots_size, sizeof(slot)), NULL);
 
 	// Allocate these later as needed...
@@ -2569,7 +2593,7 @@ query *query_create_subquery(query *q, cell *instr)
 	subq->st.instr = tmp;
 
 	frame *fsrc = GET_FRAME(q->st.cur_ctx);
-	frame *fdst = subq->frames;
+	frame *fdst = get_frame(subq, 0);
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 	fdst->dbgen = ++q->pl->dbgen;
 	subq->st.sp = fdst->actual_slots;

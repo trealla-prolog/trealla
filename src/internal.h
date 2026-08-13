@@ -322,6 +322,7 @@ typedef struct clause_ clause;
 typedef struct trail_ trail;
 typedef struct trail_page_ trail_page;
 typedef struct choice_page_ choice_page;
+typedef struct frame_page_ frame_page;
 typedef struct frame_ frame;
 typedef struct parser_ parser;
 typedef struct page_ page;
@@ -538,8 +539,12 @@ struct frame_ {
 	uint32_t hp_num, initial_slots, actual_slots, max_vars;
 	pl_idx base, op, hp;
 	pl_ctx prev;
+	pl_ctx idx;
 	bool no_recov:1;
 };
+
+#define FRAME_PAGE_SHIFT 7
+#define FRAME_PAGE_SIZE (1U << FRAME_PAGE_SHIFT)
 
 struct run_state_ {
 	predicate *pr;
@@ -750,7 +755,6 @@ struct query_ {
 	module *current_m;
 	prolog *pl;
 	parser *top, *p;
-	frame *frames;
 	slot *slots;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	cell *clone_root;					// the term copy_term/2 is copying, for cycles back to it
@@ -760,6 +764,7 @@ struct query_ {
 	trail *trail_next;
 	choice_page *choice_pages, *choice_current;
 	choice *choice_next;
+	frame **frame_pages;
 	slot *save_e;
 	query *tasks;
 	skiplist *vars;
@@ -787,7 +792,7 @@ struct query_ {
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_ctx clone_root_ctx;				// context of clone_root, which alone does not identify a term
 	pl_idx tmphp;
-	pl_idx frames_size, slots_size;
+	pl_idx frame_pages_size, slots_size;
 	pl_idx before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx heap_size, tmph_size;
 	pl_idx undo_lo_tp, undo_hi_tp;
