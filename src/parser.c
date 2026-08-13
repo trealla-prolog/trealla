@@ -3130,9 +3130,12 @@ static bool is_meta_arg(predicate *pr, cell *c, unsigned arg, int *extra)
 	if (!pr->meta_args)
 		return false;
 
+	if (arg >= pr->key.arity)
+		return false;
+
 	unsigned i = 0;
 
-	for (cell *m = pr->meta_args+1; m && (i < c->arity); m += m->num_cells, i++) {
+	for (cell *m = pr->meta_args+1; m && (i < pr->key.arity); m += m->num_cells, i++) {
 		if (!is_integer(m) || (i != arg))
 			continue;
 
@@ -3274,8 +3277,31 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 
 		if (meta) {
+			pl_idx old_val_off = c->val_off;
+			unsigned old_arity = c->arity;
 			c = goal_expansion(p, c);
 			c_idx = c - p->cl->cells;
+
+			if ((c->val_off != old_val_off) || (c->arity != old_arity)) {
+				pr = find_predicate(p->m, c);
+
+				if (pr) {
+					if (pr->alias)
+						pr = pr->alias;
+
+					if (pr->is_meta_predicate) {
+						expand_meta_predicate(p, pr, c);
+						c = p->cl->cells + c_idx;
+					}
+				}
+
+				control = false;
+
+				if ((c->val_off == g_throw_s) && (c->arity == 1))
+					control = true;
+				else if ((c->val_off == g_catch_s) && (c->arity == 3))
+					control = true;
+			}
 		}
 
 		cell *arg = c + 1;
