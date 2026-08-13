@@ -13,11 +13,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
-#include <sys/resource.h>
-#endif
-
-
 static lock g_symtab_guard;
 static skiplist *g_symtab = NULL;
 static size_t s_global_atoms_size = 64000, s_global_atoms_offset = 0;
