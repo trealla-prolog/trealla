@@ -36,13 +36,6 @@ static void calln_check(module *m, cell *p1)
 
 static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 {
-	if (((*src)->val_off == g_conjunction_s) && ((*src)->arity == 2)) {
-		*src += 1;
-		compile_term(pr, cl, dst, src);		// LHS
-		compile_term(pr, cl, dst, src);		// RHS
-		return;
-	}
-
 	cell *c = (*src) + 1;
 
 	// T1 , T2
@@ -57,7 +50,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	// T1 -> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
-		&& is_callable(c) && c->bif_ptr && (c->arity == 2)
+		&& c->bif_ptr && (c->arity == 2)
 		&& (c->bif_ptr->fn == bif_iso_if_then_2)) {
 		*src += 2;
 		unsigned var_num = cl->num_vars++;
@@ -83,7 +76,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	// T1 *-> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
-		&& is_callable(c) && c->bif_ptr && (c->arity == 2)
+		&& c->bif_ptr && (c->arity == 2)
 		&& (c->bif_ptr->fn == bif_soft_if_then_2)) {
 		*src += 2;
 		unsigned var_num = cl->num_vars++;
@@ -175,7 +168,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && !is_var(c)) {
+	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && is_callable(c)) {
 		unsigned var_num = cl->num_vars++;
 		int arity = (*src)->arity - 1;
 		unsigned save_num_cells = (*src)->num_cells;
@@ -275,9 +268,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)
-		&& (c->val_off != g_negation_s)								// Hack???
-	) {
+	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -315,7 +306,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && !is_var((c))) {
+	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && is_callable((c))) {
 		unsigned var_num1 = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, 1);
