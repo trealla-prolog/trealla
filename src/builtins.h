@@ -198,23 +198,11 @@ inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 		: q->slots + f->op + (var_num - f->initial_slots);
 }
 
-inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
+// The caller has already resolved c_ctx and the slot for c. This is used by
+// DEREF_VAR(), which needs the initial slot for cycle bookkeeping as well.
+inline static cell *deref_from_slot(query *q, cell *c, pl_ctx c_ctx, slot *e)
 {
-	if (!is_var(c)) {
-		if (is_indirect(c)) {
-			q->latest_ctx = c->val_ctx;
-			return c->val_ptr;
-		}
-
-		q->latest_ctx = c_ctx;
-		return c;
-	}
-
-	if (is_ref(c))
-		c_ctx = c->val_ctx;
-
-	const frame *f = GET_FRAME(c_ctx);
-	slot *e = get_slot(q, f, c->var_num);
+	const frame *f;
 
 	while (is_var(&e->c)) {
 		c_ctx = e->c.val_ctx;
@@ -243,6 +231,26 @@ inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
 		return c;
 
 	return &e->c;
+}
+
+inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
+{
+	if (!is_var(c)) {
+		if (is_indirect(c)) {
+			q->latest_ctx = c->val_ctx;
+			return c->val_ptr;
+		}
+
+		q->latest_ctx = c_ctx;
+		return c;
+	}
+
+	if (is_ref(c))
+		c_ctx = c->val_ctx;
+
+	const frame *f = GET_FRAME(c_ctx);
+	slot *e = get_slot(q, f, c->var_num);
+	return deref_from_slot(q, c, c_ctx, e);
 }
 
 #define FIRST_ARG(c) ((c)+1)
@@ -398,7 +406,7 @@ inline static cell *get_raw_arg(query *q, int n)
 			evgen = qvgen;											\
 		}															\
 																	\
-		c = deref(q, c, tmp_c_ctx);									\
+		c = deref_from_slot(q, c, tmp_c_ctx, e);						\
 		c_ctx = q->latest_ctx;										\
 	}
 
