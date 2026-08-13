@@ -258,12 +258,12 @@ bool check_trail(query *q)
 {
 	trail_page *a = q->trail_current;
 
-	if (a && (a->idx < a->page_size))
+	if (a && (q->trail_next < (a->entries + a->page_size)))
 		return true;
 
 	if (a && a->next) {
 		q->trail_current = a = a->next;
-		a->idx = 0;
+		q->trail_next = a->entries;
 		return true;
 	}
 
@@ -291,6 +291,7 @@ bool check_trail(query *q)
 		q->trail_pages = a;
 
 	q->trail_current = a;
+	q->trail_next = a->entries;
 	return true;
 }
 
@@ -743,7 +744,7 @@ bool add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
 	if (!check_trail(q))
 		return false;
 
-	trail *tr = q->trail_current->entries + q->trail_current->idx++;
+	trail *tr = q->trail_next++;
 	q->st.tp++;
 	tr->val_ctx = c_ctx;
 	tr->var_num = c_var_nbr;

@@ -33,20 +33,20 @@ bool check_slot(query *q, unsigned cnt);
 bool check_trail(query *q);
 trail *get_trail(query *q, pl_idx idx);
 
-// The common backtracking path stays inline; it normally only decrements the
-// current page index, and visits the previous page at a boundary.
+// The common backtracking path stays inline and normally only decrements a
+// cached pointer; it visits the previous page at a boundary.
 static inline trail *pop_trail(query *q)
 {
 	assert(q->st.tp);
 	q->st.tp--;
+	trail *tr = --q->trail_next;
 
-	trail_page *a = q->trail_current;
-	if (q->st.tp < a->base)
-		q->trail_current = a = a->prev;
+	if ((tr == q->trail_current->entries) && q->st.tp) {
+		q->trail_current = q->trail_current->prev;
+		q->trail_next = q->trail_current->entries + q->trail_current->page_size;
+	}
 
-	assert(a);
-	a->idx = q->st.tp - a->base;
-	return a->entries + a->idx;
+	return tr;
 }
 
 char *url_encode(const char *src, int len, char *dstbuf, size_t dstlen);

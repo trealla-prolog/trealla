@@ -513,7 +513,7 @@ struct trail_ {
 struct trail_page_ {
 	trail_page *prev, *next;
 	trail *entries;
-	pl_idx base, idx, page_size;
+	pl_idx base, page_size;
 };
 
 // Where *c* is the (possibly) instantiated cell in the current frame
@@ -759,6 +759,7 @@ struct query_ {
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
 	trail_page *trail_pages, *trail_current;
+	trail *trail_next;
 	choice_page *choice_pages, *choice_current;
 	choice *choice_next;
 	slot *save_e;
