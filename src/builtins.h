@@ -149,9 +149,39 @@ inline static cell *take_queuen(query *q)
 	return save;
 }
 
-#define GET_CHOICE(i) (q->choices+(i))
-#define GET_CURR_CHOICE() GET_CHOICE(q->st.cp-1)
+static inline choice *get_choice(const query *q, pl_idx idx)
+{
+	choice_page *a = q->choice_current;
+
+	while (a && (idx < a->base))
+		a = a->prev;
+
+	while (a && (idx >= (a->base + a->page_size)))
+		a = a->next;
+
+	assert(a);
+	return a->entries + (idx - a->base);
+}
+#define GET_CHOICE(i) get_choice(q, (i))
+#define GET_CURR_CHOICE() (q->choice_next - 1)
 #define GET_PREV_CHOICE() GET_CHOICE(q->st.cp-2)
+
+static inline void pop_choice(query *q)
+{
+	assert(q->st.cp);
+	q->st.cp--;
+
+	// choice_current owns the top live choice.  At a page boundary the
+	// decremented cp is the next free slot, so its predecessor is already
+	// on the previous page.
+	q->choice_next--;
+
+	if (q->choice_next == q->choice_current->entries && q->st.cp)
+	{
+		q->choice_current = q->choice_current->prev;
+		q->choice_next = q->choice_current->entries + q->choice_current->page_size;
+	}
+}
 
 #define GET_FRAME(i) (q->frames+(i))
 #define GET_CURR_FRAME() GET_FRAME(q->st.cur_ctx)

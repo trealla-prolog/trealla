@@ -321,6 +321,7 @@ typedef struct cell_ cell;
 typedef struct clause_ clause;
 typedef struct trail_ trail;
 typedef struct trail_page_ trail_page;
+typedef struct choice_page_ choice_page;
 typedef struct frame_ frame;
 typedef struct parser_ parser;
 typedef struct page_ page;
@@ -601,6 +602,12 @@ struct choice_ {
 	bool reset:1;
 };
 
+struct choice_page_ {
+	choice_page *prev, *next;
+	choice *entries;
+	pl_idx base, page_size;
+};
+
 enum { eof_action_eof_code, eof_action_error, eof_action_reset };
 
 struct stream_ {
@@ -747,12 +754,13 @@ struct query_ {
 	parser *top, *p;
 	frame *frames;
 	slot *slots;
-	choice *choices;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	cell *clone_root;					// the term copy_term/2 is copying, for cycles back to it
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
 	trail_page *trail_pages, *trail_current;
+	choice_page *choice_pages, *choice_current;
+	choice *choice_next;
 	slot *save_e;
 	query *tasks;
 	skiplist *vars;
@@ -780,7 +788,7 @@ struct query_ {
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_ctx clone_root_ctx;				// context of clone_root, which alone does not identify a term
 	pl_idx tmphp;
-	pl_idx frames_size, slots_size, choices_size;
+	pl_idx frames_size, slots_size;
 	pl_idx before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx heap_size, tmph_size;
 	pl_idx undo_lo_tp, undo_hi_tp;

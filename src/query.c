@@ -152,13 +152,6 @@ void check_pressure(query *q)
 	}
 
 #if TRACE_MEM
-	printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->st.cp, (unsigned)q->choices_size);
-#endif
-	if (q->st.cp < (q->choices_size / 2)) {
-		unsigned new_size = q->st.cp < INITIAL_NBR_CHOICES ? INITIAL_NBR_CHOICES : q->st.cp + 1;
-		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), new_size, new_size*5/4);
-	}
-#if TRACE_MEM
 	printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
 	if (q->st.fp < (q->frames_size / 2)) {
@@ -177,17 +170,42 @@ void check_pressure(query *q)
 
 static bool check_choice(query *q)
 {
-	if (q->st.cp < q->choices_size)
+	choice_page *a = q->choice_current;
+
+	if (a && (q->choice_next < (a->entries + a->page_size)))
 		return true;
 
-	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->st.cp+1, q->choices_size*5/4);
+	if (a && a->next) {
+		q->choice_current = a = a->next;
+		q->choice_next = a->entries;
+		return true;
+	}
 
-	if (!new_choicessize) {
+	a = TPL_calloc(1, sizeof(choice_page));
+	if (!a) {
 		q->oom = q->error = true;
 		return false;
 	}
 
-	q->choices_size = new_choicessize;
+	a->page_size = q->choice_current ? q->choice_current->page_size * 2 : INITIAL_NBR_CHOICES;
+	a->entries = TPL_calloc(a->page_size, sizeof(choice));
+
+	if (!a->entries) {
+		TPL_free(a);
+		q->oom = q->error = true;
+		return false;
+	}
+
+	a->base = q->st.cp;
+	a->prev = q->choice_current;
+
+	if (a->prev)
+		a->prev->next = a;
+	else
+		q->choice_pages = a;
+
+	q->choice_current = a;
+	q->choice_next = a->entries;
 	return true;
 }
 
@@ -1056,9 +1074,9 @@ static void undo_list_drain(list *l)
 // the decrement comes after; q->st.cp - 1 in drop_choice, where it comes
 // before), which looked like a discrepancy and was not.
 
-static void release_prefetch(query *q, choice *ch)
+static void release_prefetch(query *q, choice *ch, pl_idx cp)
 {
-	if (!ch->st.iter || (ch->st.iter_owner != (pl_idx)(ch - q->choices)))
+	if (!ch->st.iter || (ch->st.iter_owner != cp))
 		return;
 
 	// q->st may still alias it - defuse before the free.
@@ -1074,8 +1092,9 @@ int retry_choice(query *q)
 {
 	while (q->st.cp) {
 		undo_me(q);
+		pl_idx cp = q->st.cp - 1;
 		choice *ch = GET_CURR_CHOICE();
-		q->st.cp--;
+		pop_choice(q);
 		undo_list_drain(&ch->undo);
 
 		q->st = ch->st;
@@ -1093,13 +1112,13 @@ int retry_choice(query *q)
 
 		if (ch->catchme_exception || ch->fail_on_retry) {
 			// Choice abandoned without drop_choice(); free its prefetch.
-			release_prefetch(q, ch);
+			release_prefetch(q, ch, cp);
 			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
 
 		if (!ch->register_cleanup && q->noretry) {
-			release_prefetch(q, ch);
+			release_prefetch(q, ch, cp);
 			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
@@ -1126,13 +1145,14 @@ void drop_choice(query *q)
 	if (!q->st.cp)
 		return;
 
-	choice *ch = GET_CURR_CHOICE();
+	pl_idx cp = q->st.cp - 1;
+	choice *ch = GET_CHOICE(cp);
 
 	// Free the multi-hit prefetch when the choice it was built for goes.
 	// Cuts and last-match commits drop that choice without exhausting the
 	// iterator; without this those prefetches are abandoned.
 
-	release_prefetch(q, ch);
+	release_prefetch(q, ch, cp);
 
 	list *undo;
 
@@ -1147,14 +1167,14 @@ void drop_choice(query *q)
 	while ((u = list_pop_front(&ch->undo)) != NULL)
 		list_push_back(undo, u);
 
-	--q->st.cp;
+	pop_choice(q);
 }
 
 bool push_choice(query *q)
 {
 	CHECKED(check_choice(q));
 	const frame *f = GET_CURR_FRAME();
-	choice *ch = GET_CHOICE(q->st.cp);
+	choice *ch = q->choice_next++;
 	ch->skip = 0;
 	ch->st = q->st;
 	q->st.cp++;
@@ -2152,7 +2172,7 @@ static bool any_outstanding_choices(query *q)
 		if (!ch->barrier)
 			break;
 
-		q->st.cp--;
+		pop_choice(q);
 	}
 
 	return q->st.cp > 0;
@@ -2459,7 +2479,12 @@ void query_destroy(query *q)
 		TPL_free(save->entries);
 		TPL_free(save);
 	}
-	TPL_free(q->choices);
+	for (choice_page *a = q->choice_pages; a;) {
+		choice_page *save = a;
+		a = a->next;
+		TPL_free(save->entries);
+		TPL_free(save);
+	}
 	TPL_free(q->slots);
 	TPL_free(q->frames);
 	TPL_free(q->tmp_heap);
@@ -2510,11 +2535,9 @@ static query *query_create_(module *m, bool is_toplevel)
 	// Allocate these now...
 
 	q->frames_size = INITIAL_NBR_FRAMES;
-	q->choices_size = INITIAL_NBR_CHOICES;
 	q->slots_size = INITIAL_NBR_SLOTS;
 
 	ENSURE(q->frames = TPL_calloc(q->frames_size, sizeof(frame)), NULL);
-	ENSURE(q->choices = TPL_calloc(q->choices_size, sizeof(choice)), NULL);
 	ENSURE(q->slots = TPL_calloc(q->slots_size, sizeof(slot)), NULL);
 
 	// Allocate these later as needed...

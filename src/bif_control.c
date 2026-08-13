@@ -626,9 +626,8 @@ static bool find_reset_handler(query *q)
 	if (!q->st.cp)
 		return false;
 
-	choice *ch = GET_CURR_CHOICE();
-
-	for (; ch; ch--) {
+	for (pl_idx cp = q->st.cp; cp > 0; ) {
+		choice *ch = GET_CHOICE(--cp);
 		if (ch->reset) {
 			ch->reset = false;
 			q->st.instr = ch->st.instr;
@@ -655,8 +654,6 @@ static bool find_reset_handler(query *q)
 			return true;
 		}
 
-		if (ch == q->choices)
-			break;
 	}
 
 	return false;
@@ -772,17 +769,13 @@ static bool bif_shift_1(query *q)
 	bool have_barrier = false;
 
 	if (q->st.cp) {
-		choice *ch = GET_CURR_CHOICE();
-
-		for (; ch; ch--) {
+		for (pl_idx cp = q->st.cp; cp > 0; ) {
+			choice *ch = GET_CHOICE(--cp);
 			if (ch->reset) {
-				reset_cp = (pl_idx)(ch - q->choices);
+				reset_cp = cp;
 				have_barrier = true;
 				break;
 			}
-
-			if (ch == q->choices)
-				break;
 		}
 	}
 
