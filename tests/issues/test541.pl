@@ -5,4 +5,4 @@
 main :-
 	X = -(---(_A),-_B),
 	Y = -(- --(_A),-_B),
-	write([X,Y]), nl.
+	write_term([X,Y], [variable_names(['A'=_A, 'B'=_B])]), nl.

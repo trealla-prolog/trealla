@@ -1,3 +1,3 @@
 ok
-type_error(list,[_11,_12|a])
+type_error(list,[First,Second|a])
 term_variables/2

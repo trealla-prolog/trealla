@@ -2,4 +2,4 @@
 
 main :-
 	X = (A - =<(1,2) ),
-	write(X), nl.
+	write_term(X, [variable_names(['A'=A])]), nl.

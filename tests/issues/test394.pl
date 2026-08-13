@@ -17,5 +17,5 @@ f((dif(A,B),B=[]*[],A=[]*_)).
 
 main :-
 	findall(G-Rs, ti(G=Rs), L),
-	write(L), nl.
-
+	term_variables(L, [A,B,C,D,E,F]),
+	write_term(L, [variable_names(['A'=A, 'B'=B, 'C'=C, 'D'=D, 'E'=E, 'F'=F])]), nl.

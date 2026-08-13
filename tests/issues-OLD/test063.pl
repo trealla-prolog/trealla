@@ -2,4 +2,5 @@
 
 main :-
 	a(X) =.. [Y|Z],
-	writeq(Y), nl, writeq(Z), nl.
+	write_term(Y, [quoted(true),variable_names(['X'=X])]), nl,
+	write_term(Z, [quoted(true),variable_names(['X'=X])]), nl.

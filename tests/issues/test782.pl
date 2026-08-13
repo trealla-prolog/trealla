@@ -2,4 +2,4 @@
 
 main :-
 	L = ""||K,
-	write(L=K), nl.
+	write_term(L=K, [variable_names(['K'=K])]), nl.

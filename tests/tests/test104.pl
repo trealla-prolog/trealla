@@ -7,14 +7,14 @@
 main :-
 	% frozen goal survives the blackboard
 	freeze(X, true), bb_put(k1, X),
-	bb_get(k1, Y), frozen(Y, G), write(G), nl,
+	bb_get(k1, Y), frozen(Y, G), term_variables(G, [K1]), write_term(G, [variable_names(['K1'=K1])]), nl,
 
 	% frozen goal fires when the retrieved copy is bound
 	freeze(A, (write(fired), nl)), bb_put(k2, A),
 	bb_get(k2, 1),
 
 	% the original variable is unaffected by put/get
-	frozen(A, GA), write(GA), nl,
+	frozen(A, GA), term_variables(GA, [K2]), write_term(GA, [variable_names(['K2'=K2])]), nl,
 
 	% sharing of attributed vars inside a compound is preserved
 	freeze(B, true), bb_put(k3, f(B, g(B))),
@@ -43,11 +43,11 @@ main :-
 
 	% bb_delete and bb_update preserve attributes too
 	freeze(D, true), bb_put(k6, D),
-	bb_delete(k6, D2), frozen(D2, GD), write(GD), nl,
+	bb_delete(k6, D2), frozen(D2, GD), term_variables(GD, [K3]), write_term(GD, [variable_names(['K3'=K3])]), nl,
 	(	bb_get(k6, _) ->
 		write(delete_broken), nl
 	;	write(deleted), nl
 	),
 	freeze(E, true), bb_put(k7, E),
-	bb_update(k7, O, E), frozen(O, GO), write(GO), nl,
-	bb_get(k7, E2), frozen(E2, GE), write(GE), nl.
+	bb_update(k7, O, E), frozen(O, GO), term_variables(GO, [K4]), write_term(GO, [variable_names(['K4'=K4])]), nl,
+	bb_get(k7, E2), frozen(E2, GE), term_variables(GE, [K5]), write_term(GE, [variable_names(['K5'=K5])]), nl.

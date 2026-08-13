@@ -1,5 +1,5 @@
 :- initialization(main).
 
 main :-
-	T=f(X),N='Bad',write_term(T,[quoted(true),variable_names([N=T])]), nl,
+	T=f(X),write_term(T,[quoted(true),variable_names(['X'=X])]), nl,
 	true.
