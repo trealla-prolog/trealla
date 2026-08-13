@@ -152,13 +152,6 @@ void check_pressure(query *q)
 	}
 
 #if TRACE_MEM
-	printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
-#endif
-	if (q->st.fp < (q->frames_size / 2)) {
-		unsigned new_size = q->st.fp < INITIAL_NBR_FRAMES ? INITIAL_NBR_FRAMES : q->st.fp + 1;
-		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), new_size, new_size*5/4);
-	}
-#if TRACE_MEM
 	printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
 	if (q->st.sp < (q->slots_size / 2)) {
@@ -212,22 +205,16 @@ static bool check_choice(query *q)
 bool check_frame(query *q, unsigned max_vars)
 {
 	CHECKED(check_slot(q, max_vars));
-
 	if (q->st.fp < q->frames_size) {
 		frame *f = GET_NEW_FRAME();
 		f->max_vars = max_vars;
 		f->base = q->st.sp;
 		return true;
 	}
-
 	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp+1, q->frames_size*5/4);
-
-	if (!new_framessize) {
-		q->oom = q->error = true;
-		return false;
-	}
-
+	if (!new_framessize) { q->oom = q->error = true; return false; }
 	q->frames_size = new_framessize;
+
 	frame *f = GET_NEW_FRAME();
 	f->max_vars = max_vars;
 	f->base = q->st.sp;
