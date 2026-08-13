@@ -322,7 +322,6 @@ typedef struct clause_ clause;
 typedef struct trail_ trail;
 typedef struct trail_page_ trail_page;
 typedef struct choice_page_ choice_page;
-typedef struct frame_page_ frame_page;
 typedef struct frame_ frame;
 typedef struct parser_ parser;
 typedef struct page_ page;
@@ -524,6 +523,7 @@ struct slot_ {
 	cell c;
 	uint32_t vgen, vgen2;
 };
+
 
 // Where *prev* is the previous frame
 // Where *initial_slots* is the number allocated

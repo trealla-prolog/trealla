@@ -151,13 +151,6 @@ void check_pressure(query *q)
 		q->tmph_size = 1000;
 	}
 
-#if TRACE_MEM
-	printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
-#endif
-	if (q->st.sp < (q->slots_size / 2)) {
-		unsigned new_size = q->st.sp < INITIAL_NBR_SLOTS ? INITIAL_NBR_SLOTS : q->st.sp + 1;
-		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), new_size, new_size*5/4);
-	}
 #endif
 }
 
@@ -245,7 +238,6 @@ bool check_slot(query *q, unsigned cnt)
 	cnt += 2;	// Allow some extra
 
 	pl_idx num = q->st.sp + cnt;
-
 	if (num < q->slots_size)
 		return true;
 
@@ -257,6 +249,7 @@ bool check_slot(query *q, unsigned cnt)
 	}
 
 	q->slots_size = new_slotssize;
+
 	return true;
 }
 
@@ -2444,12 +2437,13 @@ void query_destroy(query *q)
 		TPL_free(save);
 	}
 
-	slot *e = q->slots;
-
-	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
-		cell *c = &e->c;
-		unshare_cell(c);
-	}
+	for (pl_idx i = 0; i < q->frame_pages_size; i++)
+		if (q->frame_pages[i])
+			for (unsigned j = 0; j < FRAME_PAGE_SIZE; j++) {
+				frame *f = q->frame_pages[i] + j;
+				for (unsigned k = 0; k < f->actual_slots; k++)
+					unshare_cell(&get_slot(q, f, k)->c);
+			}
 
 	for (int i = 0; i < MAX_QUEUES; i++) {
 		cell *c = q->queue[i];
