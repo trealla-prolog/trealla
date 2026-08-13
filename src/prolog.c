@@ -7,6 +7,10 @@
 #include <unistd.h>
 #endif
 
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
+#include <sys/resource.h>
+#endif
+
 #include "library.h"
 #include "module.h"
 #include "parser.h"
