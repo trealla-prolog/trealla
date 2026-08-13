@@ -1,0 +1,7 @@
+interval: ok
+linear: ok
+disequality: ok
+reification: ok
+reflection: ok
+labeling: ok
+backtracking: ok

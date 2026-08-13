@@ -37,7 +37,9 @@
 %   g1f3    b8c6
 %   f1b5    a7a6
 
+:- use_module(library(dcgs)).
 :- use_module(library(lists)).
+:- use_module(library(time)).
 
 main :-
     init_board(InBoard),
