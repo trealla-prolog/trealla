@@ -187,7 +187,6 @@ static inline frame *get_frame(const query *q, pl_idx idx)
 {
 	return q->frame_pages[idx >> FRAME_PAGE_SHIFT] + (idx & (FRAME_PAGE_SIZE - 1));
 }
-
 #define GET_FRAME(i) get_frame(q, (i))
 #define GET_CURR_FRAME() GET_FRAME(q->st.cur_ctx)
 #define GET_NEW_FRAME() GET_FRAME(q->st.fp)
