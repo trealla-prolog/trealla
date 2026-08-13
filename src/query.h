@@ -31,6 +31,23 @@ void do_yield_at(query *q, unsigned int time_in_ms);
 
 bool check_slot(query *q, unsigned cnt);
 bool check_trail(query *q);
+trail *get_trail(query *q, pl_idx idx);
+
+// The common backtracking path stays inline; it normally only decrements the
+// current page index, and visits the previous page at a boundary.
+static inline trail *pop_trail(query *q)
+{
+	assert(q->st.tp);
+	q->st.tp--;
+
+	trail_page *a = q->trail_current;
+	if (q->st.tp < a->base)
+		q->trail_current = a = a->prev;
+
+	assert(a);
+	a->idx = q->st.tp - a->base;
+	return a->entries + a->idx;
+}
 
 char *url_encode(const char *src, int len, char *dstbuf, size_t dstlen);
 char *url_decode(const char *src, char *dstbuf);

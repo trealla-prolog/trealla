@@ -274,7 +274,7 @@ static bool bif_sys_list_attributed_2(query *q)
 	pl_idx mark = get_smalluint(p1);
 
 	for (unsigned j = mark; j < q->st.tp; j++) {
-		const trail *tr = q->trails + j;
+		const trail *tr = get_trail(q, j);
 		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = deref(q, &e->c, e->c.val_ctx);
@@ -398,7 +398,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	CHECKED(init_tmp_heap(q), TPL_free(save));
 
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
-		const trail *tr = q->trails + i;
+		const trail *tr = get_trail(q, i);
 		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
 		save->e[j].c = e->c;
@@ -438,7 +438,7 @@ static bool bif_sys_redo_trail_1(query * q)
 	const bind_state *save = (bind_state*)p1->val_blob;
 
 	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
-		const trail *tr = q->trails + i;
+		const trail *tr = get_trail(q, i);
 		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
 		e->c = save->e[j].c;

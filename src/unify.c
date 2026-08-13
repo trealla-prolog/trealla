@@ -300,7 +300,7 @@ void undo_var(query *q, const cell *c, pl_ctx c_ctx)
 	e->c.tag = TAG_EMPTY;
 	e->c.val_attrs = NULL;
 	// TO-DO: undo on trail
-	q->st.tp--;
+	pop_trail(q);
 }
 
 static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth);

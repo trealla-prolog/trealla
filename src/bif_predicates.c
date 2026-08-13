@@ -275,7 +275,7 @@ static bool bif_sys_unifiable_3(query *q)
 	// Go thru trail, getting the bindings...
 
 	while (save_tp < q->st.tp) {
-		const trail *tr = q->trails + save_tp;
+		const trail *tr = get_trail(q, save_tp);
 		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = deref(q, &e->c, e->c.val_ctx);

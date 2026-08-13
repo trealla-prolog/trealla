@@ -152,13 +152,6 @@ void check_pressure(query *q)
 	}
 
 #if TRACE_MEM
-	printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
-#endif
-	if (q->st.tp < (q->trails_size / 2)) {
-		unsigned new_size = q->st.tp < INITIAL_NBR_TRAILS ? INITIAL_NBR_TRAILS : q->st.tp + 1;
-		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), new_size, new_size*5/4);
-	}
-#if TRACE_MEM
 	printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->st.cp, (unsigned)q->choices_size);
 #endif
 	if (q->st.cp < (q->choices_size / 2)) {
@@ -245,18 +238,56 @@ bool check_slot(query *q, unsigned cnt)
 
 bool check_trail(query *q)
 {
-	if (q->st.tp < q->trails_size)
+	trail_page *a = q->trail_current;
+
+	if (a && (a->idx < a->page_size))
 		return true;
 
-	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp+1, q->trails_size*5/4);
+	if (a && a->next) {
+		q->trail_current = a = a->next;
+		a->idx = 0;
+		return true;
+	}
 
-	if (!new_trailssize) {
+	a = TPL_calloc(1, sizeof(trail_page));
+	if (!a) {
 		q->oom = q->error = true;
 		return false;
 	}
 
-	q->trails_size = new_trailssize;
+	a->page_size = q->trail_current ? q->trail_current->page_size * 2 : INITIAL_NBR_TRAILS;
+	a->entries = TPL_calloc(a->page_size, sizeof(trail));
+
+	if (!a->entries) {
+		TPL_free(a);
+		q->oom = q->error = true;
+		return false;
+	}
+
+	a->base = q->st.tp;
+	a->prev = q->trail_current;
+
+	if (a->prev)
+		a->prev->next = a;
+	else
+		q->trail_pages = a;
+
+	q->trail_current = a;
 	return true;
+}
+
+trail *get_trail(query *q, pl_idx idx)
+{
+	trail_page *a = q->trail_current;
+
+	while (a && (idx < a->base))
+		a = a->prev;
+
+	while (a && (idx >= (a->base + a->page_size)))
+		a = a->next;
+
+	assert(a);
+	return a->entries + (idx - a->base);
 }
 
 bool undo_on_backtrack(query *q, void *v, enum undo_item type)
@@ -627,7 +658,7 @@ static void trim_trail(query *q, bool reused)
 		tp = 0;
 
 	while (q->st.tp > tp) {
-		const trail *tr = q->trails + q->st.tp - 1;
+		const trail *tr = get_trail(q, q->st.tp - 1);
 
 		if (tr->val_ctx != q->st.cur_ctx)
 			break;
@@ -668,7 +699,7 @@ static void trim_trail(query *q, bool reused)
 			}
 		}
 
-		q->st.tp--;
+		pop_trail(q);
 	}
 }
 
@@ -694,7 +725,8 @@ bool add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
 	if (!check_trail(q))
 		return false;
 
-	trail *tr = q->trails + q->st.tp++;
+	trail *tr = q->trail_current->entries + q->trail_current->idx++;
+	q->st.tp++;
 	tr->val_ctx = c_ctx;
 	tr->var_num = c_var_nbr;
 	tr->attrs = attrs;
@@ -707,7 +739,7 @@ void undo_me(query *q)
 	const choice *ch = GET_CURR_CHOICE();
 
 	while (q->st.tp > ch->st.tp) {
-		const trail *tr = q->trails + --q->st.tp;
+		const trail *tr = pop_trail(q);
 		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = &e->c;
@@ -2421,7 +2453,12 @@ void query_destroy(query *q)
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);
 	parser_destroy(q->p);
-	TPL_free(q->trails);
+	for (trail_page *a = q->trail_pages; a;) {
+		trail_page *save = a;
+		a = a->next;
+		TPL_free(save->entries);
+		TPL_free(save);
+	}
 	TPL_free(q->choices);
 	TPL_free(q->slots);
 	TPL_free(q->frames);
@@ -2475,12 +2512,10 @@ static query *query_create_(module *m, bool is_toplevel)
 	q->frames_size = INITIAL_NBR_FRAMES;
 	q->choices_size = INITIAL_NBR_CHOICES;
 	q->slots_size = INITIAL_NBR_SLOTS;
-	q->trails_size = INITIAL_NBR_TRAILS;
 
 	ENSURE(q->frames = TPL_calloc(q->frames_size, sizeof(frame)), NULL);
 	ENSURE(q->choices = TPL_calloc(q->choices_size, sizeof(choice)), NULL);
 	ENSURE(q->slots = TPL_calloc(q->slots_size, sizeof(slot)), NULL);
-	ENSURE(q->trails = TPL_calloc(q->trails_size, sizeof(trail)), NULL);
 
 	// Allocate these later as needed...
 

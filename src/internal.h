@@ -320,6 +320,7 @@ typedef struct rule_ rule;
 typedef struct cell_ cell;
 typedef struct clause_ clause;
 typedef struct trail_ trail;
+typedef struct trail_page_ trail_page;
 typedef struct frame_ frame;
 typedef struct parser_ parser;
 typedef struct page_ page;
@@ -503,6 +504,15 @@ struct trail_ {
 	cell *attrs;
 	pl_ctx val_ctx;
 	uint32_t var_num;
+};
+
+// Trail entries are addressed by their absolute trail index: choicepoints
+// retain those indexes across backtracking.  Pages keep the entries stable
+// without copying them when the trail grows.
+struct trail_page_ {
+	trail_page *prev, *next;
+	trail *entries;
+	pl_idx base, idx, page_size;
 };
 
 // Where *c* is the (possibly) instantiated cell in the current frame
@@ -738,11 +748,11 @@ struct query_ {
 	frame *frames;
 	slot *slots;
 	choice *choices;
-	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	cell *clone_root;					// the term copy_term/2 is copying, for cycles back to it
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
+	trail_page *trail_pages, *trail_current;
 	slot *save_e;
 	query *tasks;
 	skiplist *vars;
@@ -770,7 +780,7 @@ struct query_ {
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_ctx clone_root_ctx;				// context of clone_root, which alone does not identify a term
 	pl_idx tmphp;
-	pl_idx frames_size, slots_size, trails_size, choices_size;
+	pl_idx frames_size, slots_size, choices_size;
 	pl_idx before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx heap_size, tmph_size;
 	pl_idx undo_lo_tp, undo_hi_tp;
