@@ -697,9 +697,7 @@ struct thread_ {
 
 struct page_ {
 	page *next;
-	union {
-		cell *cells;
-	};
+	cell *cells;
 	pl_idx idx, page_size;
 	unsigned num;
 };
