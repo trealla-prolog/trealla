@@ -1886,8 +1886,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		INDEX_PROFILE_MODE(ip, idx1);
 	}
 
-	if (!arg1)
+	if (!arg1) {
 		INDEX_PROFILE_MODE(ip, idx1);
+	}
 
 	q->st.dbe = NULL;
 	sliter *iter;
