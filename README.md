@@ -10,7 +10,7 @@ and using a plain old Makefile.
 	The default double-quoted representation is *chars* list
 	Strings & slices are efficient (especially with mmap'd files)
 	REPL with history
-	Runs on Linux, Android, BSD, macOS, and WebAssembly (WASI) & Go
+	Runs on Linux, Android, FreeBSD, MacOS, Cosmopolitan, WebAssembly (WASI) & Go
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
