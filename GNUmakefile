@@ -300,6 +300,9 @@ test:
 misc:
 	./tests/run_misc.sh
 
+slow:
+	./tests/run_slow.sh
+
 valgrind:
 	./tests/run_valgrind.sh
 
