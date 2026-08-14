@@ -190,6 +190,13 @@ uint64_t wall_time_in_usec(void)
 	return (uint64_t)(now.tv_sec * 1000 * 1000) + (now.tv_nsec / 1000);
 }
 
+uint64_t monotonic_time_in_usec(void)
+{
+	struct timespec now = {0};
+	my_clock_gettime(CLOCK_MONOTONIC, &now);
+	return (uint64_t)(now.tv_sec * 1000 * 1000) + (now.tv_nsec / 1000);
+}
+
 #ifndef __wasi__
 static bool bif_shell_1(query *q)
 {
@@ -579,6 +586,80 @@ static bool bif_sys_alarm_2(query *q)
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 }
 #endif
+#else
+
+// Windows and WASI have no usable POSIX per-thread timer here. Polling a
+// monotonic deadline from the normal interrupt checks preserves nested timers
+// and avoids a helper thread (WASI builds are deliberately threadless).
+
+struct alarm_entry_ {
+	alarm_entry *next;
+	uint64_t deadline;
+	bool fired;
+};
+
+bool has_expired_alarm(query *q)
+{
+	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	uint64_t now = monotonic_time_in_usec();
+
+	for (alarm_entry *e = self->alarms; e; e = e->next) {
+		if (!e->fired && now >= e->deadline) {
+			e->fired = true;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool bif_sys_alarm_2(query *q)
+{
+	GET_FIRST_ARG(p1,number);
+	GET_NEXT_ARG(p2,integer_or_var);
+	int time_ms = 0;
+	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+
+	if (is_bigint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
+
+	if (is_float(p1))
+		time_ms = get_float(p1) * 1000;
+	else
+		time_ms = get_smallint(p1);
+
+	if (time_ms < 0)
+		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
+
+	if (time_ms == 0) {
+		if (!is_integer(p2))
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "timer");
+
+		alarm_entry *e = get_voidptr(p2);
+		alarm_entry **slot = &self->alarms;
+
+		while (*slot && (*slot != e))
+			slot = &(*slot)->next;
+
+		if (!*slot)
+			return throw_error(q, p2, p2_ctx, "domain_error", "timer");
+
+		*slot = e->next;
+		TPL_free(e);
+		return true;
+	}
+
+	alarm_entry *e = TPL_calloc(1, sizeof(alarm_entry));
+	CHECKED(e);
+	e->deadline = monotonic_time_in_usec() + ((uint64_t)time_ms * 1000);
+	e->next = self->alarms;
+	self->alarms = e;
+	self->timedout = 0;
+
+	cell tmp;
+	make_ptr(&tmp, e);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+}
 #endif
 
 static bool bif_busy_1(query *q)
@@ -1290,9 +1371,7 @@ builtins g_os_bifs[] =
 	{"pclose", 1, bif_pclose_1, "+stream", false, false, BLAH},
 #endif
 
-#if !defined(_WIN32) && !defined(__wasi__)
 	{"$alarm", 2, bif_sys_alarm_2, "+integer,-integer", false, false, BLAH},
-#endif
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
 

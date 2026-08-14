@@ -15,8 +15,12 @@
 # See https://github.com/trealla-prolog/trealla/issues/1103
 
 TPL=${TPL:-./tpl}
+TMPPL=tmp.pl
 
-$TPL -q -f --autofail <<'EOF'
+trap 'rm -f "$TMPPL"' EXIT
+touch "$TMPPL"
+
+$TPL -q -f --autofail "$TMPPL" <<'EOF'
 set_prolog_flag(double_quotes,chars).
 atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Ds = [Null], Cs = Ds.
 atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Cs = "\x0\".

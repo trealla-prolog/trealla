@@ -2362,8 +2362,7 @@ bool start(query *q)
 	bool done = false;
 
 	while (!done && !q->error) {
-		thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
-		if (g_tpl_interrupt || self->timedout) {
+		if (interrupt_pending(q)) {
 			switch (check_interrupt(q)) {
 				case 1: return true;
 				case -1: q->retry = true;

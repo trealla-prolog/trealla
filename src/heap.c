@@ -18,10 +18,11 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 	// Cap single allocations when memory limiting is enabled (8GB).
 	// If only the optimistic max overshoots (e.g. check_slot's num*3/2),
 	// clamp to the largest fitting size instead of failing when min fits.
-	const size_t limit_bytes = 1024ULL * 1024ULL * 1024ULL * 8ULL;
+	const uint64_t limit_bytes = 1024ULL * 1024ULL * 1024ULL * 8ULL;
+	const size_t effective_limit = limit_bytes > SIZE_MAX ? SIZE_MAX : (size_t)limit_bytes;
 
 	if (q->pl->limit && elem_size) {
-		size_t capped = limit_bytes / elem_size;
+		size_t capped = effective_limit / elem_size;
 
 		if (max_elements > capped) {
 			if (capped < min_elements) {

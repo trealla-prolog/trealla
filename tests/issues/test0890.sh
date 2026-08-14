@@ -8,8 +8,12 @@
 # Covers the queries from https://github.com/trealla-prolog/trealla/issues/890
 
 TPL=${TPL:-./tpl}
+TMPPL=tmp.pl
 
-$TPL -q -f --autofail <<'EOF'
+trap 'rm -f "$TMPPL"' EXIT
+touch "$TMPPL"
+
+$TPL -q -f --autofail "$TMPPL" <<'EOF'
 L=[a|[b|I]], I=[c|[d|L]].
 L=[a|[b|I]], I=[c|[d|L]], I=[_,_,Ia,Ib,_,_|_], L=[_,_,Lc,Ld,_,_|_].
 I=[_,_,Ia,Ib,_,_|_], L=[_,_,Lc,Ld,_,_|_], L=[a|[b|I]], I=[c|[d|L]].

@@ -65,6 +65,9 @@ void call_attrs(query *q, cell *attrs);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
+#if defined(_WIN32) || defined(__wasi__)
+bool has_expired_alarm(query *q);
+#endif
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 void check_pressure(query *q);
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_ctx p1_ctx, unsigned extras);
@@ -214,9 +217,20 @@ inline static bool throw_timeout(query *q)
 	return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 }
 
+inline static bool interrupt_pending(query *q)
+{
+	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+
+#if defined(_WIN32) || defined(__wasi__)
+	if (!self->timedout && self->alarms && has_expired_alarm(q))
+		self->timedout = 1;
+#endif
+
+	return g_tpl_interrupt || self->timedout;
+}
+
 #define CHECK_INTERRUPT() \
-	if (g_tpl_interrupt || \
-		((q)->thread_ptr ? (q)->thread_ptr->timedout : (q)->pl->threads[0].timedout)) { \
+	if (interrupt_pending(q)) { \
 		if (check_interrupt(q)) \
 			break; \
 	}

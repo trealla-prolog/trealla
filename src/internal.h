@@ -664,6 +664,7 @@ struct stream_ {
 	bool is_alias:1;
 };
 
+typedef struct alarm_entry_ alarm_entry;
 typedef struct thread_ thread;
 
 struct thread_ {
@@ -688,6 +689,10 @@ struct thread_ {
 	// Opaque: owned and shaped by src/tabling.c.
 
 	void *tabling_state;
+
+#if defined(_WIN32) || defined(__wasi__)
+	alarm_entry *alarms;					// polled timers for hosts without POSIX per-thread timers
+#endif
 
 	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
@@ -1119,6 +1124,7 @@ char *slicedup(const char *s, size_t n);
 int slicecmp(const char *s1, size_t len1, const char *s2, size_t len2);
 uint64_t wall_time_in_usec(void);
 uint64_t cpu_time_in_usec(void);
+uint64_t monotonic_time_in_usec(void);
 char *relative_to(const char *basefile, const char *relfile);
 size_t sprint_int(char *dst, size_t size, pl_int n, int base);
 int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix);

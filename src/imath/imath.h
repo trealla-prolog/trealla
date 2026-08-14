@@ -38,8 +38,8 @@ extern "C" {
 typedef unsigned char  mp_sign;
 typedef unsigned int   mp_size;
 typedef int            mp_result;
-typedef long           mp_small;  /* must be a signed type */
-typedef unsigned long  mp_usmall; /* must be an unsigned type */
+typedef intmax_t        mp_small;  /* must be a signed type */
+typedef uintmax_t       mp_usmall; /* must be an unsigned type */
 
 
 /* Build with words as uint64_t by default. */
@@ -80,9 +80,9 @@ extern const mp_result MP_MINERR;
 
 #define MP_DIGIT_BIT   (sizeof(mp_digit) * CHAR_BIT)
 #define MP_WORD_BIT    (sizeof(mp_word) * CHAR_BIT)
-#define MP_SMALL_MIN   LONG_MIN
-#define MP_SMALL_MAX   LONG_MAX
-#define MP_USMALL_MAX  ULONG_MAX
+#define MP_SMALL_MIN   INTMAX_MIN
+#define MP_SMALL_MAX   INTMAX_MAX
+#define MP_USMALL_MAX  UINTMAX_MAX
 
 #define MP_MIN_RADIX   2
 #define MP_MAX_RADIX   36

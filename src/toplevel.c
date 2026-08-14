@@ -35,8 +35,6 @@ static void show_goals(query *q, int num)
 
 int check_interrupt(query *q)
 {
-#ifndef __wasi__
-#ifndef _WIN32
 	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
 
 	if (self->timedout) {
@@ -48,6 +46,7 @@ int check_interrupt(query *q)
 		return 2;   // timeout handled: break C-level loops, WAM loop continues
 	}
 
+#if !defined(__wasi__) && !defined(_WIN32)
 	if (g_tpl_interrupt == SIGALRM) {
 		g_tpl_interrupt = 0;
 
@@ -56,7 +55,6 @@ int check_interrupt(query *q)
 
 		return 2;   // timeout handled: break C-level loops, WAM loop continues
 	}
-#endif
 #endif
 
 	if (!q || !q->top || !q->top->interactive) {

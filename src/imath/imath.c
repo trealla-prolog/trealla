@@ -1406,14 +1406,19 @@ mp_result mp_int_to_int(mp_int z, mp_small *out) {
 
   mp_usmall uz = MP_USED(z);
   mp_digit *dz = MP_DIGITS(z) + uz - 1;
-  mp_small uv = 0;
+  mp_usmall uv = 0;
   while (uz > 0) {
     uv <<= MP_DIGIT_BIT / 2;
     uv = (uv << (MP_DIGIT_BIT / 2)) | *dz--;
     --uz;
   }
 
-  if (out) *out = (mp_small)((sz == MP_NEG) ? -uv : uv);
+  if (out) {
+    if (sz == MP_NEG && uv == (mp_usmall)MP_SMALL_MAX + 1)
+      *out = MP_SMALL_MIN;
+    else
+      *out = (sz == MP_NEG) ? -(mp_small)uv : (mp_small)uv;
+  }
 
   return MP_OK;
 }
@@ -1946,9 +1951,8 @@ static bool s_pad(mp_int z, mp_size min) {
   return true;
 }
 
-/* Note: This will not work correctly when value == MP_SMALL_MIN */
 static void s_fake(mp_int z, mp_small value, mp_digit vbuf[]) {
-  mp_usmall uv = (mp_usmall)(value < 0) ? -value : value;
+  mp_usmall uv = value < 0 ? -(mp_usmall)value : (mp_usmall)value;
   s_ufake(z, uv, vbuf);
   if (value < 0) z->sign = MP_NEG;
 }

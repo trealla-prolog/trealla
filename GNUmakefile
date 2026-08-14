@@ -49,7 +49,7 @@ CFLAGS += -std=c11 -Isrc/wasm \
 	-D_WASI_EMULATED_PROCESS_CLOCKS
 LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal \
 	-lwasi-emulated-process-clocks -Wl,--stack-first \
-	-Wl,-zstack-size=8388608 -Wl,--initial-memory=4294967296 \
+	-Wl,-zstack-size=8388608 -Wl,--initial-memory=134217728 \
 	-o tpl.wasm
 NOFFI = 1
 NOSSL = 1
