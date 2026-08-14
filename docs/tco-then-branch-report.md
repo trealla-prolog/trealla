@@ -132,7 +132,7 @@ The comparison is only half of it. `skip` counts the choicepoints
 `p(N) :- M is N-1, call(p, M)` keeps its TCO. **The comparison without
 the skip count is not a smaller version of this fix, it is a crash**:
 `call/N`'s barrier then reads as a choicepoint that needs the frame, TCO
-is refused for the shape above, and `t4/1` in `tests/tests/test107.pl`
+is refused for the shape above, and `t4/1` in `tests/tests/test0107.pl`
 dies in `undo_me()` backtracking through what it left behind. So it
 takes the count, and `is_last_call()` has to report the barrier it
 skipped:
@@ -153,7 +153,7 @@ bool tail_recursive = is_recursive_call(q->st.instr) && is_last_call(q, &barrier
 bool choices = commit_any_choices(q, barrier ? 2 : 1);
 ```
 
-That crash also says something about the suite: `test107` printed every
+That crash also says something about the suite: `test0107` printed every
 expected line and *then* died, so `tests/run.sh` — which diffed the
 output and never looked at the exit status — scored it as a pass. The
 runners now check both.
@@ -176,8 +176,8 @@ At 200,000 iterations, patched:
   build. The one failure is `tests/issues-OLD/test056.pl`, which wants
   `crypto_data_hash/3` — an artefact of building `NOSSL=1` in this
   sandbox, and it fails the same way on stock. (On `1954a4e` the suite
-  reads 342/2; the two failures are `tests/issues/test556.pl` and
-  `tests/issues-OLD/test252.pl`, both long-standing Unicode
+reads 342/2; the two failures are `tests/issues/test0556.pl` and
+`tests/issues-OLD/test0252.pl`, both long-standing Unicode
   tokenising bugs in `writeq`, and both unrelated to anything here.)
 - The same suite under `make debug` (`-fsanitize=address`): no
   AddressSanitizer reports across the ~327 programs it completed.
@@ -231,12 +231,12 @@ f->chgen`, so `resume_frame()` and `commit_frame()` both see it while
 it is live, and it is always gone — dropped by `$drop_barrier`, or
 consumed by the retry it exists for — before the clause ends.
 
-Removing it makes `tests/issues/test338.pl` (clpb) lose solutions, so I
+Removing it makes `tests/issues/test0338.pl` (clpb) lose solutions, so I
 went looking for what breaks. Instrumenting every frame recovery, the
 first divergence from the pinned run is `bdd_restriction/4`'s frame
 being reclaimed. Disabling `trim_frame()`'s three effects one at a time:
 
-| what | test338 |
+| what | test0338 |
 |---|---|
 | don't clear the slots | still fails |
 | don't lower `q->st.sp` | still fails |
@@ -317,7 +317,7 @@ where the bare FIXME was.
 
 ### Two other things the dive turned up
 
-- `tests/tests/test104.pl`'s expected output hardcodes variable numbers
+- `tests/tests/test0104.pl`'s expected output hardcodes variable numbers
   (`freeze:freeze(_398,true)`). Anything that changes how many frames get
   recovered renumbers them, so that test will fail on any future work
   here for cosmetic reasons. Confirmed on `1954a4e`: `-O0` alone shifts
@@ -330,7 +330,7 @@ where the bare FIXME was.
 ## Files
 
 Both changes are in the tree. The regression tests landed as
-`tests/tests/test108.pl`; `tests/tests/test107.pl` covers the cut and
+`tests/tests/test0108.pl`; `tests/tests/test0107.pl` covers the cut and
 barrier cases that `is_last_call()` must not swallow. The patch files
 this section used to name (`trealla-then-branch-tco.patch`,
 `tco-then-branch-tests.pl`) were working files and are not in the repo.

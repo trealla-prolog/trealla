@@ -20,14 +20,14 @@ WHAT I TRIED
   no_recov set by tabling or set_var(). Both fields fitted existing
   padding - sizeof(frame) 72, sizeof(choice) 176, unchanged.
 
-  Releasing at all three pop sites broke tests/issues/test338 (clpb
+  Releasing at all three pop sites broke tests/issues/test0338 (clpb
   attributed variables lose bindings, third solution becomes
-  instantiation_error) and shifted variable numbering in test104.
+  instantiation_error) and shifted variable numbering in test0104.
   retry_choice() and any_outstanding_choices() RESUME execution rather
   than discard it, so releasing there is too early.
 
   Releasing only from drop_choice() passed everything I ran - suite
-  335/1, test338, test104, chess, db-stress, iso_639 11/11, ASan clean
+  335/1, test0338, test0104, chess, db-stress, iso_639 11/11, ASan clean
   - and captured the whole saving, 65764 kB against the 65892 ceiling.
 
 WHY IT IS STILL WRONG
@@ -57,5 +57,5 @@ IF REVISITED
   ownership story is reworked generally.
 
   Whatever is tried: run logtalk examples/threads/primes AND
-  tests/issues/test338. Neither trealla's own suite nor ASan caught
+  tests/issues/test0338. Neither trealla's own suite nor ASan caught
   this.

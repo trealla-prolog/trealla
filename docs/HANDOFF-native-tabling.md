@@ -283,7 +283,7 @@ no answer subsumption. Tables are thread-private, so threads do not
 share completed tables (see §5). Attvars in
 tabled calls → type_error(free_variable). cstr strings vs char lists
 are distinct trie paths. Suspension inside ITE *conditions*
-unsupported. `test104.expected` is var-numbering sensitive; regenerate
+unsupported. `test0104.expected` is var-numbering sensitive; regenerate
 + eyeball if image-copying changes intermediate var counts.
 
 **Infinite answer sets diverge** (Scryer #573; verified, we behave the

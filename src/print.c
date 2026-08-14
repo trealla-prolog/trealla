@@ -615,7 +615,7 @@ static bool is_dump_spine_var(query *q, cell *c, pl_ctx c_ctx)
 }
 
 // Follow var-to-var aliases only. Full deref would walk into a binding
-// like Y = -Y and lose the variable identity needed for naming (test842);
+// like Y = -Y and lose the variable identity needed for naming (test0842);
 // skipping deref entirely misses Cor.3 leftmost-alias selection (#1091).
 static bool var_root_slot(query *q, cell *c, pl_ctx c_ctx, uint32_t *var_num, pl_ctx *out_ctx)
 {

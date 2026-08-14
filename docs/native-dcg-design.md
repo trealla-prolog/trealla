@@ -402,8 +402,8 @@ Right class, whole-body culprit, `call/1` as context — exactly the analysis
 above, confirmed rather than assumed.
 
 **There is already a test for this, and it is too weak to catch the fix.**
-`tests/issues/test832.pl` is literally `phrase(({fail},1),_)` — quad 13 — and
-`tests/issues/test832.expected` is the single line `Error: main`, which passes
+`tests/issues/test0832.pl` is literally `phrase(({fail},1),_)` — quad 13 — and
+`tests/issues/test0832.expected` is the single line `Error: main`, which passes
 on *any* error whatsoever. That is a large part of why the defect survived: git
 history shows the reference realignment (`60f1811b`) landing and being reverted
 the next morning (`1cf402bf`), with the test files kept. Phase 3 must tighten
@@ -754,7 +754,7 @@ Guard especially against over-eager checking:
 Plus:
 
 * The repo's existing DCG tests, unchanged — the real contract. **One exception:**
-  `tests/issues/test832.expected` must be tightened (§5.3). As it stands it
+  `tests/issues/test0832.expected` must be tightened (§5.3). As it stands it
   asserts only `Error: main` and would pass both before and after the fix, so
   leaving it alone would mean shipping #1102's fix with no test that can fail.
 * Targeted: pushback lists; module-qualified head and body; `!` inside `{}` vs
@@ -888,7 +888,7 @@ merits, but it is a workaround, not a fix.
 | 0 | `src/bif_dcgs.c` with the translator, `'$dcg_rule'/2`, `'$dcg_body'/4`. Point `expand_term/2` and `dcg_translate/2` in `builtins.pl` at `'$dcg_rule'/2` (§8.1). The reference `library/dcgs.pl` still live. Land the differential harness so both run side by side, and **vendor `phrase_quad.pl`** (§9) — the phase 3 gate depends on it. | Low — new code, one small live path, easily reverted |
 | 1 | **Done.** Hook moved ahead of `assign_vars()` (not into `term_expansion()` — see §10); `dcg_expansion()` and both `g_dcg_translate_s` registrations deleted. clpz consult 0.78s → 0.31s; a 2000-rule synthetic grammar 0.22s → 0.12s. Also fixed two pre-existing stale-pointer bugs in `parser.c` that an exactly-sized clause exposes. | Medium — and the medium was in the parser's realloc invariants, not the translator |
 | 2 | Native `goal_expansion` for `phrase/2,3`. **Measured, and the case is weaker than this row implies:** ~200 `phrase/2,3` goals exist tree-wide and the expansion costs ~35µs each, so ~7ms across the whole library — against the 470ms phase 1 saved on clpz alone. The real reason to do it is that phase 3 deletes the Prolog hook, and without a replacement that regresses *runtime* inlining. Doing it natively also needs fresh variables registered in the vartab at a point after `assign_vars` has run, which is the exact hazard §10 got wrong. **Folded into phase 3**, where the hook was being rewritten anyway — kept in Prolog over `'$dcg_body'/4` rather than moved into `parser.c`, since ~7ms does not justify vartab surgery. | Low value alone; done as part of 3 |
-| 3 | **Done.** `library/dcgs.pl` replaced; reference frozen as `tests/dcg_reference.pl`; module, exports, op and `meta_predicate` declarations unchanged. **58 of 58 quads**, up from 55; #1102/#832 closed and `test832.expected` tightened from "any error" to the specific term. Three things the design missed, all recorded in §8: synthesized cells need `bif_ptr`/OP resolution before they can be *called*; `'$dcg_body'/4` declining for non-terminals pushes them onto a fallback that does not work, so `phrase/N` appends the arguments itself; and the `goal_expansion` hook must **decline** on a throwing translation rather than fall back to appending. | High — and the height was in what happens to a synthesized goal, not in the translation |
+| 3 | **Done.** `library/dcgs.pl` replaced; reference frozen as `tests/dcg_reference.pl`; module, exports, op and `meta_predicate` declarations unchanged. **58 of 58 quads**, up from 55; #1102/#832 closed and `test0832.expected` tightened from "any error" to the specific term. Three things the design missed, all recorded in §8: synthesized cells need `bif_ptr`/OP resolution before they can be *called*; `'$dcg_body'/4` declining for non-terminals pushes them onto a fallback that does not work, so `phrase/N` appends the arguments itself; and the `goal_expansion` hook must **decline** on a throwing translation rather than fall back to appending. | High — and the height was in what happens to a synthesized goal, not in the translation |
 | 4 | **Half of this is already done, and the other half is bigger than "medium".** A user `term_expansion/2` returning a **list** already works — verified: the expansion is asserted and the original term is replaced. What remains is that a `-->` term never reaches a user hook. Swapping the order is not small: `term_expansion()` builds a fully processed clause through its *own* print-and-reparse, so it cannot move ahead of `assign_vars()`, and translation cannot move after it without losing the variable registration `goal_expansion` needs (§10). Doing it properly means giving `term_expansion()` the phase-1 treatment first. **Value is low** — nothing in the tree intercepts `-->`, and `library/tabling.pl` works *because* its rename runs after translation. | Was mis-sized; and note §10's dependency is the **opposite** of what an earlier draft said — translation must run BEFORE `assign_vars`, and phase 4 must preserve that |
 | 5 | **Two of three done.** `'$string_prefix'/3` lands: 200 rules with a 4 KB literal drop from 2.36s / 100 MB RSS to 0.04s / 14 MB. `...//0` is 380x faster — but *not* for §11's reason, see below. `dcg_optimise` not done. | Low, opt-in — and §11's premise was wrong |
 
@@ -949,7 +949,7 @@ changed the design, not just confirmed it:
    SWI raises `permission_error(define, dcg_nonterminal, \+x)` for
    `(\+ x) --> B`, and neither `xlate_nonterminal()` nor the reference has any
    such guard. See §5.1 for where SWI and Scryer part company.
-7. **#832 *is* #1102.** `tests/issues/test832.pl` is `phrase(({fail},1),_)` —
+7. **#832 *is* #1102.** `tests/issues/test0832.pl` is `phrase(({fail},1),_)` —
    quad 13 exactly. Not "closely related": the same defect, with a test already
    in the tree whose `.expected` is too weak to fail. See §5.3.
 8. **No other dependents.** `library/builtins.pl` line 88 is the only reference to
