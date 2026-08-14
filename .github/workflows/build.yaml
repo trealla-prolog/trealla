@@ -105,6 +105,69 @@
               libdl.dll
               libwinpthread-1.dll
 
+    cosmo:
+      name: Cosmopolitan
+      runs-on: ubuntu-latest
+      env:
+        COSMOCC_VERSION: 4.0.2
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Cache cosmocc
+          id: cache-cosmocc
+          uses: actions/cache@v4
+          with:
+            path: ${{ runner.temp }}/cosmocc
+            key: cosmocc-${{ runner.os }}-${{ env.COSMOCC_VERSION }}
+        - name: Install cosmocc
+          if: steps.cache-cosmocc.outputs.cache-hit != 'true'
+          run: |
+            mkdir -p "${RUNNER_TEMP}/cosmocc"
+            curl -fsSL "https://cosmo.zip/pub/cosmocc/cosmocc-${COSMOCC_VERSION}.zip" -o "${RUNNER_TEMP}/cosmocc.zip"
+            unzip -q "${RUNNER_TEMP}/cosmocc.zip" -d "${RUNNER_TEMP}/cosmocc"
+        - name: Add cosmocc to PATH
+          run: echo "${RUNNER_TEMP}/cosmocc/bin" >> "$GITHUB_PATH"
+        - name: Build
+          run: make cosmo
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-cosmopolitan
+            path: |
+              tpl
+              tpl.aarch64.elf
+              tpl.com.dbg
+              LICENSE
+              ATTRIBUTION
+              README.md
+
+    freebsd:
+      name: FreeBSD
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Build and test in FreeBSD
+          uses: vmactions/freebsd-vm@v1.5.3
+          with:
+            release: "14"
+            cache-after-prepare: true
+            prepare: pkg install -y gmake libffi
+            run: |
+              make release
+              make test
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-FreeBSD-X64
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
       name: WebAssembly
@@ -159,7 +222,7 @@
 
     release:
       if: startsWith(github.ref, 'refs/tags/')
-      needs: [build, windows, wasm]
+      needs: [build, windows, cosmo, freebsd, wasm]
       name: Release binaries
       runs-on: ubuntu-latest
       steps:
