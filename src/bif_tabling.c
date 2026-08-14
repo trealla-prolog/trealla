@@ -191,7 +191,7 @@ static void thash_remove(query *q, thash *h, tnode *n)
 static bool thash_grow(query *q, thash *h)
 {
 	unsigned nb = h->nbuckets * 2;
-	tnode **nbk = calloc(nb, sizeof(tnode*));
+	tnode **nbk = TPL_calloc(nb, sizeof(tnode*));
 	if (!nbk) return false;
 	tnode **old = h->buckets;
 	unsigned oldn = h->nbuckets;
@@ -207,17 +207,17 @@ static bool thash_grow(query *q, thash *h)
 		}
 	}
 
-	free(old);
+	TPL_free(old);
 	return true;
 }
 
 static bool trie_index_children(query *q, tnode *parent)
 {
-	thash *h = calloc(1, sizeof(thash));
+	thash *h = TPL_calloc(1, sizeof(thash));
 	if (!h) return false;
 	h->nbuckets = 64;
-	h->buckets = calloc(h->nbuckets, sizeof(tnode*));
-	if (!h->buckets) { free(h); return false; }
+	h->buckets = TPL_calloc(h->nbuckets, sizeof(tnode*));
+	if (!h->buckets) { TPL_free(h); return false; }
 
 	for (tnode *n = parent->child; n; n = n->sibling)
 		thash_insert(h, n, key_hash(q, &n->key));
@@ -259,7 +259,7 @@ static void twalk_init(twalk *w, query *q, tnode **root, bool create)
 static void twalk_done(twalk *w)
 {
 	if (w->vars)
-		free(w->vars);
+		TPL_free(w->vars);
 }
 
 static int twalk_var_num(twalk *w, pl_ctx ctx, unsigned var_num)
@@ -271,7 +271,7 @@ static int twalk_var_num(twalk *w, pl_ctx ctx, unsigned var_num)
 
 	if (w->num_vars >= w->max_vars) {
 		w->max_vars = w->max_vars ? w->max_vars*2 : 16;
-		void *tmp = realloc(w->vars, sizeof(w->vars[0]) * w->max_vars);
+		void *tmp = TPL_realloc(w->vars, sizeof(w->vars[0]) * w->max_vars);
 		if (!tmp) { w->oom = true; return -1; }
 		w->vars = tmp;
 	}
@@ -311,7 +311,7 @@ static bool trie_step(twalk *w, const cell *key)
 	if (!w->create)
 		return false;
 
-	tnode *n = calloc(1, sizeof(tnode));
+	tnode *n = TPL_calloc(1, sizeof(tnode));
 	if (!n) { w->oom = true; return false; }
 	n->key = *key;
 	share_cell(&n->key);		// bigints/cstrings are refcounted
@@ -653,7 +653,7 @@ static tbl_state *tbl(query *q)
 	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
 
 	if (!self->tabling_state) {
-		tbl_state *s = calloc(1, sizeof(tbl_state));
+		tbl_state *s = TPL_calloc(1, sizeof(tbl_state));
 		if (!s) return NULL;
 		s->generation = 1;
 		s->scc_next_id = 1;
@@ -780,7 +780,7 @@ static bool tbl_slot_alloc(tbl_state *s, table *t)
 
 	if (s->nslots >= s->slots_cap) {
 		unsigned cap = s->slots_cap ? s->slots_cap * 2 : 16;
-		void *tmp = realloc(s->slots, sizeof(*s->slots) * cap);
+		void *tmp = TPL_realloc(s->slots, sizeof(*s->slots) * cap);
 		if (!tmp) return false;
 		s->slots = tmp;
 		memset(&s->slots[s->slots_cap], 0,
@@ -889,7 +889,7 @@ static bool bif_tbl_variant_table_3(query *q)
 	table *t = leaf->value;
 
 	if (!t) {
-		t = calloc(1, sizeof(table));
+		t = TPL_calloc(1, sizeof(table));
 		CHECKED(t);
 		t->status = TBL_FRESH;
 		// A non-interned callable would record functor 0 and then be
@@ -972,7 +972,7 @@ static bool bif_tbl_add_answer_2(query *q)
 	if (existed)
 		return false;
 
-	tbl_ans *a = calloc(1, sizeof(tbl_ans));
+	tbl_ans *a = TPL_calloc(1, sizeof(tbl_ans));
 	CHECKED(a);
 	a->image = tbl_image(q, p2, p2_ctx);
 	CHECKED(a->image);
@@ -1056,7 +1056,7 @@ static bool bif_tbl_add_suspension_2(query *q)
 			top->dep_min = t->scc;
 	}
 
-	tbl_susp *sp = calloc(1, sizeof(tbl_susp));
+	tbl_susp *sp = TPL_calloc(1, sizeof(tbl_susp));
 	CHECKED(sp);
 	sp->image = tbl_image(q, p2, p2_ctx);
 	CHECKED(sp->image);
@@ -1111,7 +1111,7 @@ static bool bif_tbl_pop_worklist_1(query *q)
 
 	for (tbl_ans *a = t->unproc_ans; a; a = a->next) {
 		for (tbl_susp *sp = t->first_susp; sp; sp = sp->next) {
-			tbl_pair *p = malloc(sizeof(tbl_pair));
+			tbl_pair *p = TPL_malloc(sizeof(tbl_pair));
 			CHECKED(p);
 			p->a = a; p->s = sp; p->next = NULL;
 			*tail = p; tail = &p->next;
@@ -1122,7 +1122,7 @@ static bool bif_tbl_pop_worklist_1(query *q)
 
 	for (tbl_ans *a = t->first_ans; a && a != t->unproc_ans; a = a->next) {
 		for (tbl_susp *s = t->unproc_susp; s; s = s->next) {
-			tbl_pair *p = malloc(sizeof(tbl_pair));
+			tbl_pair *p = TPL_malloc(sizeof(tbl_pair));
 			CHECKED(p);
 			p->a = a; p->s = s; p->next = NULL;
 			*tail = p; tail = &p->next;
@@ -1204,7 +1204,7 @@ static bool bif_tbl_push_scc_1(query *q)
 
 	if (s->scc_depth >= s->scc_max) {
 		unsigned nmax = s->scc_max ? s->scc_max*2 : 64;
-		tscc *tmp = realloc(s->scc, sizeof(tscc)*nmax);
+		tscc *tmp = TPL_realloc(s->scc, sizeof(tscc)*nmax);
 		CHECKED(tmp);
 		s->scc = tmp;
 		s->scc_max = nmax;

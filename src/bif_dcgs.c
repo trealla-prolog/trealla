@@ -168,7 +168,7 @@ static bool arena_reserve(dcg_ctx *c, unsigned n)
 	while (cap < (c->ar.len + n))
 		cap *= 2;
 
-	cell *buf = realloc(c->ar.buf, sizeof(cell) * cap);
+	cell *buf = TPL_realloc(c->ar.buf, sizeof(cell) * cap);
 
 	if (!buf) {
 		c->oom = true;
@@ -194,7 +194,7 @@ static void arena_release(dcg_ctx *c)
 {
 	if (c->ar.buf) {
 		unshare_cells(c->ar.buf, c->ar.len);
-		free(c->ar.buf);
+		TPL_free(c->ar.buf);
 	}
 
 	c->ar.buf = NULL;
@@ -530,7 +530,7 @@ static dcg_rc emit_terminals(dcg_ctx *c, const cell *l, pl_ctx l_ctx,
 	while (is_list(p)) {
 		if (n_opens == cap_opens) {
 			unsigned newcap = cap_opens ? cap_opens * 2 : 32;
-			unsigned *tmp = realloc(opens, sizeof(unsigned) * newcap);
+			unsigned *tmp = TPL_realloc(opens, sizeof(unsigned) * newcap);
 
 			if (!tmp) {
 				c->oom = true;
@@ -599,7 +599,7 @@ static dcg_rc emit_terminals(dcg_ctx *c, const cell *l, pl_ctx l_ctx,
 		emit_close(c, opens[i]);
 
 done:
-	free(opens);
+	TPL_free(opens);
 	return rc;
 }
 
@@ -1034,7 +1034,7 @@ static cell *arena_to_heap(dcg_ctx *c, query *q)
 		return NULL;
 
 	copy_cells(dst, c->ar.buf, c->ar.len);
-	free(c->ar.buf);
+	TPL_free(c->ar.buf);
 	c->ar.buf = NULL;
 	c->ar.len = c->ar.cap = 0;
 	return dst;
@@ -1295,7 +1295,7 @@ static clause *arena_to_clause(dcg_ctx *c)
 	// exactly these cidx cells when the clause dies.
 
 	copy_cells(cl->cells, c->ar.buf, c->ar.len);
-	free(c->ar.buf);
+	TPL_free(c->ar.buf);
 	c->ar.buf = NULL;
 	c->ar.len = c->ar.cap = 0;
 	return cl;

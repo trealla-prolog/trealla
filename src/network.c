@@ -568,7 +568,7 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 #if USE_OPENSSL
 	if (str->ssl) {
 		if (!*lineptr) {
-			*lineptr = malloc(*n=1024);
+			*lineptr = TPL_malloc(*n=1024);
 			ENSURE(*lineptr);
 		}
 
@@ -601,7 +601,7 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 				if (dstlen-- <= 1) {
 					size_t savelen = dst - *lineptr;
 					*n *= 2;
-					*lineptr = realloc(*lineptr, *n);
+					*lineptr = TPL_realloc(*lineptr, *n);
 					ENSURE(*lineptr);
 					dst = *lineptr + savelen;
 					dstlen = *n - savelen;

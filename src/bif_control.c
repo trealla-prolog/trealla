@@ -1051,11 +1051,11 @@ static void restore_streams(query *q, cell *ball)
 	if (!ball || !is_compound(ball))
 		return;
 
-	cell *buf = malloc(sizeof(cell) * ball->num_cells);
+	cell *buf = TPL_malloc(sizeof(cell) * ball->num_cells);
 	if (!buf) return;
 	pl_idx n = restore_streams_walk(q, ball, buf);
 	memcpy(ball, buf, sizeof(cell) * n);
-	free(buf);
+	TPL_free(buf);
 }
 
 static cell *parse_to_heap(query *q, const char *src)

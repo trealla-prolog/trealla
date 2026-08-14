@@ -223,7 +223,7 @@ static bool bif_sys_accept_2(query *q)
 
 	if (n < 0) {
 		close(fd);
-		free(peer_addr);
+		TPL_free(peer_addr);
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 	}
 
