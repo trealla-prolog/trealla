@@ -15,32 +15,36 @@
 # See https://github.com/trealla-prolog/trealla/issues/1103
 
 TPL=${TPL:-./tpl}
-TMPPL=tmp.pl
 
-trap 'rm -f "$TMPPL"' EXIT
-touch "$TMPPL"
+run() {
+	printf '%s\n' "$1" | "$TPL" -q -f --autofail
+}
 
-$TPL -q -f --autofail "$TMPPL" <<'EOF'
-set_prolog_flag(double_quotes,chars).
-atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Ds = [Null], Cs = Ds.
-atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Cs = "\x0\".
-atom_codes(A,[97,98]), atom_codes(A,Cs).
-atom_chars(A,[a,b]), atom_chars(A,Cs).
-X = [0'a,0'b].
-X = [a,b].
-X = "ab".
-X = [a,b|T].
-set_prolog_flag(double_quotes,codes).
-atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Ds = [Null], Cs = Ds.
-atom_codes(A,[97,98]), atom_codes(A,Cs).
-atom_chars(A,[a,b]), atom_chars(A,Cs).
-X = [0'a,0'b].
-X = [a,b].
-set_prolog_flag(double_quotes,atom).
-atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Ds = [Null], Cs = Ds.
-atom_codes(A,[97,98]), atom_codes(A,Cs).
-atom_chars(A,[a,b]), atom_chars(A,Cs).
-X = [a,b].
-X = "ab".
-halt.
-EOF
+run_with_flag() {
+	printf '%s\n' "$2" | "$TPL" -q -f --autofail \
+		-g "set_prolog_flag(double_quotes,$1)"
+}
+
+run 'set_prolog_flag(double_quotes,chars).'
+run_with_flag chars 'atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Ds = [Null], Cs = Ds.'
+run_with_flag chars 'atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Cs = "\x0\".'
+run_with_flag chars 'atom_codes(A,[97,98]), atom_codes(A,Cs).'
+run_with_flag chars 'atom_chars(A,[a,b]), atom_chars(A,Cs).'
+run_with_flag chars "X = [0'a,0'b]."
+run_with_flag chars 'X = [a,b].'
+run_with_flag chars 'X = "ab".'
+run_with_flag chars 'X = [a,b|T].'
+
+run 'set_prolog_flag(double_quotes,codes).'
+run_with_flag codes 'atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Ds = [Null], Cs = Ds.'
+run_with_flag codes 'atom_codes(A,[97,98]), atom_codes(A,Cs).'
+run_with_flag codes 'atom_chars(A,[a,b]), atom_chars(A,Cs).'
+run_with_flag codes "X = [0'a,0'b]."
+run_with_flag codes 'X = [a,b].'
+
+run 'set_prolog_flag(double_quotes,atom).'
+run_with_flag atom 'atom_codes(A,[0]), atom_codes(A,Cs), Cs = [Null], Ds = [Null], Cs = Ds.'
+run_with_flag atom 'atom_codes(A,[97,98]), atom_codes(A,Cs).'
+run_with_flag atom 'atom_chars(A,[a,b]), atom_chars(A,Cs).'
+run_with_flag atom 'X = [a,b].'
+run_with_flag atom 'X = "ab".'
