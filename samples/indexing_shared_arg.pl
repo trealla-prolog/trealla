@@ -11,8 +11,8 @@
 :- dynamic(record/3).
 
 main :-
-	populate(1, 1000),
-	lookup(10000),
+	populate(1, 10000),
+	lookup(100000),
 	write(ok), nl,
 	!.
 
