@@ -1650,7 +1650,9 @@ static bool directive_term(parser *p, cell *c)
 
 					pr->is_public = true;
 				} else if (!strcmp(C_STR(p, head), "op") && (head->arity == 3)) {
-					do_op(p, head, true);
+					// Keep exported operators in their declaring module. Importers
+					// find them through search_op() after use_module/1.
+					do_op(p, head, false);
 				} else {
 					if (!p->do_read_term)
 						fprintf(stderr, "Error: predicate export failed, '%s' in %s:%d\n", C_STR(p, head), get_loaded(p->m, p->m->filename), p->line_num);
