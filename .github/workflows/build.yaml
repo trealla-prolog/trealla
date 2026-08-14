@@ -154,7 +154,7 @@
           with:
             release: "14"
             cache-after-prepare: true
-            prepare: pkg install -y git gmake libedit libffi
+            prepare: pkg install -y bash git gmake libedit libffi
             run: |
               make release
               make test
