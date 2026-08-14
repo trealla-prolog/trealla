@@ -27,6 +27,84 @@ static void msleep(int ms)
 
 #define DEBUG_MATCH if (0)
 
+#ifdef INDEX_PROFILE
+
+// Deliberately process-global and opt-in: this is diagnostic accounting for
+// one workload, not query state. It reports which dynamic predicate lookups
+// lose selectivity after an indexing change.
+
+#define INDEX_PROFILE_ROWS 1024
+
+typedef struct {
+	const predicate *pr;
+	char name[64];
+	unsigned arity;
+	uint64_t calls, linear, idx0, idx1, idx2, candidates;
+} index_profile_row;
+
+static index_profile_row g_index_profile[INDEX_PROFILE_ROWS];
+static bool g_index_profile_registered;
+
+static index_profile_row *index_profile_get(const predicate *pr)
+{
+	unsigned i = ((size_t)pr >> 4) % INDEX_PROFILE_ROWS;
+
+	for (unsigned probes = 0; probes < INDEX_PROFILE_ROWS; probes++) {
+		index_profile_row *r = &g_index_profile[i];
+
+		if (!r->pr) {
+			r->pr = pr;
+			r->arity = pr->key.arity;
+			snprintf(r->name, sizeof(r->name), "%s", C_STR(pr->m, &pr->key));
+			return r;
+		}
+
+		if (r->pr == pr)
+			return r;
+
+		i = (i + 1) % INDEX_PROFILE_ROWS;
+	}
+
+	return NULL;
+}
+
+static void index_profile_report(void)
+{
+	for (unsigned rank = 0; rank < 20; rank++) {
+		index_profile_row *best = NULL;
+
+		for (unsigned i = 0; i < INDEX_PROFILE_ROWS; i++) {
+			index_profile_row *r = &g_index_profile[i];
+			if (r->pr && (!best || (r->candidates > best->candidates)))
+				best = r;
+		}
+
+		if (!best || !best->candidates)
+			break;
+
+		fprintf(stderr, "INDEX_PROFILE %s/%u calls=%llu linear=%llu idx0=%llu idx1=%llu idx2=%llu candidates=%llu avg=%.1f\n",
+			best->name, best->arity,
+			(unsigned long long)best->calls, (unsigned long long)best->linear,
+			(unsigned long long)best->idx0, (unsigned long long)best->idx1,
+			(unsigned long long)best->idx2, (unsigned long long)best->candidates,
+			best->calls ? (double)best->candidates / best->calls : 0.0);
+
+		best->candidates = 0;
+	}
+}
+
+#define INDEX_PROFILE_START(pr) index_profile_row *ip = index_profile_get(pr); if (ip) ip->calls++
+#define INDEX_PROFILE_MODE(ip, n) if (ip) (ip)->n++
+#define INDEX_PROFILE_CANDIDATES(ip, n) if (ip) ((ip)->candidates += (n))
+
+#else
+
+#define INDEX_PROFILE_START(pr)
+#define INDEX_PROFILE_MODE(ip, n)
+#define INDEX_PROFILE_CANDIDATES(ip, n)
+
+#endif
+
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 100;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 100;
 static const unsigned INITIAL_NBR_SLOTS = 1000;
@@ -625,12 +703,15 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	}
 
 	if (pr->idx1 && !pr->cnt) {
+		sl_destroy(pr->idx0);
 		sl_destroy(pr->idx2);
 		sl_destroy(pr->idx1);
-		pr->idx1 = pr->idx2 = NULL;
+		pr->idx0 = pr->idx1 = pr->idx2 = NULL;
+		pr->is_var_in_head = false;
 		pr->is_var_in_first_arg = false;
-		pr->is_var_in_second_arg = false;
-	} else if (pr->is_var_in_first_arg || pr->is_var_in_second_arg) {
+		pr->is_var_in_idx2_arg = false;
+		pr->idx2_arg = 0;
+	} else if (pr->is_var_in_head || pr->is_var_in_first_arg || pr->is_var_in_idx2_arg) {
 		// Clauses just left the chain. If the last var-headed one was
 		// among them the flags are now stale, and being stale here is
 		// one-way: they are only ever set by assert_commit(). Safe to
@@ -978,7 +1059,8 @@ static void commit_frame(query *q, bool head_has_vars)
 	// choicepoint before the walk could reach the matching fact.
 
 	bool is_det = !head_has_vars && cl->is_unique
-		&& !q->st.pr->is_var_in_first_arg && !q->st.pr->is_var_in_second_arg;
+		&& !q->st.pr->is_var_in_head && !q->st.pr->is_var_in_first_arg
+		&& !q->st.pr->is_var_in_idx2_arg;
 	bool last_match = is_det || cl->is_first_cut || !has_next_key(q)
 		|| (is_next_cut(q->st.instr) && cl->is_fact);
 	bool tco = false;
@@ -1598,7 +1680,7 @@ static bool in_candidates(const rule **got, unsigned num_got, const rule *c)
 }
 
 static void index_check(query *q, predicate *pr, cell *goal, cell *key,
-	const rule **got, unsigned num_got, int which)
+	const rule **got, unsigned num_got, int idx_arg)
 {
 	// The goal's own generation, NOT GET_CURR_FRAME()->dbgen. find_key()
 	// runs before check_frame(), so the current frame is still the
@@ -1625,18 +1707,13 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 		cell *ch = get_head(((rule*)c)->cl.cells);
 		cell *ck = ch;
 
-		// idx1 is keyed on Arg1, idx2 on Arg2, so each has to be
+		// Each index is keyed on its recorded argument, so each has to be
 		// checked against the key it was actually built on. The clause
 		// HEAD is still what gets printed - an arg on its own says
 		// little about which clause went missing.
 
-		if (which == 2) {
-			if (ch->arity < 2)
-				continue;
-
-			ck = NEXT_ARG(FIRST_ARG(ch));
-		} else if (ch->arity)
-			ck = FIRST_ARG(ch);
+		if (idx_arg >= 0 && ch->arity)
+			ck = get_nth_arg(ch, idx_arg);
 
 		if (index_cmpkey(ck, key, q->st.m, NULL) != 0)
 			continue;
@@ -1645,8 +1722,9 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 			continue;
 
 		if (!missing) {
-			fprintf(stderr, "\n*** index-check FAILED for %s/%u (idx%d)\n",
-				C_STR(q, &pr->key), pr->key.arity, which);
+			fprintf(stderr, "\n*** index-check FAILED for %s/%u (%s)\n",
+				C_STR(q, &pr->key), pr->key.arity,
+				idx_arg < 0 ? "head" : "argument");
 			fprintf(stderr, "***   goal   ");
 			DUMP_TERM("", goal, q->st.cur_ctx, 1);
 		}
@@ -1662,7 +1740,7 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 		// lost on a removal. If it IS reachable, the ordering is fine
 		// and the query descent went astray.
 
-		sliter *probe = sl_find_key(which == 2 ? pr->idx2 : pr->idx1, ck);
+		sliter *probe = sl_find_key(idx_arg < 0 ? pr->idx0 : idx_arg ? pr->idx2 : pr->idx1, ck);
 		const rule *probe_r;
 		bool self = false;
 
@@ -1687,8 +1765,9 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 	if (missing) {
 		fprintf(stderr, "***   indexed set had %u entr%s, %u missing\n",
 			num_got, num_got == 1 ? "y" : "ies", missing);
-		fprintf(stderr, "***   predicate has %u clauses, idx1=%s idx2=%s\n",
-			(unsigned)pr->cnt, pr->idx1 ? "yes" : "no", pr->idx2 ? "yes" : "no");
+		fprintf(stderr, "***   predicate has %u clauses, head=%s idx1=%s idx2(arg%u)=%s\n",
+			(unsigned)pr->cnt, pr->idx0 ? "yes" : "no", pr->idx1 ? "yes" : "no", pr->idx2_arg + 1,
+			pr->idx2 ? "yes" : "no");
 
 		// Carry on rather than abort: one run should surface every
 		// mismatch in a suite, not just the first. The count at exit is
@@ -1723,6 +1802,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		return true;
 	}
 
+	INDEX_PROFILE_START(pr);
+
 	if (pr->is_meta_predicate) {
 		if (!expand_meta_predicate(q, pr))
 			return false;
@@ -1738,38 +1819,82 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
 	skiplist *idx = pr->idx1;
 	cell *goal = key;
+	int idx_arg = 0;
 
-	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
-		// is_var_in_second_arg: idx2 is keyed on Arg2 and index_cmpkey
-		// calls a var equal to anything, so a var-headed Arg2 breaks
-		// the skiplist's ordering the same way it does for idx1. No
-		// usable index here - fall back to the linear walk.
+	// A full-head lookup is exact and much more selective when every
+	// clause head is ground. Variable-headed clauses stay out of idx0,
+	// because a var-equals-anything comparator is not a skiplist order.
+	if (pr->idx0 && !pr->is_var_in_head && is_ground(key)) {
+		idx = pr->idx0;
+		idx_arg = -1;
+		INDEX_PROFILE_MODE(ip, idx0);
+	} else if (pr->idx2 && (pr->idx2_arg == 1) && !pr->is_var_in_idx2_arg
+			&& is_interned(&pr->key) && !strcmp(C_STR(q, &pr->key), "$predicate_property")) {
+		// $predicate_property/3 is populated as
+		// $predicate_property(predicate, Name(_, ...), Property).
+		// Arg1 consequently has only the two category values (predicate and
+		// function), while Arg2 identifies the actual predicate.  Treating
+		// this internal catalogue like an ordinary first-arg-indexed relation
+		// turns every predicate lookup into a walk of the whole catalogue.
+		// idx2 is already maintained precisely for this argument and supports
+		// the variable arguments in Name(_, ...) through index_cmpkey's
+		// wildcard handling.
 
-		if (!pr->idx2 || pr->is_var_in_second_arg) {
+		cell *arg2 = get_nth_arg(key, pr->idx2_arg);
+
+		if (!is_var(arg2)) {
+			key = arg2;
+			idx = pr->idx2;
+			idx_arg = pr->idx2_arg;
+			INDEX_PROFILE_MODE(ip, idx2);
+		} else if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
+			INDEX_PROFILE_MODE(ip, linear);
+			INDEX_PROFILE_CANDIDATES(ip, pr->cnt);
+			q->st.dbe = pr->head;
+			return true;
+		} else if (arg1) {
+			key = arg1;
+			INDEX_PROFILE_MODE(ip, idx1);
+		}
+	} else if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
+		// idx2 is a floating later-argument index. If Arg1 is unusable,
+		// use it when the selected argument in this goal is ground.
+
+		if (!pr->idx2 || pr->is_var_in_idx2_arg) {
+			INDEX_PROFILE_MODE(ip, linear);
+			INDEX_PROFILE_CANDIDATES(ip, pr->cnt);
 			q->st.dbe = pr->head;
 			return true;
 		}
 
-		cell *arg2 = NEXT_ARG(arg1);
+		cell *arg2 = get_nth_arg(key, pr->idx2_arg);
 
 		if (is_var(arg2)) {
+			INDEX_PROFILE_MODE(ip, linear);
+			INDEX_PROFILE_CANDIDATES(ip, pr->cnt);
 			q->st.dbe = pr->head;
 			return true;
 		}
 
 		key = arg2;
 		idx = pr->idx2;
+		idx_arg = pr->idx2_arg;
+		INDEX_PROFILE_MODE(ip, idx2);
 	} else if (arg1) {
 		// idx1 is keyed on Arg1 only (see assert_commit).
 		key = arg1;
+		INDEX_PROFILE_MODE(ip, idx1);
 	}
+
+	if (!arg1)
+		INDEX_PROFILE_MODE(ip, idx1);
 
 	q->st.dbe = NULL;
 	sliter *iter;
 
 	if (!(iter = sl_find_key(idx, key))) {
 		if (g_index_check)
-			index_check(q, pr, goal, key, NULL, 0, idx == pr->idx2 ? 2 : 1);
+			index_check(q, pr, goal, key, NULL, 0, idx_arg);
 
 		return false;
 	}
@@ -1794,6 +1919,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	unsigned num_got = 0, max_got = 0;
 
 	while (sl_next_key(iter, (void*)&r)) {
+		INDEX_PROFILE_CANDIDATES(ip, 1);
 		if (g_index_check) {
 			if (num_got == max_got) {
 				max_got = max_got ? max_got * 2 : 32;
@@ -1820,7 +1946,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	sl_done(iter);
 
 	if (g_index_check) {
-		index_check(q, pr, goal, key, got, num_got, idx == pr->idx2 ? 2 : 1);
+		index_check(q, pr, goal, key, got, num_got, idx_arg);
 		TPL_free(got);
 	}
 
@@ -2506,6 +2632,14 @@ void query_destroy(query *q)
 static query *query_create_(module *m, bool is_toplevel)
 {
 	static pl_atomic uint64_t g_query_id = 0;
+
+#ifdef INDEX_PROFILE
+	if (!g_index_profile_registered) {
+		g_index_profile_registered = true;
+		atexit(index_profile_report);
+	}
+#endif
+
 	query *q = TPL_calloc(1, sizeof(query));
 	ENSURE(q);
 	q->p = parser_create(m);

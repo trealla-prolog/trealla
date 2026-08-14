@@ -198,7 +198,7 @@ static void predicate_purge_dirty_list(predicate *pr)
 		cnt++;
 	}
 
-	if (cnt && (pr->is_var_in_first_arg || pr->is_var_in_second_arg))
+	if (cnt && (pr->is_var_in_head || pr->is_var_in_first_arg || pr->is_var_in_idx2_arg))
 		recheck_var_in_indexed_args(pr);
 
 #if 0
@@ -321,11 +321,14 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 			list_push_back(&q->dirty, r);
 	}
 
+	sl_destroy(pr->idx0);
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx1);
-	pr->idx1 = pr->idx2 = NULL;
+	pr->idx0 = pr->idx1 = pr->idx2 = NULL;
+	pr->is_var_in_head = false;
 	pr->is_var_in_first_arg = false;
-	pr->is_var_in_second_arg = false;
+	pr->is_var_in_idx2_arg = false;
+	pr->idx2_arg = 0;
 	pr->is_processed = false;
 	pr->head = pr->tail = NULL;
 	pr->cnt = 0;

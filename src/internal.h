@@ -438,13 +438,13 @@ struct predicate_ {
 	predicate *alias;
 	rule *head, *tail;
 	module *m;
-	skiplist *idx1, *idx2;
+	skiplist *idx0, *idx1, *idx2;
 	const char *filename;
 	cell *meta_args;
 	list dirty;
 	cell key;
 	pl_refcnt refcnt, cnt, db_id;
-	unsigned max_vars;
+	unsigned max_vars, idx2_arg;
 	bool is_reload:1;
 	bool is_builtin:1;
 	bool is_public:1;
@@ -456,8 +456,9 @@ struct predicate_ {
 	bool is_noindex:1;
 	bool is_check_directive:1;
 	bool is_processed:1;
+	bool is_var_in_head:1;
 	bool is_var_in_first_arg:1;
-	bool is_var_in_second_arg:1;
+	bool is_var_in_idx2_arg:1;
 	bool is_iso:1;
 	bool is_dirty:1;
 };

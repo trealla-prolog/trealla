@@ -12,6 +12,8 @@
 :- dynamic(s/2).
 :- dynamic(t/2).
 :- dynamic(u/2).
+:- dynamic(v/3).
+:- dynamic(w/3).
 
 % var Arg1, asserted before the threshold
 setup_p :- assertz(p(_, varclause)), fail.
@@ -45,8 +47,21 @@ setup_u :- between(1,600,I), assertz(u(I,ground)), fail.
 setup_u :- assertz(u(_, vc)), fail.
 setup_u.
 
+% Arg1 and Arg2 contain variables in some clauses, but Arg3 does not.
+% The floating secondary index must choose Arg3 and retain the matching
+% var-Arg1 clause instead of falling back to the whole predicate chain.
+setup_v :- assertz((v(_, Y, hook) :- Y = wildcard)), fail.
+setup_v :- between(1,600,I), assertz(v(I, value, other)), fail.
+setup_v :- assertz(v(7, value, hook)), fail.
+setup_v.
+
+% All heads and the lookup are ground. This exercises the exact whole-head
+% index, which restores selectivity when many clauses share Arg1.
+setup_w :- between(1,600,I), assertz(w(shared, I, value(I))), fail.
+setup_w.
+
 main :-
-	setup_p, setup_q, setup_r, setup_s, setup_t, setup_u,
+	setup_p, setup_q, setup_r, setup_s, setup_t, setup_u, setup_v, setup_w,
 	findall(Y, p(7,Y), LP), write(LP), nl,
 	findall(Y, q(7,Y), LQ), write(LQ), nl,
 	findall(X, r(X,7), LR), write(LR), nl,
@@ -54,4 +69,6 @@ main :-
 	retract(t(_,v1)),
 	findall(Y, t(7,Y), LT), write(LT), nl,
 	retract(u(_,vc)),
-	findall(Y, u(7,Y), LU), write(LU), nl.
+	findall(Y, u(7,Y), LU), write(LU), nl,
+	findall(Y, v(7,Y,hook), LV), write(LV), nl,
+	( w(shared, 7, value(7)) -> write(head_indexed) ; write(head_missing) ), nl.

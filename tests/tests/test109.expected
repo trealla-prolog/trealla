@@ -4,3 +4,5 @@
 [7,vc]
 [ground,v2]
 [ground]
+[wildcard,value]
+head_indexed

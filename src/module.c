@@ -368,11 +368,14 @@ static void abolish_predicate(predicate *pr)
 	}
 
 	pr->head = pr->tail = NULL;
+	sl_destroy(pr->idx0);
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx1);
-	pr->idx1 = pr->idx2 = NULL;
+	pr->idx0 = pr->idx1 = pr->idx2 = NULL;
+	pr->is_var_in_head = false;
 	pr->is_var_in_first_arg = false;
-	pr->is_var_in_second_arg = false;
+	pr->is_var_in_idx2_arg = false;
+	pr->idx2_arg = 0;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -393,11 +396,14 @@ static void destroy_predicate(module *m, predicate *pr)
 	}
 
 	pr->head = pr->tail = NULL;
+	sl_destroy(pr->idx0);
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx1);
-	pr->idx1 = pr->idx2 = NULL;
+	pr->idx0 = pr->idx1 = pr->idx2 = NULL;
+	pr->is_var_in_head = false;
 	pr->is_var_in_first_arg = false;
-	pr->is_var_in_second_arg = false;
+	pr->is_var_in_idx2_arg = false;
+	pr->idx2_arg = 0;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -696,12 +702,13 @@ void index_remove_clause(predicate *pr, rule *r)
 
 	cell *c = get_head(r->cl.cells);
 	cell *k1 = c->arity ? FIRST_ARG(c) : c;
+	bool ground = !is_var(c) && (!is_compound(c) || is_ground(c));
 
-	if (pr->idx2 && c->arity > 1) {
-		cell *arg1 = FIRST_ARG(c);
-		cell *arg2 = NEXT_ARG(arg1);
-		sl_rem(pr->idx2, arg2, r);
-	}
+	if (pr->idx0 && ground)
+		sl_rem(pr->idx0, c, r);
+
+	if (pr->idx2)
+		sl_rem(pr->idx2, get_nth_arg(c, pr->idx2_arg), r);
 
 	sl_rem(pr->idx1, k1, r);
 }
@@ -810,7 +817,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 		}
 	}
 
-	if (removed && (pr->is_var_in_first_arg || pr->is_var_in_second_arg))
+	if (removed && (pr->is_var_in_head || pr->is_var_in_first_arg || pr->is_var_in_idx2_arg))
 		recheck_var_in_indexed_args(pr);
 }
 
@@ -1637,11 +1644,14 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 			pr->meta_args = NULL;
 			pr->alias = NULL;
 			pr->cnt = 0;
+			sl_destroy(pr->idx0);
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1);
-			pr->idx2 = pr->idx1 = NULL;
+			pr->idx0 = pr->idx2 = pr->idx1 = NULL;
+			pr->is_var_in_head = false;
 			pr->is_var_in_first_arg = false;
-			pr->is_var_in_second_arg = false;
+			pr->is_var_in_idx2_arg = false;
+			pr->idx2_arg = 0;
 			TPL_free(r);
 			return false;
 		}
@@ -2051,7 +2061,7 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 	return r;
 }
 
-// Recompute is_var_in_{first,second}_arg from the live clause chain.
+// Recompute the indexed-argument variable flags from the live clause chain.
 // assert_commit() only ever sets them, so retracting the last var-headed
 // clause would otherwise leave the predicate permanently barred from its
 // own index. Call after clauses have been delinked, never while a query
@@ -2059,14 +2069,19 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 
 void recheck_var_in_indexed_args(predicate *pr)
 {
+	pr->is_var_in_head = false;
 	pr->is_var_in_first_arg = false;
-	pr->is_var_in_second_arg = false;
+	pr->is_var_in_idx2_arg = false;
 
 	for (rule *r = pr->head; r; r = r->next) {
 		if (r->dbgen_retracted || r->cl.is_deleted)
 			continue;
 
 		cell *c = get_head(r->cl.cells);
+		bool ground = !is_var(c) && (!is_compound(c) || is_ground(c));
+
+		if (!ground)
+			pr->is_var_in_head = true;
 
 		if (!c->arity)
 			return;
@@ -2076,10 +2091,10 @@ void recheck_var_in_indexed_args(predicate *pr)
 		if (is_var(arg1))
 			pr->is_var_in_first_arg = true;
 
-		if ((c->arity > 1) && is_var(NEXT_ARG(arg1)))
-			pr->is_var_in_second_arg = true;
+		if (pr->idx2 && is_var(get_nth_arg(c, pr->idx2_arg)))
+			pr->is_var_in_idx2_arg = true;
 
-		if (pr->is_var_in_first_arg && pr->is_var_in_second_arg)
+		if (pr->is_var_in_head && pr->is_var_in_first_arg && pr->is_var_in_idx2_arg)
 			return;
 	}
 }
@@ -2106,14 +2121,34 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 		pr->idx1 = sl_create(index_cmpkey, NULL, m);
 		ENSURE(pr->idx1);
+		pr->idx0 = sl_create(index_cmpkey, NULL, m);
+		ENSURE(pr->idx0);
 
-		if (pr->key.arity > 1) {
-			pr->idx2 = sl_create(index_cmpkey, NULL, m);
-			ENSURE(pr->idx2);
-		}
-
+		pr->is_var_in_head = false;
 		pr->is_var_in_first_arg = false;
-		pr->is_var_in_second_arg = false;
+		pr->is_var_in_idx2_arg = false;
+		pr->idx2_arg = 0;
+
+		// Pick the first later argument with no variable-headed clauses.
+		// A variable key cannot be ordered in the skiplist, so an index on
+		// that argument would force every lookup back to the clause walk.
+		for (unsigned n = 1; n < pr->key.arity; n++) {
+			bool has_var = false;
+
+			for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
+				if (!cl2->dbgen_retracted && is_var(get_nth_arg(get_head(cl2->cl.cells), n))) {
+					has_var = true;
+					break;
+				}
+			}
+
+			if (!has_var) {
+				pr->idx2_arg = n;
+				pr->idx2 = sl_create(index_cmpkey, NULL, m);
+				ENSURE(pr->idx2);
+				break;
+			}
+		}
 
 		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
@@ -2121,21 +2156,21 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			if (cl2->dbgen_retracted)
 				continue;
 
+			bool ground = !is_var(c) && (!is_compound(c) || is_ground(c));
+
+			if (!ground)
+				pr->is_var_in_head = true;
+			else
+				sl_app(pr->idx0, c, cl2);
+
 			if (c->arity && is_var(FIRST_ARG(c)))
 				pr->is_var_in_first_arg = true;
 
 			cell *k1 = c->arity ? FIRST_ARG(c) : c;
 			sl_app(pr->idx1, k1, cl2);
 
-			if (pr->idx2) {
-				cell *arg1 = FIRST_ARG(c);
-				cell *arg2 = NEXT_ARG(arg1);
-
-				if (is_var(arg2))
-					pr->is_var_in_second_arg = true;
-
-				sl_app(pr->idx2, arg2, cl2);
-			}
+			if (pr->idx2)
+				sl_app(pr->idx2, get_nth_arg(c, pr->idx2_arg), cl2);
 		}
 
 		return;
@@ -2143,25 +2178,34 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 	cell *c = get_head(r->cl.cells);
 	cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
-	cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
 	cell *k1 = arg1 ? arg1 : c;
+	bool ground = !is_var(c) && (!is_compound(c) || is_ground(c));
+
+	if (!ground)
+		pr->is_var_in_head = true;
 
 	if (arg1 && is_var(arg1))
 		pr->is_var_in_first_arg = true;
 
-	if (arg2 && is_var(arg2))
-		pr->is_var_in_second_arg = true;
+	if (pr->idx2 && is_var(get_nth_arg(c, pr->idx2_arg)))
+		pr->is_var_in_idx2_arg = true;
 
 	if (!append) {
+		if (ground)
+			sl_set(pr->idx0, c, r);
+
 		sl_set(pr->idx1, k1, r);
 
-		if (pr->idx2 && arg2)
-			sl_set(pr->idx2, arg2, r);
+		if (pr->idx2)
+			sl_set(pr->idx2, get_nth_arg(c, pr->idx2_arg), r);
 	} else {
+		if (ground)
+			sl_app(pr->idx0, c, r);
+
 		sl_app(pr->idx1, k1, r);
 
-		if (pr->idx2 && arg2)
-			sl_app(pr->idx2, arg2, r);
+		if (pr->idx2)
+			sl_app(pr->idx2, get_nth_arg(c, pr->idx2_arg), r);
 	}
 }
 

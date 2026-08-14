@@ -26,6 +26,10 @@ ifeq ($(EMBED), 1)
 CFLAGS += -DEMBED=1
 endif
 
+ifeq ($(INDEX_PROFILE), 1)
+CFLAGS += -DINDEX_PROFILE
+endif
+
 LDFLAGS = -L/usr/local/lib -lm
 
 UNAME_S := $(shell uname -s)

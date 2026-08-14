@@ -256,6 +256,16 @@ inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
 #define FIRST_ARG(c) ((c)+1)
 #define NEXT_ARG(c) ((c)+(c)->num_cells)
 
+inline static cell *get_nth_arg(cell *c, unsigned n)
+{
+	c = FIRST_ARG(c);
+
+	while (n--)
+		c = NEXT_ARG(c);
+
+	return c;
+}
+
 #define GET_RAW_ARG(n,p) \
 	cell *p = get_raw_arg(q,n); \
 	pl_ctx p##_ctx = q->latest_ctx
