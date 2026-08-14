@@ -8,11 +8,12 @@ typedef struct {
 	query *q;
 	cell *c;
 	pl_ctx c_ctx;
+	size_t order;
 	int8_t arg;
 	bool ascending:1;
 } basepair;
 
-static int nodecmp(const void *ptr1, const void *ptr2)
+static int nodecmp_term(const void *ptr1, const void *ptr2)
 {
 	const basepair *cp1 = (const basepair*)ptr1;
 	const basepair *cp2 = (const basepair*)ptr2;
@@ -43,6 +44,18 @@ static int nodecmp(const void *ptr1, const void *ptr2)
 		return ok < 0 ? -1 : ok > 0 ? 1 : 0;
 	else
 		return ok < 0 ? 1 : ok > 0 ? -1 : 0;
+}
+
+static int nodecmp(const void *ptr1, const void *ptr2)
+{
+	const basepair *cp1 = (const basepair*)ptr1;
+	const basepair *cp2 = (const basepair*)ptr2;
+	int ok = nodecmp_term(ptr1, ptr2);
+
+	if (ok)
+		return ok;
+
+	return cp1->order < cp2->order ? -1 : cp1->order > cp2->order ? 1 : 0;
 }
 
 #if (defined __APPLE__ || defined __MACH__ || defined __DARWIN__	\
@@ -76,6 +89,7 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 		base[idx].c = h;
 		base[idx].c_ctx = h_ctx;
 		base[idx].q = q;
+		base[idx].order = idx;
 		base[idx].ascending = true;
 		base[idx].arg = keysort ? 1 : 0;
 
@@ -114,7 +128,7 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
-			if (dedup && !nodecmp(&base[i], &base[i-1]))
+			if (dedup && !nodecmp_term(&base[i], &base[i-1]))
 				continue;
 		}
 
@@ -284,6 +298,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 		base[idx].c = h;
 		base[idx].c_ctx = h_ctx;
 		base[idx].q = q;
+		base[idx].order = idx;
 		base[idx].ascending = ascending;
 		base[idx].arg = arg;
 
@@ -314,7 +329,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
-			if (dedup && !nodecmp(&base[i], &base[i-1]))
+			if (dedup && !nodecmp_term(&base[i], &base[i-1]))
 				continue;
 		}
 
@@ -415,4 +430,3 @@ builtins g_sort_bifs[] =
 
 	{0}
 };
-
