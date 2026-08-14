@@ -16,6 +16,16 @@
 #include "module.h"
 #include "query.h"
 
+static inline unsigned tpl_rand_r(unsigned *seed)
+{
+#ifdef __COSMOPOLITAN__
+	*seed = *seed * 1103515245u + 12345u;
+	return *seed & RAND_MAX;
+#else
+	return rand_r(seed);
+#endif
+}
+
 #define SET_ACCUM() {											\
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory"); \
@@ -2788,7 +2798,7 @@ static bool bif_log10_1(query *q)
 
 static pl_flt rnd(query *q)
 {
-	return (pl_flt)rand_r(&q->rand_seed) / (pl_flt)RAND_MAX;
+	return (pl_flt)tpl_rand_r(&q->rand_seed) / (pl_flt)RAND_MAX;
 }
 
 static bool bif_set_seed_1(query *q)
@@ -2837,7 +2847,7 @@ static bool bif_random_integer_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_INT;
-	q->accum.val_int = rand_r(&q->rand_seed);
+	q->accum.val_int = tpl_rand_r(&q->rand_seed);
 	return true;
 }
 
