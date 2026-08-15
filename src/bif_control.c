@@ -1205,6 +1205,7 @@ static bool bif_iso_throw_1(query *q)
 	if (is_var(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "var");
 
+	check_pressure(q);
 	q->fullstop = q->nl = false;
 	q->parens = q->numbervars = true;
 	//q->is_dump_vars = true;
@@ -1534,6 +1535,8 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 {
 	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
+
+	check_pressure(q);
 
 	// An allocation failure becomes a catchable ball HERE, and from here
 	// on the ordinary exception machinery owns it - so drop q->oom now.
