@@ -158,12 +158,38 @@ static int clock_gettime_realtime(struct timespec *tv)
 	return 0;
 }
 
+#ifdef CLOCK_PROCESS_CPUTIME_ID
+static int clock_gettime_process(struct timespec *tv)
+{
+	FILETIME creation, exit, kernel, user;
+	ULARGE_INTEGER kernelTime, userTime;
+
+	if (!GetProcessTimes(GetCurrentProcess(), &creation, &exit, &kernel, &user)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	kernelTime.LowPart = kernel.dwLowDateTime;
+	kernelTime.HighPart = kernel.dwHighDateTime;
+	userTime.LowPart = user.dwLowDateTime;
+	userTime.HighPart = user.dwHighDateTime;
+	ULONGLONG hnsTime = kernelTime.QuadPart + userTime.QuadPart;
+	tv->tv_sec = (time_t)(hnsTime / HNS_PER_SEC);
+	tv->tv_nsec = (long)((hnsTime % HNS_PER_SEC) * NS_PER_HNS);
+	return 0;
+}
+#endif
+
 static int my_clock_gettime(clockid_t type, struct timespec *tp)
 {
 	if (type == CLOCK_MONOTONIC)
 		return clock_gettime_monotonic(tp);
 	else if (type == CLOCK_REALTIME)
 		return clock_gettime_realtime(tp);
+#ifdef CLOCK_PROCESS_CPUTIME_ID
+	else if (type == CLOCK_PROCESS_CPUTIME_ID)
+		return clock_gettime_process(tp);
+#endif
 
 	errno = ENOTSUP;
 	return -1;
