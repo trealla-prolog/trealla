@@ -1544,7 +1544,7 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 		&& expected && !strcmp(expected, "memory");
 
 	// Exception handling prints and reparses the ball after unwinding to
-	// the catcher. Release the catcher's emergency reserve before doing
+	// the catcher. Release the query's emergency reserve before doing
 	// any of that work; push_catcher() rearms it after recovery is ready.
 	if (is_memory_error)
 		release_oom_reserve(q);
