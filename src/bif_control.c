@@ -1205,6 +1205,10 @@ static bool bif_iso_throw_1(query *q)
 	if (is_var(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "var");
 
+	// This may be a saved memory error rethrown by call_cleanup/2. More
+	// generally, an explicit throw can itself happen under memory pressure.
+	release_oom_reserve(q);
+
 	check_pressure(q);
 	q->fullstop = q->nl = false;
 	q->parens = q->numbervars = true;
@@ -1536,6 +1540,15 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
 
+	bool is_memory_error = !strcmp(err_type, "resource_error")
+		&& expected && !strcmp(expected, "memory");
+
+	// Exception handling prints and reparses the ball after unwinding to
+	// the catcher. Release the catcher's emergency reserve before doing
+	// any of that work; push_catcher() rearms it after recovery is ready.
+	if (is_memory_error)
+		release_oom_reserve(q);
+
 	check_pressure(q);
 
 	// An allocation failure becomes a catchable ball HERE, and from here
@@ -1552,7 +1565,7 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 	// If throw_error3()'s own allocations fail below, oom is set again -
 	// which is right: that one really is unrecoverable.
 
-	if (!strcmp(err_type, "resource_error") && expected && !strcmp(expected, "memory"))
+	if (is_memory_error)
 		q->oom = false;
 
 	q->max_depth = 10;

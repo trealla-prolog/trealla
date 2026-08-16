@@ -121,6 +121,19 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 #define REDUCE_PRESSURE 1
 #define PRESSURE_FACTOR 4
 #define TRACE_MEM 0
+#define OOM_RESERVE_SIZE (1024U * 1024U)
+
+static void rearm_oom_reserve(query *q)
+{
+	if (!q->oom_reserve)
+		q->oom_reserve = TPL_malloc(OOM_RESERVE_SIZE);
+}
+
+void release_oom_reserve(query *q)
+{
+	TPL_free(q->oom_reserve);
+	q->oom_reserve = NULL;
+}
 
 void dump_term(query *q, const char *s, const cell *c)
 {
@@ -1346,6 +1359,8 @@ bool push_catcher(query *q, enum q_retry retry)
 		ch->catchme_retry = true;
 	else if (retry == QUERY_EXCEPTION)
 		ch->catchme_exception = true;
+
+	rearm_oom_reserve(q);
 
 	return true;
 }
@@ -2625,6 +2640,7 @@ void query_destroy(query *q)
 	TPL_free(q->tmp_heap);
 	TPL_free(q->tabs);
 	TPL_free(q->unify_seen);
+	release_oom_reserve(q);
 	q->pl->q_cnt--;
 	TPL_free(q);
 }
