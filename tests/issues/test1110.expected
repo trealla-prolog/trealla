@@ -1,0 +1,13 @@
+neg_true_1: ok
+neg_1_true: ok
+compiled_true_1: ok
+compiled_1_true: ok
+compiled_fail_1: ok
+ok_fail: ok
+ok_true: ok
+ok_ff: ok
+ok_tf: ok
+ok_exist: ok
+ok_member_neg: ok
+ok_member_pos: ok
+variant_of_cyclic_term: ok

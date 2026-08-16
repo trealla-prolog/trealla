@@ -275,6 +275,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
 		make_var((*dst)++, g_anon_s, var_num);
 		make_uint((*dst)++, 0);										// Dummy value
+
+		if (is_builtin(*src)) {
+			make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
+			*dst += copy_cells(*dst, *src, (*src)->num_cells);		// Arg2
+		}
+
 		copy_term(dst, src);										// Not compile_term
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);

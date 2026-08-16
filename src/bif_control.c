@@ -485,6 +485,17 @@ static bool bif_iso_disjunction_2(query *q)
 static bool bif_iso_negation_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
+
+	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
+		CHECKED(init_tmp_heap(q));
+		cell *p1_clone = clone_term_to_tmp(q, p1, p1_ctx);
+		CHECKED(p1_clone);
+		bool status;
+
+		if (!call_check(q, p1_clone, &status, false))
+			return status;
+	}
+
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 5);
 	CHECKED(tmp);
 	pl_idx num_cells = p1->num_cells;
