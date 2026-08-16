@@ -21,7 +21,7 @@ and using a plain old Makefile.
 	Constraints: CLP(Z) via *use_module(library(clpz))*
 	Blackboarding primitives
 	Delimited continuations
-	Thread-local variant tabling
+	Tabling: thread-local variant tabling
 	Sockets library
 	...
 	Windows build is of indeterminate state ##UNSUPPORTED##
