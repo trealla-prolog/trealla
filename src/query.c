@@ -2713,6 +2713,7 @@ static query *query_create_(module *m, bool is_toplevel)
 	frame *f = GET_CURR_FRAME();
 	f->prev = CTX_NUL;
 
+	rearm_oom_reserve(q);
 	clear_write_options(q);
 	return q;
 }
