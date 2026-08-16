@@ -4123,7 +4123,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	if ((*src != '-') && parse_number(p, &src, neg)) {
 		if (neg) p->cl->cidx--;
-		SB_strcatn(p->token, tmpptr, src-tmpptr);
+
+		if (p->q && !SB_try_strcatn(p->token, tmpptr, src-tmpptr)) {
+			SB_free(p->token);
+			(void)throw_error(p->q, p->q->st.instr, p->q->st.cur_ctx,
+				"resource_error", "memory");
+			return false;
+		} else if (!p->q)
+			SB_strcatn(p->token, tmpptr, src-tmpptr);
+
 		p->srcptr = (char*)src;
 		int ch = peek_char_utf8(src);
 

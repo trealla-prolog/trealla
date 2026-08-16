@@ -669,13 +669,21 @@ static bool bif_iso_number_chars_2(query *q)
 			if (!ch)
 				return throw_error(q, head, q->latest_ctx, "syntax_error", "illegal_character");
 
-			SB_putchar(pr, ch);
+			if (!SB_try_putchar(pr, ch)) {
+				SB_free(pr);
+				return throw_error(q, q->st.instr, q->st.cur_ctx,
+					"resource_error", "memory");
+			}
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
 		}
 
-		SB_putchar(pr, '\0');
+		if (!SB_try_putchar(pr, '\0')) {
+			SB_free(pr);
+			return throw_error(q, q->st.instr, q->st.cur_ctx,
+				"resource_error", "memory");
+		}
 		parser *p = q->p;
 		parser_reset(p);
 		p->srcptr = SB_cstr(pr);
@@ -1247,13 +1255,21 @@ static bool bif_iso_number_codes_2(query *q)
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
 			}
 
-			SB_putchar(pr, val);
+			if (!SB_try_putchar(pr, val)) {
+				SB_free(pr);
+				return throw_error(q, q->st.instr, q->st.cur_ctx,
+					"resource_error", "memory");
+			}
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
 		}
 
-		SB_putchar(pr, '\0');
+		if (!SB_try_putchar(pr, '\0')) {
+			SB_free(pr);
+			return throw_error(q, q->st.instr, q->st.cur_ctx,
+				"resource_error", "memory");
+		}
 		parser *p = q->p;
 		parser_reset(p);
 		p->srcptr = SB_cstr(pr);

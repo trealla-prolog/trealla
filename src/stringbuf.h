@@ -13,6 +13,54 @@ typedef struct {
 	size_t buf_size;
 } stringbuf;
 
+static inline bool sb_try_grow(stringbuf *sb, size_t len)
+{
+	size_t offset = sb->dst - sb->buf;
+
+	if (len < (sb->buf_size - offset))
+		return true;
+
+	if (len > ((size_t)-1 - sb->buf_size - 1024))
+		return false;
+
+	size_t new_size = sb->buf_size + len + 1024;
+	char *buf = sb->buf == sb->tmpbuf
+		? TPL_malloc(new_size)
+		: TPL_realloc(sb->buf, new_size);
+
+	if (!buf)
+		return false;
+
+	if (sb->buf == sb->tmpbuf)
+		memcpy(buf, sb->tmpbuf, offset+1);
+
+	sb->buf = buf;
+	sb->dst = buf + offset;
+	sb->buf_size = new_size;
+	return true;
+}
+
+static inline bool sb_try_strcatn(stringbuf *sb, const char *src, size_t len)
+{
+	if (!sb_try_grow(sb, len))
+		return false;
+
+	memcpy(sb->dst, src, len);
+	sb->dst += len;
+	*sb->dst = '\0';
+	return true;
+}
+
+static inline bool sb_try_putchar(stringbuf *sb, int ch)
+{
+	if (!sb_try_grow(sb, MAX_BYTES_PER_CODEPOINT+1))
+		return false;
+
+	sb->dst += put_char_utf8(sb->dst, ch);
+	*sb->dst = '\0';
+	return true;
+}
+
 #define SB(pr) stringbuf pr##_buf; SB_init(pr);
 
 #define SB_init(pr) {											\
@@ -136,6 +184,9 @@ typedef struct {
 	pr##_buf.dst += put_char_utf8(pr##_buf.dst, ch);			\
 	*pr##_buf.dst = '\0'; 										\
 }
+
+#define SB_try_strcatn(pr,s,len) sb_try_strcatn(&pr##_buf, s, len)
+#define SB_try_putchar(pr,ch) sb_try_putchar(&pr##_buf, ch)
 
 #define SB_cstr(pr) (const char*) pr##_buf.buf ? pr##_buf.buf : ""
 #define SB_strcmp(pr,s) strcmp(pr##_buf.buf?pr##_buf.buf:"", s)

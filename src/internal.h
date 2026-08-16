@@ -42,10 +42,10 @@ typedef pl_atomic int64_t pl_refcnt;
 
 #include "list.h"
 #include "skiplist.h"
-#include "stringbuf.h"
 #include "threads.h"
 #include "trealla.h"
 #include "utf8.h"
+#include "stringbuf.h"
 
 #include "imath/imath.h"
 #include "imath/imrat.h"
