@@ -7,7 +7,7 @@ arguments are different terms.
 
 :- use_module(library(atts)).
 :- use_module(library(dcgs)).
-:- use_module(library(lists), [append/3, maplist/3]).
+:- use_module(library(lists), [append/3]).
 
 :- attribute dif/1.
 
@@ -43,13 +43,25 @@ vars_remove_goal([Var|Vars], Goal0) :-
     ),
     vars_remove_goal(Vars, Goal0).
 
-reinforce_goal(Goal0, Goal) :-
+% Inspect a plain copy: \=/2 on the attributed terms sees this very
+% constraint. Acyclic constraints need no remove-and-repost cycle.
+reinforce_goals([], []).
+reinforce_goals([(L \== R)|Goals0], [Goal|Goals]) :-
     Goal = (
-        term_variables(Goal0, Vars),
-        dif:vars_remove_goal(Vars, Goal0),
-        Goal0 = (L \== R),
-        dif:dif(L, R)
-    ).
+        copy_term_nat(L-R, LC-RC),
+        (   LC \= RC ->
+            term_variables(L-R, Vars),
+            dif:vars_remove_goal(Vars, L \== R)
+        ;   acyclic_term(LC),
+            acyclic_term(RC),
+            unify_with_occurs_check(LC, RC) ->
+            L \== R
+        ;   term_variables(L-R, Vars),
+            dif:vars_remove_goal(Vars, L \== R),
+            dif:dif(L, R)
+        )
+    ),
+    reinforce_goals(Goals0, Goals).
 
 append_goals([], _).
 append_goals([Var|Vars], Goals) :-
@@ -65,7 +77,7 @@ verify_attributes(Var, Value, Goals) :-
     (   get_atts(Var, +dif(Goals0)) ->
 	    term_variables(Value, ValueVars),
 	    append_goals(ValueVars, Goals0),
-        maplist(reinforce_goal, Goals0, Goals)
+        reinforce_goals(Goals0, Goals)
     ;   Goals = []
     ).
 
