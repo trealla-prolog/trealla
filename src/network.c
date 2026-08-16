@@ -578,9 +578,9 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 
 		while (!done) {
 			if (str->srclen <= 0) {
-				// FIX 7: srcbuf is char[STREAM_BUFLEN]; read at most BUFLEN-1 so the
+				// FIX 7: srcbuf is char[MAX_STREAM_BUFLEN]; read at most BUFLEN-1 so the
 				// NUL terminator below never writes one byte past the end.
-				int rlen = SSL_read((SSL*)str->sslptr, str->srcbuf, STREAM_BUFLEN - 1);
+				int rlen = SSL_read((SSL*)str->sslptr, str->srcbuf, MAX_STREAM_BUFLEN - 1);
 
 				if (rlen <= 0) {
 					if (errno == EINTR)

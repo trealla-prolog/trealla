@@ -71,8 +71,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_STREAMS 1024
 #define MAX_THREADS 2048
 #define MAX_ACTUAL_THREADS MAX_THREADS
-
-#define STREAM_BUFLEN 1024
+#define MAX_STREAM_BUFLEN 1024
 
 #define MAX_OF(a,b) (a) > (b) ? (a) : (b)
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
@@ -633,7 +632,7 @@ struct stream_ {
 	parser *p;
 
 	union {
-		char srcbuf[STREAM_BUFLEN];
+		char srcbuf[MAX_STREAM_BUFLEN];
 		struct {
 			cell *pattern, *cur_yield;
 		};
