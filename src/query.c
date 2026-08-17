@@ -2761,3 +2761,39 @@ query *query_create_task(query *q, cell *instr)
 	t->is_task = true;
 	return t;
 }
+
+// For a goal that has already been cloned and rebased into a numbering
+// of its own. query_create_subquery() copies by reference against the
+// caller's context, and a context is just a frame index - meaningless in
+// a query with its own frames, which is why a caller's bindings never
+// reached the task. Here the cells are taken as they stand and the
+// frame is sized from the goal itself, the way execute() does it for a
+// thread.
+
+query *query_create_task_rebased(query *q, cell *instr, unsigned num_vars)
+{
+	query *subq = query_create_(q->st.m, false);
+	if (!subq) return NULL;
+	subq->parent = q;
+	subq->st.fp = 1;
+	subq->top = q->top;
+	subq->is_task = true;
+
+	pl_idx num_cells = instr->num_cells;
+	cell *tmp = alloc_heap(subq, num_cells+1);
+
+	if (!tmp) {
+		query_destroy(subq);
+		return NULL;
+	}
+
+	dup_cells(tmp, instr, num_cells);
+	make_end(tmp+num_cells);
+	subq->st.instr = tmp;
+
+	frame *fdst = get_frame(subq, 0);
+	fdst->initial_slots = fdst->actual_slots = num_vars;
+	fdst->dbgen = ++q->pl->dbgen;
+	subq->st.sp = num_vars;
+	return subq;
+}

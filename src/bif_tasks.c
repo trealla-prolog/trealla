@@ -590,8 +590,38 @@ static bool bif_call_task_n(query *q)
 	if (!call_check(q, tmp2, &status, true))
 		return status;
 
-	cell *tmp = prepare_call(q, CALL_SKIP, tmp2, q->st.cur_ctx, 0);
-	query *task = query_create_task(q, tmp);
+	// A task is a query of its own, so the goal has to reach it as a
+	// term rather than as references into our frames - a context is a
+	// frame index, and means nothing over there. So: clone the assembled
+	// goal, which resolves what we have bound; then rebase it into a
+	// numbering of its own, which is also what turns the references
+	// prepare_call() just made back into plain variables.
+	//
+	// The clone has to read from somewhere other than the heap it writes
+	// to, hence staging the goal first. And it has to happen once, over
+	// the whole goal: clone_term_to_tmp() starts a new generation on each
+	// call, so cloning argument by argument renumbers each in isolation
+	// and lets unrelated variables collide.
+
+	pl_idx num_cells = tmp2->num_cells;
+	cell *staged = TPL_malloc(num_cells * sizeof(cell));
+	CHECKED(staged);
+	copy_cells(staged, tmp2, num_cells);
+
+	if (!init_tmp_heap(q)) {
+		TPL_free(staged);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+	}
+
+	cell *goal = clone_term_to_tmp(q, staged, q->st.cur_ctx);
+	TPL_free(staged);
+	CHECKED(goal);
+
+	cell *tmp = prepare_call(q, CALL_SKIP, goal, q->st.cur_ctx, 0);
+	CHECKED(tmp);
+	unsigned num_vars = rebase_term(q, tmp, 0, false);
+	query *task = query_create_task_rebased(q, tmp, num_vars);
+	CHECKED(task);
 	task->yielded = task->spawned = true;
 	CHECKED(push_task(q, task));
 	return true;
