@@ -84,6 +84,32 @@ bool do_yield_then(query *q, bool status)
 	return false;
 }
 
+// yield/0 means "let the others have a turn", not "sleep for a bit", so
+// it asks for no deadline at all and the scheduler puts the task back on
+// the ready queue as it stands.
+//
+// It needs a mark of its own rather than just a zero deadline, because
+// "yielded, no deadline" is exactly how sched_run() recognises the
+// signal send/1 raises - which is the thing await/0 is waiting for. A
+// plain yield must not look like a message.
+
+bool do_yield_now(query *q)
+{
+#ifdef __wasi__
+	if (!q->is_task && !q->pl->is_query)
+#else
+	if (!q->is_task)
+#endif
+		return true;
+
+	q->yield_at = 0;
+	q->yielded = true;
+	q->yield_now = true;
+	q->tmo_msecs = 0;
+	CHECKED(push_choice(q));
+	return false;
+}
+
 void do_yield_at(query *q, unsigned int time_in_ms)
 {
 	q->yield_at = wall_time_in_usec() / 1000;
@@ -156,6 +182,7 @@ struct scheduler_ {
 	query *io_head;
 	query **timers;						// min-heap keyed on tmo_msecs
 	unsigned timers_used, timers_size;
+	uint64_t last_poll;					// when we last looked at the descriptors
 #if USE_POLL
 	struct pollfd *pfds;				// scratch for one poll() call
 	query **pfd_owners;					// ... and who each entry belongs to
@@ -346,11 +373,13 @@ static void sched_expire_timers(scheduler *s, uint64_t now)
 	}
 }
 
-// Nothing is runnable, so sleep - until a descriptor someone is parked
-// on comes up, or until the nearest deadline, whichever is sooner. The
-// cap only bounds how long an interrupt can go unnoticed.
+// Look at the descriptors tasks are parked on, promoting whatever woke
+// or ran out of backstop. With `block` set - nothing else is runnable -
+// this sleeps until one of them comes up or until the nearest deadline,
+// whichever is sooner, the cap only bounding how long an interrupt can
+// go unnoticed. Without it this is a check that returns immediately.
 
-static void sched_wait(scheduler *s, uint64_t now)
+static void sched_wait(scheduler *s, uint64_t now, bool block)
 {
 	uint64_t deadline = s->timers_used ? s->timers[0]->tmo_msecs + 1 : 0;
 	unsigned n = 0;
@@ -392,8 +421,13 @@ static void sched_wait(scheduler *s, uint64_t now)
 	if (!deadline)
 		tmo = SCHED_MAX_SLEEP_MS;
 
+	if (!block)
+		tmo = 0;
+
 	if (!n) {
-		msleep(tmo > 0 ? tmo : 1);
+		if (block)
+			msleep(tmo > 0 ? tmo : 1);
+
 		return;
 	}
 
@@ -446,12 +480,24 @@ static bool sched_run(query *q, enum sched_mode mode)
 			if (!s->timers_used && !s->io_head)
 				break;					// nothing left to wake us
 
-			sched_wait(s, now);
+			sched_wait(s, now, true);
 			continue;
+		}
+
+		// A yield goes straight back on the ready queue, so a task that
+		// yields in a loop would keep this queue occupied and we would
+		// never reach the blocking wait above - leaving anyone parked on
+		// a descriptor unheard. Look at them anyway, without blocking,
+		// and at most once a millisecond so this stays off the hot path.
+
+		if (s->io_head && (now > s->last_poll)) {
+			s->last_poll = now;
+			sched_wait(s, now, false);
 		}
 
 		task->tmo_msecs = 0;
 		task->waiting_io = false;
+		task->yield_now = false;
 
 		if (!task->yielded || !task->st.instr || task->error) {
 			pop_task(q, task);
@@ -460,7 +506,7 @@ static bool sched_run(query *q, enum sched_mode mode)
 		}
 
 		start(task);
-		bool signal = task->yielded && !task->tmo_msecs;
+		bool signal = task->yielded && !task->tmo_msecs && !task->yield_now;
 		sched_park(s, task, now);
 
 		if (signal) {
@@ -538,7 +584,7 @@ static bool bif_yield_0(query *q)
 	if (q->retry)
 		return true;
 
-	return do_yield(q, 0);
+	return do_yield_now(q);
 }
 
 static bool bif_call_task_n(query *q)

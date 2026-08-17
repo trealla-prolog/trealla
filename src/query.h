@@ -31,6 +31,7 @@ query *query_create_task_rebased(query *q, cell *instr, unsigned num_vars);
 
 bool do_yield(query *q, int msecs);
 bool do_yield_on_stream(query *q, stream *str, bool is_write);
+bool do_yield_now(query *q);
 void do_yield_at(query *q, unsigned int time_in_ms);
 void sched_destroy(query *q);
 

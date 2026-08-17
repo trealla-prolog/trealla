@@ -96,4 +96,28 @@ main :-
 	backlog,
 	step,
 	end_wait_once,
-	timers.
+	timers,
+	yields.
+
+% yield/0 is a requeue, not a sleep: it asks for no deadline and goes
+% straight back on the ready queue. It used to be worth a millisecond
+% each - do_yield() clamped a zero delay up to 1 - so this loop alone
+% took over half a second.
+%
+% It must still not read as a message. "Yielded with no deadline" is how
+% the scheduler recognises the signal send/1 raises, so a plain yield
+% carries a mark of its own; without it, await/0 below would return for
+% every yield rather than once for the send.
+
+yielder(0) :- !, send(done).
+yielder(N) :- yield, N1 is N-1, yielder(N1).
+
+awaits(A, C) :- ( await -> A1 is A+1, awaits(A1, C) ; C = A ).
+
+yields :-
+	call_task(yielder, 2000),
+	awaits(0, C),
+	(	C =:= 1
+	->	format("yields: ok~n")
+	;	format("yields: FAILED await returned ~w times~n", [C])
+	).
