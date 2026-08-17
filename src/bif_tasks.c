@@ -32,10 +32,24 @@ static void msleep(int ms)
 #include <poll.h>
 #endif
 
-// Longest we sleep in one go. A task parked on a descriptor is woken by
-// poll(), so this only bounds how quickly we notice an interrupt.
+// Longest we sleep in one go.
+//
+// Where a signal breaks the sleep this only bounds how long an interrupt
+// can go unnoticed, and can afford to be generous: SIGINT and the
+// SIGALRM behind an expiring alarm both cut poll() and nanosleep() short
+// with EINTR, so neither waits this out.
+//
+// Where there are no signals there is nothing to cut it short.
+// interrupt_pending() polls has_expired_alarm() instead, and only gets
+// the chance once per pass round the scheduler - so on those platforms
+// this is also the worst case for how late a timeout can fire, and has
+// to stay small enough not to be noticed.
 
+#if defined(_WIN32) || defined(__wasi__)
+#define SCHED_MAX_SLEEP_MS 5
+#else
 #define SCHED_MAX_SLEEP_MS 250
+#endif
 
 // A task parked on a descriptor also carries a deadline, so that a
 // wakeup we somehow miss costs latency rather than a hang.
