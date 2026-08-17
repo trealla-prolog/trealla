@@ -14,7 +14,7 @@ test54 :-
 
 test55 :-
 	L = ["www.google.com","www.bing.com","www.duckduckgo.com"],
-	maplist(call_task(geturl),L),
+	maplist(task(geturl),L),
 	wait, writeln('Finished').
 
 test56 :-

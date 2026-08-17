@@ -1678,7 +1678,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		if (str->p->no_fp || tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1) {
 			if (q->is_task && !feof(str->fp_in) && ferror(str->fp_in)) {
 				clearerr(str->fp_in);
-				return do_yield(q, 1);
+				return do_yield_on_stream(q, str, false);
 			}
 
 			if (errno == EINTR) {
@@ -1715,7 +1715,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			if (str->fp && (str->p->no_fp || (tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1))) {
 				if (q->is_task && !feof(str->fp_in) && ferror(str->fp_in)) {
 					clearerr(str->fp_in);
-					return do_yield(q, 1);
+					return do_yield_on_stream(q, str, false);
 				}
 
 				if (errno == EINTR) {
@@ -2847,7 +2847,7 @@ static bool bif_iso_get_char_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_INPUT(q, str, ch);
@@ -2929,7 +2929,7 @@ static bool bif_iso_get_char_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_INPUT(q, str, ch);
@@ -3011,7 +3011,7 @@ static bool bif_iso_get_code_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_INPUT(q, str, ch);
@@ -3096,7 +3096,7 @@ static bool bif_iso_get_code_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_INPUT(q, str, ch);
@@ -3168,7 +3168,7 @@ static bool bif_iso_get_byte_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	str->did_getc = true;
@@ -3235,7 +3235,7 @@ static bool bif_iso_get_byte_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	str->did_getc = true;
@@ -3444,7 +3444,7 @@ static bool bif_iso_peek_char_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_PEEK(q, str, ch);
@@ -3505,7 +3505,7 @@ static bool bif_iso_peek_char_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_PEEK(q, str, ch);
@@ -3568,7 +3568,7 @@ static bool bif_iso_peek_code_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_PEEK(q, str, ch);
@@ -3633,7 +3633,7 @@ static bool bif_iso_peek_code_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	CHECK_UTF8_PEEK(q, str, ch);
@@ -3686,7 +3686,7 @@ static bool bif_iso_peek_byte_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	if (FEOF(str)) {
@@ -3740,7 +3740,7 @@ static bool bif_iso_peek_byte_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp_in);
-		return do_yield(q, 1);
+		return do_yield_on_stream(q, str, false);
 	}
 
 	if (FEOF(str)) {
@@ -4385,7 +4385,7 @@ static bool bif_read_line_to_string_2(query *q)
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp_in);
-			return do_yield(q, 1);
+			return do_yield_on_stream(q, str, false);
 		}
 
 		if (errno == EINTR) {
@@ -4443,7 +4443,7 @@ static bool bif_read_line_to_codes_2(query *q)
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp_in);
-			return do_yield(q, 1);
+			return do_yield_on_stream(q, str, false);
 		}
 
 		if (errno == EINTR) {
@@ -5338,7 +5338,7 @@ static bool bif_getline_2(query *q)
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp_in);
-			return do_yield(q, 1);
+			return do_yield_on_stream(q, str, false);
 		}
 
 		return false;
@@ -5386,7 +5386,7 @@ static bool bif_getline_3(query *q)
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp_in);
-			return do_yield(q, 1);
+			return do_yield_on_stream(q, str, false);
 		}
 
 		return false;
@@ -6061,7 +6061,7 @@ static bool bif_sys_bread_3(query *q)
 
 			if (q->is_task) {
 				clearerr(str->fp_in);
-				return do_yield(q, 1);
+				return do_yield_on_stream(q, str, false);
 			}
 		}
 

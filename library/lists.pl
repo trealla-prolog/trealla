@@ -473,7 +473,7 @@ tasklist(G, L) :-
 
 tasklist_([], _) :- wait.
 tasklist_([E|T], G) :-
-	call_task(G, E),
+	task(G, E),
 	tasklist_(T, G).
 
 tasklist(G, L1, L2) :-
@@ -481,7 +481,7 @@ tasklist(G, L1, L2) :-
 
 tasklist_([], [], _) :- wait.
 tasklist_([E1|T1], [E2|T2], G) :-
-	call_task(G, E1, E2),
+	task(G, E1, E2),
 	tasklist_(T1, T2, G).
 
 tasklist(G, L1, L2, L3) :-
@@ -489,7 +489,7 @@ tasklist(G, L1, L2, L3) :-
 
 tasklist_([], [], [], _) :- wait.
 tasklist_([E1|T1], [E2|T2], [E3|T3], G) :-
-	call_task(G, E1, E2, E3),
+	task(G, E1, E2, E3),
 	tasklist_(T1, T2, T3, G).
 
 tasklist(G, L1, L2, L3, L4) :-
@@ -497,7 +497,7 @@ tasklist(G, L1, L2, L3, L4) :-
 
 tasklist_([], [], [], [], _) :- wait.
 tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], G) :-
-	call_task(G, E1, E2, E3, E4),
+	task(G, E1, E2, E3, E4),
 	tasklist_(T1, T2, T3, T4, G).
 
 tasklist(G, L1, L2, L3, L4, L5) :-
@@ -505,7 +505,7 @@ tasklist(G, L1, L2, L3, L4, L5) :-
 
 tasklist_([], [], [], [], [], _) :- wait.
 tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], G) :-
-	call_task(G, E1, E2, E3, E4, E5),
+	task(G, E1, E2, E3, E4, E5),
 	tasklist_(T1, T2, T3, T4, T5, G).
 
 tasklist(G, L1, L2, L3, L4, L5, L6) :-
@@ -513,7 +513,7 @@ tasklist(G, L1, L2, L3, L4, L5, L6) :-
 
 tasklist_([], [], [], [], [], [], _) :- wait.
 tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], G) :-
-	call_task(G, E1, E2, E3, E4, E5, E6),
+	task(G, E1, E2, E3, E4, E5, E6),
 	tasklist_(T1, T2, T3, T4, T5, T6, G).
 
 tasklist(G, L1, L2, L3, L4, L5, L6, L7) :-
@@ -521,7 +521,7 @@ tasklist(G, L1, L2, L3, L4, L5, L6, L7) :-
 
 tasklist_([], [], [], [], [], [], [], _) :- wait.
 tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
-	call_task(G, E1, E2, E3, E4, E5, E6, E7),
+	task(G, E1, E2, E3, E4, E5, E6, E7),
 	tasklist_(T1, T2, T3, T4, T5, T6, T7, G).
 
 :- meta_predicate(tasklist(1, ?)).
