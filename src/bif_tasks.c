@@ -565,20 +565,13 @@ static bool bif_call_task_n(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
-	// Clone rather than append: append_to_tmp() copies variable cells by
-	// reference, and those references point into this query's frames,
-	// which the task - a query of its own - cannot resolve. A bound
-	// variable inside a compound therefore reached the task unbound, so
-	// call_task(p, '$future'(N)) with N bound arrived as '$future'(_).
-	// send/1 crosses the same boundary and already clones.
-
 	int arity = p1->arity, args = 1, xarity = q->st.instr->arity;
 	CHECKED(init_tmp_heap(q));
-	CHECKED(clone_term_to_tmp(q, p1, p1_ctx));
+	CHECKED(append_to_tmp(q, p1, p1_ctx));
 
 	while (args++ < xarity) {
 		GET_NEXT_ARG(p2,any);
-		CHECKED(clone_term_to_tmp(q, p2, p2_ctx));
+		CHECKED(append_to_tmp(q, p2, p2_ctx));
 		arity++;
 	}
 
