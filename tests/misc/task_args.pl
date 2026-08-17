@@ -1,4 +1,4 @@
-% call_task/N must pass its arguments to the task by value.
+% task/N must pass its arguments to the task by value.
 %
 % The task is a query of its own, with its own frames. Arguments used to
 % be copied with append_to_tmp(), which copies variable cells by
@@ -6,13 +6,13 @@
 % frames, which the task cannot resolve. A bound variable sitting inside
 % a compound therefore arrived unbound:
 %
-%     N = 7, call_task(p, '$future'(N))   ==>  task sees '$future'(_)
+%     N = 7, task(p, '$future'(N))   ==>  task sees '$future'(_)
 %
 % A term written out with its values already in place survived, which is
 % why this went unnoticed - only a variable *reference* was lost, not a
 % value. library(concurrent) hit it squarely, since future/3 builds
 % '$future'(N) with N bound, and left a NOTE about "a bug to do with
-% passing variables in call_task/1" plus a write/read round trip through
+% passing variables in task/1" plus a write/read round trip through
 % an atom to work around it. send/1 crosses the same query boundary and
 % has always cloned.
 %
@@ -42,13 +42,13 @@ main :-
 	N = 7,
 	A = f(42),
 	Inner = g(N),
-	call_task(check, int,       42,           42),
-	call_task(check, atm,       foo,          foo),
-	call_task(check, lit,       f(42),        f(42)),
-	call_task(check, via_var,   f(42),        A),
-	call_task(check, bound_var, '$future'(7), '$future'(N)),
-	call_task(check, nested,    h(g(7),7),    h(Inner,N)),
-	call_task(check, in_list,   [7,f(42),x],  [N,A,x]),
+	task(check, int,       42,           42),
+	task(check, atm,       foo,          foo),
+	task(check, lit,       f(42),        f(42)),
+	task(check, via_var,   f(42),        A),
+	task(check, bound_var, '$future'(7), '$future'(N)),
+	task(check, nested,    h(g(7),7),    h(Inner,N)),
+	task(check, in_list,   [7,f(42),x],  [N,A,x]),
 	wait,
 	drain(L),
 	maplist(report, L),
@@ -64,6 +64,6 @@ shared(X, Y) :- X = 1, (Y == 1 -> send(shared-ok) ; send(shared-'came apart')).
 ingoal(G, X) :- call(G), (X == 7 -> send(goal_var-ok) ; send(goal_var-'came apart')).
 
 vars :-
-	call_task(alias, _, _), wait, drain(L1), maplist(report, L1),
-	call_task(shared, Z, Z), wait, drain(L2), maplist(report, L2),
-	G = (W = 7), call_task(ingoal, G, W), wait, drain(L3), maplist(report, L3).
+	task(alias, _, _), wait, drain(L1), maplist(report, L1),
+	task(shared, Z, Z), wait, drain(L2), maplist(report, L2),
+	G = (W = 7), task(ingoal, G, W), wait, drain(L3), maplist(report, L3).

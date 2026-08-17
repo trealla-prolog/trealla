@@ -6264,7 +6264,7 @@ static void load_properties(module *m)
 		format_property(m, tmpbuf, sizeof(tmpbuf), "call", i, metabuf, false); SB_strcat(pr, tmpbuf);
 	}
 
-	for (int i = 2; i <= 7; i++) {
+	for (int i = 2; i <= 8; i++) {
 		char metabuf[1024];
 		char *dst2 = metabuf;
 		dst2 += snprintf(dst2, sizeof(metabuf), "meta_predicate(task(%d", i-1);
