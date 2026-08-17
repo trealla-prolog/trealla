@@ -21,7 +21,7 @@ future(Template, Goal, F) :-
 	assertz(F),
 	Task0 = ((Goal -> (retract(F), send([F-Template])) ; (retract(F), fail))),
 	copy_term(Task0, Task),
-	task(callgoal_, Task, F).
+	call_task(callgoal_, Task, F).
 
 :- meta_predicate(future(-,0,?)).
 :- help(future(+term,+callable,?list), [iso(false)]).
@@ -93,10 +93,10 @@ strip_prefix_([[_-V]|Rest], Init, L) :-
 	strip_prefix_(Rest, [V|Init], L).
 
 % The goal goes to the task as a term. It used to be written out as an
-% atom and read back here, because task/N passed variable cells by
+% atom and read back here, because call_task/N passed variable cells by
 % reference and a bound variable inside a compound reached the task
 % unbound - '$future'(N) among them, which is this predicate's second
-% argument. task/N clones and rebases now, so the round trip is
+% argument. call_task/N clones and rebases now, so the round trip is
 % gone, and with it the requirement that a goal survive being written
 % and re-read.
 

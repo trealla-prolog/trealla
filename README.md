@@ -1024,18 +1024,18 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 | Predicate | Template | |
 |---|---|---|
 | `await/0` | `await` |  |
+| `call_task/1` | `call_task(:callable)` |  |
+| `call_task/2` | `call_task(:callable,?term)` |  |
+| `call_task/3` | `call_task(:callable,?term,?term)` |  |
+| `call_task/4` | `call_task(:callable,?term,?term,?term)` |  |
+| `call_task/5` | `call_task(:callable,?term,?term,?term,?term)` |  |
+| `call_task/6` | `call_task(:callable,?term,?term,?term,?term,?term)` |  |
+| `call_task/7` | `call_task(:callable,?term,?term,?term,?term,?term,?term)` |  |
+| `call_task/8` | `call_task(:callable,?term,?term,?term,?term,?term,?term,?term)` |  |
 | `end_wait/0` | `end_wait` |  |
 | `fork/0` | `fork` |  |
 | `recv/1` | `recv(?term)` |  |
 | `send/1` | `send(+term)` |  |
-| `task/1` | `task(:callable)` |  |
-| `task/2` | `task(:callable,?term)` |  |
-| `task/3` | `task(:callable,?term,?term)` |  |
-| `task/4` | `task(:callable,?term,?term,?term)` |  |
-| `task/5` | `task(:callable,?term,?term,?term,?term)` |  |
-| `task/6` | `task(:callable,?term,?term,?term,?term,?term)` |  |
-| `task/7` | `task(:callable,?term,?term,?term,?term,?term,?term)` |  |
-| `task/8` | `task(:callable,?term,?term,?term,?term,?term,?term,?term)` |  |
 | `wait/0` | `wait` |  |
 | `yield/0` | `yield` |  |
 
@@ -1902,7 +1902,7 @@ Co-operative multitasking is available in the form of light-weight
 coroutines that run until they yield either explicitly or implicitly
 (when waiting on an event of some kind using pol() where available).
 
-	task/[1-n]              # concurrent form of call/1-n
+	call_task/[1-n]	        # concurrent form of call/1-n
 	tasklist/[2-8]          # concurrent form of maplist/1-n
 
 An example:

@@ -6222,7 +6222,7 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "once", 1, "meta_predicate(once(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))", false); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "task", 1, "meta_predicate(task(0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "call_task", 1, "meta_predicate(call_task(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findnsols", 4, "meta_predicate(findnsols(?,?,0,-))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate(((:)|(+)))", false); SB_strcat(pr, tmpbuf);
@@ -6267,14 +6267,14 @@ static void load_properties(module *m)
 	for (int i = 2; i <= 8; i++) {
 		char metabuf[1024];
 		char *dst2 = metabuf;
-		dst2 += snprintf(dst2, sizeof(metabuf), "meta_predicate(task(%d", i-1);
+		dst2 += snprintf(dst2, sizeof(metabuf), "meta_predicate(call_task(%d", i-1);
 
 		for (int j = 1; j < i; j++)
 			dst2 += snprintf(dst2, sizeof(metabuf)-(dst2-metabuf), ",?");
 
 
 		snprintf(dst2, sizeof(metabuf)-(dst2-metabuf), "))");
-		format_property(m, tmpbuf, sizeof(tmpbuf), "task", i, metabuf, false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), "call_task", i, metabuf, false); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {

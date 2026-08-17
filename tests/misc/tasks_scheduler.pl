@@ -30,14 +30,14 @@ drain_(Acc, Sum) :-
 % Tasks run in the order they were spawned.
 
 fair_order :-
-	forall(between(1,10,N), task(emit,N)),
+	forall(between(1,10,N), call_task(emit,N)),
 	wait, nl.
 
 % Well past the old 64-task cap: every task must get its turn, not just
 % the first 64 to be scanned.
 
 backlog :-
-	forall(between(1,200,N), task(square,N)),
+	forall(between(1,200,N), call_task(square,N)),
 	wait, drain(Sum),
 	Expect is (200*201*401)//6,
 	(	Sum =:= Expect
@@ -49,7 +49,7 @@ backlog :-
 % are left - which is what makes it usable as a loop condition.
 
 step :-
-	forall(between(1,8,N), task(square,N)),
+	forall(between(1,8,N), call_task(square,N)),
 	step_(0, Count, 0, Sum),
 	(	Count =:= 8, Sum =:= 204
 	->	format("step: ok~n")
@@ -73,10 +73,10 @@ step_(C0, C, S0, S) :-
 stopper :- end_wait.
 
 end_wait_once :-
-	task(stopper),
-	task(square, 9),
+	call_task(stopper),
+	call_task(square, 9),
 	wait,
-	task(square, 10),
+	call_task(square, 10),
 	wait,
 	drain(Sum),
 	(	Sum =:= 181
@@ -88,7 +88,7 @@ end_wait_once :-
 % 50ms so this does not depend on a lightly loaded machine.
 
 timers :-
-	forall(member(N,[3,1,2]), task(napper,N)),
+	forall(member(N,[3,1,2]), call_task(napper,N)),
 	wait, nl.
 
 main :-
@@ -115,7 +115,7 @@ yielder(N) :- yield, N1 is N-1, yielder(N1).
 awaits(A, C) :- ( await -> A1 is A+1, awaits(A1, C) ; C = A ).
 
 yields :-
-	task(yielder, 2000),
+	call_task(yielder, 2000),
 	awaits(0, C),
 	(	C =:= 1
 	->	format("yields: ok~n")
