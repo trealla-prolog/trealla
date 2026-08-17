@@ -554,7 +554,10 @@ static bool bif_iso_catch_3(query *q)
 
 	if ((q->retry == QUERY_EXCEPTION) || (q->retry == QUERY_ABORT)) {
 		unsigned is_abort = q->retry == QUERY_ABORT;
-		check_pressure(q);
+
+		// No check_pressure() here: it would move q->slots, and the ball
+		// and recovery goal are reached through them. See throw_error().
+
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,any);
 		q->retry = QUERY_OK;
@@ -1220,7 +1223,9 @@ static bool bif_iso_throw_1(query *q)
 	// generally, an explicit throw can itself happen under memory pressure.
 	release_oom_reserve(q);
 
-	check_pressure(q);
+	// No check_pressure() here: it would move q->slots out from under
+	// p1, which print_term_to_strbuf() reads just below. See throw_error().
+
 	q->fullstop = q->nl = false;
 	q->parens = q->numbervars = true;
 	//q->is_dump_vars = true;
@@ -1560,7 +1565,17 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 	if (is_memory_error)
 		release_oom_reserve(q);
 
-	check_pressure(q);
+	// No check_pressure() here. It reallocs q->slots, and `c` is very
+	// often a pointer into that array - deref() hands back &e->c for a
+	// bound variable - so trimming the slots left the cell we are about
+	// to build the ball from dangling. ASan caught it as a
+	// heap-use-after-free in throw_error3() below, reading the tag of a
+	// cell that check_pressure() had just moved, on nothing more exotic
+	// than must_be/2 failing during goal expansion at startup.
+	//
+	// Same reasoning at the other two throw sites in this file. Pressure
+	// is still relieved from the main loop in start(), where no caller is
+	// holding a cell across the call.
 
 	// An allocation failure becomes a catchable ball HERE, and from here
 	// on the ordinary exception machinery owns it - so drop q->oom now.
