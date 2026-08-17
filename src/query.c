@@ -2606,6 +2606,8 @@ void query_destroy(query *q)
 		q->tasks = task;
 	}
 
+	sched_destroy(q);
+
 	// Choicepoints still live at teardown hold undo items of their own.
 	// Draining q->undo alone left them behind, so a query that halted -
 	// or simply succeeded - with choicepoints outstanding leaked

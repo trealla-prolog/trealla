@@ -214,7 +214,7 @@ static bool bif_sys_accept_2(query *q)
 
 	if (fd == -1) {
 		if (q->is_task)
-			return do_yield(q, 1);
+			return do_yield_on_stream(q, str, false);
 
 		return false;
 	}

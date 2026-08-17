@@ -331,6 +331,7 @@ typedef struct choice_ choice;
 typedef struct run_state_ run_state;
 typedef struct prolog_flags_ prolog_flags;
 typedef struct builtins_ builtins;
+typedef struct scheduler_ scheduler;
 
 // Using a fixed-size cell allows having arrays of cells, which is
 // basically what a Term is. A compound is a variable length array of
@@ -773,6 +774,17 @@ struct query_ {
 	frame **frame_pages;
 	slot *save_e;
 	query *tasks;
+
+	// Task scheduling, see bif_tasks.c. The first group is only used by
+	// a query that has spawned tasks, the second only by a task itself.
+
+	scheduler *sched;					// allocated lazily by push_task()
+	query *sched_next;					// link in the ready FIFO or the io list
+	unsigned heap_idx;					// our slot in the parent's timer heap
+	int wait_fd;						// descriptor we parked on, if waiting_io
+	short wait_events;					// ... and what we are waiting for
+	uint8_t sched_where;				// which of the three we are queued on
+
 	skiplist *vars;
 	thread *thread_ptr;
 	var_item *tabs;
@@ -857,6 +869,7 @@ struct query_ {
 	bool noderef:1;
 	bool double_quotes:1;
 	bool end_wait:1;
+	bool waiting_io:1;
 	bool did_unhandled_exception:1;
 	bool access_private:1;
 	bool in_retract:1;
