@@ -3614,7 +3614,7 @@ static bool bif_statistics_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	}
 
-	return false;
+	return throw_error(q, p1, p1_ctx, "domain_error", "statistics_key");
 }
 
 static bool bif_split_string_4(query *q)
