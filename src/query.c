@@ -2341,11 +2341,6 @@ void do_cleanup(query *q, cell *c, pl_ctx c_ctx)
 
 static bool consultall(query *q, cell *l, pl_ctx l_ctx)
 {
-	if (is_string(l)) {
-		do_load_file(q, l, l_ctx);
-		return true;
-	}
-
 	if (is_cyclic_term(q, l, l_ctx))
 		return throw_error(q, l, l_ctx, "type_error", "callable");
 
@@ -2356,7 +2351,7 @@ static bool consultall(query *q, cell *l, pl_ctx l_ctx)
 		h = deref(q, h, l_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 
-		if (is_iso_list(h)) {
+		if (is_list(h)) {
 			if (consultall(q, h, h_ctx) != true)
 				return false;
 		} else {
