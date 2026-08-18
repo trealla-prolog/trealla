@@ -147,7 +147,8 @@ learn who sent a datagram or to address one to a specific peer. That is the enti
 point of the UDP API.
 
 *Needed:* two bifs, `'$udp_recv'(+Stream, -Data, -Host, -Port, +Opts)` and
-`'$udp_send'(+Stream, +Data, +Host, +Port, +Opts)`. Small and self-contained.
+`'$udp_send'(+Stream, +Data, +Host, +Port, +Opts)`. **Both now exist** — added in
+`network.c`/`bif_net.c`, loopback-verified in both directions.
 
 **Socket options with no plumbing:** `broadcast`, `bindtodevice/1`, `sndbuf/1`,
 `ip_add_membership/1,2,3`, `ip_drop_membership/1,2,3`. All need `setsockopt` calls
@@ -167,8 +168,7 @@ Provide `tcp_host_to_address/2` only, and even that needs a resolver bif:
 `'$client'`'s two output atoms are populated from URL parsing, not DNS
 **[checked]**, so there is no way to resolve a name without opening a connection.
 
-*Needed:* `'$host_address'(+Host, -IpAtom)` wrapping `getaddrinfo` — which
-`network.c` already calls **[checked]**, so this is a small extraction.
+*Needed:* `'$host_address'(+Host, -IpAtom)` wrapping `getaddrinfo`. **Now exists.**
 
 ---
 
@@ -247,11 +247,9 @@ needing a real network must be loopback-only.
 
 ## 9. Open questions
 
-1. **Ephemeral ports.** SWI's `tcp_bind(S, Addr)` with `Addr` unbound binds to port 0
-   and unifies `Addr` with the actual port. `'$server'` accepts a var port
-   **[checked]** but I could not confirm it unifies the bound port back. If it does
-   not, `tcp_bind/2` cannot report the port and a bif change is needed. **Check this
-   first — it decides whether the deferred-bind design is viable at all.**
+1. ~~**Ephemeral ports.**~~ **Answered: `'$server'` with a var port does bind and
+   report the port back.** So `tcp_bind(S, Addr)` with `Addr` unbound can work, and
+   the deferred-bind design of §2 is viable.
 2. **Handle table and threads.** Blackboard or dynamic predicate? Needs to survive
    concurrent socket creation, and handles must not leak on thread exit.
 3. **`tcp_fcntl` non-blocking.** Map onto `set_stream(S, timeout(0))`, or refuse?
@@ -264,6 +262,30 @@ needing a real network must be loopback-only.
 
 ---
 
+## 9a. `tcp_bind/2` cannot restrict to an interface
+
+Found while building the helpers, and it constrains §3 rather than §4.
+
+`tpl_server()` passes **NULL** as the host to `getaddrinfo` **[checked]** — it
+ignores the hostname it was given and binds the wildcard address. Two consequences:
+
+- `tcp_bind(S, '127.0.0.1':Port)` cannot actually restrict the socket to loopback.
+  The address is parsed, the port is honoured, the host is discarded. `library(socket)`
+  should either document this or reject a non-wildcard bind address rather than
+  silently listening on every interface — the silent version is a security-relevant
+  surprise.
+- With `AF_UNSPEC` and a NULL host, `getaddrinfo` resolves IPv6 first, so a server
+  socket is normally **AF_INET6**. Peers therefore arrive as v4-mapped addresses
+  (`::ffff:127.0.0.1`), and `library(socket)` must normalise those to `ip(A,B,C,D)`
+  before handing them to callers who expect SWI's IPv4 term.
+
+Both are pre-existing `tpl_server` behaviour, not new. Fixing the first means
+letting `tpl_server` honour its hostname argument, which is a small change but
+changes existing behaviour for `library/sockets.pl` too — out of scope here, worth
+its own decision.
+
+---
+
 ## 10. Phasing
 
 | Phase | Change | Risk |
@@ -273,7 +295,7 @@ needing a real network must be loopback-only.
 | 2 | TCP client path: `tcp_socket/1`, `tcp_connect/2,3,4`, `tcp_open_socket/2,3`, `tcp_close_socket/1`. Loopback test against `library/sockets.pl`'s server. | Low |
 | 3 | TCP server path: `tcp_bind/2`, `tcp_listen/2`, `tcp_accept/3`, `tcp_setopt/2`, `tcp_getopt/2`. Full round-trip test. | Medium — where the deferred-bind seam bites |
 | 4 | Unix domain sockets, `gethostname/1`, `ip_name/2`, `tcp_host_to_address/2` (needs the resolver bif). | Low |
-| 5 | UDP — only after the two bifs exist. | Medium |
+| 5 | UDP — the two bifs now exist (`'$udp_recv'/5`, `'$udp_send'/5`), so this is Prolog-side only: `as(Type)`, `encoding`, address normalisation. | Low |
 | 6 | Optional: SOCKS, proxy hooks. | Low, opt-in |
 
 Phases 1–3 are the useful core: they cover what almost all SWI socket code actually
