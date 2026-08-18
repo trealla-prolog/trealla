@@ -99,8 +99,9 @@ int tpl_domain_connect(const char *name, bool udp)
     strncpy(addr.sun_path, name, sizeof(addr.sun_path) - 1);
 
 	if (connect(fd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1) {
-		//perror("connect");
+		int save_errno = errno;
 		close(fd);
+		errno = save_errno;
 		return -1;
 	}
 
@@ -128,8 +129,9 @@ int tpl_domain_server(const char *name, bool udp)
     int rc = bind(fd, (struct sockaddr *) &server_sockaddr, sizeof(server_sockaddr));
 
     if (rc == -1) {
-		//perror("bind");
+		int save_errno = errno;
 		close(fd);
+		errno = save_errno;
 		return -1;
 	}
 

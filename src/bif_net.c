@@ -23,6 +23,16 @@ static void parse_host(const char *src, char hostname[1024], char path[4096], un
 	} else if (!strncmp(src, "unix://", 7)) {
 		src += 7;
 		*domain = 1;
+
+		// The remainder is a filesystem path, not host/port/path. Take it
+		// verbatim - the parsing below would split it at the first slash
+		// and then strip the leading one, silently turning an absolute
+		// path into a relative one.
+
+		snprintf(path, 4096, "%s", src);
+		hostname[0] = '\0';
+		*port = 0;
+		return;
 	}
 
 	if (*src == ':')
@@ -159,7 +169,9 @@ static bool bif_sys_server_3(query *q)
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	TPL_free(filename);
-	int fd = tpl_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
+	int fd = domain
+		? tpl_domain_server(path, udp)
+		: tpl_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
 
 	// The stream alias has always been "localhost" when unspecified.
 
@@ -681,7 +693,9 @@ static bool bif_sys_client_5(query *q)
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	TPL_free(filename);
 
-	int fd = tpl_connect(hostname, port, udp, nodelay);
+	int fd = domain
+		? tpl_domain_connect(path, udp)
+		: tpl_connect(hostname, port, udp, nodelay);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "socket_error", tpl_socket_errname(errno));

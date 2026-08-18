@@ -1,6 +1,6 @@
-% library(socket) - the SWI-compatible interface. Phases 2 and 3 of
+% library(socket) - the SWI-compatible interface. Phases 2, 3 and 4 of
 % docs/socket-swi-design.md: address conversion, the handle lifecycle,
-% and the TCP client and server paths.
+% the TCP client and server paths, and unix domain sockets.
 %
 % The client is checked against library(sockets)'s server rather than
 % against itself, so a bug in the handle layer cannot cancel out. The
@@ -94,6 +94,34 @@ main :-
     t(rebind, (tcp_socket(P3), tcp_bind(P3, '127.0.0.1':3404),
                     catch(tcp_bind(P3, '127.0.0.1':3405), error(permission_error(bind,_,_),_), true),
                     tcp_close_socket(P3))),
+
+    % unix domain sockets. The path is fixed, so as with the ports above a
+    % concurrent run of this suite would collide.
+    catch(delete_file('/tmp/trealla_socket_test.sock'), _, true),
+    t(unix_roundtrip, (
+        unix_domain_socket(Uv), tcp_bind(Uv, '/tmp/trealla_socket_test.sock'),
+        tcp_listen(Uv, 5),
+        unix_domain_socket(Uc), tcp_connect(Uc, '/tmp/trealla_socket_test.sock'),
+        tcp_open_socket(Uc, UCS), format(UCS, "ping~n", []), flush_output(UCS),
+        tcp_accept(Uv, USl, _),
+        tcp_open_socket(USl, USS), getline(USS, U1), U1 == "ping",
+        format(USS, "pong~n", []), flush_output(USS),
+        getline(UCS, U2), U2 == "pong",
+        tcp_close_socket(USl), tcp_close_socket(Uc), tcp_close_socket(Uv))),
+
+    % it must be a real AF_UNIX socket, not a TCP one: the bind leaves a
+    % socket inode behind. This is what regressed silently before - the
+    % round-trip above passes either way.
+    t(unix_is_real, (
+        unix_domain_socket(Uf), tcp_bind(Uf, '/tmp/trealla_socket_test2.sock'),
+        catch(delete_file('/tmp/trealla_socket_test2.sock'), _, fail),
+        tcp_close_socket(Uf))),
+
+    t(unix_missing, (unix_domain_socket(Un),
+        catch(tcp_connect(Un, '/tmp/no_such_dir_xyzzy/x.sock'),
+              error(socket_error(enoent,_), tcp_connect/2), true),
+        tcp_close_socket(Un))),
+    catch(delete_file('/tmp/trealla_socket_test.sock'), _, true),
 
     (  saw_failure
     -> format("socket: FAILURES above~n")

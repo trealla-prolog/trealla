@@ -186,6 +186,27 @@ Provide `tcp_host_to_address/2` only, and even that needs a resolver bif:
 
 *Needed:* `'$host_address'(+Host, -IpAtom)` wrapping `getaddrinfo`. **Now exists.**
 
+**Unix domain sockets were not actually implemented** — found at phase 4.
+`parse_host` recognised the `unix://` prefix and set a `domain` flag that
+**nothing ever read**, and `tpl_domain_server`/`tpl_domain_connect` were fully
+written but had *zero callers*. `library(sockets)`'s documented `unix(Path)`
+support therefore opened an ordinary TCP socket on the wildcard address, and
+because that works, the substitution was invisible: data flowed, round-trips
+passed, and no socket file was ever created.
+
+Two things needed fixing:
+
+- the `domain` flag is now read, dispatching to `tpl_domain_*`;
+- `parse_host` takes the remainder of a `unix://` URL verbatim. The general
+  path would split it at the first slash and then strip the leading one — a
+  rule that suits `http://host/path` but silently turned `/tmp/x.sock` into
+  the relative `tmp/x.sock`.
+
+The regression test asserts a **socket inode exists at the path**, not merely
+that a round-trip succeeds — the round-trip passes on the broken build too.
+Note that `exists_file/1` is false for a socket, so the check deletes it
+instead.
+
 ---
 
 ## 5. Errors
@@ -323,7 +344,7 @@ those to `ip(A,B,C,D)` before handing them to callers expecting SWI's IPv4 term.
 | 1 | Handle representation, state table, address conversion, `socket_error` wrapper. No I/O yet; unit-testable on its own. | Low |
 | 2 | TCP client path: `tcp_socket/1`, `tcp_connect/2,3,4`, `tcp_open_socket/2,3`, `tcp_close_socket/1`. Loopback test against `library/sockets.pl`'s server. | Low |
 | 3 | **Done.** TCP server path: `tcp_bind/2`, `tcp_listen/2`, `tcp_accept/3`. Full round-trip test. Materialisation moved to bind — see §2. Errno now carried out of `tpl_server`/`tpl_connect` so failures name their cause — see §5. |
-| 4 | Unix domain sockets, `gethostname/1`, `ip_name/2`, `tcp_host_to_address/2` (needs the resolver bif). | Low |
+| 4 | **Done.** Unix domain sockets - which turned out to need the C wiring above, not just Prolog. `gethostname/1`, `ip_name/2`, `tcp_host_to_address/2` had already landed with phase 1. |
 | 5 | UDP — the two bifs now exist (`'$udp_recv'/5`, `'$udp_send'/5`), so this is Prolog-side only: `as(Type)`, `encoding`, address normalisation. | Low |
 | 6 | Optional: SOCKS, proxy hooks. | Low, opt-in |
 
