@@ -2393,6 +2393,13 @@ static bool unload_realfile(module *m, const char *filename)
 	return true;
 }
 
+// Search order for a consulted name that may or may not carry an
+// extension. ".pl" leads and the bare name follows it.
+
+static const char *g_src_suffixes[] = {
+	".pl", "", ".pro", ".prolog", ".p", ".P"
+};
+
 bool unload_file(module *m, const char *filename)
 {
 	size_t len = strlen(filename);
@@ -2414,15 +2421,21 @@ bool unload_file(module *m, const char *filename)
 	char *savebuf = strdup(tmpbuf);
 	char *realbuf = NULL;
 
-	if (!(realbuf = realpath(tmpbuf, NULL))) {
-		strcpy(tmpbuf, savebuf);
-		strcat(tmpbuf, ".pl");
+	// Same order as load_file, or unloading `f` would not find the
+	// `f.pl` that consulting `f` actually loaded.
 
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			TPL_free(savebuf);
-			TPL_free(tmpbuf);
-			return false;
-		}
+	for (unsigned i = 0; i < (sizeof(g_src_suffixes) / sizeof(g_src_suffixes[0])); i++) {
+		strcpy(tmpbuf, savebuf);
+		strcat(tmpbuf, g_src_suffixes[i]);
+
+		if ((realbuf = realpath(tmpbuf, NULL)))
+			break;
+	}
+
+	if (!realbuf) {
+		TPL_free(savebuf);
+		TPL_free(tmpbuf);
+		return false;
 	}
 
 	TPL_free(savebuf);
@@ -2594,53 +2607,20 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 
 	char *savebuf = strdup(tmpbuf);
 	char *realbuf = NULL;
-	strcpy(tmpbuf, filename);
 
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			realbuf = realpath(tmpbuf, NULL);
-		}
-	}
+	// ".pl" is tried before the bare name. Quintus and SICStus both
+	// specified it that way and every system since has followed, so
+	// consulting `f` where both `f.pl` and an executable `f` exist must
+	// pick the source file - see issue #1114.
+	//
+	// The empty suffix in the middle is the bare name; the rest are ours.
 
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			strcat(tmpbuf, ".pl");
-			realbuf = realpath(tmpbuf, NULL);
-		}
-	}
+	for (unsigned i = 0; i < (sizeof(g_src_suffixes) / sizeof(g_src_suffixes[0])); i++) {
+		strcpy(tmpbuf, savebuf);
+		strcat(tmpbuf, g_src_suffixes[i]);
 
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			strcat(tmpbuf, ".pro");
-			realbuf = realpath(tmpbuf, NULL);
-		}
-	}
-
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			strcat(tmpbuf, ".prolog");
-			realbuf = realpath(tmpbuf, NULL);
-		}
-	}
-
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			strcat(tmpbuf, ".p");
-			realbuf = realpath(tmpbuf, NULL);
-		}
-	}
-
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			strcat(tmpbuf, ".P");
-			realbuf = realpath(tmpbuf, NULL);
-		}
+		if ((realbuf = realpath(tmpbuf, NULL)))
+			break;
 	}
 
 	TPL_free(savebuf);
