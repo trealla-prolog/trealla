@@ -2404,7 +2404,8 @@ bool start(query *q)
 			}
 		}
 
-		if (!is_callable(q->st.instr)) {
+		if (!is_callable(q->st.instr)
+			&& (q->run_init || !is_list(q->st.instr))) {
 			cell *p1 = deref(q, q->st.instr, q->st.cur_ctx);
 			pl_ctx p1_ctx = q->latest_ctx;
 
@@ -2480,7 +2481,7 @@ bool start(query *q)
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
-		} else if (!q->run_init && is_iso_list(q->st.instr)) {
+		} else if (!q->run_init && is_list(q->st.instr)) {
 			if (!consultall(q, q->st.instr, q->st.cur_ctx)) {
 				Trace(q, q->st.instr, q->st.cur_ctx, FAIL);
 				q->retry = QUERY_RETRY;
