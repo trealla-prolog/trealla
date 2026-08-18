@@ -370,10 +370,10 @@ those to `ip(A,B,C,D)` before handing them to callers expecting SWI's IPv4 term.
 | 3 | **Done.** TCP server path: `tcp_bind/2`, `tcp_listen/2`, `tcp_accept/3`. Full round-trip test. Materialisation moved to bind — see §2. Errno now carried out of `tpl_server`/`tpl_connect` so failures name their cause — see §5. |
 | 4 | **Done.** Unix domain sockets - which turned out to need the C wiring above, not just Prolog. `gethostname/1`, `ip_name/2`, `tcp_host_to_address/2` had already landed with phase 1. |
 | 5 | **Done.** UDP: `udp_receive/4`, `udp_send/4`, `as(Type)`, `max_message_size`, address normalisation. Not Prolog-side only after all — `encoding(octet)` needed C, see §4. |
-| 6 | Optional: SOCKS, proxy hooks. | Low, opt-in |
+| 6 | **Dropped.** SOCKS and proxy hooks — see §11. |
 
 Phases 1–3 are the useful core: they cover what almost all SWI socket code actually
-does. Phases 4–6 are completeness.
+does. Phases 4–5 are completeness and are done. Phase 6 was dropped.
 
 ---
 
@@ -385,3 +385,14 @@ does. Phases 4–6 are completeness.
   does not exist here either.
 - **GUI dispatch.** `tcp_setopt(S, dispatch(_))` accepted and ignored.
 - **Replacing `library/sockets.pl`.** It stays. This is an addition, not a migration.
+- **SOCKS and HTTP proxies** (was phase 6). The `proxy_for_url/3` and `try_proxy/4`
+  hooks would be small — roughly 60–80 lines, no new C, since `multifile` works and
+  socket streams do byte-exact I/O via `set_stream(type(binary))` with
+  `put_byte`/`get_byte` (verified; note `peek_byte/2` raises `permission_error` on a
+  socket, so any protocol parser must work without lookahead). SOCKS5 itself is the
+  expensive part: address-type handling in both the request and the reply, eight
+  status codes, and — the real cost — a SOCKS5 server written in Prolog to test
+  against, because a protocol like this passes a naive round-trip and fails on a
+  real proxy. Not attempted. It was also never established whether SWI implements
+  SOCKS inside `library(socket)` or in a separate library; that is worth settling
+  before anyone picks this up, since it decides whether it belongs in this file.
