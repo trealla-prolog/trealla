@@ -26,6 +26,18 @@ they differ only in the interface they present. Use whichever suits.
     one stream. `tcp_open_socket/3` returns the same stream twice. Code
     that splits a pair with `stream_pair/3` will not work; code that uses
     the pair directly with `format/3`, `read_term/3` and `close/1` will.
+
+  * `udp_receive/4` and `udp_send/4` carry text as UTF-8, so a byte over
+    127 goes out as more than one byte. Pass `encoding(octet)` for a
+    binary protocol: the datagram is then a list of raw byte values in
+    both directions. `encoding(iso_latin_1)` is rejected rather than
+    quietly approximated.
+
+  * `udp_receive/4` with `as(term)` interns the functor and atom names of
+    every term it parses, and those are never reclaimed - roughly one new
+    symbol per distinct datagram. Reading terms from an untrusted peer is
+    therefore a slow memory leak. SWI has the same property. Ordinary
+    atom construction does not cost anything permanent; parsing does.
 */
 
 :- module(socket, [
