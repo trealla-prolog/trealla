@@ -1,6 +1,6 @@
-% library(socket) - the SWI-compatible interface. Phases 2, 3 and 4 of
+% library(socket) - the SWI-compatible interface. Phases 2 to 5 of
 % docs/socket-swi-design.md: address conversion, the handle lifecycle,
-% the TCP client and server paths, and unix domain sockets.
+% the TCP client and server paths, unix domain sockets, and UDP.
 %
 % The client is checked against library(sockets)'s server rather than
 % against itself, so a bug in the handle layer cannot cancel out. The
@@ -94,6 +94,46 @@ main :-
     t(rebind, (tcp_socket(P3), tcp_bind(P3, '127.0.0.1':3404),
                     catch(tcp_bind(P3, '127.0.0.1':3405), error(permission_error(bind,_,_),_), true),
                     tcp_close_socket(P3))),
+
+    % udp
+    t(udp_roundtrip, (udp_socket(Dsv), tcp_bind(Dsv, '127.0.0.1':DP),
+                  udp_socket(Dcl),
+                  udp_send(Dcl, 'hello', '127.0.0.1':DP, []),
+                  udp_receive(Dsv, DD, DFrom, []),
+                  DD == "hello", DFrom = DIp:_, DIp == ip(127,0,0,1),
+                  tcp_close_socket(Dcl), tcp_close_socket(Dsv))),
+
+    udp_socket(Usv), tcp_bind(Usv, '127.0.0.1':3410), udp_socket(Ucl),
+    t(udp_as_atom, (udp_send(Ucl, abc, '127.0.0.1':3410, []),
+                  udp_receive(Usv, X1, _, [as(atom)]), X1 == abc)),
+    t(udp_as_codes, (udp_send(Ucl, hi, '127.0.0.1':3410, []),
+                  udp_receive(Usv, X2, _, [as(codes)]), X2 == [104,105])),
+    t(udp_as_term, (udp_send(Ucl, foo(bar,[1,2]), '127.0.0.1':3410, [as(term)]),
+                  udp_receive(Usv, X3, _, [as(term)]), X3 == foo(bar,[1,2]))),
+    t(udp_number, (udp_send(Ucl, 42, '127.0.0.1':3410, []),
+                  udp_receive(Usv, X4, _, [as(atom)]), X4 == '42')),
+    t(udp_max_size, (udp_send(Ucl, abcdefgh, '127.0.0.1':3410, []),
+                  udp_receive(Usv, X5, _, [max_message_size(3)]), X5 == "abc")),
+
+    % byte-exact: the text path is UTF-8, so 255 and 128 would each go out
+    % as two bytes without encoding(octet)
+    t(udp_octet, (udp_send(Ucl, [0,255,128,7], '127.0.0.1':3410, [encoding(octet)]),
+                  udp_receive(Usv, X6, _, [encoding(octet), as(codes)]),
+                  X6 == [0,255,128,7])),
+
+    % sending without an explicit bind materialises an ephemeral socket
+    t(udp_unbound_send, (udp_socket(Uc2), udp_send(Uc2, x, '127.0.0.1':3410, []),
+                  udp_receive(Usv, X7, _, []), X7 == "x", tcp_close_socket(Uc2))),
+
+    t(udp_bad_as, catch(udp_receive(Usv, _, _, [as(bogus)]),
+                  error(domain_error(udp_as, bogus), _), true)),
+    t(udp_bad_encoding, catch(udp_receive(Usv, _, _, [encoding(iso_latin_1)]),
+                  error(domain_error(encoding, _), _), true)),
+    t(udp_on_tcp_socket, (tcp_socket(Ut),
+                  catch(udp_send(Ut, x, '127.0.0.1':3410, []),
+                        error(permission_error(udp, _, _), _), true),
+                  tcp_close_socket(Ut))),
+    tcp_close_socket(Ucl), tcp_close_socket(Usv),
 
     % unix domain sockets. The path is fixed, so as with the ports above a
     % concurrent run of this suite would collide.

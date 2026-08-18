@@ -166,6 +166,30 @@ point of the UDP API.
 `'$udp_send'(+Stream, +Data, +Host, +Port, +Opts)`. **Both now exist** — added in
 `network.c`/`bif_net.c`, loopback-verified in both directions.
 
+**Phase 5 correction.** The phasing table called UDP "Prolog-side only" now that
+the bifs exist. That was wrong about `encoding`: the text path is UTF-8, so
+sending byte 255 puts *two* bytes on the wire and no arrangement of Prolog can
+prevent it. `encoding(octet)` was therefore added to both bifs — the datagram
+becomes a list of raw byte values in each direction. UDP is mostly binary
+protocols, so this is not an edge case. Verified byte-exact for `[0,255,128,7]`,
+which the text path mangles.
+
+Both bifs also used to `return false` on a failed syscall. They now throw
+`socket_error/2` off errno like the rest of §5.
+
+**`as(term)` interns permanently.** Reading a term interns the functor and atom
+names it contains, and *that* grows the symbol table where ordinary atom
+construction does not — measured at 950 new symbols for 1000 distinct
+datagrams, against a control of 1000 distinct atoms built with
+`format(atom(...))` which grew it by 0. So `as(term)` on an untrusted peer is a
+slow leak. SWI has the same property; it is documented in the module header
+rather than prevented.
+
+The receive path otherwise builds no atom unless `as(atom)` was asked for.
+`read_term_from_atom/3` accepts a string — though *not* a bare char list, which
+is a distinction worth knowing — so the term case needs no intermediate atom,
+and `number_codes/2` plus `format(string(S), ...)` cover the send side.
+
 **Socket options with no plumbing:** `broadcast`, `bindtodevice/1`, `sndbuf/1`,
 `ip_add_membership/1,2,3`, `ip_drop_membership/1,2,3`. All need `setsockopt` calls
 that do not exist. `dispatch/1` is GUI-related and should simply be accepted and
@@ -345,7 +369,7 @@ those to `ip(A,B,C,D)` before handing them to callers expecting SWI's IPv4 term.
 | 2 | TCP client path: `tcp_socket/1`, `tcp_connect/2,3,4`, `tcp_open_socket/2,3`, `tcp_close_socket/1`. Loopback test against `library/sockets.pl`'s server. | Low |
 | 3 | **Done.** TCP server path: `tcp_bind/2`, `tcp_listen/2`, `tcp_accept/3`. Full round-trip test. Materialisation moved to bind — see §2. Errno now carried out of `tpl_server`/`tpl_connect` so failures name their cause — see §5. |
 | 4 | **Done.** Unix domain sockets - which turned out to need the C wiring above, not just Prolog. `gethostname/1`, `ip_name/2`, `tcp_host_to_address/2` had already landed with phase 1. |
-| 5 | UDP — the two bifs now exist (`'$udp_recv'/5`, `'$udp_send'/5`), so this is Prolog-side only: `as(Type)`, `encoding`, address normalisation. | Low |
+| 5 | **Done.** UDP: `udp_receive/4`, `udp_send/4`, `as(Type)`, `max_message_size`, address normalisation. Not Prolog-side only after all — `encoding(octet)` needed C, see §4. |
 | 6 | Optional: SOCKS, proxy hooks. | Low, opt-in |
 
 Phases 1–3 are the useful core: they cover what almost all SWI socket code actually

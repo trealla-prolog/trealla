@@ -827,10 +827,14 @@ static bool bif_sys_current_host_1(query *q)
 
 // '$udp_recv'(+Stream, -Data, -Host, -Port, +Options)
 //
-// Options: max_message_size(+Bytes), default 4096 as SWI has it.
+// Options: max_message_size(+Bytes), default 4096 as SWI has it, and
+// encoding(octet).
 //
-// Data comes back as a length-counted string so an embedded NUL is
-// preserved; library/socket.pl converts per udp_receive/4's as(Type).
+// Data normally comes back as a length-counted string, so an embedded NUL
+// survives and library/socket.pl converts per udp_receive/4's as(Type).
+// That path is UTF-8 text, though, so it cannot carry arbitrary bytes -
+// under encoding(octet) the datagram is returned as a list of raw byte
+// values instead, which is what a binary protocol needs.
 
 static bool bif_sys_udp_recv_5(query *q)
 {
@@ -842,6 +846,7 @@ static bool bif_sys_udp_recv_5(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	size_t maxlen = 4096;
+	bool octet = false;
 
 	LIST_HANDLER(p4);
 
@@ -858,6 +863,14 @@ static bool bif_sys_udp_recv_5(query *q)
 				maxlen = (size_t)get_smallint(arg);
 		}
 
+		if (is_compound(c) && (c->arity == 1)
+			&& !CMP_STRING_TO_CSTR(q, c, "encoding")) {
+			cell *arg = deref(q, c+1, c_ctx);
+
+			if (is_atom(arg) && !CMP_STRING_TO_CSTR(q, arg, "octet"))
+				octet = true;
+		}
+
 		p4 = LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
@@ -870,19 +883,40 @@ static bool bif_sys_udp_recv_5(query *q)
 	ssize_t len = tpl_udp_recv(str, buf, maxlen, host, sizeof(host), &port);
 
 	if (len < 0) {
+		int save_errno = errno;
 		free(buf);
-		return false;
+		return throw_error(q, pstr, pstr_ctx, "socket_error", tpl_socket_errname(save_errno));
 	}
 
-	cell tmp;
-	bool ok = make_stringn(&tmp, buf, (size_t)len);
-	free(buf);
+	if (octet) {
+		if (!init_tmp_heap(q)) {
+			free(buf);
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+		}
 
-	if (!ok)
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+		for (ssize_t i = 0; i < len; i++) {
+			cell tmp;
+			make_int(&tmp, (unsigned char)buf[i]);
+			append_list(q, &tmp);
+		}
 
-	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
+		free(buf);
+		cell *l = len ? end_list(q) : make_nil();
+		CHECKED(l);
+
+		if (!unify(q, p1, p1_ctx, l, q->st.cur_ctx))
+			return false;
+	} else {
+		cell tmp;
+		bool ok = make_stringn(&tmp, buf, (size_t)len);
+		free(buf);
+
+		if (!ok)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+
+		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
+			return false;
+	}
 
 	cell tmp2;
 	make_cstring(&tmp2, host);
@@ -897,9 +931,11 @@ static bool bif_sys_udp_recv_5(query *q)
 
 // '$udp_send'(+Stream, +Data, +Host, +Port, +Options)
 //
-// Data may be an atom, a string, or a list of chars/codes. Options are
-// accepted and ignored here; encoding and as(Type) are handled in
-// library/socket.pl, which knows the term shapes.
+// Data may be an atom, a string, or a list of chars/codes, which go out
+// as UTF-8. Under encoding(octet) it must instead be a list of byte
+// values, sent verbatim - the UTF-8 path would turn byte 255 into two
+// bytes on the wire. as(Type) is handled in library/socket.pl, which
+// knows the term shapes.
 
 static bool bif_sys_udp_send_5(query *q)
 {
@@ -910,12 +946,74 @@ static bool bif_sys_udp_send_5(query *q)
 	GET_NEXT_ARG(p4,list_or_nil);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
+	bool octet = false;
+
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_ctx c_ctx = q->latest_ctx;
+
+		if (is_compound(c) && (c->arity == 1)
+			&& !CMP_STRING_TO_CSTR(q, c, "encoding")) {
+			cell *arg = deref(q, c+1, c_ctx);
+
+			if (is_atom(arg) && !CMP_STRING_TO_CSTR(q, arg, "octet"))
+				octet = true;
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+	}
 
 	const char *src;
 	size_t len;
 	char *tofree = NULL;
 
-	if (is_atom(p1) || is_string(p1)) {
+	if (octet) {
+		size_t cnt = 0, cap = 256;
+		char *bytes = malloc(cap);
+		CHECKED(bytes);
+		cell *l = p1;
+		pl_ctx l_ctx = p1_ctx;
+		LIST_HANDLER(l);
+
+		while (is_list(l)) {
+			cell *h = deref(q, LIST_HEAD(l), l_ctx);
+
+			if (!is_smallint(h) || (get_smallint(h) < 0) || (get_smallint(h) > 255)) {
+				free(bytes);
+				return throw_error(q, h, l_ctx, "type_error", "byte");
+			}
+
+			if (cnt == cap) {
+				cap *= 2;
+				char *tmp = realloc(bytes, cap);
+
+				if (!tmp) {
+					free(bytes);
+					return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+				}
+
+				bytes = tmp;
+			}
+
+			bytes[cnt++] = (char)get_smallint(h);
+			l = deref(q, LIST_TAIL(l), l_ctx);
+			l_ctx = q->latest_ctx;
+		}
+
+		if (!is_nil(l)) {
+			free(bytes);
+			return throw_error(q, p1, p1_ctx, "type_error", "list");
+		}
+
+		tofree = bytes;
+		src = bytes;
+		len = cnt;
+	} else if (is_atom(p1) || is_string(p1)) {
 		src = C_STR(q, p1);
 		len = C_STRLEN(q, p1);
 	} else if (is_iso_list(p1)) {
@@ -933,11 +1031,15 @@ static bool bif_sys_udp_send_5(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "text");
 
 	ssize_t sent = tpl_udp_send(str, src, len, C_STR(q, p2), (int)get_smallint(p3));
+	int save_errno = errno;
 
 	if (tofree)
 		free(tofree);
 
-	return sent >= 0;
+	if (sent < 0)
+		return throw_error(q, pstr, pstr_ctx, "socket_error", tpl_socket_errname(save_errno));
+
+	return true;
 }
 
 // '$host_address'(+Host, -Address)

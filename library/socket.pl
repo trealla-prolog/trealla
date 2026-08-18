@@ -33,6 +33,8 @@ they differ only in the interface they present. Use whichever suits.
 	udp_socket/1,
 	unix_domain_socket/1,
 	socket_create/2,
+	udp_receive/4,
+	udp_send/4,
 	tcp_bind/2,
 	tcp_listen/2,
 	tcp_accept/3,
@@ -197,43 +199,57 @@ ip_name(IP, Name) :-
 	'$host_atom'(IP, Name).
 ip_name(IP, Name) :-
 	must_be(atom, Name),
-	'$split_dots'(Name, Parts),
-	Parts = [_,_,_,_],
-	'$atom_nums'(Parts, [A,B,C,D]), !,
-	IP = ip(A,B,C,D).
+	atom_chars(Name, Cs),
+	'$parse_ip4'(Cs, IP0), !,
+	IP = IP0.
 ip_name(_, Name) :-
 	throw(error(domain_error(ip_address, Name), ip_name/2)).
 
-% Written out rather than using atomic_list_concat/3 in split mode
-% (Trealla does not support that mode) or a yall lambda (not available
-% unless the caller has loaded it).
+% Parsed arithmetically off the characters rather than by splitting into
+% sub-atoms, which also does away with the atomic_list_concat/3 split
+% mode Trealla lacks. This runs on the receive path for every packet, so
+% it stays allocation-light.
 
-'$split_dots'(Atom, Parts) :-
-	atom_chars(Atom, Cs),
-	'$sd'(Cs, [], Parts).
+'$parse_ip4'(Cs, ip(A,B,C,D)) :-
+	'$ip_octet'(Cs, A, ['.'|R1]),
+	'$ip_octet'(R1, B, ['.'|R2]),
+	'$ip_octet'(R2, C, ['.'|R3]),
+	'$ip_octet'(R3, D, []).
 
-'$sd'([], Acc, [P]) :- !, '$rev_atom'(Acc, P).
-'$sd'(['.'|T], Acc, [P|Ps]) :- !, '$rev_atom'(Acc, P), '$sd'(T, [], Ps).
-'$sd'([C|T], Acc, Ps) :- '$sd'(T, [C|Acc], Ps).
+'$ip_octet'([C|Cs], N, Rest) :-
+	'$digit_val'(C, V),
+	'$ip_octet_'(Cs, V, N, Rest),
+	N >= 0, N =< 255.
 
-'$rev_atom'(Acc, A) :- reverse(Acc, Cs), atom_chars(A, Cs).
+'$ip_octet_'([C|Cs], Acc, N, Rest) :-
+	'$digit_val'(C, V), !,
+	Acc2 is (Acc * 10) + V,
+	Acc2 =< 255,
+	'$ip_octet_'(Cs, Acc2, N, Rest).
+'$ip_octet_'(Cs, N, N, Cs).
 
-'$atom_nums'([], []).
-'$atom_nums'([A|As], [N|Ns]) :-
-	atom_number(A, N),
-	integer(N), N >= 0, N =< 255,
-	'$atom_nums'(As, Ns).
+'$digit_val'(C, V) :-
+	char_code(C, Code),
+	Code >= 0'0, Code =< 0'9,
+	V is Code - 0'0.
 
 % A wildcard server socket comes back AF_INET6, so an IPv4 peer arrives
-% v4-mapped as ::ffff:127.0.0.1. Callers expect SWI's ip/4.
+% v4-mapped as ::ffff:127.0.0.1. Callers expect SWI's ip/4. The address
+% arrives as an atom from both '$peer_addr' and '$udp_recv', but chars
+% are accepted too so the parser has one entry point.
 
-'$normalise_peer'(Atom, IP) :-
-	atom(Atom),
-	atom_concat('::ffff:', Dotted, Atom), !,
-	ip_name(IP, Dotted).
-'$normalise_peer'(Atom, IP) :-
-	catch(ip_name(IP, Atom), _, fail), !.
-'$normalise_peer'(Atom, Atom).
+'$normalise_peer'(Host, IP) :-
+	'$peer_chars'(Host, Cs),
+	'$strip_v4mapped'(Cs, Cs1),
+	'$parse_ip4'(Cs1, IP0), !,
+	IP = IP0.
+'$normalise_peer'(Host, Host).
+
+'$peer_chars'(H, Cs) :- atom(H), !, atom_chars(H, Cs).
+'$peer_chars'(H, H).
+
+'$strip_v4mapped'([':',':',f,f,f,f,':'|Cs], Cs) :- !.
+'$strip_v4mapped'(Cs, Cs).
 
 % --- creation ----------------------------------------------------------
 
@@ -266,6 +282,160 @@ unix_domain_socket(Socket) :- socket_create(Socket, [domain(unix)]).
 
 '$sock_opts'(_, dgram, [udp(true)]) :- !.
 '$sock_opts'(_, _, []).
+
+% --- udp ---------------------------------------------------------------
+%
+% A UDP socket need not be bound before sending, so one that has never
+% seen tcp_bind/2 is materialised here on an ephemeral port, which is
+% what the send would have done implicitly anyway.
+
+'$udp_stream'(Socket, Stream, Ctx) :-
+	'$sock_get'(Socket, Domain, Type, Phase),
+	(  Type == dgram
+	-> true
+	;  throw(error(permission_error(udp, socket, Socket), Ctx))
+	),
+	(  Phase = listening(S)
+	-> Stream = S
+	;  Phase = connected(S)
+	-> Stream = S
+	;  Phase == fresh
+	-> '$sock_opts'(Domain, Type, Opts),
+	   '$sock_call'('$server'(_, Stream, Opts), Ctx),
+	   '$sock_set'(Socket, listening(Stream))
+	;  throw(error(existence_error(socket, Socket), Ctx))
+	).
+
+%% udp_receive(+Socket, -Data, -From, +Options).
+%
+% From is Ip:Port with Ip an ip/4 or ip/8 term, as SWI has it - note that
+% udp_send/4 takes a *hostname* in that position, which is SWI's
+% asymmetry, not ours.
+%
+% Options: as(atom|codes|string|chars|term), default string;
+% max_message_size(+Bytes), default 4096; encoding(octet|utf8|text).
+
+udp_receive(Socket, Data, From, Options) :-
+	must_be(list, Options),
+	'$udp_as'(Options, As, udp_receive/4),
+	'$udp_enc'(Options, Enc, udp_receive/4),
+	'$udp_stream'(Socket, Stream, udp_receive/4),
+	'$udp_bifopts'(Options, Enc, BifOpts),
+	'$sock_call'('$udp_recv'(Stream, Raw, Host, Port, BifOpts), udp_receive/4),
+	'$udp_data'(Enc, Raw, As, Data),
+	'$normalise_peer'(Host, Ip),
+	From = Ip:Port.
+
+%% udp_send(+Socket, +Data, +To, +Options).
+%
+% To is Host:Port. Under encoding(octet) Data must be a list of byte
+% values; otherwise an atom, string, chars/codes list, number or - with
+% as(term) - any term.
+
+udp_send(Socket, Data, To, Options) :-
+	must_be(list, Options),
+	'$udp_enc'(Options, Enc, udp_send/4),
+	'$udp_as'(Options, As, udp_send/4),
+	'$udp_stream'(Socket, Stream, udp_send/4),
+	'$send_addr'(To, Host, Port),
+	'$udp_payload'(Enc, As, Data, Payload),
+	'$udp_bifopts'(Options, Enc, BifOpts),
+	'$sock_call'('$udp_send'(Stream, Payload, Host, Port, BifOpts), udp_send/4).
+
+'$send_addr'(To, _, _) :-
+	var(To), !,
+	throw(error(instantiation_error, udp_send/4)).
+'$send_addr'(Host0:Port, Host, Port) :- !,
+	must_be(integer, Port),
+	'$host_atom'(Host0, Host).
+'$send_addr'(To, _, _) :-
+	throw(error(domain_error(socket_address, To), udp_send/4)).
+
+% Only the options the bifs understand are passed down; the rest are
+% interpreted here.
+
+'$udp_bifopts'(Options, Enc, BifOpts) :-
+	(  memberchk(max_message_size(N), Options)
+	-> Rest = [max_message_size(N)]
+	;  Rest = []
+	),
+	(  Enc == octet
+	-> BifOpts = [encoding(octet)|Rest]
+	;  BifOpts = Rest
+	).
+
+'$udp_as'(Options, As, Ctx) :-
+	(  memberchk(as(A), Options)
+	-> (  '$udp_as_type'(A)
+	   -> As = A
+	   ;  throw(error(domain_error(udp_as, A), Ctx))
+	   )
+	;  As = string
+	).
+
+'$udp_as_type'(atom).
+'$udp_as_type'(codes).
+'$udp_as_type'(chars).
+'$udp_as_type'(string).
+'$udp_as_type'(term).
+
+% iso_latin_1 is rejected rather than quietly approximated - the layer
+% below is UTF-8 or raw bytes, and nothing here would do the transcoding.
+
+'$udp_enc'(Options, Enc, Ctx) :-
+	(  memberchk(encoding(E), Options)
+	-> (  E == octet
+	   -> Enc = octet
+	   ;  ( E == utf8 ; E == text )
+	   -> Enc = text
+	   ;  throw(error(domain_error(encoding, E), Ctx))
+	   )
+	;  Enc = text
+	).
+
+% Under octet the bif hands back byte values; otherwise a string.
+
+% No atom is built unless as(atom) was asked for - read_term_from_atom/3
+% accepts a string, which is what the text path already holds, so the
+% term case needs no intermediate either.
+%
+% as(term) is the one option that costs something permanent. Reading a
+% term interns the functor and atom names it contains, and unlike
+% ordinary atom construction that *does* grow the symbol table: measured
+% at 950 new symbols for 1000 distinct datagrams. Parsing terms from an
+% untrusted peer is therefore a slow memory leak, and is documented as
+% such rather than prevented - SWI behaves the same way.
+
+'$udp_data'(octet, Raw, As, Data) :- !,
+	(  As == codes
+	-> Data = Raw
+	;  As == atom
+	-> atom_codes(Data, Raw)
+	;  string_codes(S, Raw),
+	   '$udp_text'(As, S, Data)
+	).
+'$udp_data'(text, Raw, As, Data) :-
+	(  As == atom
+	-> atom_chars(Data, Raw)
+	;  '$udp_text'(As, Raw, Data)
+	).
+
+'$udp_text'(string, S, S).
+'$udp_text'(chars, S, S).
+'$udp_text'(codes, S, C) :- string_codes(S, C).
+'$udp_text'(term, S, T) :- read_term_from_atom(S, T, []).
+
+'$udp_payload'(octet, _, Data, Data) :- !,
+	must_be(list, Data).
+'$udp_payload'(text, As, Data, Payload) :-
+	(  ( atom(Data) ; is_list(Data) )
+	-> Payload = Data
+	;  number(Data)
+	-> number_codes(Data, Payload)
+	;  As == term
+	-> format(string(Payload), "~q", [Data])
+	;  throw(error(type_error(text, Data), udp_send/4))
+	).
 
 % --- server ------------------------------------------------------------
 
