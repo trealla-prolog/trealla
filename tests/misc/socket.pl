@@ -1,9 +1,11 @@
-% library(socket) - the SWI-compatible interface. Phase 2 of
+% library(socket) - the SWI-compatible interface. Phases 2 and 3 of
 % docs/socket-swi-design.md: address conversion, the handle lifecycle,
-% and the TCP client path.
+% and the TCP client and server paths.
 %
 % The client is checked against library(sockets)'s server rather than
-% against itself, so a bug in the handle layer cannot cancel out.
+% against itself, so a bug in the handle layer cannot cancel out. The
+% server path is then checked against this library's own client, which
+% by then has been independently verified.
 %
 % Ports are fixed and in the 34xx range; if the suite ever runs
 % concurrently with itself these will collide.
@@ -53,6 +55,46 @@ main :-
                   socket_server_accept(Srv, _C2, In2, []),
                   getline(In2, L2), L2 == "yo", close(P), close(In2))),
     socket_server_close(Srv),
+
+    % server path, this library on both ends
+    t(roundtrip, (tcp_socket(Sv), tcp_bind(Sv, '127.0.0.1':3402), tcp_listen(Sv, 5),
+                  tcp_socket(Cl), tcp_connect(Cl, '127.0.0.1':3402),
+                  tcp_open_socket(Cl, CS), format(CS, "ping~n", []), flush_output(CS),
+                  tcp_accept(Sv, Slave, Peer), Peer == ip(127,0,0,1),
+                  tcp_open_socket(Slave, SS), getline(SS, L3), L3 == "ping",
+                  format(SS, "pong~n", []), flush_output(SS),
+                  getline(CS, L4), L4 == "pong",
+                  tcp_close_socket(Slave), tcp_close_socket(Cl), tcp_close_socket(Sv))),
+
+    % an unbound port is reported back by the bind, as SWI does
+    t(ephemeral, (tcp_socket(Se), tcp_bind(Se, '127.0.0.1':Port),
+                  integer(Port), Port > 0,
+                  tcp_socket(Ce), tcp_connect(Ce, '127.0.0.1':Port),
+                  tcp_accept(Se, Sl2, _), tcp_close_socket(Sl2),
+                  tcp_close_socket(Ce), tcp_close_socket(Se))),
+
+    % failures name their cause and surface at the right predicate
+    t(bind_in_use, (tcp_socket(B1), tcp_bind(B1, '127.0.0.1':3403),
+                    tcp_socket(B2),
+                    catch(tcp_bind(B2, '127.0.0.1':3403),
+                          error(socket_error(eaddrinuse,_), tcp_bind/2), true),
+                    tcp_close_socket(B2), tcp_close_socket(B1))),
+    t(connect_refused, (tcp_socket(R),
+                    catch(tcp_connect(R, '127.0.0.1':3499),
+                          error(socket_error(econnrefused,_), tcp_connect/2), true),
+                    tcp_close_socket(R))),
+
+    % the phase machine refuses out-of-order use
+    t(listen_unbound, (tcp_socket(P1),
+                    catch(tcp_listen(P1, 5), error(permission_error(listen,_,_),_), true),
+                    tcp_close_socket(P1))),
+    t(accept_unbound, (tcp_socket(P2),
+                    catch(tcp_accept(P2,_,_), error(permission_error(accept,_,_),_), true),
+                    tcp_close_socket(P2))),
+    t(rebind, (tcp_socket(P3), tcp_bind(P3, '127.0.0.1':3404),
+                    catch(tcp_bind(P3, '127.0.0.1':3405), error(permission_error(bind,_,_),_), true),
+                    tcp_close_socket(P3))),
+
     (  saw_failure
     -> format("socket: FAILURES above~n")
     ;  format("socket: all ok~n")

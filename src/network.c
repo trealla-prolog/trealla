@@ -150,7 +150,7 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	struct addrinfo hints, *result, *rp;
-	int fd, status;
+	int fd, status, save_errno = ECONNREFUSED;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -159,8 +159,10 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 	char svc[20];
 	snprintf(svc, sizeof(svc), "%u", port);
 
-	if ((status = getaddrinfo(hostname, svc, &hints, &result)) != 0)
+	if ((status = getaddrinfo(hostname, svc, &hints, &result)) != 0) {
+		errno = (status == EAI_NONAME) ? ENOENT : EADDRNOTAVAIL;
 		return -1;
+	}
 
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
 		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
@@ -177,14 +179,16 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 		if (connect(fd, rp->ai_addr, rp->ai_addrlen) != -1)
 			break;
 
-		//perror("connect");
+		// Saved before the cleanup below, which may clobber it.
+
+		save_errno = errno;
 		close(fd);
 	}
 
 	freeaddrinfo(result);
 
 	if (rp == NULL) {
-		//perror("freeaddrinfo");
+		errno = save_errno;
 		return -1;
 	}
 
@@ -206,7 +210,7 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	struct addrinfo hints, *result, *rp;
-	int fd, status;
+	int fd, status, save_errno = EADDRNOTAVAIL;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -226,7 +230,7 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 	const char *bindhost = (hostname && *hostname) ? hostname : NULL;
 
 	if ((status = getaddrinfo(bindhost, svc, &hints, &result)) != 0) {
-		//perror("getaddrinfo");
+		errno = (status == EAI_NONAME) ? ENOENT : EADDRNOTAVAIL;
 		return -1;
 	}
 
@@ -245,14 +249,20 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 		if (bind(fd, rp->ai_addr, rp->ai_addrlen) == 0)
 			break;
 
-		perror("bind");
+		// Kept so the caller can report *why*. freeaddrinfo and close
+		// below are both free to clobber errno, so it is saved here
+		// rather than read at the return.
+
+		save_errno = errno;
 		close(fd);
 	}
 
 	freeaddrinfo(result);
 
-	if (rp == NULL)
+	if (rp == NULL) {
+		errno = save_errno;
 		return -1;
+	}
 
 	if (udp)
 		return fd;
@@ -808,4 +818,35 @@ bool tpl_host_address(const char *hostname, char *ip, size_t iplen)
 #else
 	return false;
 #endif
+}
+
+// Maps errno onto the lowercase symbol SWI's socket_error/2 reports, so
+// bif_net.c can name a failure without knowing the platform's constants.
+// Anything unrecognised comes back as `unknown`.
+
+const char *tpl_socket_errname(int err)
+{
+	switch (err) {
+#if !defined(_WIN32) && !defined(__wasi__)
+	case EADDRINUSE: return "eaddrinuse";
+	case EADDRNOTAVAIL: return "eaddrnotavail";
+	case EAFNOSUPPORT: return "eafnosupport";
+	case EACCES: return "eacces";
+	case ECONNREFUSED: return "econnrefused";
+	case ECONNRESET: return "econnreset";
+	case EHOSTUNREACH: return "ehostunreach";
+	case ENETUNREACH: return "enetunreach";
+	case ETIMEDOUT: return "etimedout";
+	case EPIPE: return "epipe";
+	case EAGAIN: return "eagain";
+	case EINVAL: return "einval";
+	case EMFILE: return "emfile";
+	case ENFILE: return "enfile";
+	case ENOENT: return "enoent";
+	case EISCONN: return "eisconn";
+#endif
+	default: break;
+	}
+
+	return "unknown";
 }

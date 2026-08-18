@@ -167,7 +167,7 @@ static bool bif_sys_server_3(query *q)
 		snprintf(hostname, sizeof(hostname), "localhost");
 
 	if (fd == -1)
-		return throw_error(q, p1, p1_ctx, "existence_error", "server_failed");
+		return throw_error(q, p1, p1_ctx, "socket_error", tpl_socket_errname(errno));
 
 	int n = new_stream(q->pl);
 
@@ -684,7 +684,7 @@ static bool bif_sys_client_5(query *q)
 	int fd = tpl_connect(hostname, port, udp, nodelay);
 
 	if (fd == -1)
-		return throw_error(q, p1, p1_ctx, "resource_error", "could_not_connect");
+		return throw_error(q, p1, p1_ctx, "socket_error", tpl_socket_errname(errno));
 
 	int n = new_stream(q->pl);
 

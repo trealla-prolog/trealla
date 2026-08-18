@@ -20,6 +20,7 @@ extern int tpl_close(stream *str);
 
 extern ssize_t tpl_udp_recv(stream *str, void *buf, size_t buflen, char *host, size_t hostlen, int *port);
 extern ssize_t tpl_udp_send(stream *str, const void *buf, size_t len, const char *host, int port);
+extern const char *tpl_socket_errname(int err);
 extern bool tpl_host_address(const char *hostname, char *ip, size_t iplen);
 
 extern int get_local_port(int clientSock);

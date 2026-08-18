@@ -12,10 +12,15 @@ they differ only in the interface they present. Use whichever suits.
 
   * A Socket is a Prolog-side handle, not an OS handle. Trealla has no bif
     that creates an unbound, unconnected socket, so `tcp_socket/1` records
-    intent and the real socket is created later, at `tcp_connect/2` or
-    `tcp_listen/2`. The visible consequence is that a bind failure - a port
-    already in use, say - surfaces at `tcp_listen/2` rather than at
+    intent and the real socket appears later, at `tcp_connect/2` or
     `tcp_bind/2`.
+
+  * The underlying bif binds and listens in one step, so `tcp_bind/2` does
+    both and `tcp_listen/2` only validates. Bind errors and the ephemeral
+    port therefore surface at `tcp_bind/2`, which is where SWI puts them.
+    The one visible difference is that a socket bound but never listened
+    is nonetheless listening, where SWI would refuse connections to it.
+    `BackLog` is ignored - the underlying layer hardcodes `SOMAXCONN`.
 
   * Trealla's socket streams are bidirectional, so a "stream pair" here is
     one stream. `tcp_open_socket/3` returns the same stream twice. Code
@@ -28,6 +33,9 @@ they differ only in the interface they present. Use whichever suits.
 	udp_socket/1,
 	unix_domain_socket/1,
 	socket_create/2,
+	tcp_bind/2,
+	tcp_listen/2,
+	tcp_accept/3,
 	tcp_connect/2,
 	tcp_connect/3,
 	tcp_connect/4,
@@ -113,12 +121,37 @@ they differ only in the interface they present. Use whichever suits.
 	;  throw(error(socket_error(unknown, 'operation failed'), Context))
 	).
 
-'$sock_rethrow'(error(socket_error(C,M), Ctx), _) :- !,
-	throw(error(socket_error(C,M), Ctx)).
+% The builtins put the culprit where SWI puts a message, so the message
+% is rederived from the code and the context is the library predicate the
+% caller actually invoked.
+
+'$sock_rethrow'(error(socket_error(C,M), Ctx), Context) :- !,
+	(  '$errmsg'(C, Msg)
+	-> throw(error(socket_error(C,Msg), Context))
+	;  throw(error(socket_error(C,M), Ctx))
+	).
 '$sock_rethrow'(error(existence_error(_, _), _), Context) :- !,
 	throw(error(socket_error(enoent, 'no such host or file'), Context)).
 '$sock_rethrow'(E, _) :-
 	throw(E).
+
+'$errmsg'(eaddrinuse,    'address already in use').
+'$errmsg'(eaddrnotavail, 'cannot assign requested address').
+'$errmsg'(eafnosupport,  'address family not supported').
+'$errmsg'(eacces,        'permission denied').
+'$errmsg'(econnrefused,  'connection refused').
+'$errmsg'(econnreset,    'connection reset by peer').
+'$errmsg'(ehostunreach,  'no route to host').
+'$errmsg'(enetunreach,   'network is unreachable').
+'$errmsg'(etimedout,     'connection timed out').
+'$errmsg'(epipe,         'broken pipe').
+'$errmsg'(eagain,        'resource temporarily unavailable').
+'$errmsg'(einval,        'invalid argument').
+'$errmsg'(emfile,        'too many open files').
+'$errmsg'(enfile,        'too many open files in system').
+'$errmsg'(enoent,        'no such host or file').
+'$errmsg'(eisconn,       'socket is already connected').
+'$errmsg'(unknown,       'operation failed').
 
 % --- addresses ---------------------------------------------------------
 %
@@ -233,6 +266,76 @@ unix_domain_socket(Socket) :- socket_create(Socket, [domain(unix)]).
 
 '$sock_opts'(_, dgram, [udp(true)]) :- !.
 '$sock_opts'(_, _, []).
+
+% --- server ------------------------------------------------------------
+
+%% tcp_bind(+Socket, ?Address).
+%
+% Binds AND listens - see the module header. Address may leave the port
+% unbound to request an ephemeral one, in which case it is unified with
+% the port actually assigned.
+
+tcp_bind(Socket, Address) :-
+	'$sock_get'(Socket, Domain, Type, Phase),
+	(  Phase == fresh
+	-> true
+	;  throw(error(permission_error(bind, socket, Socket), tcp_bind/2))
+	),
+	'$bind_spec'(Domain, Address, Spec),
+	'$sock_opts'(Domain, Type, Opts),
+	'$sock_call'('$server'(Spec, Stream, Opts), tcp_bind/2),
+	'$sock_set'(Socket, listening(Stream)).
+
+% What to hand '$server'. A wholly or partly unbound address is passed
+% through as a TERM rather than flattened to an atom, because that is how
+% the bif reports the port it actually bound.
+
+'$bind_spec'(unix, Path, Spec) :- !,
+	must_be(atom, Path),
+	atom_concat('unix://', Path, Spec).
+'$bind_spec'(_, Address, Spec) :-
+	var(Address), !,
+	Spec = Address.
+'$bind_spec'(_, Host:Port, Spec) :-
+	var(Port), !,
+	'$host_atom'(Host, H),
+	Spec = H:Port.
+'$bind_spec'(_, Address, Spec) :-
+	'$addr_atom'(Address, Spec).
+
+%% tcp_listen(+Socket, +BackLog).
+%
+% The bind already listened, so this validates and returns. BackLog is
+% accepted and ignored.
+
+tcp_listen(Socket, BackLog) :-
+	must_be(integer, BackLog),
+	'$sock_get'(Socket, _, _, Phase),
+	(  Phase = listening(_)
+	-> true
+	;  throw(error(permission_error(listen, socket, Socket), tcp_listen/2))
+	).
+
+%% tcp_accept(+Socket, -Slave, -Peer).
+%
+% Blocks until a client connects. Slave is a new socket, already
+% materialised - the stream exists before the handle does, so
+% tcp_open_socket/2 on it is a lookup.
+
+tcp_accept(Socket, Slave, Peer) :-
+	'$sock_get'(Socket, Domain, Type, Phase),
+	(  Phase = listening(Stream)
+	-> true
+	;  throw(error(permission_error(accept, socket, Socket), tcp_accept/3))
+	),
+	'$sock_call'('$accept'(Stream, Client), tcp_accept/3),
+	(  catch('$peer_addr'(Client, Addr, _), _, fail)
+	-> '$normalise_peer'(Addr, Peer)
+	;  Peer = ip(0,0,0,0)
+	),
+	'$new_id'(Id),
+	assertz('$sock'(Id, Domain, Type, connected(Client))),
+	Slave = '$socket'(Id).
 
 % --- client ------------------------------------------------------------
 

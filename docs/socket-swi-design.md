@@ -61,26 +61,42 @@ pending address, and a phase:
 | phase | meaning | holds |
 |---|---|---|
 | `fresh` | created, nothing done | domain, type, options |
-| `bound(Addr)` | `tcp_bind/2` called; **nothing has happened at OS level yet** | + address |
-| `listening(Stream)` | materialised by `tcp_listen/2` via `'$server'` | listening stream |
+| `listening(Stream)` | materialised by `tcp_bind/2` via `'$server'` | listening stream |
 | `connected(Stream)` | materialised by `tcp_connect` or produced by `tcp_accept` | connected stream |
 | `closed` | after `tcp_close_socket/1` | — |
 
 Materialisation points:
 
-- `tcp_bind(S, Addr)` records the address and returns. **No syscall.**
-- `tcp_listen(S, _Backlog)` calls `'$server'(Addr, Stream, Opts)` — this is where
-  socket, bind and listen all actually happen.
+- `tcp_bind(S, Addr)` calls `'$server'(Addr, Stream, Opts)` — socket, bind and
+  listen all happen here.
+- `tcp_listen(S, _Backlog)` validates the phase and returns. **No syscall.**
 - `tcp_connect(S, Addr)` calls `'$client'(Addr, _, _, Stream, Opts)`.
 - `tcp_accept(S, Slave, Peer)` calls `'$accept'`, then `'$peer_addr'`, and wraps the
   resulting stream in a *new* handle already in `connected/1`.
 - `tcp_open_socket(S, Pair)` just returns the stream the handle already holds.
 
-**The consequence to be honest about.** Deferring bind changes *when errors
-surface*. In SWI, binding to a port already in use fails at `tcp_bind/2`. Here it
-fails at `tcp_listen/2`. Any code that catches around `tcp_bind/2` specifically will
-not see the error. This is unavoidable without a new bif and must be documented in
-the module header, not buried.
+**Revised at phase 3.** This section originally deferred materialisation to
+`tcp_listen/2` and accepted that bind errors would surface late. That is now
+reversed, because `'$server'` was confirmed to **report an ephemeral port back**
+through an unbound argument — and a variable stored by `assertz` loses its
+binding, so the port can only reach the caller if the bind happens inside
+`tcp_bind/2` itself. Binding eagerly is therefore forced by the ephemeral-port
+case, and it happens to also put bind errors exactly where SWI puts them:
+
+```prolog
+?- tcp_socket(S), tcp_bind(S, '127.0.0.1':P).
+P = 65422.
+
+?- tcp_socket(S), tcp_bind(S, '127.0.0.1':3599).      % already in use
+ERROR: socket_error(eaddrinuse, 'address already in use') in tcp_bind/2
+```
+
+**The consequence to be honest about** is now the mirror image, and much
+smaller: a socket that is bound but never listened is nonetheless listening, so
+connections to it are accepted into the backlog where SWI would refuse them. No
+realistic program can observe this, since `tcp_listen/2` normally follows
+immediately. `BackLog` itself is ignored either way — `tpl_server` hardcodes
+`SOMAXCONN`.
 
 A second consequence: `tcp_accept/3` in SWI returns a *socket* that the caller then
 opens. Here the stream already exists before the handle does, so the handle is born
@@ -104,8 +120,8 @@ thread-keyed dynamic predicate. **Open question — see §9.**
 | `unix_domain_socket/1` | handle with `domain(unix)` | `'$server'`/`'$client'` accept `unix://Path` **[checked]** |
 | `udp_socket/1` | handle with `type(dgram)` | creatable, but see §4 — the UDP *operations* are missing |
 | `socket_create/2` | handle | only the `domain`/`type` combinations the bifs support |
-| `tcp_bind/2` | record address | deferred; see §2 |
-| `tcp_listen/2` | `'$server'` | **Backlog is ignored** — `tpl_server` hardcodes it |
+| `tcp_bind/2` | `'$server'` | binds *and* listens; reports an unbound port back |
+| `tcp_listen/2` | — | phase check only; **Backlog ignored** — `tpl_server` hardcodes it |
 | `tcp_accept/3` | `'$accept'` + `'$peer_addr'` | Peer as `ip(A,B,C,D):Port` after conversion |
 | `tcp_connect/2` | `'$client'` | |
 | `tcp_connect/3` (Address, StreamPair, Options) | `'$client'` | the modern form; most-used in practice |
@@ -181,10 +197,32 @@ Trealla's bifs raise ordinary ISO errors and, in places, just fail. Mapping is
 therefore *lossy in one direction*: we can wrap what we get, but we cannot
 manufacture an errno we were never told.
 
-Proposal: a single `'$socket_error'(Goal, Context)` wrapper that catches what the
-bifs throw and re-raises as `socket_error/2` where the errno is recoverable, and as
-a documented approximation otherwise. Getting real errno values through would need
-the bifs to carry them — worth doing eventually, out of scope here.
+Implemented as a single `'$sock_call'(Goal, Context)` wrapper that catches what
+the bifs throw and re-raises as `socket_error(Code, Message)` with `Context` set
+to the *library* predicate the caller invoked, not the bif underneath it.
+
+**Done at phase 3** — the "out of scope, worth doing eventually" note below was
+resolved, because the coarse errors made the phase-3 tests unable to distinguish
+a real bind conflict from a typo'd hostname. `tpl_server` and `tpl_connect` now
+preserve `errno` across their cleanup paths (`freeaddrinfo` and `close` are both
+free to clobber it, so it is saved at the point of failure), and
+`tpl_socket_errname` maps it to the lowercase symbol SWI reports. The platform
+`#if` guards stay in `network.c`; `bif_net.c` only calls the helper.
+
+The two blanket errors are gone:
+
+| was | now |
+|---|---|
+| `existence_error(_, server_failed)` | `socket_error(eaddrinuse, 'address already in use')` |
+| `resource_error(could_not_connect)` | `socket_error(econnrefused, 'connection refused')` |
+
+Both previously collapsed every cause into one term — a port conflict and an
+unresolvable host were indistinguishable. Neither old term was referenced
+anywhere in the tree, so nothing depended on them. `tpl_server` also no longer
+`perror`s a failed bind to stderr, since the cause now travels in the exception.
+
+The mapping is still lossy in one direction: bifs that simply *fail* tell us
+nothing, and those still yield `socket_error(unknown, 'operation failed')`.
 
 ---
 
@@ -284,7 +322,7 @@ those to `ip(A,B,C,D)` before handing them to callers expecting SWI's IPv4 term.
 | 0 | Answer open question 1. It determines the design. | — |
 | 1 | Handle representation, state table, address conversion, `socket_error` wrapper. No I/O yet; unit-testable on its own. | Low |
 | 2 | TCP client path: `tcp_socket/1`, `tcp_connect/2,3,4`, `tcp_open_socket/2,3`, `tcp_close_socket/1`. Loopback test against `library/sockets.pl`'s server. | Low |
-| 3 | TCP server path: `tcp_bind/2`, `tcp_listen/2`, `tcp_accept/3`, `tcp_setopt/2`, `tcp_getopt/2`. Full round-trip test. | Medium — where the deferred-bind seam bites |
+| 3 | **Done.** TCP server path: `tcp_bind/2`, `tcp_listen/2`, `tcp_accept/3`. Full round-trip test. Materialisation moved to bind — see §2. Errno now carried out of `tpl_server`/`tpl_connect` so failures name their cause — see §5. |
 | 4 | Unix domain sockets, `gethostname/1`, `ip_name/2`, `tcp_host_to_address/2` (needs the resolver bif). | Low |
 | 5 | UDP — the two bifs now exist (`'$udp_recv'/5`, `'$udp_send'/5`), so this is Prolog-side only: `as(Type)`, `encoding`, address normalisation. | Low |
 | 6 | Optional: SOCKS, proxy hooks. | Low, opt-in |
