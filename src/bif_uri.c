@@ -164,10 +164,45 @@ static bool bif_sys_uri_parse_6(query *q)
 	return ok;
 }
 
+// RFC-3986 section 5.3. A component is absent when its has_ flag is
+// clear, which is not the same as being empty: an absent query means no
+// '?' at all, an empty one means a '?' with nothing after it.
+
+static char *uri_recompose(const uri_parts *u)
+{
+	SB(pr);
+
+	if (u->has_scheme) {
+		SB_strcatn(pr, u->scheme, u->scheme_len);
+		SB_strcat(pr, ":");
+	}
+
+	if (u->has_auth) {
+		SB_strcat(pr, "//");
+		SB_strcatn(pr, u->auth, u->auth_len);
+	}
+
+	if (u->path_len)
+		SB_strcatn(pr, u->path, u->path_len);
+
+	if (u->has_search) {
+		SB_strcat(pr, "?");
+		SB_strcatn(pr, u->search, u->search_len);
+	}
+
+	if (u->has_frag) {
+		SB_strcat(pr, "#");
+		SB_strcatn(pr, u->frag, u->frag_len);
+	}
+
+	char *out = slicedup(SB_cstr(pr), SB_strlen(pr));
+	SB_free(pr);
+	return out;
+}
+
 // '$uri_build'(-Uri, ?Scheme, ?Auth, ?Path, ?Search, ?Fragment)
 //
-// RFC-3986 section 5.3. An unbound argument means "component absent",
-// which is not the same as an empty one.
+// An unbound argument means "component absent".
 
 static bool bif_sys_uri_build_6(query *q)
 {
@@ -197,33 +232,26 @@ static bool bif_sys_uri_build_6(query *q)
 		}
 	}
 
-	SB(pr);
+	uri_parts u;
+	memset(&u, 0, sizeof(u));
+	u.has_scheme = part[0] != NULL;
+	u.scheme = part[0];
+	u.scheme_len = part[0] ? strlen(part[0]) : 0;
+	u.has_auth = part[1] != NULL;
+	u.auth = part[1];
+	u.auth_len = part[1] ? strlen(part[1]) : 0;
+	u.path = part[2];
+	u.path_len = part[2] ? strlen(part[2]) : 0;
+	u.has_search = part[3] != NULL;
+	u.search = part[3];
+	u.search_len = part[3] ? strlen(part[3]) : 0;
+	u.has_frag = part[4] != NULL;
+	u.frag = part[4];
+	u.frag_len = part[4] ? strlen(part[4]) : 0;
 
-	if (part[0]) {
-		SB_strcat(pr, part[0]);
-		SB_strcat(pr, ":");
-	}
-
-	if (part[1]) {
-		SB_strcat(pr, "//");
-		SB_strcat(pr, part[1]);
-	}
-
-	if (part[2])
-		SB_strcat(pr, part[2]);
-
-	if (part[3]) {
-		SB_strcat(pr, "?");
-		SB_strcat(pr, part[3]);
-	}
-
-	if (part[4]) {
-		SB_strcat(pr, "#");
-		SB_strcat(pr, part[4]);
-	}
-
-	bool ok = unify_text(q, p1, p1_ctx, SB_cstr(pr), SB_strlen(pr));
-	SB_free(pr);
+	char *out = uri_recompose(&u);
+	bool ok = unify_text(q, p1, p1_ctx, out, strlen(out));
+	TPL_free(out);
 
 	for (int i = 0; i < 5; i++)
 		TPL_free(part[i]);
@@ -237,19 +265,42 @@ static bool bif_sys_uri_build_6(query *q)
 // password ]. Port comes back as an integer, the IPv6 host without its
 // brackets - both as SWI reports them.
 
-static bool bif_sys_uri_authority_parse_5(query *q)
+// A port is *DIGIT and has to fit the 16 bits everything downstream
+// assumes. A numeric tail that qualifies on neither count stays part of
+// the host rather than being silently truncated: strtoul() was letting
+// "x:99999999999999999999" saturate and come back as port -1.
+
+static bool parse_port(const char *s, pl_int *port)
 {
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,any);
-	GET_NEXT_ARG(p4,any);
-	GET_NEXT_ARG(p5,any);
+	unsigned long n = 0;
 
-	char *src = get_text(q, p1, p1_ctx);
+	if (!*s)
+		return false;
 
-	if (!src)
-		return throw_error(q, p1, p1_ctx, "type_error", "atom");
+	for (const char *p = s; *p; p++) {
+		if (!isdigit((unsigned char)*p))
+			return false;
 
+		n = (n * 10) + (*p - '0');
+
+		if (n > 65535)
+			return false;
+	}
+
+	*port = (pl_int)n;
+	return true;
+}
+
+typedef struct {
+	const char *user, *pass, *host;
+	size_t user_len, pass_len, host_len;
+	bool has_user, has_pass, has_port;
+	pl_int port;
+} auth_parts;
+
+static void auth_split(const char *src, auth_parts *a)
+{
+	memset(a, 0, sizeof(*a));
 	const char *user = NULL, *pass = NULL, *host = src;
 	size_t user_len = 0, pass_len = 0, host_len = 0;
 	bool has_user = false, has_pass = false, has_port = false;
@@ -299,15 +350,8 @@ static bool bif_sys_uri_authority_parse_5(query *q)
 			else
 				rest = NULL;
 
-			if (rest && *rest) {
-				char *endp;
-				unsigned long n = strtoul(rest, &endp, 10);
-
-				if (!*endp) {
-					port = (pl_int)n;
-					has_port = true;
-				}
-			}
+			if (rest && *rest)
+				has_port = parse_port(rest, &port);
 		}
 	} else {
 		const char *colon = strrchr(host, ':');
@@ -316,11 +360,7 @@ static bool bif_sys_uri_authority_parse_5(query *q)
 		// host (a bracketless IPv6 address, say) and is left alone.
 
 		if (colon && colon[1]) {
-			char *endp;
-			unsigned long n = strtoul(colon + 1, &endp, 10);
-
-			if (!*endp) {
-				port = (pl_int)n;
+			if (parse_port(colon + 1, &port)) {
 				has_port = true;
 				host_len = colon - host;
 			}
@@ -328,16 +368,37 @@ static bool bif_sys_uri_authority_parse_5(query *q)
 			host_len = colon - host;
 	}
 
+	a->user = user; a->user_len = user_len; a->has_user = has_user;
+	a->pass = pass; a->pass_len = pass_len; a->has_pass = has_pass;
+	a->host = host; a->host_len = host_len;
+	a->port = port; a->has_port = has_port;
+}
+
+static bool bif_sys_uri_authority_parse_5(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
+	GET_NEXT_ARG(p4,any);
+	GET_NEXT_ARG(p5,any);
+
+	char *src = get_text(q, p1, p1_ctx);
+
+	if (!src)
+		return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+	auth_parts a;
+	auth_split(src, &a);
 	cell tmp;
 
 	bool ok =
-		(has_user ? unify_text(q, p2, p2_ctx, user, user_len) : unify_absent(p2))
-		&& (has_pass ? unify_text(q, p3, p3_ctx, pass, pass_len) : unify_absent(p3))
-		&& unify_text(q, p4, p4_ctx, host, host_len);
+		(a.has_user ? unify_text(q, p2, p2_ctx, a.user, a.user_len) : unify_absent(p2))
+		&& (a.has_pass ? unify_text(q, p3, p3_ctx, a.pass, a.pass_len) : unify_absent(p3))
+		&& unify_text(q, p4, p4_ctx, a.host, a.host_len);
 
 	if (ok) {
-		if (has_port) {
-			make_int(&tmp, port);
+		if (a.has_port) {
+			make_int(&tmp, a.port);
 			ok = unify(q, p5, p5_ctx, &tmp, q->st.cur_ctx);
 		} else
 			ok = unify_absent(p5);
@@ -434,12 +495,437 @@ static bool bif_sys_uri_authority_build_5(query *q)
 	return ok;
 }
 
+// RFC-3986 section 5.2.4. The output can never be longer than the
+// input, so one allocation up front is enough.
+
+static void pop_segment(char *out, char **o)
+{
+	while ((*o > out) && (*(*o - 1) != '/'))
+		(*o)--;
+
+	if (*o > out)
+		(*o)--;
+}
+
+static char *remove_dot_segments(const char *in, size_t n)
+{
+	char *out = TPL_malloc(n + 2);
+
+	if (!out)
+		return NULL;
+
+	char *o = out;
+	const char *p = in, *end = in + n;
+
+	while (p < end) {
+		size_t left = end - p;
+
+		if ((left >= 3) && !memcmp(p, "../", 3))
+			p += 3;
+		else if ((left >= 2) && !memcmp(p, "./", 2))
+			p += 2;
+		else if ((left >= 3) && !memcmp(p, "/./", 3))
+			p += 2;
+		else if ((left == 2) && !memcmp(p, "/.", 2)) {
+			*o++ = '/';
+			p = end;
+		} else if ((left >= 4) && !memcmp(p, "/../", 4)) {
+			p += 3;
+			pop_segment(out, &o);
+		} else if ((left == 3) && !memcmp(p, "/..", 3)) {
+			pop_segment(out, &o);
+			*o++ = '/';
+			p = end;
+		} else if ((left == 1) && (*p == '.'))
+			p++;
+		else if ((left == 2) && !memcmp(p, "..", 2))
+			p += 2;
+		else {
+			// Move one whole segment across, leading '/' included.
+
+			if (*p == '/')
+				*o++ = *p++;
+
+			while ((p < end) && (*p != '/'))
+				*o++ = *p++;
+		}
+	}
+
+	*o = '\0';
+	return out;
+}
+
+// RFC-3986 section 5.3's merge(). Everything up to and including the
+// base's last '/', then the reference.
+
+static char *merge_paths(const uri_parts *base, const char *ref, size_t ref_len)
+{
+	SB(pr);
+
+	if (base->has_auth && !base->path_len) {
+		SB_strcat(pr, "/");
+	} else {
+		size_t keep = 0;
+
+		for (size_t i = base->path_len; i > 0; i--) {
+			if (base->path[i-1] == '/') {
+				keep = i;
+				break;
+			}
+		}
+
+		SB_strcatn(pr, base->path, keep);
+	}
+
+	SB_strcatn(pr, ref, ref_len);
+	char *out = slicedup(SB_cstr(pr), SB_strlen(pr));
+	SB_free(pr);
+	return out;
+}
+
+// '$uri_resolve'(+Ref, +Base, -Uri)
+//
+// RFC-3986 section 5.2.2, the strict flavour: a reference carrying its
+// own scheme is already absolute, even when that scheme matches the
+// base's. (The non-strict variant folds "http:g" against a http base
+// into "http://a/b/c/g"; section 5.4.2 lists it as the one place the
+// two disagree.)
+
+static bool bif_sys_uri_resolve_3(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
+
+	char *ref_str = get_text(q, p1, p1_ctx);
+
+	if (!ref_str)
+		return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+	char *base_str = get_text(q, p2, p2_ctx);
+
+	if (!base_str) {
+		TPL_free(ref_str);
+		return throw_error(q, p2, p2_ctx, "type_error", "atom");
+	}
+
+	uri_parts r, b, t;
+	uri_split(ref_str, &r);
+	uri_split(base_str, &b);
+	memset(&t, 0, sizeof(t));
+
+	char *owned = NULL;			// whichever path we had to build
+
+	if (r.has_scheme) {
+		t.has_scheme = true;
+		t.scheme = r.scheme;
+		t.scheme_len = r.scheme_len;
+		t.has_auth = r.has_auth;
+		t.auth = r.auth;
+		t.auth_len = r.auth_len;
+		owned = remove_dot_segments(r.path, r.path_len);
+		t.has_search = r.has_search;
+		t.search = r.search;
+		t.search_len = r.search_len;
+	} else {
+		t.has_scheme = b.has_scheme;
+		t.scheme = b.scheme;
+		t.scheme_len = b.scheme_len;
+
+		if (r.has_auth) {
+			t.has_auth = true;
+			t.auth = r.auth;
+			t.auth_len = r.auth_len;
+			owned = remove_dot_segments(r.path, r.path_len);
+			t.has_search = r.has_search;
+			t.search = r.search;
+			t.search_len = r.search_len;
+		} else {
+			t.has_auth = b.has_auth;
+			t.auth = b.auth;
+			t.auth_len = b.auth_len;
+
+			if (!r.path_len) {
+				// An empty reference path keeps the base's path, and
+				// only falls back to the base's query when the
+				// reference brought none of its own.
+
+				owned = slicedup(b.path, b.path_len);
+
+				if (r.has_search) {
+					t.has_search = true;
+					t.search = r.search;
+					t.search_len = r.search_len;
+				} else {
+					t.has_search = b.has_search;
+					t.search = b.search;
+					t.search_len = b.search_len;
+				}
+			} else {
+				if (r.path[0] == '/')
+					owned = remove_dot_segments(r.path, r.path_len);
+				else {
+					char *merged = merge_paths(&b, r.path, r.path_len);
+
+					if (merged) {
+						owned = remove_dot_segments(merged, strlen(merged));
+						TPL_free(merged);
+					}
+				}
+
+				t.has_search = r.has_search;
+				t.search = r.search;
+				t.search_len = r.search_len;
+			}
+		}
+	}
+
+	t.has_frag = r.has_frag;
+	t.frag = r.frag;
+	t.frag_len = r.frag_len;
+
+	bool ok = false;
+
+	if (owned) {
+		t.path = owned;
+		t.path_len = strlen(owned);
+		char *out = uri_recompose(&t);
+
+		if (out) {
+			ok = unify_text(q, p3, p3_ctx, out, strlen(out));
+			TPL_free(out);
+		}
+
+		TPL_free(owned);
+	}
+
+	TPL_free(ref_str);
+	TPL_free(base_str);
+	return ok;
+}
+
+static int hexval(int ch)
+{
+	if ((ch >= '0') && (ch <= '9')) return ch - '0';
+	if ((ch >= 'a') && (ch <= 'f')) return ch - 'a' + 10;
+	return ch - 'A' + 10;
+}
+
+static bool is_unreserved(int ch)
+{
+	if ((ch < 0) || (ch > 127))
+		return false;
+
+	return isalnum(ch) || (ch == '-') || (ch == '.') || (ch == '_') || (ch == '~');
+}
+
+// RFC-3986 section 6.2.2.2: an escape standing for an unreserved
+// character is decoded, and every escape that has to stay gets its hex
+// digits uppercased. Reserved characters are left encoded - decoding
+// %2F in a path would change what the path means.
+
+static char *pct_normalize(const char *s, size_t n)
+{
+	char *out = TPL_malloc(n + 1);
+
+	if (!out)
+		return NULL;
+
+	char *o = out;
+
+	for (size_t i = 0; i < n; ) {
+		if ((s[i] == '%') && (i + 2 < n)
+			&& isxdigit((unsigned char)s[i+1]) && isxdigit((unsigned char)s[i+2])) {
+			int ch = (hexval((unsigned char)s[i+1]) << 4) | hexval((unsigned char)s[i+2]);
+
+			if (is_unreserved(ch))
+				*o++ = (char)ch;
+			else {
+				*o++ = '%';
+				*o++ = toupper((unsigned char)s[i+1]);
+				*o++ = toupper((unsigned char)s[i+2]);
+			}
+
+			i += 3;
+		} else
+			*o++ = s[i++];
+	}
+
+	*o = '\0';
+	return out;
+}
+
+static const struct {
+	const char *scheme;
+	pl_int port;
+} s_default_ports[] = {
+	{"ftp", 21}, {"http", 80}, {"https", 443}, {"ws", 80}, {"wss", 443}, {NULL, 0}
+};
+
+static bool is_default_port(const char *scheme, pl_int port)
+{
+	if (!scheme)
+		return false;
+
+	for (int i = 0; s_default_ports[i].scheme; i++) {
+		if (!strcmp(s_default_ports[i].scheme, scheme))
+			return s_default_ports[i].port == port;
+	}
+
+	return false;
+}
+
+// The authority is normalized piecewise rather than as one string: only
+// the host is case-insensitive, and only the port can be dropped.
+
+static char *normalize_authority(const char *auth, size_t auth_len, const char *scheme)
+{
+	char *src = slicedup(auth, auth_len);
+
+	if (!src)
+		return NULL;
+
+	auth_parts a;
+	auth_split(src, &a);
+	SB(pr);
+
+	if (a.has_user) {
+		char *u = pct_normalize(a.user, a.user_len);
+		SB_strcat(pr, u ? u : "");
+		TPL_free(u);
+
+		if (a.has_pass) {
+			SB_strcat(pr, ":");
+			char *w = pct_normalize(a.pass, a.pass_len);
+			SB_strcat(pr, w ? w : "");
+			TPL_free(w);
+		}
+
+		SB_strcat(pr, "@");
+	}
+
+	char *h = pct_normalize(a.host, a.host_len);
+
+	if (h) {
+		for (char *c = h; *c; c++)
+			*c = tolower((unsigned char)*c);
+
+		if (is_ipv6_literal(h)) {
+			SB_strcat(pr, "[");
+			SB_strcat(pr, h);
+			SB_strcat(pr, "]");
+		} else
+			SB_strcat(pr, h);
+
+		TPL_free(h);
+	}
+
+	if (a.has_port && !is_default_port(scheme, a.port))
+		SB_sprintf(pr, ":%lld", (long long)a.port);
+
+	char *out = slicedup(SB_cstr(pr), SB_strlen(pr));
+	SB_free(pr);
+	TPL_free(src);
+	return out;
+}
+
+// '$uri_normalize'(+Uri, -Normalized)
+//
+// RFC-3986 section 6.2.2 (case, %-encoding and path segments) plus the
+// two scheme-based rules from 6.2.3 that are safe without knowing the
+// scheme's own rules: a default port is dropped, and an empty path
+// under an authority becomes "/".
+
+static bool bif_sys_uri_normalize_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	char *src = get_text(q, p1, p1_ctx);
+
+	if (!src)
+		return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+	uri_parts u, t;
+	uri_split(src, &u);
+	memset(&t, 0, sizeof(t));
+
+	char *scheme = NULL, *auth = NULL, *path = NULL, *dots = NULL;
+	char *search = NULL, *frag = NULL;
+
+	if (u.has_scheme) {
+		scheme = slicedup(u.scheme, u.scheme_len);
+
+		if (scheme) {
+			for (char *c = scheme; *c; c++)
+				*c = tolower((unsigned char)*c);
+		}
+
+		t.has_scheme = true;
+		t.scheme = scheme;
+		t.scheme_len = scheme ? strlen(scheme) : 0;
+	}
+
+	if (u.has_auth) {
+		auth = normalize_authority(u.auth, u.auth_len, scheme);
+		t.has_auth = true;
+		t.auth = auth;
+		t.auth_len = auth ? strlen(auth) : 0;
+	}
+
+	path = pct_normalize(u.path, u.path_len);
+
+	if (path)
+		dots = remove_dot_segments(path, strlen(path));
+
+	if (dots && !*dots && t.has_auth) {
+		TPL_free(dots);
+		dots = slicedup("/", 1);
+	}
+
+	t.path = dots;
+	t.path_len = dots ? strlen(dots) : 0;
+
+	if (u.has_search) {
+		search = pct_normalize(u.search, u.search_len);
+		t.has_search = true;
+		t.search = search;
+		t.search_len = search ? strlen(search) : 0;
+	}
+
+	if (u.has_frag) {
+		frag = pct_normalize(u.frag, u.frag_len);
+		t.has_frag = true;
+		t.frag = frag;
+		t.frag_len = frag ? strlen(frag) : 0;
+	}
+
+	bool ok = false;
+	char *out = uri_recompose(&t);
+
+	if (out) {
+		ok = unify_text(q, p2, p2_ctx, out, strlen(out));
+		TPL_free(out);
+	}
+
+	TPL_free(scheme);
+	TPL_free(auth);
+	TPL_free(path);
+	TPL_free(dots);
+	TPL_free(search);
+	TPL_free(frag);
+	TPL_free(src);
+	return ok;
+}
+
 builtins g_uri_bifs[] =
 {
 	{"$uri_parse", 6, bif_sys_uri_parse_6, "+atom,?atom,?atom,?atom,?atom,?atom", false, false, BLAH},
 	{"$uri_build", 6, bif_sys_uri_build_6, "-atom,?atom,?atom,?atom,?atom,?atom", false, false, BLAH},
 	{"$uri_authority_parse", 5, bif_sys_uri_authority_parse_5, "+atom,?atom,?atom,?atom,?integer", false, false, BLAH},
 	{"$uri_authority_build", 5, bif_sys_uri_authority_build_5, "-atom,?atom,?atom,?atom,?integer", false, false, BLAH},
+	{"$uri_resolve", 3, bif_sys_uri_resolve_3, "+atom,+atom,-atom", false, false, BLAH},
+	{"$uri_normalize", 2, bif_sys_uri_normalize_2, "+atom,-atom", false, false, BLAH},
 
 	{0}
 };

@@ -1,5 +1,6 @@
-% RFC-3986 syntax primitives: '$uri_parse'/6, '$uri_build'/6,
-% '$uri_authority_parse'/5, '$uri_authority_build'/5.
+% RFC-3986 primitives: '$uri_parse'/6, '$uri_build'/6,
+% '$uri_authority_parse'/5, '$uri_authority_build'/5,
+% '$uri_resolve'/3, '$uri_normalize'/2.
 
 :- initialization(main).
 
@@ -34,6 +35,51 @@ art(A) :-
 	->	format("ok ~q~n", [A])
 	;	format("FAILED ~q -> ~q~n", [A,A2])
 	).
+
+% Every reference in RFC-3986 sections 5.4.1 and 5.4.2, resolved
+% against the base the RFC uses. Silent when they all agree.
+
+base('http://a/b/c/d;p?q').
+
+r(Ref, Want) :-
+	base(B),
+	'$uri_resolve'(Ref, B, Got),
+	(	Got == Want
+	->	true
+	;	format("FAILED ~q + ~q -> ~q, wanted ~q~n", [Ref,B,Got,Want])
+	).
+
+n(U) :-
+	'$uri_normalize'(U, N),
+	format("~q | ~q~n", [U,N]).
+
+rfc5401 :-
+	r('g:h', 'g:h'), r(g, 'http://a/b/c/g'), r('./g', 'http://a/b/c/g'),
+	r('g/', 'http://a/b/c/g/'), r('/g', 'http://a/g'), r('//g', 'http://g'),
+	r('?y', 'http://a/b/c/d;p?y'), r('g?y', 'http://a/b/c/g?y'),
+	r('#s', 'http://a/b/c/d;p?q#s'), r('g#s', 'http://a/b/c/g#s'),
+	r('g?y#s', 'http://a/b/c/g?y#s'), r(';x', 'http://a/b/c/;x'),
+	r('g;x', 'http://a/b/c/g;x'), r('g;x?y#s', 'http://a/b/c/g;x?y#s'),
+	r('', 'http://a/b/c/d;p?q'), r('.', 'http://a/b/c/'),
+	r('./', 'http://a/b/c/'), r('..', 'http://a/b/'), r('../', 'http://a/b/'),
+	r('../g', 'http://a/b/g'), r('../..', 'http://a/'),
+	r('../../', 'http://a/'), r('../../g', 'http://a/g').
+
+rfc5402 :-
+	r('../../../g', 'http://a/g'), r('../../../../g', 'http://a/g'),
+	r('/./g', 'http://a/g'), r('/../g', 'http://a/g'),
+	r('g.', 'http://a/b/c/g.'), r('.g', 'http://a/b/c/.g'),
+	r('g..', 'http://a/b/c/g..'), r('..g', 'http://a/b/c/..g'),
+	r('./../g', 'http://a/b/g'), r('./g/.', 'http://a/b/c/g/'),
+	r('g/./h', 'http://a/b/c/g/h'), r('g/../h', 'http://a/b/c/h'),
+	r('g;x=1/./y', 'http://a/b/c/g;x=1/y'), r('g;x=1/../y', 'http://a/b/c/y'),
+	r('g?y/./x', 'http://a/b/c/g?y/./x'),
+	r('g?y/../x', 'http://a/b/c/g?y/../x'),
+	r('g#s/./x', 'http://a/b/c/g#s/./x'),
+	r('g#s/../x', 'http://a/b/c/g#s/../x'),
+	% Strict resolution: a reference with its own scheme is already
+	% absolute, even when it repeats the base's scheme.
+	r('http:g', 'http:g').
 
 main :-
 	p('http://www.example.com/path?q=1#frag'),
@@ -84,4 +130,33 @@ main :-
 	art('bob:secret@example.com:443'),
 	art('[::1]:8080'),
 	art('[2001:db8::1]'),
-	art('host:notaport').
+	art('host:notaport'),
+	nl,
+	rfc5401,
+	rfc5402,
+	write('RFC 5.4 vectors agree'), nl,
+	nl,
+	n('HTTP://www.EXAMPLE.com/'),
+	n('http://www.example.com:80/x'),
+	n('https://www.example.com:443/x'),
+	n('http://www.example.com:8080/x'),
+	n('http://example.com'),
+	n('http://example.com/%7Euser/%2Fpath/%aa'),
+	n('http://example.com/a/./b/../c'),
+	n('eXaMpLe://a/./b/../c?Q%7e#F%7e'),
+	n('http://USER:PW@HOST:80/'),
+	n('/a/b/../c'),
+	n('http://[::1]:80/'),
+	n('http://[2001:DB8::1]/'),
+	n('urn:ISBN:0451450523'),
+	n('http://x/%2e%2e/y'),
+	n('http://x/%c3%a9'),
+	% A port that is not *DIGIT, or will not fit 16 bits, is not a
+	% port - it stays part of the host instead of being truncated.
+	n('http://x:99999999999999999999/'),
+	n('http://x:70000/'),
+	n(''),
+	n('%'), n('%4'), n('%zz'),
+	n('/../../../..'),
+	n('http://'),
+	n('http://[]:80').
