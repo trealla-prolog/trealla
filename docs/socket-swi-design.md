@@ -262,27 +262,18 @@ needing a real network must be loopback-only.
 
 ---
 
-## 9a. `tcp_bind/2` cannot restrict to an interface
+## 9a. Interface binding — fixed
 
-Found while building the helpers, and it constrains §3 rather than §4.
+`tpl_server()` used to pass **NULL** as the host to `getaddrinfo`, binding the
+wildcard and discarding the hostname, so `tcp_bind(S, '127.0.0.1':Port)` could not
+have restricted the socket to loopback. **Fixed**: an explicit host now binds that
+interface, while no host still means the wildcard. `tcp_bind/2` can therefore be
+implemented faithfully.
 
-`tpl_server()` passes **NULL** as the host to `getaddrinfo` **[checked]** — it
-ignores the hostname it was given and binds the wildcard address. Two consequences:
-
-- `tcp_bind(S, '127.0.0.1':Port)` cannot actually restrict the socket to loopback.
-  The address is parsed, the port is honoured, the host is discarded. `library(socket)`
-  should either document this or reject a non-wildcard bind address rather than
-  silently listening on every interface — the silent version is a security-relevant
-  surprise.
-- With `AF_UNSPEC` and a NULL host, `getaddrinfo` resolves IPv6 first, so a server
-  socket is normally **AF_INET6**. Peers therefore arrive as v4-mapped addresses
-  (`::ffff:127.0.0.1`), and `library(socket)` must normalise those to `ip(A,B,C,D)`
-  before handing them to callers who expect SWI's IPv4 term.
-
-Both are pre-existing `tpl_server` behaviour, not new. Fixing the first means
-letting `tpl_server` honour its hostname argument, which is a small change but
-changes existing behaviour for `library/sockets.pl` too — out of scope here, worth
-its own decision.
+The remaining consequence stands: with **no** host and `AF_UNSPEC`, `getaddrinfo`
+resolves IPv6 first, so a wildcard server socket is normally **AF_INET6** and peers
+arrive as v4-mapped addresses (`::ffff:127.0.0.1`). `library(socket)` must normalise
+those to `ip(A,B,C,D)` before handing them to callers expecting SWI's IPv4 term.
 
 ---
 
