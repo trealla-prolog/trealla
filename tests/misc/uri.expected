@@ -1,0 +1,49 @@
+'http://www.example.com/path?q=1#frag' | http 'www.example.com' '/path' 'q=1' frag
+'http://user:pw@[::1]:8080/a/b' | http 'user:pw@[::1]:8080' '/a/b' - -
+'/relative/path' | - - '/relative/path' - -
+'relative/path' | - - 'relative/path' - -
+'mailto:bob@example.com' | mailto - 'bob@example.com' - -
+'urn:isbn:0451450523' | urn - 'isbn:0451450523' - -
+'http://x/' | http x / - -
+'http://x/?' | http x / '' -
+'http://x' | http x '' - -
+'//host/path' | - host '/path' - -
+'a:b' | a - b - -
+'/tmp/a:b' | - - '/tmp/a:b' - -
+'80:nope' | - - '80:nope' - -
+'file:///etc/hosts' | file '' '/etc/hosts' - -
+'http://x/p?a=1&b=2#' | http x '/p' 'a=1&b=2' ''
+'HTTP://X/Y%2fZ' | 'HTTP' 'X' '/Y%2fZ' - -
+'' | - - '' - -
+[c,h,a,r,s,:,/,/,l,i,s,t,/,o,k] | chars list '/ok' - -
+
+'www.example.com' | - - 'www.example.com' -
+'www.example.com:8080' | - - 'www.example.com' 8080
+'bob@example.com' | bob - 'example.com' -
+'bob:secret@example.com:443' | bob secret 'example.com' 443
+'[::1]' | - - '::1' -
+'[::1]:8080' | - - '::1' 8080
+'[2001:db8::1]' | - - '2001:db8::1' -
+'bob@sub@host:99' | 'bob@sub' - host 99
+'host:notaport' | - - 'host:notaport' -
+'' | - - '' -
+
+ok 'http://www.example.com/path?q=1#frag'
+ok 'http://user:pw@[::1]:8080/a/b'
+ok '/relative/path'
+ok 'mailto:bob@example.com'
+ok 'urn:isbn:0451450523'
+ok 'http://x/?'
+ok 'http://x'
+ok '//host/path'
+ok 'file:///etc/hosts'
+ok 'http://x/p?a=1&b=2#'
+ok ''
+
+ok 'www.example.com'
+ok 'www.example.com:8080'
+ok 'bob@example.com'
+ok 'bob:secret@example.com:443'
+ok '[::1]:8080'
+ok '[2001:db8::1]'
+ok 'host:notaport'

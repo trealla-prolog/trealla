@@ -149,6 +149,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_tabling.o \
 	src/bif_tasks.o \
 	src/bif_threads.o \
+	src/bif_uri.o \
 	src/compile.o \
 	src/heap.o \
 	src/history.o \
