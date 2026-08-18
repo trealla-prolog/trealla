@@ -205,6 +205,7 @@ LIBOBJECTS +=  \
 	library/si.o \
 	library/tabling.o \
 	library/sqlite3.o \
+	library/socket.o \
 	library/sockets.o \
 	library/time.o \
 	library/ugraphs.o \
