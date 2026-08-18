@@ -205,7 +205,6 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfile, const char *certfile)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
-	(void) hostname;
 	struct addrinfo hints, *result, *rp;
 	int fd, status;
 
@@ -216,7 +215,17 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 	char svc[20];
 	snprintf(svc, sizeof(svc), "%u", port);
 
-	if ((status = getaddrinfo(NULL, svc, &hints, &result)) != 0) {
+	// A NULL or empty hostname means the wildcard address, which is what
+	// this always did - it used to discard the argument outright. A real
+	// hostname now binds that interface only, so a server can be
+	// restricted to loopback. The caller is responsible for passing NULL
+	// when the user did not actually name a host: see bif_sys_server_3,
+	// where "localhost" is the alias default and must not be mistaken
+	// for a bind request.
+
+	const char *bindhost = (hostname && *hostname) ? hostname : NULL;
+
+	if ((status = getaddrinfo(bindhost, svc, &hints, &result)) != 0) {
 		//perror("getaddrinfo");
 		return -1;
 	}

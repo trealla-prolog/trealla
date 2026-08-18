@@ -53,7 +53,12 @@ static bool bif_sys_server_3(query *q)
 	char *keyfile = "privkey.pem", *certfile = "fullchain.pem";
 	int udp = 0, nodelay = 1, ssl = 0, domain = 0, level = 0;
 	unsigned port = 80;
-	snprintf(hostname, sizeof(hostname), "localhost");
+	// Left EMPTY rather than defaulting to "localhost", so that
+	// tpl_server() can tell "no host given" (bind the wildcard, the
+	// historical behaviour) from "host is localhost" (bind loopback
+	// only). The alias default below restores "localhost" afterwards.
+
+	hostname[0] = '\0';
 	path[0] = '\0';
 	char *filename = NULL;
 
@@ -155,6 +160,11 @@ static bool bif_sys_server_3(query *q)
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	TPL_free(filename);
 	int fd = tpl_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
+
+	// The stream alias has always been "localhost" when unspecified.
+
+	if (!hostname[0])
+		snprintf(hostname, sizeof(hostname), "localhost");
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "existence_error", "server_failed");
