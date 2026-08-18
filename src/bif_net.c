@@ -801,6 +801,140 @@ static bool bif_sys_current_host_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+// '$udp_recv'(+Stream, -Data, -Host, -Port, +Options)
+//
+// Options: max_message_size(+Bytes), default 4096 as SWI has it.
+//
+// Data comes back as a length-counted string so an embedded NUL is
+// preserved; library/socket.pl converts per udp_receive/4's as(Type).
+
+static bool bif_sys_udp_recv_5(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p3,var);
+	GET_NEXT_ARG(p4,list_or_nil);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	size_t maxlen = 4096;
+
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_ctx c_ctx = q->latest_ctx;
+
+		if (is_compound(c) && (c->arity == 1)
+			&& !CMP_STRING_TO_CSTR(q, c, "max_message_size")) {
+			cell *arg = deref(q, c+1, c_ctx);
+
+			if (is_smallint(arg) && (get_smallint(arg) > 0))
+				maxlen = (size_t)get_smallint(arg);
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+	}
+
+	char *buf = malloc(maxlen);
+	CHECKED(buf);
+	char host[256];
+	int port = 0;
+	ssize_t len = tpl_udp_recv(str, buf, maxlen, host, sizeof(host), &port);
+
+	if (len < 0) {
+		free(buf);
+		return false;
+	}
+
+	cell tmp;
+	bool ok = make_stringn(&tmp, buf, (size_t)len);
+	free(buf);
+
+	if (!ok)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
+		return false;
+
+	cell tmp2;
+	make_cstring(&tmp2, host);
+
+	if (!unify(q, p2, p2_ctx, &tmp2, q->st.cur_ctx))
+		return false;
+
+	cell tmp3;
+	make_int(&tmp3, port);
+	return unify(q, p3, p3_ctx, &tmp3, q->st.cur_ctx);
+}
+
+// '$udp_send'(+Stream, +Data, +Host, +Port, +Options)
+//
+// Data may be an atom, a string, or a list of chars/codes. Options are
+// accepted and ignored here; encoding and as(Type) are handled in
+// library/socket.pl, which knows the term shapes.
+
+static bool bif_sys_udp_send_5(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,any);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,integer);
+	GET_NEXT_ARG(p4,list_or_nil);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	const char *src;
+	size_t len;
+	char *tofree = NULL;
+
+	if (is_atom(p1) || is_string(p1)) {
+		src = C_STR(q, p1);
+		len = C_STRLEN(q, p1);
+	} else if (is_iso_list(p1)) {
+		if (!scan_is_chars_list(q, p1, p1_ctx, true))
+			return throw_error(q, p1, p1_ctx, "type_error", "text");
+
+		tofree = chars_list_to_string(q, p1, p1_ctx);
+		CHECKED(tofree);
+		src = tofree;
+		len = strlen(tofree);
+	} else if (is_nil(p1)) {
+		src = "";
+		len = 0;
+	} else
+		return throw_error(q, p1, p1_ctx, "type_error", "text");
+
+	ssize_t sent = tpl_udp_send(str, src, len, C_STR(q, p2), (int)get_smallint(p3));
+
+	if (tofree)
+		free(tofree);
+
+	return sent >= 0;
+}
+
+// '$host_address'(+Host, -Address)
+//
+// Resolve without connecting. '$client' reports back the hostname it was
+// handed, not a resolved address, so there was no way to do this before.
+
+static bool bif_sys_host_address_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	char ip[256];
+
+	if (!tpl_host_address(C_STR(q, p1), ip, sizeof(ip)))
+		return false;
+
+	cell tmp;
+	make_cstring(&tmp, ip);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+}
+
 static bool bif_sys_peer_addr_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -832,6 +966,9 @@ builtins g_net_bifs[] =
 	{"$client_tls", 4, bif_sys_client_tls_4, "+stream,+atom,+integer,+source_sink", false, false, BLAH},
 	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 	{"$peer_addr", 3, bif_sys_peer_addr_3, "+stream,-atom,-integer", false, false, BLAH},
+	{"$udp_recv", 5, bif_sys_udp_recv_5, "+stream,-string,-atom,-integer,+list", false, false, BLAH},
+	{"$udp_send", 5, bif_sys_udp_send_5, "+stream,+term,+atom,+integer,+list", false, false, BLAH},
+	{"$host_address", 2, bif_sys_host_address_2, "+atom,-atom", false, false, BLAH},
 
 	{0}
 };

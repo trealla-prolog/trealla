@@ -668,3 +668,135 @@ int tpl_close(stream *str)
 
 	return ok;
 }
+
+// --- SWI-compatible socket helpers -----------------------------------
+//
+// These three exist for library/socket.pl (see docs/socket-swi-design.md).
+// They live here rather than in bif_net.c because this file already owns
+// the platform guards and the socket headers; bif_net.c calls tpl_*
+// helpers and never touches a syscall directly.
+
+// A datagram socket read that reports WHO sent it. The udp(true) option
+// on '$client'/'$server' gives a SOCK_DGRAM socket, but reading it with
+// the ordinary stream predicates loses the sender - which is the whole
+// point of the UDP interface. Returns bytes read, or -1.
+
+ssize_t tpl_udp_recv(stream *str, void *buf, size_t buflen, char *host, size_t hostlen, int *port)
+{
+#if !defined(_WIN32) && !defined(__wasi__)
+	struct sockaddr_storage from;
+	socklen_t fromlen = sizeof(from);
+	ssize_t len = recvfrom(fileno(str->fp_in), buf, buflen, 0, (struct sockaddr*)&from, &fromlen);
+
+	if (len < 0)
+		return -1;
+
+	char svc[NI_MAXSERV];
+	host[0] = svc[0] = '\0';
+
+	if (getnameinfo((struct sockaddr*)&from, fromlen, host, hostlen, svc, sizeof(svc),
+			NI_NUMERICHOST|NI_NUMERICSERV) != 0) {
+		// The datagram is still good even if we cannot name the peer.
+		snprintf(host, hostlen, "unknown");
+		*port = 0;
+		return len;
+	}
+
+	*port = atoi(svc);
+	return len;
+#else
+	return -1;
+#endif
+}
+
+// Addressed datagram write. Resolves per call rather than caching: a UDP
+// socket may send to many peers, so there is no one address to cache.
+
+ssize_t tpl_udp_send(stream *str, const void *buf, size_t len, const char *host, int port)
+{
+#if !defined(_WIN32) && !defined(__wasi__)
+	int fd = fileno(str->fp_out);
+
+	// Resolve in the SOCKET's address family, not whatever getaddrinfo
+	// prefers. tpl_server() binds the wildcard address - it passes NULL
+	// as the host to getaddrinfo - and with AF_UNSPEC that comes back
+	// IPv6 first, so a server socket is typically AF_INET6. Resolving
+	// the destination independently then yields AF_INET for something
+	// like 127.0.0.1, and sendto() rejects the mismatch with EINVAL.
+	//
+	// AI_V4MAPPED|AI_ALL lets an IPv4 destination still be reached from
+	// a v6 socket, as a v4-mapped address.
+
+	struct sockaddr_storage me;
+	socklen_t melen = sizeof(me);
+	int family = AF_UNSPEC;
+
+	if (getsockname(fd, (struct sockaddr*)&me, &melen) == 0)
+		family = me.ss_family;
+
+	struct addrinfo hints, *result, *rp;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = family;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	if (family == AF_INET6)
+		hints.ai_flags = AI_V4MAPPED | AI_ALL;
+
+	char svc[20];
+	snprintf(svc, sizeof(svc), "%d", port);
+
+	if (getaddrinfo(host, svc, &hints, &result) != 0)
+		return -1;
+
+	ssize_t sent = -1;
+
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		sent = sendto(fd, buf, len, 0, rp->ai_addr, rp->ai_addrlen);
+
+		if (sent >= 0)
+			break;
+
+		// '$client' with udp(true) calls connect(), and BSD/macOS reject
+		// sendto() with an explicit destination on a connected socket.
+		// A connected datagram socket can only reach its peer anyway, so
+		// the destination is either that peer or unreachable - send() is
+		// the right call and gives the same result.
+
+		if (errno == EISCONN) {
+			sent = send(fd, buf, len, 0);
+
+			if (sent >= 0)
+				break;
+		}
+	}
+
+	freeaddrinfo(result);
+	return sent;
+#else
+	return -1;
+#endif
+}
+
+// Name to numeric address, without opening a connection. '$client'
+// reports the hostname it was given, not a resolved one, so there was
+// previously no way to resolve a name at all.
+
+bool tpl_host_address(const char *hostname, char *ip, size_t iplen)
+{
+#if !defined(_WIN32) && !defined(__wasi__)
+	struct addrinfo hints, *result;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+
+	if (getaddrinfo(hostname, NULL, &hints, &result) != 0)
+		return false;
+
+	bool ok = getnameinfo(result->ai_addr, result->ai_addrlen, ip, iplen,
+			NULL, 0, NI_NUMERICHOST) == 0;
+	freeaddrinfo(result);
+	return ok;
+#else
+	return false;
+#endif
+}
