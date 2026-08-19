@@ -1670,7 +1670,13 @@ static mp_result s_read_fast(mp_int z, mp_size radix, const char *str,
     }
   }
 
-  if ((res = mp_int_init_uvalue(&P, (mp_usmall)p0)) != MP_OK) goto CLEANUP;
+  if ((res = mp_int_init_uvalue(&P, (mp_usmall)p0)) != MP_OK) {
+    /* P is untouched when init fails - mp_int_init_copy() returns
+       before writing z - so it must not reach mp_int_clear() below. */
+    for (j = 0; j < m; j++) mp_int_clear(&v[j]);
+    free(v);
+    return res;
+  }
 
   /* Combine pairs from the right; an odd leftmost element passes through. */
   while (m > 1) {
@@ -1686,6 +1692,15 @@ static mp_result s_read_fast(mp_int z, mp_size radix, const char *str,
         v[ofs + j] = v[hi];
         if (v[hi].digits == &v[hi].single)
           v[ofs + j].digits = &v[ofs + j].single;
+
+        /* The move duplicated the digits pointer. On the success path
+           m shrinks past v[hi] so only one copy is ever cleared, but a
+           mid-loop failure jumps to CLEANUP with the old m and frees
+           both - a double free reachable whenever mp_int_mul() or
+           mp_int_add() hits OOM (issue #801). Hand ownership over. */
+        v[hi].digits = &v[hi].single;
+        v[hi].used = 1;
+        v[hi].single = 0;
       }
     }
     m = ofs + m / 2;
