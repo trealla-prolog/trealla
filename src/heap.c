@@ -229,7 +229,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			uint32_t save_vgen = 0;
 			int both = 0;
 			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
-			if (both) q->cycle_error = true;
+			if (both) q->cycle_error = q->cycle_dropped = true;
 
 			if (is_var(p1 + 1) && cycles_back(q, h, h_ctx)) {
 				h = p1 + 1;
@@ -254,7 +254,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			if (deep_copy(t)) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, t, t_ctx, q->vgen);
 
 			if (both)
-				q->cycle_error = true;
+				q->cycle_error = q->cycle_dropped = true;
 
 			if (is_var(p1) && cycles_back(q, t, t_ctx)) {
 				t = p1;
@@ -343,7 +343,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		bool any = false;
 		int both = 0;
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
-		if (both) q->cycle_error = true;
+		if (both) q->cycle_error = q->cycle_dropped = true;
 
 		if (is_var(n->p1) && cycles_back(q, c, c_ctx)) {
 			c = n->p1;
@@ -408,6 +408,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 
 cell *clone_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 {
+	q->cycle_dropped = false;
 	if (++q->vgen == 0) q->vgen = 1;
 	q->has_vars = false;
 	cell *rec = clone_term_to_tmp_internal(q, p1, p1_ctx, 0);

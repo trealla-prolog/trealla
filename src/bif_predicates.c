@@ -2886,6 +2886,23 @@ bool bif_sys_queue_1(query *q)
 		cell *attrs = e->c.val_attrs;
 	}
 
+	// A cycle cannot survive being queued. The clone has no frame slots
+	// to hang one from, so it emits a fresh variable where the back-edge
+	// was and the term quietly stops being cyclic - see issue #989, where
+	// that produced answers that looked plausible and were wrong.
+	//
+	// Refusing is the same position library(builtins) already takes for
+	// bagof/3 and setof/3, which check acyclic_term(G) before they start.
+	// A solution that merely *references* a cyclic term still living in
+	// an outer frame would sometimes survive this, by accident of the
+	// reference outliving the copy; it is rejected too, rather than have
+	// findall/3 depend on which frame the cycle happens to sit in.
+
+	if (q->cycle_dropped) {
+		q->st.qnum--;
+		return throw_error(q, p1, p1_ctx, "type_error", "acyclic_term");
+	}
+
 	CHECKED(alloc_queuen(q, q->st.qnum, tmp), q->st.qnum--);
 	return true;
 }

@@ -765,6 +765,7 @@ struct query_ {
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	void *oom_reserve;					// emergency headroom for constructing a memory error
 	cell *clone_root;					// the term copy_term/2 is copying, for cycles back to it
+	bool cycle_dropped;					// a clone hit a cycle it could not represent and truncated it
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
 	trail_page *trail_pages, *trail_current;
