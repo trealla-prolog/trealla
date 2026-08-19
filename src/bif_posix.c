@@ -12,6 +12,11 @@
 #include <unistd.h>
 #endif
 
+#if !defined(_WIN32) && !defined(__wasi__)
+#define USE_SYSLOG 1
+#include <syslog.h>
+#endif
+
 #ifdef _WIN32
 #define ctime_r(p1,p2) ctime(p1)
 #define gmtime_r(p1,p2) gmtime(p1)
@@ -249,6 +254,180 @@ static bool bif_posix_fork_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+
+// --- syslog ------------------------------------------------------------
+//
+// The LOG_* values are platform-specific, so the symbolic names SWI's
+// library(syslog) uses are mapped here rather than in Prolog. Anything
+// the platform does not define is simply absent from the table and is
+// reported as a domain_error.
+
+#if USE_SYSLOG
+
+typedef struct { const char *name; int val; } syslog_name;
+
+static const syslog_name s_syslog_facilities[] = {
+	{"auth", LOG_AUTH},
+#ifdef LOG_AUTHPRIV
+	{"authpriv", LOG_AUTHPRIV},
+#endif
+	{"cron", LOG_CRON},
+	{"daemon", LOG_DAEMON},
+#ifdef LOG_FTP
+	{"ftp", LOG_FTP},
+#endif
+	{"kern", LOG_KERN},
+	{"local0", LOG_LOCAL0}, {"local1", LOG_LOCAL1},
+	{"local2", LOG_LOCAL2}, {"local3", LOG_LOCAL3},
+	{"local4", LOG_LOCAL4}, {"local5", LOG_LOCAL5},
+	{"local6", LOG_LOCAL6}, {"local7", LOG_LOCAL7},
+	{"lpr", LOG_LPR}, {"mail", LOG_MAIL}, {"news", LOG_NEWS},
+	{"syslog", LOG_SYSLOG}, {"user", LOG_USER}, {"uucp", LOG_UUCP},
+	{NULL, 0}
+};
+
+static const syslog_name s_syslog_priorities[] = {
+	{"emerg", LOG_EMERG}, {"alert", LOG_ALERT}, {"crit", LOG_CRIT},
+	{"err", LOG_ERR}, {"warning", LOG_WARNING}, {"notice", LOG_NOTICE},
+	{"info", LOG_INFO}, {"debug", LOG_DEBUG},
+	{NULL, 0}
+};
+
+static const syslog_name s_syslog_options[] = {
+	{"cons", LOG_CONS}, {"ndelay", LOG_NDELAY}, {"nowait", LOG_NOWAIT},
+	{"odelay", LOG_ODELAY},
+#ifdef LOG_PERROR
+	{"perror", LOG_PERROR},
+#endif
+	{"pid", LOG_PID},
+	{NULL, 0}
+};
+
+static bool syslog_lookup(const syslog_name *tbl, const char *name, int *val)
+{
+	for (const syslog_name *p = tbl; p->name; p++) {
+		if (!strcmp(p->name, name)) {
+			*val = p->val;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// openlog(3) stores the pointer it is given, it does not copy the
+// string, so the ident has to outlive the call. Keeping our own copy is
+// not optional: the Prolog atom's storage can move or be reclaimed, and
+// syslog would then read freed memory on every message.
+
+static char *g_syslog_ident = NULL;
+
+#endif
+
+static bool bif_sys_openlog_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,list_or_nil);
+	GET_NEXT_ARG(p3,atom);
+#if USE_SYSLOG
+	int facility = 0;
+
+	if (!syslog_lookup(s_syslog_facilities, C_STR(q, p3), &facility))
+		return throw_error(q, p3, p3_ctx, "domain_error", "syslog_facility");
+
+	int mask = 0;
+	LIST_HANDLER(p2);
+
+	while (is_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+		pl_ctx c_ctx = q->latest_ctx;
+
+		if (!is_atom(c))
+			return throw_error(q, c, c_ctx, "type_error", "atom");
+
+		int opt = 0;
+
+		if (!syslog_lookup(s_syslog_options, C_STR(q, c), &opt))
+			return throw_error(q, c, c_ctx, "domain_error", "syslog_option");
+
+		mask |= opt;
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	if (!is_nil(p2))
+		return throw_error(q, p2, p2_ctx, "type_error", "list");
+
+	char *ident = strdup(C_STR(q, p1));
+	CHECKED(ident);
+	openlog(ident, mask, facility);
+
+	// Freed only after the new one is in place, since the old pointer is
+	// live until openlog() replaces it.
+
+	free(g_syslog_ident);
+	g_syslog_ident = ident;
+	return true;
+#else
+	return throw_error(q, p1, p1_ctx, "resource_error", "syslog_unavailable");
+#endif
+}
+
+static bool bif_sys_syslog_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,any);
+#if USE_SYSLOG
+	int pri = 0;
+
+	if (!syslog_lookup(s_syslog_priorities, C_STR(q, p1), &pri))
+		return throw_error(q, p1, p1_ctx, "domain_error", "syslog_priority");
+
+	const char *src;
+	char *tofree = NULL;
+
+	if (is_atom(p2) || is_string(p2)) {
+		src = C_STR(q, p2);
+	} else if (is_nil(p2)) {
+		src = "";
+	} else if (is_iso_list(p2)) {
+		if (!scan_is_chars_list(q, p2, p2_ctx, true))
+			return throw_error(q, p2, p2_ctx, "type_error", "text");
+
+		tofree = chars_list_to_string(q, p2, p2_ctx);
+		CHECKED(tofree);
+		src = tofree;
+	} else
+		return throw_error(q, p2, p2_ctx, "type_error", "text");
+
+	// "%s" rather than passing the message as the format itself - a
+	// message carrying %s or %n would otherwise read arbitrary memory.
+
+	syslog(pri, "%s", src);
+
+	if (tofree)
+		free(tofree);
+
+	return true;
+#else
+	return throw_error(q, p1, p1_ctx, "resource_error", "syslog_unavailable");
+#endif
+}
+
+static bool bif_sys_closelog_0(query *q)
+{
+#if USE_SYSLOG
+	closelog();
+	free(g_syslog_ident);
+	g_syslog_ident = NULL;
+	return true;
+#else
+	return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "syslog_unavailable");
+#endif
+}
+
 builtins g_posix_bifs[] =
 {
     {"posix_strftime", 3, bif_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
@@ -264,6 +443,10 @@ builtins g_posix_bifs[] =
 	{"posix_getppid", 1, bif_posix_getppid_1, "-integer", false, false, BLAH},
 	{"posix_getpid", 1, bif_posix_getpid_1, "-integer", false, false, BLAH},
 	{"posix_fork", 1, bif_posix_fork_1, "-integer", false, false, BLAH},
+
+	{"$openlog", 3, bif_sys_openlog_3, "+atom,+list,+atom", false, false, BLAH},
+	{"$syslog", 2, bif_sys_syslog_2, "+atom,+term", false, false, BLAH},
+	{"$closelog", 0, bif_sys_closelog_0, NULL, false, false, BLAH},
 
 	// For Logtalk...
 

@@ -43,6 +43,8 @@ extern unsigned char library_ugraphs_pl[];
 extern unsigned int library_ugraphs_pl_len;
 extern unsigned char library_sqlite3_pl[];
 extern unsigned int library_sqlite3_pl_len;
+extern unsigned char library_syslog_pl[];
+extern unsigned int library_syslog_pl_len;
 extern unsigned char library_sockets_pl[];
 extern unsigned int library_sockets_pl_len;
 extern unsigned char library_json_pl[];
@@ -130,6 +132,7 @@ library g_libs[] = {
 	 {"si", library_si_pl, &library_si_pl_len},
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
 	 {"sockets", library_sockets_pl, &library_sockets_pl_len},
+	 {"syslog", library_syslog_pl, &library_syslog_pl_len},
 	 {"time", library_time_pl, &library_time_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
 	 {"uri", library_uri_pl, &library_uri_pl_len},

@@ -1,0 +1,11 @@
+found: an atom message
+found: a string message
+found: codes
+found: formatted argument
+found: warning: fallback message
+ident ok
+--- error handling ---
+bad_facility: raised
+bad_option: raised
+bad_priority: raised
+bad_ident: raised

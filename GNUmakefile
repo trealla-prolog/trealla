@@ -208,6 +208,7 @@ LIBOBJECTS +=  \
 	library/sqlite3.o \
 	library/socket.o \
 	library/sockets.o \
+	library/syslog.o \
 	library/time.o \
 	library/ugraphs.o \
 	library/uri.o \
