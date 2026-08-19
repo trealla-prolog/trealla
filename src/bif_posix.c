@@ -17,6 +17,12 @@
 #include <syslog.h>
 #endif
 
+#if !defined(_WIN32) && !defined(__wasi__)
+#define USE_POSIX_FILES 1
+#include <sys/stat.h>
+#include <sys/time.h>
+#endif
+
 #ifdef _WIN32
 #define ctime_r(p1,p2) ctime(p1)
 #define gmtime_r(p1,p2) gmtime(p1)
@@ -428,6 +434,284 @@ static bool bif_sys_closelog_0(query *q)
 #endif
 }
 
+
+// --- filesystem ---------------------------------------------------------
+//
+// Thin wrappers over the POSIX calls that library(filesex) needs and
+// Trealla did not already have. Anything that is only path arithmetic -
+// directory_file_path/3, relative_file_name/3 - is done in Prolog and is
+// deliberately absent here.
+//
+// POSIX only. Windows and WASI get resource_error rather than a silent
+// no-op, so a caller finds out instead of believing the link was made.
+
+#if USE_POSIX_FILES
+
+static bool posix_file_error(query *q, cell *c, pl_ctx c_ctx, const char *op)
+{
+	// The errno name is carried through so a caller can tell a missing
+	// path from a permission problem, as with the socket layer.
+
+	const char *name;
+
+	switch (errno) {
+	case EACCES: name = "eacces"; break;
+	case EEXIST: name = "eexist"; break;
+	case EINVAL: name = "einval"; break;
+	case EISDIR: name = "eisdir"; break;
+	case ELOOP: name = "eloop"; break;
+	case EMLINK: name = "emlink"; break;
+	case ENAMETOOLONG: name = "enametoolong"; break;
+	case ENOENT: name = "enoent"; break;
+	case ENOSPC: name = "enospc"; break;
+	case ENOTDIR: name = "enotdir"; break;
+	case ENOTEMPTY: name = "enotempty"; break;
+	case EPERM: name = "eperm"; break;
+	case EROFS: name = "erofs"; break;
+	case EXDEV: name = "exdev"; break;
+	default: name = "unknown"; break;
+	}
+
+	cell tmp;
+	make_atom(&tmp, new_atom(q->pl, name));
+	(void) op;
+	return throw_error2(q, c, c_ctx, "file_error", name, &tmp);
+}
+
+#endif
+
+#define POSIX_FILES_GUARD(q, c, c_ctx) \
+	return throw_error(q, c, c_ctx, "resource_error", "posix_files_unavailable")
+
+static bool bif_posix_rmdir_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+#if USE_POSIX_FILES
+	if (rmdir(C_STR(q, p1)))
+		return posix_file_error(q, p1, p1_ctx, "rmdir");
+
+	return true;
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+// delete_file/1 checks the file exists first, which a *dangling*
+// symlink does not - and a recursive delete creates dangling links as it
+// goes, by removing a target before the link to it. unlink(2) removes
+// the link itself and does not care what it points at.
+
+static bool bif_posix_unlink_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+#if USE_POSIX_FILES
+	if (unlink(C_STR(q, p1)))
+		return posix_file_error(q, p1, p1_ctx, "unlink");
+
+	return true;
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+static bool bif_posix_link_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom);
+#if USE_POSIX_FILES
+	if (link(C_STR(q, p1), C_STR(q, p2)))
+		return posix_file_error(q, p2, p2_ctx, "link");
+
+	return true;
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+static bool bif_posix_symlink_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom);
+#if USE_POSIX_FILES
+	if (symlink(C_STR(q, p1), C_STR(q, p2)))
+		return posix_file_error(q, p2, p2_ctx, "symlink");
+
+	return true;
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+static bool bif_posix_readlink_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+#if USE_POSIX_FILES
+	char buf[4096];
+	ssize_t n = readlink(C_STR(q, p1), buf, sizeof(buf) - 1);
+
+	if (n < 0)
+		return posix_file_error(q, p1, p1_ctx, "readlink");
+
+	buf[n] = '\0';
+	cell tmp;
+	make_cstring(&tmp, buf);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+// The mode is the permission bits only, as an integer - the symbolic
+// specs chmod/2 accepts are parsed in Prolog.
+
+// Resolves symlinks, so a recursive walk can tell it has already been
+// somewhere and not spin on a link that points back up its own tree.
+
+static bool bif_posix_realpath_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+#if USE_POSIX_FILES
+	char *real = realpath(C_STR(q, p1), NULL);
+
+	if (!real)
+		return posix_file_error(q, p1, p1_ctx, "realpath");
+
+	cell tmp;
+	make_cstring(&tmp, real);
+	free(real);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+static bool bif_posix_chmod_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,integer);
+#if USE_POSIX_FILES
+	if (chmod(C_STR(q, p1), (mode_t)(get_smallint(p2) & 07777)))
+		return posix_file_error(q, p1, p1_ctx, "chmod");
+
+	return true;
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+static bool bif_posix_file_mode_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+#if USE_POSIX_FILES
+	struct stat st;
+
+	if (stat(C_STR(q, p1), &st))
+		return posix_file_error(q, p1, p1_ctx, "stat");
+
+	cell tmp;
+	make_int(&tmp, st.st_mode & 07777);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+// lstat, not stat: a symlink must report as a symlink or a recursive
+// delete would follow it out of the tree it was asked to remove.
+
+static bool bif_posix_file_type_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+#if USE_POSIX_FILES
+	struct stat st;
+
+	if (lstat(C_STR(q, p1), &st))
+		return posix_file_error(q, p1, p1_ctx, "lstat");
+
+	const char *type;
+
+	switch (st.st_mode & S_IFMT) {
+	case S_IFREG: type = "regular"; break;
+	case S_IFDIR: type = "directory"; break;
+	case S_IFLNK: type = "symlink"; break;
+	case S_IFIFO: type = "fifo"; break;
+	case S_IFSOCK: type = "socket"; break;
+	case S_IFCHR: type = "char_device"; break;
+	case S_IFBLK: type = "block_device"; break;
+	default: type = "unknown"; break;
+	}
+
+	cell tmp;
+	make_atom(&tmp, new_atom(q->pl, type));
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+// Access, modified and changed times as floating-point seconds, which is
+// how set_time_file/3 reports them.
+
+static bool bif_posix_file_times_4(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p3,var);
+	GET_NEXT_ARG(p4,var);
+#if USE_POSIX_FILES
+	struct stat st;
+
+	if (stat(C_STR(q, p1), &st))
+		return posix_file_error(q, p1, p1_ctx, "stat");
+
+	cell tmp;
+	make_float(&tmp, (double)st.st_atime);
+
+	if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
+		return false;
+
+	make_float(&tmp, (double)st.st_mtime);
+
+	if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
+		return false;
+
+	make_float(&tmp, (double)st.st_ctime);
+	return unify(q, p4, p4_ctx, &tmp, q->st.cur_ctx);
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
+// There is no portable way to set the changed time - it is maintained by
+// the kernel - so set_time_file/3 rejects changed() rather than pretend.
+
+static bool bif_posix_set_file_times_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,number);
+	GET_NEXT_ARG(p3,number);
+#if USE_POSIX_FILES
+	double atime = is_float(p2) ? get_float(p2) : (double)get_smallint(p2);
+	double mtime = is_float(p3) ? get_float(p3) : (double)get_smallint(p3);
+	struct timeval tv[2];
+	tv[0].tv_sec = (time_t)atime;
+	tv[0].tv_usec = (suseconds_t)((atime - (double)(time_t)atime) * 1000000);
+	tv[1].tv_sec = (time_t)mtime;
+	tv[1].tv_usec = (suseconds_t)((mtime - (double)(time_t)mtime) * 1000000);
+
+	if (utimes(C_STR(q, p1), tv))
+		return posix_file_error(q, p1, p1_ctx, "utimes");
+
+	return true;
+#else
+	POSIX_FILES_GUARD(q, p1, p1_ctx);
+#endif
+}
+
 builtins g_posix_bifs[] =
 {
     {"posix_strftime", 3, bif_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
@@ -443,6 +727,18 @@ builtins g_posix_bifs[] =
 	{"posix_getppid", 1, bif_posix_getppid_1, "-integer", false, false, BLAH},
 	{"posix_getpid", 1, bif_posix_getpid_1, "-integer", false, false, BLAH},
 	{"posix_fork", 1, bif_posix_fork_1, "-integer", false, false, BLAH},
+
+	{"posix_rmdir", 1, bif_posix_rmdir_1, "+atom", false, false, BLAH},
+	{"posix_unlink", 1, bif_posix_unlink_1, "+atom", false, false, BLAH},
+	{"posix_link", 2, bif_posix_link_2, "+atom,+atom", false, false, BLAH},
+	{"posix_symlink", 2, bif_posix_symlink_2, "+atom,+atom", false, false, BLAH},
+	{"posix_readlink", 2, bif_posix_readlink_2, "+atom,-atom", false, false, BLAH},
+	{"posix_realpath", 2, bif_posix_realpath_2, "+atom,-atom", false, false, BLAH},
+	{"posix_chmod", 2, bif_posix_chmod_2, "+atom,+integer", false, false, BLAH},
+	{"posix_file_mode", 2, bif_posix_file_mode_2, "+atom,-integer", false, false, BLAH},
+	{"posix_file_type", 2, bif_posix_file_type_2, "+atom,-atom", false, false, BLAH},
+	{"posix_file_times", 4, bif_posix_file_times_4, "+atom,-float,-float,-float", false, false, BLAH},
+	{"posix_set_file_times", 3, bif_posix_set_file_times_3, "+atom,+number,+number", false, false, BLAH},
 
 	{"$openlog", 3, bif_sys_openlog_3, "+atom,+list,+atom", false, false, BLAH},
 	{"$syslog", 2, bif_sys_syslog_2, "+atom,+term", false, false, BLAH},
