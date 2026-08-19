@@ -14,7 +14,9 @@ and using a plain old Makefile.
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
-	Concurrency via threads / tasks / futures / engines (generators)
+	FFIs for GNU Scientific Library (GSL)
+	FFIs for Raylib library
+	Concurrency via threads / tasks / futures / engines (aka. generators)
 	Definite Clause Grammar (DCGs)
 	Attributed variables with freeze/2 dif/2, when/2
 	Constraints: CLP(B) via *use_module(library(clpb))*
@@ -23,10 +25,9 @@ and using a plain old Makefile.
 	Delimited continuations
 	Tabling: thread-local variant tabling
 	Sockets library
-	...
-	Windows build is of indeterminate state ##UNSUPPORTED##
-	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
+	...
+	Windows build ##UNSUPPORTED##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
@@ -1774,7 +1775,7 @@ For example...
 	]).
 ```
 
-See the *library/raylib.pl* and *samples/test_raylib.pl* for an example
+See the *library/raylib.pl* and *samples/test_raylib1.pl* for an example
 usage including passing and returning structs by value.
 
 See the *library/curl.pl* and *samples/test_curl.pl* for an example

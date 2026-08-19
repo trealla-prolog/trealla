@@ -305,6 +305,14 @@ compile: util/bin2c
 reference: tpl
 	$(PYTHON) util/gen_reference.py --in-place README.md
 
+# Regenerate library/raylib.pl from the installed raylib.h. Needs the
+# headers, not the library, and is not part of a normal build: the
+# generated file is checked in. RAYLIB_H overrides header discovery.
+
+raylib:
+	$(PYTHON) util/gen_raylib.py --verify
+	$(PYTHON) util/gen_raylib.py --in-place
+
 test:
 	./tests/run.sh
 
