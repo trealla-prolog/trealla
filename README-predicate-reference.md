@@ -27,7 +27,8 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 | `atom_upper/2` | `atom_upper(?atom,?atom)` |  |
 | `atomic/1` | `atomic(+term)` | ISO |
 | `atomic_concat/3` | `atomic_concat(+atomic,+atomic,?atomic)` |  |
-| `atomic_list_concat/3` | `atomic_list_concat(?list,+atomic,?atomic)` |  |
+| `atomic_list_concat/2` | `atomic_list_concat(+list,?atom)` |  |
+| `atomic_list_concat/3` | `atomic_list_concat(?list,+atomic,?atom)` |  |
 | `base64/3` | `base64(?string,?string,+list)` |  |
 | `between/3` | `between(+integer,+integer,?integer)` |  |
 | `call_nth/2` | `call_nth(:callable,+integer)` |  |
@@ -594,7 +595,6 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 | `append/1` | `append(+filename)` |  |
 | `argv/1` | `argv(-list)` |  |
 | `atom_number/2` | `atom_number(?atom,?number)` |  |
-| `atomic_list_concat/2` | `atomic_list_concat(+list,+atomic)` |  |
 | `bagof/3` | `bagof(+term,:callable,?list)` | ISO |
 | `call_residue_vars/2` | `call_residue_vars(@goal,-list)` |  |
 | `chars_base64/3` | `chars_base64(+atom,?atom,+list)` |  |

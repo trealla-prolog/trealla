@@ -481,10 +481,6 @@ engine_post(E, T, R) :-
 current_engine(E) :-
 	stream_property(E, engine(true)).
 
-:- help(atomic_list_concat(+list,+atomic), [iso(false)]).
-
-atomic_list_concat(L, Atom) :- atomic_list_concat(L, '', Atom).
-
 :- help(chars_base64(+atom,?atom,+list), [iso(false)]).
 
 chars_base64(Plain, Base64, Opts) :- base64(Plain, Base64, Opts).

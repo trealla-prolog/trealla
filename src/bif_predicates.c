@@ -4890,7 +4890,7 @@ static bool bif_atomic_concat_3(query *q)
 
 static bool do_atomic_list_concat_split(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, cell *p3, pl_ctx p3_ctx)
 {
-	char *sep_alloc = NULL, *src_alloc = NULL;
+	char *sep_alloc = NULL;
 	const char *sep, *src;
 	size_t sep_len, src_len;
 
@@ -4908,16 +4908,9 @@ static bool do_atomic_list_concat_split(query *q, cell *p1, pl_ctx p1_ctx, cell 
 		return throw_error(q, p2, p2_ctx, "domain_error", "non_empty_atom");
 	}
 
-	if (is_atom(p3)) {
-		src = C_STR(q, p3);
-		src_len = C_STRLEN(q, p3);
-	} else {
-		src = src_alloc = print_term_to_strbuf(q, p3, p3_ctx, 1);
-		CHECKED(src_alloc, TPL_free(sep_alloc));
-		src_len = strlen(src);
-	}
-
-	CHECKED(init_tmp_heap(q), TPL_free(sep_alloc); TPL_free(src_alloc));
+	src = C_STR(q, p3);
+	src_len = C_STRLEN(q, p3);
+	CHECKED(init_tmp_heap(q), TPL_free(sep_alloc));
 	const char *start = src, *end = src + src_len;
 
 	while (true) {
@@ -4941,7 +4934,6 @@ static bool do_atomic_list_concat_split(query *q, cell *p1, pl_ctx p1_ctx, cell 
 	}
 
 	TPL_free(sep_alloc);
-	TPL_free(src_alloc);
 	cell *l = end_list(q);
 	CHECKED(l);
 
@@ -4960,23 +4952,13 @@ static bool do_atomic_list_concat_split(query *q, cell *p1, pl_ctx p1_ctx, cell 
 	return unify(q, p1, p1_ctx, l, q->st.cur_ctx);
 }
 
-static bool bif_atomic_list_concat_3(query *q)
+// Join mode: the list is proper, so run the elements together with Sep
+// between them. A var element means we can't join; whether that's an
+// error or a cue to split instead is the caller's call - atomic_list_-
+// concat/2 has no separator to split on, so for it it's always an error.
+
+static bool do_atomic_list_concat_join(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, cell *p3, pl_ctx p3_ctx, bool can_split)
 {
-	GET_FIRST_ARG(p1,iso_list_or_nil_or_var);
-	GET_NEXT_ARG(p2,atomic);
-	GET_NEXT_ARG(p3,atomic_or_var);
-	bool is_partial;
-
-	if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
-		if (!is_partial)
-			return throw_error(q, p1, p1_ctx, "type_error", "list");
-
-		if (is_var(p3))
-			return throw_error(q, p3, p3_ctx, "instantiation_error", "not_sufficiently_instantiated");
-
-		return do_atomic_list_concat_split(q, p1, p1_ctx, p2, p2_ctx, p3, p3_ctx);
-	}
-
 	cell *p1_orig = p1;
 	pl_ctx p1_orig_ctx = p1_ctx;
 	LIST_HANDLER(p1);
@@ -4989,7 +4971,7 @@ static bool bif_atomic_list_concat_3(query *q)
 		if (is_var(h)) {
 			SB_free(pr);
 
-			if (is_var(p3))
+			if (!can_split || is_var(p3))
 				return throw_error(q, h, q->latest_ctx, "instantiation_error", "atomic");
 
 			return do_atomic_list_concat_split(q, p1_orig, p1_orig_ctx, p2, p2_ctx, p3, p3_ctx);
@@ -5025,6 +5007,47 @@ static bool bif_atomic_list_concat_3(query *q)
 	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
+}
+
+static bool bif_atomic_list_concat_2(query *q)
+{
+	GET_FIRST_ARG(p1,iso_list_or_nil_or_var);
+	GET_NEXT_ARG(p2,atom_or_var);
+	bool is_partial;
+
+	// There's no separator here, so nothing to split on: a list that
+	// isn't fully there is an error, not a request to split...
+
+	if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
+		if (is_partial)
+			return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
+
+		return throw_error(q, p1, p1_ctx, "type_error", "list");
+	}
+
+	cell tmp;
+	make_atom(&tmp, g_empty_s);
+	return do_atomic_list_concat_join(q, p1, p1_ctx, &tmp, q->st.cur_ctx, p2, p2_ctx, false);
+}
+
+static bool bif_atomic_list_concat_3(query *q)
+{
+	GET_FIRST_ARG(p1,iso_list_or_nil_or_var);
+	GET_NEXT_ARG(p2,atomic);
+	GET_NEXT_ARG(p3,atom_or_var);
+	bool is_partial;
+
+	if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
+		if (!is_partial)
+			return throw_error(q, p1, p1_ctx, "type_error", "list");
+
+		if (is_var(p3))
+			return throw_error(q, p3, p3_ctx, "instantiation_error", "not_sufficiently_instantiated");
+
+		return do_atomic_list_concat_split(q, p1, p1_ctx, p2, p2_ctx, p3, p3_ctx);
+	}
+
+	return do_atomic_list_concat_join(q, p1, p1_ctx, p2, p2_ctx, p3, p3_ctx, true);
 }
 
 static bool bif_replace_4(query *q)
@@ -6788,7 +6811,8 @@ builtins g_other_bifs[] =
 	{"term_singletons", 2, bif_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"string", 1, bif_string_1, "+term", false, false, BLAH},
 	{"atomic_concat", 3, bif_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
-	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "?list,+atomic,?atomic", false, false, BLAH},
+	{"atomic_list_concat", 2, bif_atomic_list_concat_2, "+list,?atom", false, false, BLAH},
+	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "?list,+atomic,?atom", false, false, BLAH},
 	{"replace", 4, bif_replace_4, "+string,+integer,+integer,-string", false, false, BLAH},
 	{"split_string", 4, bif_split_string_4, "+string,+atom,+atom,-list", false, false, BLAH},
 	{"split", 4, bif_split_4, "+string,+string,?string,?string", false, false, BLAH},
