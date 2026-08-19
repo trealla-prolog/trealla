@@ -191,6 +191,26 @@ static bool cycles_back(const query *q, const cell *c, pl_ctx c_ctx)
 
 typedef struct { lnode hdr; cell *p1; pl_ctx p1_ctx; int arity; pl_idx save_idx; unsigned depth; slot *e; uint32_t save_vgen; } snode;
 
+// Records a back-edge caught at 'be_off' pointing back at the subterm
+// whose copy starts at 'anchor_off'. Both are offsets into the tmp heap,
+// which survive the flat copy into a queue.
+
+static bool record_cycle_pair(query *q, pl_idx be_off, pl_idx anchor_off)
+{
+	if (q->cyc_cnt == q->cyc_size) {
+		unsigned n = q->cyc_size ? q->cyc_size * 2 : 4;
+		void *ptr = TPL_realloc(q->cyc_pairs, sizeof(struct cyc_pair) * n);
+		if (!ptr) return false;
+		q->cyc_pairs = ptr;
+		q->cyc_size = n;
+	}
+
+	q->cyc_pairs[q->cyc_cnt].be_off = be_off;
+	q->cyc_pairs[q->cyc_cnt].anchor_off = anchor_off;
+	q->cyc_cnt++;
+	return true;
+}
+
 static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 #if 0
@@ -222,6 +242,14 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		pl_ctx save_p1_ctx = p1_ctx;
 		bool any1 = false, any2 = false;
 
+		// Spine nodes reached by dereferencing a tail variable, so a tail
+		// that points back up the list can be matched to the copy of the
+		// node it names. Bounded: a longer cyclic spine than this simply
+		// goes unrecorded, exactly as before.
+
+		struct { slot *e; pl_idx off; } spine[64];
+		unsigned spine_cnt = 0;
+
 		while (is_iso_list(p1)) {
 			slot *e = NULL;
 			cell *h = p1 + 1;
@@ -251,10 +279,25 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			}
 
 			both = 0;
-			if (deep_copy(t)) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, t, t_ctx, q->vgen);
+			slot *tail_e = NULL;
+			if (deep_copy(t)) { tail_e = NULL; DEREF_CHECKED(any2, both, save_vgen, tail_e, tail_e->vgen, t, t_ctx, q->vgen); }
 
-			if (both)
+			if (both) {
 				q->cycle_error = true;
+
+				for (unsigned i = 0; i < spine_cnt; i++) {
+					if (spine[i].e == tail_e) {
+						record_cycle_pair(q, tmp_heap_used(q), spine[i].off);
+						break;
+					}
+				}
+			} else if (tail_e && is_iso_list(t) && (spine_cnt < 64)) {
+				// The node this tail names is copied at the top of the
+				// next iteration, which is where tmp_heap_used() points.
+				spine[spine_cnt].e = tail_e;
+				spine[spine_cnt].off = tmp_heap_used(q);
+				spine_cnt++;
+			}
 
 			if (is_var(p1) && cycles_back(q, t, t_ctx)) {
 				t = p1;
@@ -343,7 +386,21 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		bool any = false;
 		int both = 0;
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
-		if (both) q->cycle_error = true;
+
+		if (both) {
+			q->cycle_error = true;
+
+			// The anchor is the frame we descended through this same slot
+			// to reach: its copy began at save_idx, and the variable about
+			// to be emitted here has to end up bound to it.
+
+			for (snode *a = (snode*)list_front(&stack); a; a = (snode*)list_next(a)) {
+				if (a->e == e) {
+					record_cycle_pair(q, tmp_heap_used(q), a->save_idx);
+					break;
+				}
+			}
+		}
 
 		if (is_var(n->p1) && cycles_back(q, c, c_ctx)) {
 			c = n->p1;
@@ -408,6 +465,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 
 cell *clone_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 {
+	q->cyc_cnt = 0;
 	if (++q->vgen == 0) q->vgen = 1;
 	q->has_vars = false;
 	cell *rec = clone_term_to_tmp_internal(q, p1, p1_ctx, 0);

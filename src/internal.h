@@ -766,6 +766,20 @@ struct query_ {
 	void *oom_reserve;					// emergency headroom for constructing a memory error
 	cell *clone_root;					// the term copy_term/2 is copying, for cycles back to it
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
+
+	// Back-edges found while cloning a cyclic term. clone_term_to_tmp()
+	// cannot represent a cycle directly - a cycle lives through a frame
+	// slot and the tmp heap has none - so it records where the cycle was
+	// caught and what it points back at, and the consumer closes it with
+	// a unification once the term is somewhere that has slots. Empty for
+	// acyclic terms, which is nearly always.
+
+	struct cyc_pair { pl_idx be_off, anchor_off; } *cyc_pairs;
+	unsigned cyc_cnt, cyc_size;
+
+	struct cyc_pair *qcyc[MAX_QUEUES];
+	unsigned qcyc_cnt[MAX_QUEUES], qcyc_size[MAX_QUEUES];
+	pl_idx *qcyc_soln[MAX_QUEUES];
 	page *heap_pages;
 	trail_page *trail_pages, *trail_current;
 	trail *trail_next;

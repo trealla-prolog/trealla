@@ -1,0 +1,9 @@
+findall_keeps_cycle
+findall_keeps_existing
+two_cycles_ok
+cyclic_list_ok
+bagof_case1_ok
+bagof_case2_ok
+bagof_case3_ok
+comment_chain_ok
+acyclic_unaffected
