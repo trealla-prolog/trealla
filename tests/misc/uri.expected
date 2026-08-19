@@ -82,8 +82,8 @@ segment escapes [32,34,35,37,47,58,60,62,63,91,92,93,94,96,123,124,125]
 
 enc path 'a b' | 'a%20b'
 enc path 'a/b:c?d#e' | 'a/b%3Ac%3Fd%23e'
-enc path 'é' | '%C3%A9'
-enc path '日本' | '%E6%97%A5%E6%9C%AC'
+enc path é | '%C3%A9'
+enc path 日本 | '%E6%97%A5%E6%9C%AC'
 enc path '~-._!$@' | '~-._!$@'
 enc segment 'a/b:c?d#e' | 'a%2Fb%3Ac%3Fd%23e'
 enc fragment 'a&b=c+d;e' | 'a&b=c+d;e'
@@ -96,13 +96,13 @@ dec path 'a+b' | 'a+b'
 dec fragment 'a+b' | 'a+b'
 dec segment 'a+b' | 'a+b'
 dec path 'a%20b' | 'a b'
-dec path '%C3%A9' | 'é'
+dec path '%C3%A9' | é
 dec path 'a%2Fb' | 'a/b'
 dec path '%ZZ' | '%ZZ'
 dec path '%' | '%'
 dec path '%4' | '%4'
 dec path '' | ''
-dec path '%FF' | 'ÿ'
+dec path '%FF' | ÿ
 dec path '%C3' | 'Ã'
 dec path 'a%00b' | 'a\x0\b'
 
