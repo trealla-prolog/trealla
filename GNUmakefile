@@ -149,6 +149,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_tabling.o \
 	src/bif_tasks.o \
 	src/bif_threads.o \
+	src/bif_uri.o \
 	src/compile.o \
 	src/heap.o \
 	src/history.o \
@@ -209,6 +210,7 @@ LIBOBJECTS +=  \
 	library/sockets.o \
 	library/time.o \
 	library/ugraphs.o \
+	library/uri.o \
 	library/uuid.o \
 	library/when.o \
 	library/yall.o

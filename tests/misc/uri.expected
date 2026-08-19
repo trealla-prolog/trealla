@@ -1,0 +1,129 @@
+'http://www.example.com/path?q=1#frag' | http 'www.example.com' '/path' 'q=1' frag
+'http://user:pw@[::1]:8080/a/b' | http 'user:pw@[::1]:8080' '/a/b' - -
+'/relative/path' | - - '/relative/path' - -
+'relative/path' | - - 'relative/path' - -
+'mailto:bob@example.com' | mailto - 'bob@example.com' - -
+'urn:isbn:0451450523' | urn - 'isbn:0451450523' - -
+'http://x/' | http x / - -
+'http://x/?' | http x / '' -
+'http://x' | http x '' - -
+'//host/path' | - host '/path' - -
+'a:b' | a - b - -
+'/tmp/a:b' | - - '/tmp/a:b' - -
+'80:nope' | - - '80:nope' - -
+'file:///etc/hosts' | file '' '/etc/hosts' - -
+'http://x/p?a=1&b=2#' | http x '/p' 'a=1&b=2' ''
+'HTTP://X/Y%2fZ' | 'HTTP' 'X' '/Y%2fZ' - -
+'' | - - '' - -
+[c,h,a,r,s,:,/,/,l,i,s,t,/,o,k] | chars list '/ok' - -
+
+'www.example.com' | - - 'www.example.com' -
+'www.example.com:8080' | - - 'www.example.com' 8080
+'bob@example.com' | bob - 'example.com' -
+'bob:secret@example.com:443' | bob secret 'example.com' 443
+'[::1]' | - - '::1' -
+'[::1]:8080' | - - '::1' 8080
+'[2001:db8::1]' | - - '2001:db8::1' -
+'bob@sub@host:99' | 'bob@sub' - host 99
+'host:notaport' | - - 'host:notaport' -
+'' | - - '' -
+
+ok 'http://www.example.com/path?q=1#frag'
+ok 'http://user:pw@[::1]:8080/a/b'
+ok '/relative/path'
+ok 'mailto:bob@example.com'
+ok 'urn:isbn:0451450523'
+ok 'http://x/?'
+ok 'http://x'
+ok '//host/path'
+ok 'file:///etc/hosts'
+ok 'http://x/p?a=1&b=2#'
+ok ''
+
+ok 'www.example.com'
+ok 'www.example.com:8080'
+ok 'bob@example.com'
+ok 'bob:secret@example.com:443'
+ok '[::1]:8080'
+ok '[2001:db8::1]'
+ok 'host:notaport'
+
+RFC 5.4 vectors agree
+
+'HTTP://www.EXAMPLE.com/' | 'http://www.example.com/' | 'http://www.example.com/'
+'http://www.example.com:80/x' | 'http://www.example.com/x' | 'http://www.example.com/x'
+'https://www.example.com:443/x' | 'https://www.example.com/x' | 'https://www.example.com/x'
+'http://www.example.com:8080/x' | 'http://www.example.com:8080/x' | 'http://www.example.com:8080/x'
+'http://example.com' | 'http://example.com/' | 'http://example.com/'
+'http://example.com/%7Euser/%2Fpath/%aa' | 'http://example.com/~user/%2Fpath/%AA' | 'http://example.com/%7Euser/%2Fpath/%aa'
+'http://example.com/a/./b/../c' | 'http://example.com/a/c' | 'http://example.com/a/c'
+'eXaMpLe://a/./b/../c?Q%7e#F%7e' | 'example://a/c?Q~#F~' | 'example://a/c?Q%7e#F%7e'
+'http://USER:PW@HOST:80/' | 'http://USER:PW@host/' | 'http://USER:PW@host/'
+'/a/b/../c' | '/a/c' | '/a/c'
+'http://[::1]:80/' | 'http://[::1]/' | 'http://[::1]/'
+'http://[2001:DB8::1]/' | 'http://[2001:db8::1]/' | 'http://[2001:db8::1]/'
+'urn:ISBN:0451450523' | 'urn:ISBN:0451450523' | 'urn:ISBN:0451450523'
+'http://x/%2e%2e/y' | 'http://x/y' | 'http://x/%2e%2e/y'
+'http://x/%c3%a9' | 'http://x/%C3%A9' | 'http://x/%c3%a9'
+'http://x:99999999999999999999/' | 'http://x:99999999999999999999/' | 'http://x:99999999999999999999/'
+'http://x:70000/' | 'http://x:70000/' | 'http://x:70000/'
+'' | '' | ''
+'%' | '%' | '%'
+'%4' | '%4' | '%4'
+'%zz' | '%zz' | '%zz'
+/../../../.. | / | /
+'http://' | 'http:///' | 'http:///'
+'http://[]:80' | 'http:///' | 'http:///'
+
+query_value escapes [32,34,35,37,38,43,58,59,60,61,62,91,92,93,94,96,123,124,125]
+fragment escapes [32,34,35,37,60,62,91,92,93,94,96,123,124,125]
+path escapes [32,34,35,37,58,60,62,63,91,92,93,94,96,123,124,125]
+segment escapes [32,34,35,37,47,58,60,62,63,91,92,93,94,96,123,124,125]
+
+enc path 'a b' | 'a%20b'
+enc path 'a/b:c?d#e' | 'a/b%3Ac%3Fd%23e'
+enc path é | '%C3%A9'
+enc path 日本 | '%E6%97%A5%E6%9C%AC'
+enc path '~-._!$@' | '~-._!$@'
+enc segment 'a/b:c?d#e' | 'a%2Fb%3Ac%3Fd%23e'
+enc fragment 'a&b=c+d;e' | 'a&b=c+d;e'
+enc query_value 'a&b=c+d;e' | 'a%26b%3Dc%2Bd%3Be'
+enc query_value 'a b' | 'a%20b'
+enc query_value '' | ''
+
+dec query_value 'a+b' | 'a b'
+dec path 'a+b' | 'a+b'
+dec fragment 'a+b' | 'a+b'
+dec segment 'a+b' | 'a+b'
+dec path 'a%20b' | 'a b'
+dec path '%C3%A9' | é
+dec path 'a%2Fb' | 'a/b'
+dec path '%ZZ' | '%ZZ'
+dec path '%' | '%'
+dec path '%4' | '%4'
+dec path '' | ''
+dec path '%FF' | ÿ
+dec path '%C3' | 'Ã'
+dec path 'a%00b' | 'a\x0\b'
+
+iri->uri 'http://x/é' | 'http://x/%C3%A9'
+iri->uri 'http://x/a b' | 'http://x/a%20b'
+iri->uri 'http://x/%20' | 'http://x/%20'
+iri->uri 'http://x/%2F' | 'http://x//'
+iri->uri 'http://x/?q=a b&r=c' | 'http://x/?q=a%20b&r=c'
+iri->uri 'http://x/#f g' | 'http://x/#f%20g'
+iri->uri 'http://x/?q=%23b' | 'http://x/?q=%23b'
+iri->uri 'http://x/p%3Fq' | 'http://x/p%3Fq'
+iri->uri 'http://x/?a=1&b=2' | 'http://x/?a=1&b=2'
+iri->uri 'http://user:pw@x/p' | 'http://user:pw@x/p'
+iri->uri 'http://x/日本/x?a=é' | 'http://x/%E6%97%A5%E6%9C%AC/x?a=%C3%A9'
+
+uri->iri 'http://x/%C3%A9' | 'http://x/é'
+uri->iri 'http://x/%2F' | 'http://x//'
+uri->iri 'http://x/%20' | 'http://x/%20'
+uri->iri 'http://x/a+b' | 'http://x/a+b'
+uri->iri 'http://x/?q=%23b' | 'http://x/?q=%23b'
+uri->iri 'http://x/p%3Fq' | 'http://x/p%3Fq'
+uri->iri 'http://x/%E6%97%A5%E6%9C%AC' | 'http://x/日本'
+uri->iri 'http://x/?a=1&b=2' | 'http://x/?a=1&b=2'
+uri->iri 'http://x/%FF' | 'http://x/ÿ'
