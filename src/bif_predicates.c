@@ -176,47 +176,6 @@ static bool bif_findnsols_4(query *q)
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
 
-// Ties each recorded back-edge to the subterm it points at. Doing it here
-// rather than during the copy is the point: the solutions are now real
-// terms in a frame, so binding the variable makes a genuine cycle.
-
-static bool close_queued_cycles(query *q, unsigned qnum, cell *lst, pl_ctx lst_ctx)
-{
-	if (!q->qcyc_cnt[qnum])
-		return true;
-
-	unsigned soln = 0;
-	cell *l = deref(q, lst, lst_ctx);
-	pl_ctx l_ctx = q->latest_ctx;
-
-	while (is_iso_list(l)) {
-		cell *h = deref(q, l + 1, l_ctx);
-		pl_ctx h_ctx = q->latest_ctx;
-
-		for (unsigned i = 0; i < q->qcyc_cnt[qnum]; i++) {
-			if (q->qcyc_soln[qnum][i] != soln)
-				continue;
-
-			pl_idx be = q->qcyc[qnum][i].be_off;
-			pl_idx an = q->qcyc[qnum][i].anchor_off;
-
-			if ((be >= h->num_cells) || (an >= h->num_cells))
-				continue;
-
-			if (!unify(q, h + be, h_ctx, h + an, h_ctx))
-				return false;
-		}
-
-		cell *t = l + 1;
-		t += t->num_cells;
-		l = deref(q, t, l_ctx);
-		l_ctx = q->latest_ctx;
-		soln++;
-	}
-
-	return true;
-}
-
 static bool bif_iso_findall_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -239,7 +198,6 @@ static bool bif_iso_findall_3(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "callable");
 
 		grab_queuen(q);
-		q->qcyc_cnt[q->st.qnum] = 0;
 
 		if (q->st.qnum == MAX_QUEUES)
 			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
@@ -266,7 +224,6 @@ static bool bif_iso_findall_3(query *q)
 	pl_idx num_cells = queuen_used(q);
 	const pl_idx solns_cells = num_cells;
 	cell *solns = take_queuen(q);
-	const unsigned save_qnum = q->st.qnum;		// drop_queuen moves it
 	drop_queuen(q);
 
 	// Now grab matching solutions with fresh variables for each...
@@ -286,14 +243,6 @@ static bool bif_iso_findall_3(query *q)
 	cell *l = end_list(q);
 	free_solns(solns, solns_cells);
 	CHECKED(l);
-
-	// Closed on the list just built, not on p3: an already-instantiated
-	// p3 would have the caller's own cells, whose layout has nothing to
-	// do with the offsets recorded against the copied solutions.
-
-	if (!close_queued_cycles(q, save_qnum, l, q->st.cur_ctx))
-		return false;
-
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
 
@@ -2920,38 +2869,6 @@ static bool bif_sys_list_1(query *q)
 	return unify(q, p1, p1_ctx, l, q->st.cur_ctx);
 }
 
-// Carries the back-edges clone_term_to_tmp() found for this solution over
-// to the drain, which is the first place with frame slots to close them
-// in. Offsets are relative to the solution, and the queue copy is flat,
-// so they stay valid.
-
-static bool stash_cycle_pairs(query *q, unsigned qnum)
-{
-	if (!q->cyc_cnt)
-		return true;
-
-	unsigned need = q->qcyc_cnt[qnum] + q->cyc_cnt;
-
-	if (need > q->qcyc_size[qnum]) {
-		unsigned n = need * 2;
-		void *ptr = TPL_realloc(q->qcyc[qnum], sizeof(struct cyc_pair) * n);
-		if (!ptr) return false;
-		q->qcyc[qnum] = ptr;
-		void *ptr2 = TPL_realloc(q->qcyc_soln[qnum], sizeof(pl_idx) * n);
-		if (!ptr2) return false;
-		q->qcyc_soln[qnum] = ptr2;
-		q->qcyc_size[qnum] = n;
-	}
-
-	for (unsigned i = 0; i < q->cyc_cnt; i++) {
-		q->qcyc[qnum][q->qcyc_cnt[qnum]] = q->cyc_pairs[i];
-		q->qcyc_soln[qnum][q->qcyc_cnt[qnum]] = q->qcnt[qnum];
-		q->qcyc_cnt[qnum]++;
-	}
-
-	return true;
-}
-
 bool bif_sys_queue_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -2969,7 +2886,6 @@ bool bif_sys_queue_1(query *q)
 		cell *attrs = e->c.val_attrs;
 	}
 
-	CHECKED(stash_cycle_pairs(q, q->st.qnum), q->st.qnum--);
 	CHECKED(alloc_queuen(q, q->st.qnum, tmp), q->st.qnum--);
 	return true;
 }

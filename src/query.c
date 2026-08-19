@@ -2594,8 +2594,6 @@ void query_destroy(query *q)
 			unshare_cell(c);
 
 		TPL_free(q->queue[i]);
-		TPL_free(q->qcyc[i]);
-		TPL_free(q->qcyc_soln[i]);
 	}
 
 	while (q->tasks) {
@@ -2637,7 +2635,6 @@ void query_destroy(query *q)
 	for (pl_idx i = 0; i < q->frame_pages_size; i++)
 		TPL_free(q->frame_pages[i]);
 	TPL_free(q->frame_pages);
-	TPL_free(q->cyc_pairs);
 	TPL_free(q->tmp_heap);
 	TPL_free(q->tabs);
 	TPL_free(q->unify_seen);
