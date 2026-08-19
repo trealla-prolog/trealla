@@ -37,7 +37,6 @@ socket+bind+listen and hands back a *stream*: **[checked]**
 | `'$peer_addr'(+Stream, -Atom, -Integer)` | peer host and port |
 | `'$current_host'(-Atom)` | hostname |
 | `'$server_tls'/2`, `'$client_tls'/4` | TLS upgrade |
-| `'$http_location'/2`, `'$parse_url'/2` | URL helpers |
 
 There is **no** bif that creates an unbound, unconnected socket, and none that
 binds without listening. So `tcp_socket/1` cannot map onto anything directly, and

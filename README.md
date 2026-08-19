@@ -1510,22 +1510,55 @@ HTTP 1.1
 A server *Goal* takes a single arg, the connection stream.
 
 
+URIs
+====
+
+	:- use_module(library(uri)).
+
+	uri_components/2			# uri_components(?Uri, ?Components)
+	uri_data/3					# uri_data(?Field, +Components, ?Data)
+	uri_data/4					# uri_data(+Field, +Components, +Data, -New)
+	uri_normalized/2			# uri_normalized(+Uri, -Normalized)
+	uri_normalized/3			# uri_normalized(+Uri, +Base, -Normalized)
+	iri_normalized/2			# iri_normalized(+Iri, -Normalized)
+	iri_normalized/3			# iri_normalized(+Iri, +Base, -Normalized)
+	uri_normalized_iri/2		# uri_normalized_iri(+Uri, -Normalized)
+	uri_normalized_iri/3		# uri_normalized_iri(+Uri, +Base, -Normalized)
+	uri_is_global/1				# uri_is_global(+Uri)
+	uri_resolve/3				# uri_resolve(+Uri, +Base, -Global)
+	uri_query_components/2		# uri_query_components(?String, ?Query)
+	uri_authority_components/2	# uri_authority_components(?Auth, ?Components)
+	uri_authority_data/3		# uri_authority_data(?Field, ?Components, ?Data)
+	uri_encoded/3				# uri_encoded(+Component, ?Value, ?Encoded)
+	uri_iri/2					# uri_iri(?Uri, ?Iri)
+	uri_file_name/2				# uri_file_name(?Uri, ?FileName)
+	uri_edit/3					# uri_edit(+Actions, +Uri, -NewUri)
+
+RFC-3986 syntax, resolution and normalization, after SWI-Prolog's
+*library(uri)*. Components come back as they appear in the URI, still
+percent-encoded: only the caller knows which component it is holding,
+and so which character set applies to it.
+
+```console
+	$ tpl
+	?- use_module(library(uri)).
+	   true.
+	?- uri_components('http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz',C).
+	   C = uri_components(http,'www.xyz.org:81','/hello','msg=Hello+World%21&foo=bar',xyz).
+	?- uri_query_components('msg=Hello+World%21&foo=bar',Q).
+	   Q = [msg='Hello World!',foo=bar].
+	?- uri_resolve('../g','http://a/b/c/d;p?q',U).
+	   U = 'http://a/b/g'.
+	?- uri_normalized('HTTP://Example.COM/a/../b',N).
+	   N = 'http://example.com/b'.
+	?-
+```
+
+
 Networking
 ==========
 
 Probably not for general use. Use *library/sockets.pl* instead:
-
-	'$http_location'/2         # '$http_location'(?list,?url)
-	'$parse_url'/2             # '$parse_url'(?url,?list)
-
-```console
-	$ tpl
-	?- '$parse_url'('http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz',P).
-	   P = [search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)].
-	?- '$parse_url'(U,[search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)]).
-	   U = 'http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz'.
-	?-
-```
 
 	'$server'/2                # '$server'(+host,--stream)
 	'$server'/3                # '$server'(+host,--stream,+list)
