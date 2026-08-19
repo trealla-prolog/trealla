@@ -140,12 +140,6 @@ bool needs_quoting(module *m, const char *src, int srclen)
 	if (!strcmp(src, ",") || !strcmp(src, ".") || !strcmp(src, "|"))
 		return true;
 
-	if (!strcmp(src, "{}") || !strcmp(src, "[]")
-		|| !strcmp(src, "!") || !strcmp(src, ";")
-		|| !strcmp(src, "\\")
-		)
-		return false;
-
 	if ((src[0] == '/') && (src[1] == '*'))
 		return true;
 
@@ -156,6 +150,12 @@ bool needs_quoting(module *m, const char *src, int srclen)
 
 	if (iswupper(ch) || iswdigit(ch) || (ch == '_'))
 		return true;
+
+	if (!strcmp(src, "{}") || !strcmp(src, "[]")
+		|| !strcmp(src, "!") || !strcmp(src, ";")
+		|| !strcmp(src, "\\")
+		)
+		return false;
 
 	const char *s = src;
 	int slen = srclen;
