@@ -19,12 +19,11 @@ and using a plain old Makefile.
 	FFIs for Raylib & Raymath
 	Concurrency via threads / tasks / futures / engines (aka. generators)
 	Definite Clause Grammar (DCGs)
-	Attributed variables with freeze/2 dif/2, when/2
-	Constraints: CLP(B) via *use_module(library(clpb))*
-	Constraints: CLP(Z) via *use_module(library(clpz))*
+	Attributed variables with freeze/2, dif/2 & when/2
+	Constraints: CLP(B) & CLP(Z)
 	Blackboarding primitives
 	Delimited continuations
-	Tabling: thread-local variant tabling
+	Thread-local variant tabling
 	Socket(s) library
 	...
 	Windows build ##UNSUPPORTED##
