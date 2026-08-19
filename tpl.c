@@ -157,6 +157,7 @@ static void index_check_report(void)
 	if (!g_index_check || (!g_index_check_lookups && !g_index_check_bad))
 		return;
 
+	fflush(stdout);
 	fprintf(stderr, "index-check: %lu indexed lookup%s verified, %lu mismatch%s\n",
 		g_index_check_lookups, g_index_check_lookups == 1 ? "" : "s",
 		g_index_check_bad, g_index_check_bad == 1 ? "" : "es");
@@ -292,6 +293,7 @@ int main(int ac, char *av[], char * envp[])
 
 #if 0
 		if ((av[i][0] == '-') && did_load) {
+			fflush(stdout);
 			fprintf(stderr, "Error: options entered after files\n");
 			pl_destroy(pl);
 			return 0;
@@ -335,6 +337,7 @@ int main(int ac, char *av[], char * envp[])
 			do_restore = 0;
 		} else if (do_log) {
 			if (!pl_logging(pl, av[i])) {
+				fflush(stdout);
 				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),log_save)\n", av[i]);
 				pl_destroy(pl);
 				return 1;
@@ -342,6 +345,7 @@ int main(int ac, char *av[], char * envp[])
 			do_log = 0;
 		} else {
 			if (!pl_consult(pl, av[i])) {
+				fflush(stdout);
 				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),consult/1)\n", av[i]);
 				pl_destroy(pl);
 				return 1;
@@ -351,6 +355,7 @@ int main(int ac, char *av[], char * envp[])
 
 	if (restore_file) {
 		if (!pl_restore(pl, restore_file)) {
+			fflush(stdout);
 			fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),restore_file)\n", restore_file);
 			pl_destroy(pl);
 			return 1;
@@ -426,6 +431,11 @@ int main(int ac, char *av[], char * envp[])
 				len--;
 
 			if (len && (line[len-1] != '.')) {
+				// stdout is block-buffered when it is not a tty and stderr
+				// is not buffered at all, so this would otherwise appear
+				// above the output it comes after.
+
+				fflush(stdout);
 				fprintf(stderr, "Error: error(syntax_error(unterminated),read_term/3)\n");
 				pl_destroy(pl);
 				return 1;
