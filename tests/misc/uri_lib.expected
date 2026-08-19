@@ -1,0 +1,70 @@
+comp 'http://user:pw@host:8080/p/q?a=1#f' | uri_components(http,'user:pw@host:8080','/p/q','a=1',f)
+comp 'urn:isbn:0451450523' | urn_components(urn,isbn,'0451450523','_','_')
+comp 'mailto:bob@x.com' | uri_components(mailto,'_','bob@x.com','_','_')
+comp '/rel/path' | uri_components('_','_','/rel/path','_','_')
+comp 'file:///etc/hosts' | uri_components(file,'','/etc/hosts','_','_')
+comp 'http://h' | uri_components(http,h,'','_','_')
+bld uri_components(http,'h:80','/p','a=1',frag) | 'http://h:80/p?a=1#frag'
+bld uri_components(http,h,'_','_','_') | 'http://h'
+bld urn_components(urn,isbn,'0451','_','_') | 'urn:isbn:0451'
+data scheme 'http://h/p?q#f' | http
+data authority 'http://h/p?q#f' | h
+data path 'http://h/p?q#f' | '/p'
+data search 'http://h/p?q#f' | q
+data fragment 'http://h/p?q#f' | f
+data nid 'http://h/p?q#f' | <fail>
+data nss 'http://h/p?q#f' | <fail>
+data scheme 'urn:isbn:0451' | urn
+data authority 'urn:isbn:0451' | <fail>
+data path 'urn:isbn:0451' | <fail>
+data search 'urn:isbn:0451' | '_'
+data fragment 'urn:isbn:0451' | '_'
+data nid 'urn:isbn:0451' | isbn
+data nss 'urn:isbn:0451' | '0451'
+qparse 'a=1&b=2' | [a='1',b='2']
+qparse 'a&b=1' | ['a&b'='1']
+qparse '' | []
+qparse 'a=1&a=2' | [a='1',a='2']
+qparse 'a=b=c' | [a='b=c']
+qparse '=1' | ['' = '1']
+qparse 'a=' | [a='']
+qparse 'a=1&b=x+y&c=%26' | [a='1',b='x y',c=&]
+qbuild [a=1,b='x y',c= &=] | 'a=1&b=x%20y&c=%26%3D'
+qbuild [a(1),b-2,c=3] | 'a=1&b=2&c=3'
+qbuild [] | ''
+auth 'u:p@h:80' | uri_authority(u,p,h,80)
+auth h | uri_authority('_','_',h,'_')
+auth '[::1]:8080' | uri_authority('_','_','::1',8080)
+authb uri_authority(u,p,h,80) | 'u:p@h:80'
+authb uri_authority('_','_',h,'_') | h
+global 'http://x/' | yes
+global '/rel' | no
+global 'a:b' | no
+global 'c:/x' | no
+global 'urn:x:y' | yes
+u2f 'file:///etc/hosts' | '/etc/hosts'
+u2f 'http://x/y' | <fail>
+u2f 'file:///a%20b/c' | '/a b/c'
+f2u '/etc/hosts' | 'file:///etc/hosts'
+f2u '/a b/c' | 'file:///a%20b/c'
+norm 'HTTP://X/a/../b' | 'http://x/b'
+norm 'http://x:80/' | 'http://x/'
+norm 'http://X/%c3%a9/%7e/a/../b' | 'http://x/%C3%A9/~/b'
+norm3 g 'http://a/b/c/d' | 'http://a/b/c/g'
+inorm 'HTTP://X/%c3%a9/%7e/a/../b' | 'http://x/%c3%a9/%7e/b'
+normi 'HTTP://X/%c3%a9/%7e/a/../b' | 'http://x/é/~/b'
+res g 'http://a/b/c/d;p?q' | 'http://a/b/c/g'
+res '../x' 'http://a/b/c/d' | 'http://a/b/x'
+res 'http:g' 'http://a/b/c/d;p?q' | 'http:g'
+edit path('/new') 'http://h/old?q' | 'http://h/new?q'
+edit [host(h2),port(99)] 'http://h/p' | 'http://h2:99/p'
+edit path(rel) 'http://h/a/b' | 'http://h/a/rel'
+edit fragment('_') 'http://h/p#f' | 'http://h/p'
+edit search([a=1]) 'http://h/p' | 'http://h/p?a=1'
+edit scheme(https) 'http://h/p' | 'https://h/p'
+edit user(bob) 'http://h/p' | 'http://bob@h/p'
+enc path 'a b' | 'a%20b'
+enc query_value 'a&b' | 'a%26b'
+dec path 'a%20b' | 'a b'
+dec query_value 'a+b' | 'a b'
+u2i 'http://x/%C3%A9' | 'http://x/é'

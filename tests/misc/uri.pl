@@ -1,6 +1,6 @@
 % RFC-3986 primitives: '$uri_parse'/6, '$uri_build'/6,
 % '$uri_authority_parse'/5, '$uri_authority_build'/5,
-% '$uri_resolve'/3, '$uri_normalize'/2, '$uri_encode'/3,
+% '$uri_resolve'/3, '$uri_normalize'/3, '$uri_encode'/3,
 % '$uri_decode'/3, '$iri_uri'/2, '$uri_iri'/2.
 
 :- initialization(main).
@@ -51,8 +51,9 @@ r(Ref, Want) :-
 	).
 
 n(U) :-
-	'$uri_normalize'(U, N),
-	format("~q | ~q~n", [U,N]).
+	'$uri_normalize'(U, uri, N),
+	'$uri_normalize'(U, iri, I),
+	format("~q | ~q | ~q~n", [U,N,I]).
 
 rfc5401 :-
 	r('g:h', 'g:h'), r(g, 'http://a/b/c/g'), r('./g', 'http://a/b/c/g'),

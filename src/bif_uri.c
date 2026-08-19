@@ -778,7 +778,7 @@ static bool is_default_port(const char *scheme, pl_int port)
 // The authority is normalized piecewise rather than as one string: only
 // the host is case-insensitive, and only the port can be dropped.
 
-static char *normalize_authority(const char *auth, size_t auth_len, const char *scheme)
+static char *normalize_authority(const char *auth, size_t auth_len, const char *scheme, bool pct)
 {
 	char *src = slicedup(auth, auth_len);
 
@@ -790,13 +790,13 @@ static char *normalize_authority(const char *auth, size_t auth_len, const char *
 	SB(pr);
 
 	if (a.has_user) {
-		char *u = pct_normalize(a.user, a.user_len);
+		char *u = pct ? pct_normalize(a.user, a.user_len) : slicedup(a.user, a.user_len);
 		SB_strcat(pr, u ? u : "");
 		TPL_free(u);
 
 		if (a.has_pass) {
 			SB_strcat(pr, ":");
-			char *w = pct_normalize(a.pass, a.pass_len);
+			char *w = pct ? pct_normalize(a.pass, a.pass_len) : slicedup(a.pass, a.pass_len);
 			SB_strcat(pr, w ? w : "");
 			TPL_free(w);
 		}
@@ -804,7 +804,7 @@ static char *normalize_authority(const char *auth, size_t auth_len, const char *
 		SB_strcat(pr, "@");
 	}
 
-	char *h = pct_normalize(a.host, a.host_len);
+	char *h = pct ? pct_normalize(a.host, a.host_len) : slicedup(a.host, a.host_len);
 
 	if (h) {
 		for (char *c = h; *c; c++)
@@ -829,17 +829,28 @@ static char *normalize_authority(const char *auth, size_t auth_len, const char *
 	return out;
 }
 
-// '$uri_normalize'(+Uri, -Normalized)
+// '$uri_normalize'(+Uri, +Mode, -Normalized)
 //
 // RFC-3986 section 6.2.2 (case, %-encoding and path segments) plus the
 // two scheme-based rules from 6.2.3 that are safe without knowing the
 // scheme's own rules: a default port is dropped, and an empty path
 // under an authority becomes "/".
+//
+// Mode 'iri' skips the %-encoding half of 6.2.2 and leaves every escape
+// exactly as it was found, hex case included. An IRI is allowed to hold
+// characters a URI has to escape, so re-spelling its escapes is not
+// this predicate's business.
 
-static bool bif_sys_uri_normalize_2(query *q)
+static bool bif_sys_uri_normalize_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(pm,atom);
 	GET_NEXT_ARG(p2,any);
+
+	bool pct = CMP_STRING_TO_CSTR(q, pm, "iri") != 0;
+
+	if (pct && CMP_STRING_TO_CSTR(q, pm, "uri"))
+		return throw_error(q, pm, pm_ctx, "domain_error", "uri_normalize_mode");
 
 	char *src = get_text(q, p1, p1_ctx);
 
@@ -867,13 +878,13 @@ static bool bif_sys_uri_normalize_2(query *q)
 	}
 
 	if (u.has_auth) {
-		auth = normalize_authority(u.auth, u.auth_len, scheme);
+		auth = normalize_authority(u.auth, u.auth_len, scheme, pct);
 		t.has_auth = true;
 		t.auth = auth;
 		t.auth_len = auth ? strlen(auth) : 0;
 	}
 
-	path = pct_normalize(u.path, u.path_len);
+	path = pct ? pct_normalize(u.path, u.path_len) : slicedup(u.path, u.path_len);
 
 	if (path)
 		dots = remove_dot_segments(path, strlen(path));
@@ -887,14 +898,14 @@ static bool bif_sys_uri_normalize_2(query *q)
 	t.path_len = dots ? strlen(dots) : 0;
 
 	if (u.has_search) {
-		search = pct_normalize(u.search, u.search_len);
+		search = pct ? pct_normalize(u.search, u.search_len) : slicedup(u.search, u.search_len);
 		t.has_search = true;
 		t.search = search;
 		t.search_len = search ? strlen(search) : 0;
 	}
 
 	if (u.has_frag) {
-		frag = pct_normalize(u.frag, u.frag_len);
+		frag = pct ? pct_normalize(u.frag, u.frag_len) : slicedup(u.frag, u.frag_len);
 		t.has_frag = true;
 		t.frag = frag;
 		t.frag_len = frag ? strlen(frag) : 0;
@@ -1358,7 +1369,7 @@ builtins g_uri_bifs[] =
 	{"$uri_authority_parse", 5, bif_sys_uri_authority_parse_5, "+atom,?atom,?atom,?atom,?integer", false, false, BLAH},
 	{"$uri_authority_build", 5, bif_sys_uri_authority_build_5, "-atom,?atom,?atom,?atom,?integer", false, false, BLAH},
 	{"$uri_resolve", 3, bif_sys_uri_resolve_3, "+atom,+atom,-atom", false, false, BLAH},
-	{"$uri_normalize", 2, bif_sys_uri_normalize_2, "+atom,-atom", false, false, BLAH},
+	{"$uri_normalize", 3, bif_sys_uri_normalize_3, "+atom,+atom,-atom", false, false, BLAH},
 	{"$uri_encode", 3, bif_sys_uri_encode_3, "+atom,+atom,-atom", false, false, BLAH},
 	{"$uri_decode", 3, bif_sys_uri_decode_3, "+atom,+atom,-atom", false, false, BLAH},
 	{"$iri_uri", 2, bif_sys_iri_uri_2, "+atom,-atom", false, false, BLAH},

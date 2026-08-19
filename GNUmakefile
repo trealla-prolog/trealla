@@ -210,6 +210,7 @@ LIBOBJECTS +=  \
 	library/sockets.o \
 	library/time.o \
 	library/ugraphs.o \
+	library/uri.o \
 	library/uuid.o \
 	library/when.o \
 	library/yall.o
