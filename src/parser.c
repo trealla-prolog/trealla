@@ -411,22 +411,60 @@ static void consultall(parser *p, cell *l)
 	}
 }
 
+static bool is_dir_sep(int ch)
+{
+#ifdef _WIN32
+	// Backslash only counts on Windows: on POSIX it is an ordinary
+	// character and a file may legitimately be named with one.
+
+	return (ch == '/') || (ch == '\\');
+#else
+	return ch == '/';
+#endif
+}
+
+static const char *last_dir_sep(const char *s)
+{
+	const char *last = NULL;
+
+	for (const char *p = s; *p; p++) {
+		if (is_dir_sep(*p))
+			last = p;
+	}
+
+	return last;
+}
+
+// A name that already carries a directory is taken as given; a bare one
+// - or an explicitly upward one - is taken relative to the file doing
+// the consulting.
+//
+// basefile is whatever realpath() handed back, and on Windows that is
+// backslash-separated. Scanning for '/' alone found no separator there
+// at all, so the directory was truncated away and the name was left to
+// resolve against the working directory instead of against the
+// consulting file. Consulting a bare name from a file in a
+// subdirectory could only work if the two happened to coincide.
+
 char *relative_to(const char *basefile, const char *relfile)
 {
 	char *tmpbuf = TPL_malloc(strlen(basefile) + strlen(relfile) + 256);
 	ENSURE(tmpbuf);
 	char *ptr = tmpbuf;
+	bool upward = !strncmp(relfile, "../", 3);
 
-	if (!strncmp(relfile, "../", 3) || !strchr(relfile, '/')) {
+#ifdef _WIN32
+	upward = upward || !strncmp(relfile, "..\\", 3);
+#endif
+
+	if (upward || !last_dir_sep(relfile)) {
 		strcpy(tmpbuf, basefile);
-		ptr = tmpbuf + strlen(tmpbuf) - 1;
+		const char *sep = last_dir_sep(tmpbuf);
 
-		while ((ptr != tmpbuf) && (*ptr != '/'))
-			ptr--;
+		// Keep the separator the base was written with, so a Windows
+		// path stays a Windows path.
 
-		if (ptr != tmpbuf)
-			*ptr++ = '/';
-
+		ptr = sep ? tmpbuf + (sep - tmpbuf) + 1 : tmpbuf;
 		*ptr = '\0';
 	}
 
