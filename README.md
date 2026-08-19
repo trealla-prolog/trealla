@@ -9,13 +9,14 @@ and using a plain old Makefile.
 	Atoms and strings are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
 	Strings & slices are efficient (especially with mmap'd files)
+	Rational trees ##EXPERIMENTAL##
 	REPL with history
 	Runs on Linux, Android, FreeBSD, MacOS, Cosmopolitan, WebAssembly (WASI) & Go
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
-	FFIs for GNU Scientific Library (GSL)
-	FFIs for Raylib library
+	FFIs for GNU Scientific Library (GSL) ##EXPERIMENTAL##
+	FFIs for Raylib & Raymath
 	Concurrency via threads / tasks / futures / engines (aka. generators)
 	Definite Clause Grammar (DCGs)
 	Attributed variables with freeze/2 dif/2, when/2
@@ -24,8 +25,7 @@ and using a plain old Makefile.
 	Blackboarding primitives
 	Delimited continuations
 	Tabling: thread-local variant tabling
-	Sockets library
-	Rational trees ##EXPERIMENTAL##
+	Socket(s) library
 	...
 	Windows build ##UNSUPPORTED##
 
