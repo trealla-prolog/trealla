@@ -1,0 +1,11 @@
+findall_inside
+findall_existing
+findall_list
+findnsols
+bagof_case1
+bagof_case2
+bagof_case3
+acyclic_findall
+acyclic_compound
+acyclic_bagof
+acyclic_findnsols
