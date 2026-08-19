@@ -218,9 +218,8 @@ ip_name(_, Name) :-
 	throw(error(domain_error(ip_address, Name), ip_name/2)).
 
 % Parsed arithmetically off the characters rather than by splitting into
-% sub-atoms, which also does away with the atomic_list_concat/3 split
-% mode Trealla lacks. This runs on the receive path for every packet, so
-% it stays allocation-light.
+% sub-atoms with atomic_list_concat/3. This runs on the receive path for
+% every packet, so it stays allocation-light.
 
 '$parse_ip4'(Cs, ip(A,B,C,D)) :-
 	'$ip_octet'(Cs, A, ['.'|R1]),

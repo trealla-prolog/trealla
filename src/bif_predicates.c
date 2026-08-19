@@ -4884,11 +4884,101 @@ static bool bif_atomic_concat_3(query *q)
 	return ok;
 }
 
+// Split mode: Atom is bound and List isn't, so break Atom apart on
+// each occurrence of Sep. Pieces are always atoms, and an empty piece
+// is '' - so 'a--b' split on '-' gives [a,'',b].
+
+static bool do_atomic_list_concat_split(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, cell *p3, pl_ctx p3_ctx)
+{
+	char *sep_alloc = NULL, *src_alloc = NULL;
+	const char *sep, *src;
+	size_t sep_len, src_len;
+
+	if (is_atom(p2)) {
+		sep = C_STR(q, p2);
+		sep_len = C_STRLEN(q, p2);
+	} else {
+		sep = sep_alloc = print_term_to_strbuf(q, p2, p2_ctx, 1);
+		CHECKED(sep_alloc);
+		sep_len = strlen(sep);
+	}
+
+	if (!sep_len) {
+		TPL_free(sep_alloc);
+		return throw_error(q, p2, p2_ctx, "domain_error", "non_empty_atom");
+	}
+
+	if (is_atom(p3)) {
+		src = C_STR(q, p3);
+		src_len = C_STRLEN(q, p3);
+	} else {
+		src = src_alloc = print_term_to_strbuf(q, p3, p3_ctx, 1);
+		CHECKED(src_alloc, TPL_free(sep_alloc));
+		src_len = strlen(src);
+	}
+
+	CHECKED(init_tmp_heap(q), TPL_free(sep_alloc); TPL_free(src_alloc));
+	const char *start = src, *end = src + src_len;
+
+	while (true) {
+		const char *ptr = NULL;
+
+		for (const char *s = start; (size_t)(end - s) >= sep_len; s++) {
+			if (!memcmp(s, sep, sep_len)) {
+				ptr = s;
+				break;
+			}
+		}
+
+		cell tmp;
+		make_cstringn(&tmp, start, (ptr ? ptr : end) - start);
+		append_list(q, &tmp);
+
+		if (!ptr)
+			break;
+
+		start = ptr + sep_len;
+	}
+
+	TPL_free(sep_alloc);
+	TPL_free(src_alloc);
+	cell *l = end_list(q);
+	CHECKED(l);
+
+	// end_list() took its own reference to every piece, so the ones
+	// make_cstringn() gave us are now redundant and must be released
+	// or the strings outlive the query...
+
+	cell *c = l;
+
+	while (is_iso_list(c)) {
+		cell *h = c + 1;
+		c = h + h->num_cells;
+		unshare_cell(h);
+	}
+
+	return unify(q, p1, p1_ctx, l, q->st.cur_ctx);
+}
+
 static bool bif_atomic_list_concat_3(query *q)
 {
-	GET_FIRST_ARG(p1,iso_list_or_nil);
+	GET_FIRST_ARG(p1,iso_list_or_nil_or_var);
 	GET_NEXT_ARG(p2,atomic);
-	GET_NEXT_ARG(p3,atom_or_var);
+	GET_NEXT_ARG(p3,atomic_or_var);
+	bool is_partial;
+
+	if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
+		if (!is_partial)
+			return throw_error(q, p1, p1_ctx, "type_error", "list");
+
+		if (is_var(p3))
+			return throw_error(q, p3, p3_ctx, "instantiation_error", "not_sufficiently_instantiated");
+
+		return do_atomic_list_concat_split(q, p1, p1_ctx, p2, p2_ctx, p3, p3_ctx);
+	}
+
+	cell *p1_orig = p1;
+	pl_ctx p1_orig_ctx = p1_ctx;
 	LIST_HANDLER(p1);
 	SB(pr);
 
@@ -4898,7 +4988,11 @@ static bool bif_atomic_list_concat_3(query *q)
 
 		if (is_var(h)) {
 			SB_free(pr);
-			return throw_error(q, h, q->latest_ctx, "instantiation_error", "atomic");
+
+			if (is_var(p3))
+				return throw_error(q, h, q->latest_ctx, "instantiation_error", "atomic");
+
+			return do_atomic_list_concat_split(q, p1_orig, p1_orig_ctx, p2, p2_ctx, p3, p3_ctx);
 		}
 
 		if (!is_atomic(h)) {
@@ -4923,11 +5017,6 @@ static bool bif_atomic_list_concat_3(query *q)
 			SB_strcat(pr, dst);
 			TPL_free(dst);
 		}
-	}
-
-	if (is_var(p1)) {
-		SB_free(pr);
-		return throw_error(q, p1, p1_ctx, "instantiation_error", "atomic_list_concat/3");
 	}
 
 	cell tmp;
@@ -6699,7 +6788,7 @@ builtins g_other_bifs[] =
 	{"term_singletons", 2, bif_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"string", 1, bif_string_1, "+term", false, false, BLAH},
 	{"atomic_concat", 3, bif_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
-	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
+	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "?list,+atomic,?atomic", false, false, BLAH},
 	{"replace", 4, bif_replace_4, "+string,+integer,+integer,-string", false, false, BLAH},
 	{"split_string", 4, bif_split_string_4, "+string,+atom,+atom,-list", false, false, BLAH},
 	{"split", 4, bif_split_4, "+string,+string,?string,?string", false, false, BLAH},

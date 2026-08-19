@@ -27,7 +27,7 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 | `atom_upper/2` | `atom_upper(?atom,?atom)` |  |
 | `atomic/1` | `atomic(+term)` | ISO |
 | `atomic_concat/3` | `atomic_concat(+atomic,+atomic,?atomic)` |  |
-| `atomic_list_concat/3` | `atomic_list_concat(+list,+list,-atomic)` |  |
+| `atomic_list_concat/3` | `atomic_list_concat(?list,+atomic,?atomic)` |  |
 | `base64/3` | `base64(?string,?string,+list)` |  |
 | `between/3` | `between(+integer,+integer,?integer)` |  |
 | `call_nth/2` | `call_nth(:callable,+integer)` |  |
