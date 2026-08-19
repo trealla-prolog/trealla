@@ -74,3 +74,56 @@ RFC 5.4 vectors agree
 /../../../.. | /
 'http://' | 'http:///'
 'http://[]:80' | 'http:///'
+
+query_value escapes [32,34,35,37,38,43,58,59,60,61,62,91,92,93,94,96,123,124,125]
+fragment escapes [32,34,35,37,60,62,91,92,93,94,96,123,124,125]
+path escapes [32,34,35,37,58,60,62,63,91,92,93,94,96,123,124,125]
+segment escapes [32,34,35,37,47,58,60,62,63,91,92,93,94,96,123,124,125]
+
+enc path 'a b' | 'a%20b'
+enc path 'a/b:c?d#e' | 'a/b%3Ac%3Fd%23e'
+enc path 'é' | '%C3%A9'
+enc path '日本' | '%E6%97%A5%E6%9C%AC'
+enc path '~-._!$@' | '~-._!$@'
+enc segment 'a/b:c?d#e' | 'a%2Fb%3Ac%3Fd%23e'
+enc fragment 'a&b=c+d;e' | 'a&b=c+d;e'
+enc query_value 'a&b=c+d;e' | 'a%26b%3Dc%2Bd%3Be'
+enc query_value 'a b' | 'a%20b'
+enc query_value '' | ''
+
+dec query_value 'a+b' | 'a b'
+dec path 'a+b' | 'a+b'
+dec fragment 'a+b' | 'a+b'
+dec segment 'a+b' | 'a+b'
+dec path 'a%20b' | 'a b'
+dec path '%C3%A9' | 'é'
+dec path 'a%2Fb' | 'a/b'
+dec path '%ZZ' | '%ZZ'
+dec path '%' | '%'
+dec path '%4' | '%4'
+dec path '' | ''
+dec path '%FF' | 'ÿ'
+dec path '%C3' | 'Ã'
+dec path 'a%00b' | 'a\x0\b'
+
+iri->uri 'http://x/é' | 'http://x/%C3%A9'
+iri->uri 'http://x/a b' | 'http://x/a%20b'
+iri->uri 'http://x/%20' | 'http://x/%20'
+iri->uri 'http://x/%2F' | 'http://x//'
+iri->uri 'http://x/?q=a b&r=c' | 'http://x/?q=a%20b&r=c'
+iri->uri 'http://x/#f g' | 'http://x/#f%20g'
+iri->uri 'http://x/?q=%23b' | 'http://x/?q=%23b'
+iri->uri 'http://x/p%3Fq' | 'http://x/p%3Fq'
+iri->uri 'http://x/?a=1&b=2' | 'http://x/?a=1&b=2'
+iri->uri 'http://user:pw@x/p' | 'http://user:pw@x/p'
+iri->uri 'http://x/日本/x?a=é' | 'http://x/%E6%97%A5%E6%9C%AC/x?a=%C3%A9'
+
+uri->iri 'http://x/%C3%A9' | 'http://x/é'
+uri->iri 'http://x/%2F' | 'http://x//'
+uri->iri 'http://x/%20' | 'http://x/%20'
+uri->iri 'http://x/a+b' | 'http://x/a+b'
+uri->iri 'http://x/?q=%23b' | 'http://x/?q=%23b'
+uri->iri 'http://x/p%3Fq' | 'http://x/p%3Fq'
+uri->iri 'http://x/%E6%97%A5%E6%9C%AC' | 'http://x/日本'
+uri->iri 'http://x/?a=1&b=2' | 'http://x/?a=1&b=2'
+uri->iri 'http://x/%FF' | 'http://x/ÿ'

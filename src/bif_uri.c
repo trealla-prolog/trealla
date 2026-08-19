@@ -918,6 +918,439 @@ static bool bif_sys_uri_normalize_2(query *q)
 	return ok;
 }
 
+// Which characters have to be escaped, per component. These sets were
+// read off what SWI's uri_encoded/3 actually escapes rather than off
+// the grammar: RFC-3986 permits sub-delims in a query, but a
+// query_value holding a raw '&' or '=' would break the very name=value
+// split it exists to feed.
+
+typedef enum {
+	COMP_QUERY_VALUE = 0,
+	COMP_FRAGMENT,
+	COMP_PATH,
+	COMP_SEGMENT,
+	COMP_AUTH,
+	COMP_ANY
+} uri_comp;
+
+// Unsafe in every component: escaping these can never change what a
+// URI means, only how it reads.
+
+static const char *s_esc_always = " \"#%<>[\\]^`{|}";
+
+static const char *s_esc_extra[] = {
+	"&+:;=",		// query_value
+	"",				// fragment
+	":?",			// path
+	"/:?",			// segment
+	":@/?#",		// authority - not reachable from '$uri_encode', used
+					// when transcoding, where decoding an escaped ':'
+					// or '@' would move the userinfo/port boundary
+	""				// the everywhere-unsafe set on its own
+};
+
+static bool must_escape(int ch, uri_comp comp)
+{
+	// Controls, DEL, and every byte of a non-ASCII sequence.
+
+	if ((ch < 0x20) || (ch >= 0x7f))
+		return true;
+
+	return strchr(s_esc_always, ch) || strchr(s_esc_extra[comp], ch);
+}
+
+static void put_escape(char **o, unsigned char ch)
+{
+	static const char *hex = "0123456789ABCDEF";
+	*(*o)++ = '%';
+	*(*o)++ = hex[ch >> 4];
+	*(*o)++ = hex[ch & 0x0f];
+}
+
+// Escaping can triple the length, so one allocation up front.
+
+static char *pct_encode(const char *s, size_t n, uri_comp comp)
+{
+	char *out = TPL_malloc((n * 3) + 1);
+
+	if (!out)
+		return NULL;
+
+	char *o = out;
+
+	for (size_t i = 0; i < n; i++) {
+		unsigned char ch = (unsigned char)s[i];
+
+		if (must_escape(ch, comp))
+			put_escape(&o, ch);
+		else
+			*o++ = (char)ch;
+	}
+
+	*o = '\0';
+	return out;
+}
+
+// Decoding only ever shrinks. A malformed escape is passed through
+// verbatim rather than being treated as an error - that is what SWI
+// does, and a URI holding a bare '%' is common enough in the wild.
+
+static char *pct_decode(const char *s, size_t n, bool plus_is_space, size_t *out_len)
+{
+	char *out = TPL_malloc(n + 1);
+
+	if (!out)
+		return NULL;
+
+	char *o = out;
+
+	for (size_t i = 0; i < n; ) {
+		if ((s[i] == '%') && (i + 2 < n)
+			&& isxdigit((unsigned char)s[i+1]) && isxdigit((unsigned char)s[i+2])) {
+			*o++ = (char)((hexval((unsigned char)s[i+1]) << 4) | hexval((unsigned char)s[i+2]));
+			i += 3;
+		} else if (plus_is_space && (s[i] == '+')) {
+			// Only a query_value reads '+' as a space, and only when
+			// decoding - encoding always produces %20. That asymmetry
+			// is the HTML form-encoding legacy, and it stops here.
+
+			*o++ = ' ';
+			i++;
+		} else
+			*o++ = s[i++];
+	}
+
+	// A decoded query value is arbitrary user data and may hold a
+	// NUL, so the length is reported rather than left to strlen():
+	// "%00" would otherwise take the rest of the value with it.
+
+	*o = '\0';
+	*out_len = o - out;
+	return out;
+}
+
+// How many bytes of well-formed UTF-8 start at s, or 0 if what is there
+// is not a valid sequence. Bounded by end, so a sequence truncated at
+// the tail reports 0 rather than reading past the buffer.
+
+static size_t utf8_seq_len(const unsigned char *s, const unsigned char *end)
+{
+	size_t need;
+	unsigned int cp;
+
+	if (s >= end)
+		return 0;
+
+	if (s[0] < 0x80)
+		return 1;
+	else if ((s[0] & 0xe0) == 0xc0) { need = 2; cp = s[0] & 0x1f; }
+	else if ((s[0] & 0xf0) == 0xe0) { need = 3; cp = s[0] & 0x0f; }
+	else if ((s[0] & 0xf8) == 0xf0) { need = 4; cp = s[0] & 0x07; }
+	else return 0;
+
+	if ((size_t)(end - s) < need)
+		return 0;
+
+	for (size_t i = 1; i < need; i++) {
+		if ((s[i] & 0xc0) != 0x80)
+			return 0;
+
+		cp = (cp << 6) | (s[i] & 0x3f);
+	}
+
+	// Overlong forms, surrogates and out-of-range code points all have
+	// valid-looking byte patterns but no valid meaning.
+
+	if (cp > 0x10ffff)
+		return 0;
+
+	if ((cp >= 0xd800) && (cp <= 0xdfff))
+		return 0;
+
+	if ((need == 2) && (cp < 0x80))
+		return 0;
+
+	if ((need == 3) && (cp < 0x800))
+		return 0;
+
+	if ((need == 4) && (cp < 0x10000))
+		return 0;
+
+	return need;
+}
+
+// Re-encode a raw byte buffer as well-formed UTF-8. Bytes already
+// forming a valid sequence are copied across untouched; a byte that
+// does not is read as Latin-1 and re-encoded as the code point of the
+// same value.
+//
+// This has to be total. Percent-decoding can yield any byte at all, and
+// handing ill-formed UTF-8 to make_cstringn() builds an atom that hangs
+// the printer rather than printing badly - "%FF" was enough to do it.
+// Reading a stray byte as Latin-1 is also what SWI does with it.
+
+static char *utf8_sanitize(const char *s, size_t n, size_t *out_len)
+{
+	char *out = TPL_malloc((n * 2) + 1);
+
+	if (!out)
+		return NULL;
+
+	char *o = out;
+	const unsigned char *p = (const unsigned char *)s, *end = p + n;
+
+	while (p < end) {
+		size_t seq = utf8_seq_len(p, end);
+
+		if (seq) {
+			memcpy(o, p, seq);
+			o += seq;
+			p += seq;
+		} else {
+			unsigned char ch = *p++;
+			*o++ = (char)(0xc0 | (ch >> 6));
+			*o++ = (char)(0x80 | (ch & 0x3f));
+		}
+	}
+
+	*o = '\0';
+	*out_len = o - out;
+	return out;
+}
+
+static bool get_component(query *q, cell *c, pl_ctx c_ctx, uri_comp *comp)
+{
+	if (!is_atom(c))
+		return false;
+
+	if (!CMP_STRING_TO_CSTR(q, c, "query_value")) *comp = COMP_QUERY_VALUE;
+	else if (!CMP_STRING_TO_CSTR(q, c, "fragment")) *comp = COMP_FRAGMENT;
+	else if (!CMP_STRING_TO_CSTR(q, c, "path")) *comp = COMP_PATH;
+	else if (!CMP_STRING_TO_CSTR(q, c, "segment")) *comp = COMP_SEGMENT;
+	else return false;
+
+	return true;
+}
+
+// '$uri_encode'(+Component, +Value, -Encoded)
+
+static bool bif_sys_uri_encode_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
+	uri_comp comp;
+
+	if (!get_component(q, p1, p1_ctx, &comp))
+		return throw_error(q, p1, p1_ctx, "domain_error", "uri_component");
+
+	char *src = get_text(q, p2, p2_ctx);
+
+	if (!src)
+		return throw_error(q, p2, p2_ctx, "type_error", "atom");
+
+	bool ok = false;
+	char *out = pct_encode(src, strlen(src), comp);
+
+	if (out) {
+		ok = unify_text(q, p3, p3_ctx, out, strlen(out));
+		TPL_free(out);
+	}
+
+	TPL_free(src);
+	return ok;
+}
+
+// '$uri_decode'(+Component, +Encoded, -Value)
+
+static bool bif_sys_uri_decode_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
+	uri_comp comp;
+
+	if (!get_component(q, p1, p1_ctx, &comp))
+		return throw_error(q, p1, p1_ctx, "domain_error", "uri_component");
+
+	char *src = get_text(q, p2, p2_ctx);
+
+	if (!src)
+		return throw_error(q, p2, p2_ctx, "type_error", "atom");
+
+	bool ok = false;
+	size_t raw_len = 0;
+	char *out = pct_decode(src, strlen(src), comp == COMP_QUERY_VALUE, &raw_len);
+
+	if (out) {
+		size_t len = 0;
+		char *clean = utf8_sanitize(out, raw_len, &len);
+
+		if (clean) {
+			ok = unify_text(q, p3, p3_ctx, clean, len);
+			TPL_free(clean);
+		}
+
+		TPL_free(out);
+	}
+
+	TPL_free(src);
+	return ok;
+}
+
+// Move one component between its URI and IRI spellings.
+//
+// The two questions get two different character sets, which looks
+// asymmetric until you see what each one protects. An ESCAPE is decoded
+// only when its character is safe in THIS component - decoding %3F in a
+// path would invent a query. A LITERAL is escaped only when it is
+// unsafe in EVERY component - escaping the '&' already sitting in a
+// query would break the name=value split that is there on purpose.
+
+static char *transcode(const char *s, size_t n, uri_comp comp, bool to_ascii)
+{
+	char *out = TPL_malloc((n * 3) + 1);
+
+	if (!out)
+		return NULL;
+
+	char *o = out;
+
+	for (size_t i = 0; i < n; ) {
+		if ((s[i] == '%') && (i + 2 < n)
+			&& isxdigit((unsigned char)s[i+1]) && isxdigit((unsigned char)s[i+2])) {
+			unsigned char ch = (unsigned char)((hexval((unsigned char)s[i+1]) << 4)
+				| hexval((unsigned char)s[i+2]));
+
+			if (ch >= 0x80) {
+				// A byte of a UTF-8 sequence: it stays escaped in the
+				// URI spelling and becomes raw text in the IRI one.
+
+				if (to_ascii) {
+					*o++ = '%';
+					*o++ = toupper((unsigned char)s[i+1]);
+					*o++ = toupper((unsigned char)s[i+2]);
+				} else
+					*o++ = (char)ch;
+			} else if (must_escape(ch, comp)) {
+				*o++ = '%';
+				*o++ = toupper((unsigned char)s[i+1]);
+				*o++ = toupper((unsigned char)s[i+2]);
+			} else
+				*o++ = (char)ch;
+
+			i += 3;
+		} else {
+			unsigned char ch = (unsigned char)s[i++];
+
+			if (ch >= 0x80) {
+				if (to_ascii)
+					put_escape(&o, ch);
+				else
+					*o++ = (char)ch;
+			} else if (must_escape(ch, COMP_ANY))
+				put_escape(&o, ch);
+			else
+				*o++ = (char)ch;
+		}
+	}
+
+	*o = '\0';
+	return out;
+}
+
+static bool do_uri_iri(query *q, bool to_ascii)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	char *src = get_text(q, p1, p1_ctx);
+
+	if (!src)
+		return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+	uri_parts u, t;
+	uri_split(src, &u);
+	memset(&t, 0, sizeof(t));
+
+	// The scheme is ASCII by grammar and has nothing to transcode.
+
+	t.has_scheme = u.has_scheme;
+	t.scheme = u.scheme;
+	t.scheme_len = u.scheme_len;
+
+	char *auth = NULL, *path = NULL, *search = NULL, *frag = NULL;
+
+	if (u.has_auth) {
+		auth = transcode(u.auth, u.auth_len, COMP_AUTH, to_ascii);
+		t.has_auth = true;
+		t.auth = auth;
+		t.auth_len = auth ? strlen(auth) : 0;
+	}
+
+	path = transcode(u.path, u.path_len, COMP_PATH, to_ascii);
+	t.path = path;
+	t.path_len = path ? strlen(path) : 0;
+
+	if (u.has_search) {
+		search = transcode(u.search, u.search_len, COMP_QUERY_VALUE, to_ascii);
+		t.has_search = true;
+		t.search = search;
+		t.search_len = search ? strlen(search) : 0;
+	}
+
+	if (u.has_frag) {
+		frag = transcode(u.frag, u.frag_len, COMP_FRAGMENT, to_ascii);
+		t.has_frag = true;
+		t.frag = frag;
+		t.frag_len = frag ? strlen(frag) : 0;
+	}
+
+	bool ok = false;
+	char *out = uri_recompose(&t);
+
+	if (out) {
+		if (to_ascii)
+			ok = unify_text(q, p2, p2_ctx, out, strlen(out));
+		else {
+			// Only this direction puts decoded bytes back into the
+			// text, so only this direction can go ill-formed.
+
+			size_t len = 0;
+			char *clean = utf8_sanitize(out, strlen(out), &len);
+
+			if (clean) {
+				ok = unify_text(q, p2, p2_ctx, clean, len);
+				TPL_free(clean);
+			}
+		}
+
+		TPL_free(out);
+	}
+
+	TPL_free(auth);
+	TPL_free(path);
+	TPL_free(search);
+	TPL_free(frag);
+	TPL_free(src);
+	return ok;
+}
+
+// '$iri_uri'(+IRI, -URI) - everything non-ASCII becomes UTF-8 escapes.
+
+static bool bif_sys_iri_uri_2(query *q)
+{
+	return do_uri_iri(q, true);
+}
+
+// '$uri_iri'(+URI, -IRI) - UTF-8 escapes become the characters they
+// stand for, wherever that is safe.
+
+static bool bif_sys_uri_iri_2(query *q)
+{
+	return do_uri_iri(q, false);
+}
+
 builtins g_uri_bifs[] =
 {
 	{"$uri_parse", 6, bif_sys_uri_parse_6, "+atom,?atom,?atom,?atom,?atom,?atom", false, false, BLAH},
@@ -926,6 +1359,10 @@ builtins g_uri_bifs[] =
 	{"$uri_authority_build", 5, bif_sys_uri_authority_build_5, "-atom,?atom,?atom,?atom,?integer", false, false, BLAH},
 	{"$uri_resolve", 3, bif_sys_uri_resolve_3, "+atom,+atom,-atom", false, false, BLAH},
 	{"$uri_normalize", 2, bif_sys_uri_normalize_2, "+atom,-atom", false, false, BLAH},
+	{"$uri_encode", 3, bif_sys_uri_encode_3, "+atom,+atom,-atom", false, false, BLAH},
+	{"$uri_decode", 3, bif_sys_uri_decode_3, "+atom,+atom,-atom", false, false, BLAH},
+	{"$iri_uri", 2, bif_sys_iri_uri_2, "+atom,-atom", false, false, BLAH},
+	{"$uri_iri", 2, bif_sys_uri_iri_2, "+atom,-atom", false, false, BLAH},
 
 	{0}
 };

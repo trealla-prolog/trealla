@@ -1,6 +1,7 @@
 % RFC-3986 primitives: '$uri_parse'/6, '$uri_build'/6,
 % '$uri_authority_parse'/5, '$uri_authority_build'/5,
-% '$uri_resolve'/3, '$uri_normalize'/2.
+% '$uri_resolve'/3, '$uri_normalize'/2, '$uri_encode'/3,
+% '$uri_decode'/3, '$iri_uri'/2, '$uri_iri'/2.
 
 :- initialization(main).
 
@@ -81,6 +82,36 @@ rfc5402 :-
 	% absolute, even when it repeats the base's scheme.
 	r('http:g', 'http:g').
 
+e(C, V) :-
+	'$uri_encode'(C, V, E),
+	format("enc ~w ~q | ~q~n", [C,V,E]).
+
+d(C, V) :-
+	'$uri_decode'(C, V, D),
+	format("dec ~w ~q | ~q~n", [C,V,D]).
+
+i2u(I) :-
+	'$iri_uri'(I, U),
+	format("iri->uri ~q | ~q~n", [I,U]).
+
+u2i(U) :-
+	'$uri_iri'(U, I),
+	format("uri->iri ~q | ~q~n", [U,I]).
+
+% The exact set of printable ASCII each component escapes. Compared
+% character by character against SWI's uri_encoded/3, which these four
+% lines reproduce exactly.
+
+charset(C) :-
+	findall(Code,
+		(	between(32, 126, Code),
+			char_code(Ch, Code),
+			'$uri_encode'(C, Ch, E),
+			atom_length(E, L),
+			L > 1
+		), Escaped),
+	format("~w escapes ~w~n", [C,Escaped]).
+
 main :-
 	p('http://www.example.com/path?q=1#frag'),
 	p('http://user:pw@[::1]:8080/a/b'),
@@ -159,4 +190,34 @@ main :-
 	n('%'), n('%4'), n('%zz'),
 	n('/../../../..'),
 	n('http://'),
-	n('http://[]:80').
+	n('http://[]:80'),
+	nl,
+	charset(query_value),
+	charset(fragment),
+	charset(path),
+	charset(segment),
+	nl,
+	e(path, 'a b'), e(path, 'a/b:c?d#e'), e(path, 'é'), e(path, '日本'),
+	e(path, '~-._!$@'), e(segment, 'a/b:c?d#e'), e(fragment, 'a&b=c+d;e'),
+	e(query_value, 'a&b=c+d;e'), e(query_value, 'a b'), e(query_value, ''),
+	nl,
+	% Only a query_value reads '+' as a space, and only when decoding.
+	d(query_value, 'a+b'), d(path, 'a+b'), d(fragment, 'a+b'),
+	d(segment, 'a+b'),
+	d(path, 'a%20b'), d(path, '%C3%A9'), d(path, 'a%2Fb'),
+	% Malformed escapes pass through as themselves.
+	d(path, '%ZZ'), d(path, '%'), d(path, '%4'), d(path, ''),
+	% Percent-decoding can produce any byte at all. A byte that is not
+	% part of well-formed UTF-8 is read as Latin-1 rather than left to
+	% become an atom the printer cannot handle.
+	d(path, '%FF'), d(path, '%C3'), d(path, 'a%00b'),
+	nl,
+	i2u('http://x/é'), i2u('http://x/a b'), i2u('http://x/%20'),
+	i2u('http://x/%2F'), i2u('http://x/?q=a b&r=c'), i2u('http://x/#f g'),
+	i2u('http://x/?q=%23b'), i2u('http://x/p%3Fq'), i2u('http://x/?a=1&b=2'),
+	i2u('http://user:pw@x/p'), i2u('http://x/日本/x?a=é'),
+	nl,
+	u2i('http://x/%C3%A9'), u2i('http://x/%2F'), u2i('http://x/%20'),
+	u2i('http://x/a+b'), u2i('http://x/?q=%23b'), u2i('http://x/p%3Fq'),
+	u2i('http://x/%E6%97%A5%E6%9C%AC'), u2i('http://x/?a=1&b=2'),
+	u2i('http://x/%FF').
