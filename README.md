@@ -11,7 +11,8 @@ and using a plain old Makefile.
 	Strings & slices are efficient (especially with mmap'd files)
 	Rational trees ##EXPERIMENTAL##
 	REPL with history
-	Runs on Linux, Android, FreeBSD, MacOS, Cosmopolitan, WebAssembly (WASI) & Go
+	Runs on Linux, Android, MacOS, FreeBSD, OpenBSD, RISC OS, Haiku & Solaris
+	Runs Cosmopolitan, WebAssembly (WASI) & Go
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)

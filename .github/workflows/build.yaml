@@ -328,6 +328,43 @@
               ATTRIBUTION
               README.md
 
+    netbsd-sparc64:
+      name: NetBSD 11 SPARC64 (experimental)
+      runs-on: ubuntu-latest
+      continue-on-error: true
+      timeout-minutes: 90
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Build and test in NetBSD
+          uses: vmactions/netbsd-vm@v1.4.6
+          with:
+            release: "11.0"
+            arch: sparc64
+            sync: scp
+            usesh: true
+            cache-after-prepare: true
+            prepare: |
+              /usr/sbin/pkg_add -u bash coreutils diffutils git gmake
+              ln -sf /usr/pkg/bin/gtimeout /usr/pkg/bin/timeout
+              ln -sf /usr/pkg/bin/gdiff /usr/pkg/bin/diff
+            run: |
+              export PATH="/usr/pkg/bin:$PATH"
+              git config --global --add safe.directory "$GITHUB_WORKSPACE"
+              gmake CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
+              ./tpl -q -g 'writeln(netbsd_sparc64_ok),halt'
+              gmake test
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-NetBSD-SPARC64
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
     solaris:
       name: Solaris 11.4 CBE (experimental)
       runs-on: ubuntu-latest
