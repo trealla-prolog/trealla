@@ -330,8 +330,8 @@
               ATTRIBUTION
               README.md
 
-    netbsd-sparc64:
-      name: NetBSD 11 SPARC64 (experimental)
+    netbsd-x64:
+      name: NetBSD 11 X64 (experimental)
       runs-on: ubuntu-latest
       continue-on-error: true
       timeout-minutes: 90
@@ -343,7 +343,7 @@
           uses: vmactions/netbsd-vm@v1.4.6
           with:
             release: "11.0"
-            arch: sparc64
+            arch: x86_64
             sync: scp
             usesh: true
             cache-after-prepare: true
@@ -354,12 +354,12 @@
               export PATH="/usr/pkg/bin:$PATH"
               version=$(printf '%s' "$GITHUB_SHA" | cut -c1-7)
               gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
-              ./tpl -q -g 'writeln(netbsd_sparc64_ok),halt'
+              ./tpl -q -g 'writeln(netbsd_x64_ok),halt'
               gmake test
         - name: Upload artifacts
           uses: actions/upload-artifact@v4
           with:
-            name: tpl-NetBSD-SPARC64
+            name: tpl-NetBSD-X64
             path: |
               tpl
               LICENSE
