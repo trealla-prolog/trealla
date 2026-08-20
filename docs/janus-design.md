@@ -278,6 +278,66 @@ three are not what the names suggest:
 | `pl_redo` | another solution exists | destroys the query itself on false |
 | `pl_done` | released | only on a query `pl_redo` has not exhausted |
 
+### 4.4 Naming the shared library, and Windows
+
+Not implemented — recorded here so the decision is made before phase 0 starts.
+
+`do_dlopen` now maps `.so` onto `.dylib` and `.dll`, which is enough on macOS
+and Linux but only solves a third of the problem on Windows. Three things vary
+there, and only the first is a suffix:
+
+| | example |
+|---|---|
+| suffix | `.so` → `.dll` — **handled** |
+| version infix | `libffi-8.dll`, `libssl-3-x64.dll`, `libcurl-4.dll` |
+| absent `lib` prefix | `python313.dll` |
+
+The version cannot be derived by any mapping, because it belongs to the
+*installation* and not the platform. Globbing `libfoo-*.dll` off `PATH` would
+load whatever ABI happened to be present, which is worse than failing honestly.
+So two mechanisms, for two different situations.
+
+**Fixed, known names — a candidate list on `use_foreign_module/2`:**
+
+```prolog
+:- use_foreign_module(['libcurl.so', 'libcurl-4.dll'], [ ... ]).
+```
+
+Tried in order, first that opens wins, and the error names all of them. A bare
+atom stays a one-element list, so nothing existing changes. The whole change is
+local to `do_use_foreign_module` in `src/module.c`. This puts the ABI version in
+the shim that knows which ABI it binds, rather than in a guess somewhere central
+— worth stressing, because the versioned names for curl, gsl, sqlite3 and raylib
+on MSYS2 are exactly the sort of thing that should not be invented from a
+machine that cannot test them.
+
+**Names known only at run time — `'$dlopen'/3` plus `'$register_predicate'/4`.**
+This is what libpython needs, since 3.9 through 3.14 are all plausible on one
+machine and no fixed list covers that. It already works. **[checked]**
+
+```prolog
+:- ( pylib(L), catch('$dlopen'(L, 0, H), _, fail)
+   ->  forall(sig(N, A, R), '$register_predicate'(H, N, A, R))
+   ;   throw(error(existence_error(foreign_library, libpython), _)) ).
+```
+
+Two constraints, both measured:
+
+- It has to be a plain `:- Goal` directive, which runs *during* load, so clauses
+  read after it compile against predicates that already exist. `initialization/1`
+  is too late — it runs after the file is loaded, and the calling clauses were
+  compiled without the predicate, giving `existence_error` at run time.
+- `'$register_predicate'/4` rejects `[]` for the argument list, because `[]` is
+  an atom rather than an `iso_list`, so a zero-argument function such as
+  `Py_Initialize` cannot go through it. `use_foreign_module/2` accepts `[]`
+  happily — see the `'CloseWindow'([], void)` entries in `library/raylib.pl`.
+  Changing that `GET_NEXT_ARG(p3, iso_list)` to `iso_list_or_nil` is the whole
+  fix, and phase 0 needs it.
+
+Neither mechanism should bake guessed DLL names into the shipped shims. The
+point of both is to give whoever has a Windows box a place to put the accurate
+name.
+
 ---
 
 ## 5. Keeping Python out of the default build
@@ -345,6 +405,9 @@ Consequences worth stating:
 | Structured term inspection | missing **[checked]** | new `trealla.h` API, §4.2 |
 | `pl_query` keeps goal strings alive | broken **[checked]** | §4.2 — blocks phase 6 |
 | Success/failure after `pl_query` | broken **[checked]** | §4.2 — blocks `query_once` |
+| Runtime library resolution | works **[checked]** | `$dlopen` + `$register_predicate`, §4.4 |
+| Registering a zero-arg function | broken **[checked]** | §4.4 — one-line fix, needed by phase 0 |
+| Naming a versioned Windows DLL | missing | §4.4 — candidate list on `use_foreign_module/2` |
 | Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
 | C callbacks from the FFI | absent by design | why §4.2 needs C |
 
@@ -367,13 +430,12 @@ Three platforms, three shapes:
 - macOS/Homebrew: a framework path with no `.so` suffix. `do_dlopen` handles it
   as-is. **[checked]**
 - Linux: `libpython3.x.so`, ordinary `dlopen`.
-- Windows: `python3X.dll`. `do_dlopen` now rewrites `.so` to `.dll` there, the
-  same way it has always rewritten to `.dylib` on macOS, so naming the library
-  `'libpython3.x.so'` works on all three. **[checked]** The FFI itself is built
-  on Windows — the `WIN` block does not set `NOFFI`, and the CI installs
+- Windows: `python3X.dll` — no `lib` prefix and the version in the filename, so
+  the suffix mapping alone does not reach it. Use the runtime resolution of
+  §4.4, which also needs the one-line `iso_list_or_nil` fix described there
+  before `Py_Initialize` can be registered. The FFI itself is built on Windows —
+  the `WIN` block does not set `NOFFI`, and the CI installs
   `mingw-w64-x86_64-dlfcn`, which resolves `dlopen` through `LoadLibrary`.
-  What remains here is only *which* DLL to look for, since the version is in
-  the filename.
 
 Also decide what happens at `halt`: there is no hook for a library to run
 `Py_Finalize`, so it will not run. That is usually harmless — the process is
