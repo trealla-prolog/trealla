@@ -352,8 +352,31 @@
               ln -sf /usr/pkg/bin/gtimeout /usr/pkg/bin/timeout
             run: |
               export PATH="/usr/pkg/bin:$PATH"
+              # Trealla documents a UTF-8 locale as a requirement, and this
+              # VM starts in C. Without one, test0252 and test0556 differ:
+              # writeq only quotes a non-ASCII atom when the C library calls
+              # its characters alphabetic, which is locale-dependent. The
+              # other BSD runners are already UTF-8, which is why only this
+              # one shows it.
+              if locale -a 2>/dev/null | grep -qx 'C.UTF-8'; then
+                LC_ALL=C.UTF-8
+              elif locale -a 2>/dev/null | grep -qx 'en_US.UTF-8'; then
+                LC_ALL=en_US.UTF-8
+              else
+                LC_ALL=C
+                echo "WARNING: no UTF-8 locale on this image; encoding tests will differ"
+              fi
+              export LC_ALL
+              echo "using LC_ALL=$LC_ALL"
               version=$(printf '%s' "$GITHUB_SHA" | cut -c1-7)
-              gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
+              # NOPIC=1 is a deliberate experiment, not a permanent setting.
+              # test0779 (number_chars of a 4-byte codepoint) dumps core here
+              # and nowhere else, and -fPIC - added when libtrealla.a joined
+              # the default build - is the one codegen-affecting difference on
+              # this runner. It reproduces under neither locale on macOS/arm64
+              # with ASAN and UBSan. If the crash survives NOPIC=1 it predates
+              # that change and this line should come out again.
+              gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 NOPIC=1 release
               ./tpl -q -g 'writeln(netbsd_x64_ok),halt'
               gmake test
         - name: Upload artifacts
