@@ -427,6 +427,9 @@ int new_stream(prolog *pl)
 		str->repo = false;
 		str->binary = false;
 		str->at_end_of_file = false;
+		str->ungetch = 0;
+		str->did_getc = false;
+		str->invalid_pending = false;
 		str->fp = str->fp_in = str->fp_out = NULL;
 		str->is_active = true;
 		prolog_unlock(pl);

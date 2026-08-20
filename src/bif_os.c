@@ -1223,7 +1223,7 @@ static bool bif_process_create_3(query *q)
 				int fds[2];
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 1);
-				child_stdin_fd = fds[1];
+				child_stdout_fd = fds[1];
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
@@ -1248,7 +1248,7 @@ static bool bif_process_create_3(query *q)
 				int fds[2];
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 2);
-				child_stdin_fd = fds[1];
+				child_stderr_fd = fds[1];
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
