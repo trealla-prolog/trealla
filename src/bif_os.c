@@ -1129,10 +1129,13 @@ static bool bif_process_create_3(query *q)
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
 #endif
 			} else if (!CMP_STRING_TO_CSTR(q, c, "cwd")) {
-#if 1
-				return throw_error(q, c, c_ctx, "system_error", "posix_spawn_file_actions_addchdir");
-#else
+#if (defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))) || !defined(POSIX_SPAWN_SETSID)
+				return throw_error(q, c, c_ctx, "system_error", "posix_spawnattr_setflags");
+#endif
 				const char *cwd = C_STR(q, name);
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
+				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
+#else
 				posix_spawn_file_actions_addchdir(&file_actions, cwd);
 #endif
 			} else if (!CMP_STRING_TO_CSTR(q, c, "env") && is_list_or_nil(name)) {
