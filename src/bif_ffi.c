@@ -102,37 +102,82 @@ typedef struct nested_elements {
 #endif
 
 #if USE_FFI
-void *do_dlopen(const char *filename, int flag)
-{
-#if __APPLE__
-	const char *ptr = strstr(filename, ".so");
-	char *filename2;
+// Prolog code names a shared library the Unix way - 'libfoo.so' - and
+// every library/*.pl that uses the FFI is written that way. Two of the
+// three platforms we build for want a different suffix, so map it here
+// rather than making each of those files carry a platform switch.
+//
+// Windows was missing until now: dlopen there comes from the dlfcn-win32
+// shim the CI installs, and it resolves through LoadLibrary, which will
+// not find a .so under any circumstances. So library(gsl), library(curl),
+// library(sqlite3) and library(raylib) could not load on Windows at all.
 
-	if (ptr) {
-		filename2 = TPL_malloc((strlen(filename)-2)+5+1);
-		const char *src = filename;
-		char *dst = filename2;
-
-		while (src != ptr)
-			*dst++ = *src++;
-
-		strcpy(dst, ".dylib");
-		dst += strlen(".dylib");
-		src += strlen(".so");
-
-		while (*src)
-			*dst++ = *src++;
-
-		*dst = '\0';
-	} else
-		filename2 = strdup(filename);
-#else
-	char *filename2 = strdup(filename);
+#if defined(__APPLE__)
+#define SO_SUFFIX ".dylib"
+#elif defined(_WIN32)
+#define SO_SUFFIX ".dll"
 #endif
 
-	void *handle = dlopen(filename2, !flag ? RTLD_LAZY | RTLD_GLOBAL : flag);
-	TPL_free(filename2);
-	return handle;
+#ifdef SO_SUFFIX
+// The ".so" that starts the *extension*, not merely the first one in the
+// string: a path like /opt/my.software/plugin.so has an earlier match,
+// and rewriting that one produced a nonsense filename. Accepts a version
+// suffix too, so libfoo.so.1 is still recognised.
+
+static const char *find_so_ext(const char *filename)
+{
+	const char *found = NULL;
+
+	for (const char *p = filename; (p = strstr(p, ".so")); p += 3) {
+		const char *after = p + 3;
+
+		if (!*after || (*after == '.'))
+			found = p;
+	}
+
+	return found;
+}
+
+static char *swap_so_suffix(const char *filename, const char *ptr)
+{
+	size_t head = ptr - filename;
+	char *out = TPL_malloc(strlen(filename) - strlen(".so") + strlen(SO_SUFFIX) + 1);
+
+	if (!out)
+		return NULL;
+
+	memcpy(out, filename, head);
+	strcpy(out + head, SO_SUFFIX);
+	strcat(out + head, ptr + strlen(".so"));
+	return out;
+}
+#endif
+
+void *do_dlopen(const char *filename, int flag)
+{
+	int mode = !flag ? RTLD_LAZY | RTLD_GLOBAL : flag;
+
+#ifdef SO_SUFFIX
+	const char *ptr = find_so_ext(filename);
+
+	if (ptr) {
+		char *filename2 = swap_so_suffix(filename, ptr);
+
+		if (filename2) {
+			void *handle = dlopen(filename2, mode);
+			TPL_free(filename2);
+
+			// Fall through to the name as written if that missed: a
+			// platform may genuinely carry a .so, and reporting the
+			// error against the name the user gave is friendlier.
+
+			if (handle)
+				return handle;
+		}
+	}
+#endif
+
+	return dlopen(filename, mode);
 }
 
 static bool bif_sys_dlopen_3(query *q)

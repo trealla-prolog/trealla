@@ -367,10 +367,13 @@ Three platforms, three shapes:
 - macOS/Homebrew: a framework path with no `.so` suffix. `do_dlopen` handles it
   as-is. **[checked]**
 - Linux: `libpython3.x.so`, ordinary `dlopen`.
-- Windows: `python3X.dll`. Untested and unaddressed so far. The FFI *is* built
-  on Windows — the `WIN` block does not set `NOFFI` — so this is in scope, but
-  `do_dlopen` only rewrites `.so` to `.dylib` under `__APPLE__`, and nothing
-  maps it to `.dll`. Decide here rather than discovering it late.
+- Windows: `python3X.dll`. `do_dlopen` now rewrites `.so` to `.dll` there, the
+  same way it has always rewritten to `.dylib` on macOS, so naming the library
+  `'libpython3.x.so'` works on all three. **[checked]** The FFI itself is built
+  on Windows — the `WIN` block does not set `NOFFI`, and the CI installs
+  `mingw-w64-x86_64-dlfcn`, which resolves `dlopen` through `LoadLibrary`.
+  What remains here is only *which* DLL to look for, since the version is in
+  the filename.
 
 Also decide what happens at `halt`: there is no hook for a library to run
 `Py_Finalize`, so it will not run. That is usually harmless — the process is
