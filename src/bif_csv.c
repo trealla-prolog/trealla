@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -11,7 +12,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 	SB(pr);
 
 	if (params->trim) {
-		while (iswspace(*src))
+		while (isspace((unsigned char)*src))
 			get_char_utf8(&src);
 	}
 
@@ -91,7 +92,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 			while (*tmp_src) {
 				if (*tmp_src == '.')
 					dots++;
-				else if (!isdigit(*tmp_src))
+				else if (!isdigit((unsigned char)*tmp_src))
 					bad++;
 
 				tmp_src++;
@@ -148,7 +149,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 		SB_init(pr);
 
 		if (params->trim) {
-			while (iswspace(*src))				get_char_utf8(&src);
+			while (isspace((unsigned char)*src))				get_char_utf8(&src);
 		}
 	}
 

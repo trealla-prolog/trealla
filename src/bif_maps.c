@@ -181,7 +181,7 @@ static bool bif_map_get_3(query *q)
 		if ((*src == '.') || (*src == 'e') || (*src == 'E')
 			|| (*src == '+') || (*src == '-'))
 			floaties++;
-		else if (!isdigit(*src)) {
+		else if (!isdigit((unsigned char)*src)) {
 			all_digs = 0;
 			break;
 		}
@@ -256,7 +256,7 @@ static bool bif_map_list_2(query *q)
 		int all_digs = 1;
 
 		while (*src) {
-			if (!isdigit(*src)) {
+			if (!isdigit((unsigned char)*src)) {
 				all_digs = 0;
 				break;
 			}
@@ -281,7 +281,7 @@ static bool bif_map_list_2(query *q)
 			if ((*src == '.') || (*src == 'e') || (*src == 'E')
 				|| (*src == '+') || (*src == '-'))
 				floaties++;
-			else if (!isdigit(*src)) {
+			else if (!isdigit((unsigned char)*src)) {
 				all_digs = 0;
 				break;
 			}

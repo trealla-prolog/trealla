@@ -116,9 +116,9 @@ int check_interrupt(query *q)
 			goto LOOP;
 		}
 
-		if (isdigit(ch)) {
+		if (iswdigit(ch)) {
 			q->fail_on_retry = true;
-			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : INT_MAX;
+			q->autofail_n = iswdigit(ch) ? (unsigned)ch - '0' : INT_MAX;
 			break;
 		}
 
@@ -222,14 +222,14 @@ bool check_redo(query *q)
 	printf(" ");
 #endif
 
-		if ((ch == 'a') || (ch == 'f') || isdigit(ch)) {
+		if ((ch == 'a') || (ch == 'f') || iswdigit(ch)) {
 			printf(" ");
 			fflush(stdout);
 			q->is_redo = true;
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
 			q->fail_on_retry = true;
-			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : ch == 'f' ? 5-(q->retries%5) : INT_MAX;
+			q->autofail_n = iswdigit(ch) ? (unsigned)ch - '0' : ch == 'f' ? 5-(q->retries%5) : INT_MAX;
 			break;
 		}
 
@@ -257,9 +257,9 @@ bool check_redo(query *q)
 			break;
 		}
 
-		if (isdigit(ch)) {
+		if (iswdigit(ch)) {
 			q->fail_on_retry = true;
-			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : INT_MAX;
+			q->autofail_n = iswdigit(ch) ? (unsigned)ch - '0' : INT_MAX;
 			break;
 		}
 
@@ -380,7 +380,7 @@ void dump_vars(query *q, bool partial)
 		int j;
 
 		if ((GET_POOL(q, p->vartab.off[i])[0] == '_')
-			&& isalpha(GET_POOL(q, p->vartab.off[i])[1])
+			&& isalpha((unsigned char)GET_POOL(q, p->vartab.off[i])[1])
 			&& ((j = varunformat(GET_POOL(q, p->vartab.off[i])+1)) != -1))
 			q->ignores[j] = true;
 	}

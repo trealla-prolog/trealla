@@ -4022,7 +4022,7 @@ static bool bif_read_term_from_chars_3(query *q)
 
 	const char *end_ptr = src + strlen(src) - 1;
 
-	while (isspace(*end_ptr) && (end_ptr != src))
+	while (isspace((unsigned char)*end_ptr) && (end_ptr != src))
 		end_ptr--;
 
 	if (src[strlen(src)-1] != '.')
@@ -4074,7 +4074,7 @@ static bool bif_read_term_from_atom_3(query *q)
 
 	const char *end_ptr = src + strlen(src) - 1;
 
-	while (isspace(*end_ptr) && (end_ptr != src))
+	while (isspace((unsigned char)*end_ptr) && (end_ptr != src))
 		end_ptr--;
 
 	if (src[strlen(src)-1] != '.')

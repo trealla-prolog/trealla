@@ -1117,7 +1117,7 @@ static bool bif_hex_bytes_2(query *q)
 		int n = peek_char_utf8(src);
 		unsigned val = 0;
 
-		if (isdigit(n))
+		if (iswdigit(n))
 			val += n - '0';
 		else if ((n >= 'a') && (n <= 'f'))
 			val += (n - 'a') + 10;
@@ -1144,7 +1144,7 @@ static bool bif_hex_bytes_2(query *q)
 		src = C_STR(q, h);
 		n = peek_char_utf8(src);
 
-		if (isdigit(n))
+		if (iswdigit(n))
 			val += n - '0';
 		else if ((n >= 'a') && (n <= 'f'))
 			val += (n - 'a') + 10;
@@ -3800,7 +3800,7 @@ static bool bif_split_4(query *q)
 		unshare_cell(&tmp);
 		ptr = ptr+1;
 
-		while (isspace(*ptr))
+		while (isspace((unsigned char)*ptr))
 			ptr++;
 
 		if (*ptr)
@@ -4583,7 +4583,7 @@ char *url_encode(const char *src, int len, char *dstbuf, size_t dstlen)
 		if (*src == ' ') {
 			*dst++ = '+';
 			src++;
-		} else if (!isalnum(*src) && (*src != '-') && (*src != '_') && (*src != '.') && (*src != '~')) {
+		} else if (!isalnum((unsigned char)*src) && (*src != '-') && (*src != '_') && (*src != '.') && (*src != '~')) {
 			const unsigned char* src2 = (unsigned char*)src;
 			dst += snprintf(dst, dstlen, "%%%02X", *src2);
 			src++;
@@ -5427,13 +5427,18 @@ static bool bif_char_type_2(query *q)
 		return iswalpha(ch) || iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "prolog"))
 		return iswalpha(ch) || iswdigit(ch) || iswgraph(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "hexadecimal_digit")) {
-		return isxdigit(ch);
-	} else if (!CMP_STRING_TO_CSTR(q, p2, "octal_digit")) {
-		static const char *s_hex = "01234567";
-		return isdigit(ch) && strchr(s_hex, ch);
-	} else if (!CMP_STRING_TO_CSTR(q, p2, "decimal_digit"))
-		return isdigit(ch);
+	// 'ch' is a full codepoint, so the wide forms: the narrow ctype
+	// functions are undefined for anything outside unsigned char, and on
+	// some libcs that is a table overrun and a crash rather than the
+	// harmless false it reads as. iswdigit and iswxdigit are ASCII-only
+	// in every locale by definition, so this is not a widening of what
+	// they match. There is no iswoctdigit, hence the range test.
+	else if (!CMP_STRING_TO_CSTR(q, p2, "hexadecimal_digit"))
+		return iswxdigit(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "octal_digit"))
+		return (ch >= '0') && (ch <= '7');
+	else if (!CMP_STRING_TO_CSTR(q, p2, "decimal_digit"))
+		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "numeric"))
 		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "whitespace"))
@@ -5446,7 +5451,7 @@ static bool bif_char_type_2(query *q)
 		cell *arg21 = deref(q, p2+1, p2_ctx);
 		pl_ctx arg21_ctx = q->latest_ctx;
 		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
-		put_char_utf8(tmpbuf, tolower(ch));
+		put_char_utf8(tmpbuf, towlower(ch));
 		cell tmp;
 		make_string(&tmp, tmpbuf);
 		bool ok = unify(q, arg21, arg21_ctx, &tmp, q->st.cur_ctx);
@@ -5456,7 +5461,7 @@ static bool bif_char_type_2(query *q)
 		cell *arg21 = deref(q, p2+1, p2_ctx);
 		pl_ctx arg21_ctx = q->latest_ctx;
 		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
-		put_char_utf8(tmpbuf, toupper(ch));
+		put_char_utf8(tmpbuf, towupper(ch));
 		cell tmp;
 		make_string(&tmp, tmpbuf);
 		bool ok = unify(q, arg21, arg21_ctx, &tmp, q->st.cur_ctx);

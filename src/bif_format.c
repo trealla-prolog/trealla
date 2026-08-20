@@ -280,7 +280,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			argval = ch;
 			ch = get_next_char(q, &fmt1);
 		} else {
-			while (isdigit(ch)) {
+			while (iswdigit(ch)) {
 				argval_specified = 1;
 				noargval = 0;
 				argval *= 10;

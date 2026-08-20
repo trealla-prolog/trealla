@@ -109,7 +109,7 @@ LOOP:
 			end_ptr--;
 		}
 
-		while (isspace(*end_ptr)) {
+		while (isspace((unsigned char)*end_ptr)) {
 			*end_ptr = '\0';
 			end_ptr--;
 		}
@@ -360,7 +360,7 @@ LOOP:
 		int ch = get_char_utf8(&s);
 		const char *end_ptr = cmd + strlen(cmd) - (strlen(cmd) ? 1 : 0);
 
-		while (isspace(*end_ptr) && (end_ptr != cmd))
+		while (isspace((unsigned char)*end_ptr) && (end_ptr != cmd))
 			end_ptr--;
 
 		if ((ch == 0) && (*end_ptr == eol)) {

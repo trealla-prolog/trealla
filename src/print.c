@@ -322,7 +322,9 @@ static bool has_spaces(const char *src, int srclen)
 		int ch = get_char_utf8(&src);
 		srclen -= lench;
 
-		if (isspace(ch))
+		// A codepoint, so the wide form: isspace() is undefined past
+		// unsigned char and overruns its table on some libcs.
+		if (iswspace(ch))
 			return true;
 	}
 
@@ -482,7 +484,7 @@ static void reformat_float(char *tmpbuf, size_t tmplen, pl_flt v)
 	if (*src == '-')
 		*dst++ = *src++;
 
-	while (isdigit(*src))
+	while (isdigit((unsigned char)*src))
 		*dst++ = *src++;
 
 	if ((*src != '.') && (*src != ',')) {

@@ -3507,7 +3507,7 @@ const char *g_anti_escapes = "eafbtvrnsd'\\\"`";
 static int get_escape(parser *p, const char **_src, bool *error, bool number)
 {
 	const char *src = *_src;
-	int ch = *src++;
+	int ch = (unsigned char)*src++;
 	const char *ptr = strchr(g_anti_escapes, ch);
 
 	if (ptr && ((ch != 's') || !p->flags.strict_iso))
@@ -3582,10 +3582,10 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 		if ((base == 8) && !isodigit(*src))
 			break;
 
-		if ((base == 10) && !isdigit(*src))
+		if ((base == 10) && !isdigit((unsigned char)*src))
 			break;
 
-		if ((base == 16) && !isxdigit(*src))
+		if ((base == 16) && !isxdigit((unsigned char)*src))
 			break;
 
 		if (spacers > 1) {
@@ -3623,9 +3623,9 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 		return;
 	}
 
-	if ((base != 16) && !isdigit(src[-1]))
+	if ((base != 16) && !isdigit((unsigned char)src[-1]))
 		src--;
-	else if ((base == 16) && !isxdigit(src[-1]))
+	else if ((base == 16) && !isxdigit((unsigned char)src[-1]))
 		src--;
 
 	mp_int_read_cstring(v2, base, (char*)SB_cstr(p->token), NULL);
@@ -3644,7 +3644,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	PARSE_LOOP:
 
-	if ((*s == '.') && isdigit(s[1])) {
+	if ((*s == '.') && isdigit((unsigned char)s[1])) {
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3653,10 +3653,13 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		return false;
 	}
 
-	if (!isdigit(*s))
+	// These index a ctype table with a char, which is signed: any byte
+	// over 0x7f arrives negative, and the lookup is then undefined. A
+	// 4-byte codepoint after 0' starts at 0xf0, i.e. -16.
+	if (!isdigit((unsigned char)*s))
 		return false;
 
-	if ((s[0] == '0') && (s[1] == '\'') && iscntrl(s[2])) {
+	if ((s[0] == '0') && (s[1] == '\'') && iscntrl((unsigned char)s[2])) {
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3666,7 +3669,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	}
 
 	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\'')
-		&& (iswspace(s[3]) || (s[3] == '.') || (s[3] == ',') || (s[3] == ';') || !s[3])) {
+		&& (isspace((unsigned char)s[3]) || (s[3] == '.') || (s[3] == ',') || (s[3] == ';') || !s[3])) {
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3684,7 +3687,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		return false;
 	}
 
-	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\\') && isdigit(s[3])) {
+	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\\') && isdigit((unsigned char)s[3])) {
 		char *s2 = (char*)s+3;
 		long long v = strtoll(s2, &s2, 8);
 
@@ -3752,7 +3755,8 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			int save_ch = s[0];
 			v = get_escape(p, &s, &p->error, false);
 
-			if ((((save_ch == '0')) && !iscntrl(v)) || p->error) {
+			// v is a codepoint, so the wide form here.
+			if ((((save_ch == '0')) && !iswcntrl(v)) || p->error) {
 				//printf("*** *s=%d, iscntrl=%d, save_ch=%d, v=%d\n", *s, iscntrl(*s), save_ch, v);
 
 				if (!p->do_read_term)
@@ -3864,7 +3868,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	read_integer(p, &v2, 10, &s);
 
-	if (p->flags.json && s && ((*s == 'e') || (*s == 'E')) && isdigit(s[1])) {
+	if (p->flags.json && s && ((*s == 'e') || (*s == 'E')) && isdigit((unsigned char)s[1])) {
 		p->v.tag = TAG_FLOAT;
 		errno = 0;
 		pl_flt v = strtod(tmpptr, &tmpptr);
@@ -3887,7 +3891,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		return true;
 	}
 
-	if (s && (*s == '.') && isdigit(s[1])) {
+	if (s && (*s == '.') && isdigit((unsigned char)s[1])) {
 		p->v.tag = TAG_FLOAT;
 		errno = 0;
 		pl_flt v = strtod(tmpptr, &tmpptr);
@@ -3925,7 +3929,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	int ch;
 	p->v.tag = TAG_INT;
 
-	if ((s[-1] == '.') || isspace(s[-1]))
+	if ((s[-1] == '.') || isspace((unsigned char)s[-1]))
 		s--;
 
 	*srcptr = s;
@@ -4078,7 +4082,7 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 		//src = eat_space(p);
 		bool nl = false;
 
-		while (iswblank(*src))
+		while (isblank((unsigned char)*src))
 			src++;
 
 		while (*src == '\n') {
@@ -4086,7 +4090,7 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 			src++;
 		}
 
-		while (iswblank(*src))
+		while (isblank((unsigned char)*src))
 			src++;
 
 		if ((!src || !*src) && !nl) {
@@ -4512,7 +4516,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		return false;
 
 	if (*src) {
-		while (iswspace(*src))
+		while (isspace((unsigned char)*src))
 			src++;
 	}
 
@@ -4689,7 +4693,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			&& (*p->srcptr != ')')
 			&& (*p->srcptr != ']')
 			&& (*p->srcptr != '}')
-			&& !iswalnum(*p->srcptr)
+			&& !isalnum((unsigned char)*p->srcptr)
 			&& (*p->srcptr != '_')
 			&& ((*p->srcptr != ' ') || !p->is_op)
 			) {
