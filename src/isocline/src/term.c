@@ -22,6 +22,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#if defined(__sun)
+#include <sys/termios.h>
+#endif
 #if defined(__linux__)
 //#include <linux/kd.h>
 #endif

@@ -18,6 +18,9 @@
 
 #if !defined(_WIN32) && !defined(__wasi__)
 #include <sys/ioctl.h>
+#if defined(__sun)
+#include <sys/termios.h>
+#endif
 #endif
 
 #include "history.h"
