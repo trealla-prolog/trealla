@@ -49,6 +49,10 @@ ifeq ($(UNAME_S), FreeBSD)
 LDFLAGS += -lrt
 endif
 
+ifeq ($(UNAME_S), SunOS)
+LDFLAGS += -lsocket -lnsl
+endif
+
 ifeq ($(UNAME_S), Haiku)
 LDFLAGS += -lnetwork
 endif
@@ -131,11 +135,12 @@ endif
 ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread
-# -latomic only works for gcc
+# -latomic only works for gcc, and is not shipped with every system gcc.
 ifeq ($(COMPILER_IS_GCC),gcc)
+GCC_LIBATOMIC := $(shell $(CC) -print-file-name=libatomic.a)
+ifneq ($(wildcard $(GCC_LIBATOMIC)),)
 LDFLAGS += -latomic
-else
-LDFLAGS +=
+endif
 endif
 endif
 
