@@ -20,6 +20,7 @@
 #include <histedit.h>
 #if defined(__OpenBSD__)
 #include <readline/readline.h>
+#include <readline/history.h>
 #else
 #include <editline/readline.h>
 #endif

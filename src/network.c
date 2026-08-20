@@ -746,7 +746,8 @@ ssize_t tpl_udp_send(stream *str, const void *buf, size_t len, const char *host,
 	// like 127.0.0.1, and sendto() rejects the mismatch with EINVAL.
 	//
 	// AI_V4MAPPED|AI_ALL lets an IPv4 destination still be reached from
-	// a v6 socket, as a v4-mapped address.
+	// a v6 socket, as a v4-mapped address. Some systems, notably OpenBSD,
+	// deliberately do not support v4-mapped addresses or these flags.
 
 	struct sockaddr_storage me;
 	socklen_t melen = sizeof(me);
@@ -760,8 +761,10 @@ ssize_t tpl_udp_send(stream *str, const void *buf, size_t len, const char *host,
 	hints.ai_family = family;
 	hints.ai_socktype = SOCK_DGRAM;
 
+#if defined(AI_V4MAPPED) && defined(AI_ALL)
 	if (family == AF_INET6)
 		hints.ai_flags = AI_V4MAPPED | AI_ALL;
+#endif
 
 	char svc[20];
 	snprintf(svc, sizeof(svc), "%d", port);
