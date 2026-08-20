@@ -113,7 +113,10 @@ endif
 
 ifndef NOFFI
 CFLAGS += -DUSE_FFI=1 -I/usr/local/opt/libffi/include
-LDFLAGS += -lffi -ldl
+LDFLAGS += -lffi
+ifneq ($(UNAME_S),OpenBSD)
+LDFLAGS += -ldl
+endif
 endif
 
 ifndef NOSSL

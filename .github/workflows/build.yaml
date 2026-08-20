@@ -17,6 +17,7 @@
         matrix:
           os:
             - ubuntu-latest
+            - ubuntu-24.04-arm
             - macos-latest
       steps:
         - uses: actions/checkout@v4
@@ -26,7 +27,7 @@
           run: |
             sudo apt-get update
             sudo apt-get install libedit-dev xxd libffi-dev libssl-dev
-          if: matrix.os == 'ubuntu-latest'
+          if: startsWith(matrix.os, 'ubuntu-')
         - name: Install deps (macOS)
           run: |
             brew update
@@ -105,6 +106,65 @@
               libdl.dll
               libwinpthread-1.dll
 
+    windows-arm64:
+      name: Windows ARM64
+      runs-on: windows-11-arm
+      defaults:
+        run:
+          shell: msys2 {0}
+      steps:
+        - uses: msys2/setup-msys2@v2
+          with:
+            msystem: CLANGARM64
+            update: true
+        - name: Install deps
+          run: |
+            pacman --noconfirm -S make file mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-headers-git
+            pacman --noconfirm -S mingw-w64-clang-aarch64-libffi mingw-w64-clang-aarch64-dlfcn mingw-w64-clang-aarch64-openssl
+            pacman --noconfirm -S mingw-w64-clang-aarch64-winpthreads mingw-w64-clang-aarch64-libwinpthread vim diffutils git
+        - name: Configure line endings
+          run: git config --global core.autocrlf input
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Fetch tags
+          run: git fetch --tags --force origin
+        - name: Build
+          run: make WIN=1 CC=clang HOST_CC=clang AR=llvm-ar release
+        - name: Verify architecture
+          run: file tpl.exe | grep -qi 'PE32+.*Aarch64'
+        - name: Test
+          run: make test
+        - name: Make Windows-friendly
+          run: |
+            cp ${MINGW_PREFIX}/bin/{libcrypto-3-arm64.dll,libssl-3-arm64.dll,libffi-8.dll,libdl.dll,libwinpthread-1.dll} .
+            echo -e "\n\nOpenSSL (libcrypto-3-arm64.dll, libssl-3-arm64.dll):\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/openssl/LICENSE >> ATTRIBUTION
+            echo -e "\n\nlibffi: (libffi-8.dll)\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/libffi/LICENSE >> ATTRIBUTION
+            echo -e "\n\ndlfcn: (libdl.dll)\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/dlfcn/LICENSE >> ATTRIBUTION
+            echo -e "\n\nlibwinpthread:\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/winpthreads/COPYING >> ATTRIBUTION
+            echo -e "\n\nisocline:\n" >> ATTRIBUTION
+            cat src/isocline/LICENSE >> ATTRIBUTION
+            mv ATTRIBUTION ATTRIBUTION.txt
+            mv LICENSE LICENSE.txt
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-Windows-ARM64
+            path: |
+              tpl.exe
+              LICENSE.txt
+              ATTRIBUTION.txt
+              README.md
+              libcrypto-3-arm64.dll
+              libssl-3-arm64.dll
+              libffi-8.dll
+              libdl.dll
+              libwinpthread-1.dll
+
     linux32:
       name: Linux x86 (32-bit)
       runs-on: ubuntu-24.04
@@ -129,6 +189,44 @@
           uses: actions/upload-artifact@v4
           with:
             name: tpl-Linux-X86
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
+    s390x:
+      name: Linux s390x (big-endian)
+      runs-on: ubuntu-24.04
+      timeout-minutes: 60
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Set up QEMU
+          uses: docker/setup-qemu-action@v4
+          with:
+            platforms: s390x
+        - name: Build and test under s390x
+          run: |
+            docker run --rm --platform linux/s390x \
+              --volume "$GITHUB_WORKSPACE:/workspace" \
+              --workdir /workspace \
+              ubuntu:24.04 \
+              bash -euxo pipefail -c '
+                export DEBIAN_FRONTEND=noninteractive
+                apt-get update
+                apt-get install -y build-essential file git libedit-dev libffi-dev libssl-dev xxd
+                git config --global --add safe.directory /workspace
+                make clean
+                make release
+                file tpl | grep -q "ELF 64-bit MSB.*IBM S/390"
+                make test
+              '
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-Linux-S390X
             path: |
               tpl
               LICENSE
@@ -198,6 +296,35 @@
               ATTRIBUTION
               README.md
 
+    openbsd:
+      name: OpenBSD
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Build and test in OpenBSD
+          uses: vmactions/openbsd-vm@v1.4.6
+          with:
+            release: "7.9"
+            cache-after-prepare: true
+            prepare: |
+              pkg_add bash coreutils gdiff git gmake libffi
+              ln -sf /usr/local/bin/gtimeout /usr/local/bin/timeout
+              ln -sf /usr/local/bin/gdiff /usr/local/bin/diff
+            run: |
+              make release
+              make test
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-OpenBSD-X64
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
       name: WebAssembly
@@ -252,7 +379,7 @@
 
     release:
       if: startsWith(github.ref, 'refs/tags/')
-      needs: [build, windows, linux32, cosmo, freebsd, wasm]
+      needs: [build, windows, windows-arm64, linux32, s390x, cosmo, freebsd, openbsd, wasm]
       name: Release binaries
       runs-on: ubuntu-latest
       steps:
