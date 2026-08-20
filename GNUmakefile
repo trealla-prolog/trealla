@@ -211,6 +211,7 @@ LIBOBJECTS +=  \
 	library/syslog.o \
 	library/filesex.o \
 	library/time.o \
+	library/tty.o \
 	library/ugraphs.o \
 	library/uri.o \
 	library/uuid.o \

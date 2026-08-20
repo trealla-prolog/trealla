@@ -89,6 +89,8 @@ extern unsigned char library_aggregate_pl[];
 extern unsigned int library_aggregate_pl_len;
 extern unsigned char library_time_pl[];
 extern unsigned int library_time_pl_len;
+extern unsigned char library_tty_pl[];
+extern unsigned int library_tty_pl_len;
 extern unsigned char library_yall_pl[];
 extern unsigned int library_yall_pl_len;
 
@@ -137,6 +139,7 @@ library g_libs[] = {
 	 {"syslog", library_syslog_pl, &library_syslog_pl_len},
 	 {"filesex", library_filesex_pl, &library_filesex_pl_len},
 	 {"time", library_time_pl, &library_time_pl_len},
+	 {"tty", library_tty_pl, &library_tty_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
 	 {"uri", library_uri_pl, &library_uri_pl_len},
 	 {"uuid", library_uuid_pl, &library_uuid_pl_len},

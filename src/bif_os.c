@@ -16,6 +16,10 @@
 #include <sys/wait.h>
 #endif
 
+#if !defined(_WIN32) && !defined(__wasi__)
+#include <sys/ioctl.h>
+#endif
+
 #include "history.h"
 #include "module.h"
 #include "parser.h"
@@ -823,6 +827,43 @@ static bool bif_get_unbuffered_code_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+#if !defined(_WIN32) && !defined(__wasi__)
+// The live window size, which is not the same thing as the terminfo
+// 'li'/'co' numbers: those are the type's nominal size (24x80 for an
+// xterm) and do not move when the window is resized.
+//
+// Tries each of the standard streams because any one of them may be a
+// pipe while another is still the terminal - `tpl < script.pl` being the
+// obvious case. Fails silently when none of them is a terminal, so a
+// caller can fall back rather than having to catch.
+
+static bool bif_sys_tty_size_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
+	static const int fds[] = {STDOUT_FILENO, STDERR_FILENO, STDIN_FILENO};
+	struct winsize ws = {0};
+	bool got = false;
+
+	for (unsigned i = 0; !got && (i < sizeof(fds)/sizeof(fds[0])); i++) {
+		if (!ioctl(fds[i], TIOCGWINSZ, &ws) && ws.ws_row && ws.ws_col)
+			got = true;
+	}
+
+	if (!got)
+		return false;
+
+	cell tmp;
+	make_int(&tmp, ws.ws_row);
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
+		return false;
+
+	make_int(&tmp, ws.ws_col);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+}
+#endif
+
 static bool bif_get_unbuffered_char_1(query *q)
 {
 	GET_FIRST_ARG(p1,in_character_or_var);
@@ -1387,6 +1428,10 @@ builtins g_os_bifs[] =
 	{"busy", 1, bif_busy_1, "+integer", false, false, BLAH},
 	{"get_unbuffered_code", 1, bif_get_unbuffered_code_1, "?integer", false, false, BLAH},
 	{"get_unbuffered_char", 1, bif_get_unbuffered_char_1, "?character", false, false, BLAH},
+
+#if !defined(_WIN32) && !defined(__wasi__)
+	{"$tty_size", 2, bif_sys_tty_size_2, "-integer,-integer", false, false, BLAH},
+#endif
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
