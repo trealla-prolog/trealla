@@ -1,3 +1,6 @@
+#if defined(__sun)
+#define __EXTENSIONS__
+#endif
 #define _XOPEN_SOURCE 700
 #include <ctype.h>
 #include <dirent.h>
