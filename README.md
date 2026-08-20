@@ -5,14 +5,14 @@ A compact, efficient ISO Prolog interpreter. Written in plain old C
 and using a plain old Makefile.
 
 	MIT licensed
+	Runs on Linux, Android, MacOS, FreeBSD, OpenBSD, NetBSD, RISC/OS, Haiku, OpenIndiana & Solaris
 	Integers & Rationals are unbounded
 	Atoms and strings are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
 	Strings & slices are efficient (especially with mmap'd files)
 	Rational trees ##EXPERIMENTAL##
 	REPL with history
-	Runs on Linux, Android, MacOS, FreeBSD, OpenBSD, RISC OS, Haiku, OpenIndiana & Solaris
-	Runs Cosmopolitan, WebAssembly (WASI) & Go
+	Builds for Cosmopolitan, WebAssembly (WASI) & Go
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
@@ -27,7 +27,7 @@ and using a plain old Makefile.
 	Thread-local variant tabling
 	Socket(s) library
 	...
-	Windows build ##UNSUPPORTED##
+	Windows build (your mileage may vary) ##UNSUPPORTED##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
