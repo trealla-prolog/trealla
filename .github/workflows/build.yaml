@@ -105,6 +105,36 @@
               libdl.dll
               libwinpthread-1.dll
 
+    linux32:
+      name: Linux x86 (32-bit)
+      runs-on: ubuntu-24.04
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Install 32-bit dependencies
+          run: |
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+            sudo apt-get install file gcc-multilib libedit-dev:i386 libffi-dev:i386 libssl-dev:i386 xxd
+        - name: Fetch tags
+          run: git fetch --tags --force origin
+        - name: Build
+          run: make OPT=-m32 release
+        - name: Verify architecture
+          run: file tpl | grep -q 'ELF 32-bit.*Intel 80386'
+        - name: Test
+          run: make test
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-Linux-X86
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
     cosmo:
       name: Cosmopolitan
       runs-on: ubuntu-latest
@@ -222,7 +252,7 @@
 
     release:
       if: startsWith(github.ref, 'refs/tags/')
-      needs: [build, windows, cosmo, freebsd, wasm]
+      needs: [build, windows, linux32, cosmo, freebsd, wasm]
       name: Release binaries
       runs-on: ubuntu-latest
       steps:
