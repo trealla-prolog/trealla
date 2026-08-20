@@ -3634,50 +3634,135 @@ static bool bif_statistics_2(query *q)
 	return throw_error(q, p1, p1_ctx, "domain_error", "statistics_key");
 }
 
+// True if ch is one of the characters in the UTF-8 set `set`.
+
+static bool char_in_set(const char *set, int ch)
+{
+	while (*set) {
+		if (get_char_utf8(&set) == ch)
+			return true;
+	}
+
+	return false;
+}
+
+// split_string(+String, +SepChars, +PadChars, -SubStrings)
+//
+// This follows SWI's pl-string.c. The three points that are easy to get
+// wrong, and were: sep and pad are character *sets*, not single chars;
+// pad is stripped from BOTH ends of the input and of every field; and
+// the result always has at least one element, so an all-padding input
+// gives [""] rather than []. Empty fields are preserved - that is what
+// the `skip_padding` flag is for, mirroring SWI's `no_skip_padding`
+// label: after a separator that is not itself a pad character, and with
+// another separator next, the padding skip is suppressed so the empty
+// field between them survives.
+//
+// A nil argument is the empty text. Without that, C_STR() hands back the
+// atom's name and "" (which reads as [] under any double_quotes setting)
+// splits on '[' and ']'.
+
 static bool bif_split_string_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,atom);
 	GET_NEXT_ARG(p4,any);
-	const char *src = C_STR(q, p1);
-	int sep = peek_char_utf8(C_STR(q, p2));
-	int pad = peek_char_utf8(C_STR(q, p3));
-	const char *start = src, *ptr;
-	cell *l = NULL;
-
-	if (!*start)
-		return unify(q, p4, p4_ctx, make_nil(), q->st.cur_ctx);
+	const char *src = is_nil(p1) ? "" : C_STR(q, p1);
+	const size_t srclen = is_nil(p1) ? 0 : C_STRLEN(q, p1);
+	const char *seps = is_nil(p2) ? "" : C_STR(q, p2);
+	const char *pads = is_nil(p3) ? "" : C_STR(q, p3);
 
 	CHECKED(init_tmp_heap(q));
 
-	// FIXME: sep & pad are not a single char...
+	// The input, minus trailing padding. Tracked forwards so no part of
+	// this needs to walk a UTF-8 sequence backwards.
 
-	while ((ptr = strchr_utf8(start, sep)) != NULL) {
-		while ((peek_char_utf8(start) == pad) && (pad != sep))
-			get_char_utf8(&start);
+	size_t end = 0;
 
-		if (ptr-start) {
-			cell tmp;
-			CHECKED(make_slice(q, &tmp, p1, start-src, ptr-start));
-			append_list(q, &tmp);
+	for (size_t off = 0; off < srclen; ) {
+		const char *ptr = src + off;
+		const int ch = get_char_utf8(&ptr);
+		off = (size_t)(ptr - src);
+
+		if (!char_in_set(pads, ch))
+			end = off;
+	}
+
+	size_t i = 0;
+	bool skip_padding = true;
+
+	for (;;) {
+		if (skip_padding) {
+			while (i < end) {
+				const char *ptr = src + i;
+
+				if (!char_in_set(pads, peek_char_utf8(ptr)))
+					break;
+
+				get_char_utf8(&ptr);
+				i = (size_t)(ptr - src);
+			}
+
+			if (i == end) {
+				cell tmp;
+
+				if (is_string(p1))
+					make_atom(&tmp, g_nil_s);
+				else
+					make_atom(&tmp, g_empty_s);
+
+				append_list(q, &tmp);
+				break;
+			}
 		}
 
-		start = ptr + 1;
-	}
+		skip_padding = true;
 
-	if (*start) {
-		while (peek_char_utf8(start) == pad)
-			get_char_utf8(&start);
+		// Scan to the next separator, remembering where the field ends
+		// once its own trailing padding is discounted.
 
+		size_t last = i, field_end = i;
+
+		while (i < end) {
+			const char *ptr = src + i;
+			const int ch = peek_char_utf8(ptr);
+
+			if (char_in_set(seps, ch))
+				break;
+
+			get_char_utf8(&ptr);
+			i = (size_t)(ptr - src);
+
+			if (!char_in_set(pads, ch))
+				field_end = i;
+		}
+
+		const size_t sep_at = i;
 		cell tmp;
-		CHECKED(make_slice(q, &tmp, p1, start-src, C_STRLEN(q, p1)-(start-src)));
 
-		if (C_STRLEN(q, p1)-(start-src))
-			append_list(q, &tmp);
+		if (field_end > last) {
+			CHECKED(make_slice(q, &tmp, p1, last, field_end-last));
+		} else if (is_string(p1))
+			make_atom(&tmp, g_nil_s);
+		else
+			make_atom(&tmp, g_empty_s);
+
+		append_list(q, &tmp);
+
+		if (sep_at == end)
+			break;
+
+		const char *ptr = src + sep_at;
+		const int sep_ch = get_char_utf8(&ptr);
+		i = (size_t)(ptr - src);
+
+		if (!char_in_set(pads, sep_ch)
+			&& (i < end) && char_in_set(seps, peek_char_utf8(src+i)))
+			skip_padding = false;
 	}
 
-	l = end_list(q);
+	cell *l = end_list(q);
 	CHECKED(l);
 	return unify(q, p4, p4_ctx, l, q->st.cur_ctx);
 }
