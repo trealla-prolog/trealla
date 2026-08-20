@@ -690,7 +690,7 @@ struct thread_ {
 
 	void *tabling_state;
 
-#if defined(_WIN32) || defined(__wasi__)
+#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__)
 	alarm_entry *alarms;					// polled timers for hosts without POSIX per-thread timers
 #endif
 

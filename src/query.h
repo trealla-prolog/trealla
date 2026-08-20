@@ -71,7 +71,7 @@ void call_attrs(query *q, cell *attrs);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
-#if defined(_WIN32) || defined(__wasi__)
+#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__)
 bool has_expired_alarm(query *q);
 #endif
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
