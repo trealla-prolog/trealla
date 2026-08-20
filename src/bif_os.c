@@ -1124,16 +1124,16 @@ static bool bif_process_create_3(query *q)
 				ppid_ctx = name_ctx;
 			} else if (!CMP_STRING_TO_CSTR(q, c, "detached")) {
 #if (defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))) || !defined(POSIX_SPAWN_SETSID)
-				return throw_error(q, c, c_ctx, "not available", "posix_spawnattr_setflags");
+				return throw_error(q, c, c_ctx, "system_error", "posix_spawnattr_setflags");
 #else
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
 #endif
 			} else if (!CMP_STRING_TO_CSTR(q, c, "cwd")) {
-#ifndef posix_spawn_file_actions_addchdir_np
-				return throw_error(q, c, c_ctx, "not available", "posix_spawn_file_actions_addchdir_np");
+#if 1
+				return throw_error(q, c, c_ctx, "system_error", "posix_spawn_file_actions_addchdir");
 #else
-				const chat *cwd = C_STR(q, name);
-				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
+				const char *cwd = C_STR(q, name);
+				posix_spawn_file_actions_addchdir(&file_actions, cwd);
 #endif
 			} else if (!CMP_STRING_TO_CSTR(q, c, "env") && is_list_or_nil(name)) {
 				LIST_HANDLER(name);
