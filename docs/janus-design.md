@@ -88,32 +88,67 @@ this is implementation, not design. Translation is recursive on both sides.
 | `int` | integer | Trealla is unbounded, so no clamping — XSB has to range-check here, we do not |
 | `float` | float | |
 | `str` | atom | UTF-8 both sides |
-| `True` / `False` | `@true` / `@false` | needs `op(200, fy, @)` |
+| `True` / `False` | `@true` / `@false` | no `op/3` needed — see below |
 | `None` | `@none` | |
 | `list` | list | syntactically identical |
 | `tuple` of arity N | `-/N` compound | functor is a hyphen |
-| `dict` | `{K:V, K:V}` | curly term wrapping a `:/2` comma-list |
+| `dict`, non-empty | `{K:V, K:V}` | curly term wrapping a `:/2` comma-list |
+| `dict`, empty | `{}` — an **atom** | not a compound; special case both ways |
 | `set` | `py_set(List)` | element order not preserved |
 | anything else | opaque object reference | representation is explicitly system-dependent |
 | `bytes`, `complex` | — | not in the spec; leave unmapped |
 
-Every term form needed already exists in Trealla. **[checked]**
+Every term form needed already exists in Trealla, and none of them needs an
+operator declaration. **[checked]**
 
 ```prolog
 ?- X = {a:1,b:2}, X =.. L.
    L = [{},(a:1,b:2)]
+?- X = {a:1}, X =.. L.
+   L = [{},a:1]
+?- X = {}, compound(X).
+   false.                  % the empty dict is an ATOM
 ?- T = -(1,2,3), T =.. TL.
    TL = [-,1,2,3]
+?- T = -(1), compound(T).
+   true.                   % so a 1-tuple is expressible
 ```
 
 So the dictionary form comes for free from the curly-brace comma-list Trealla
-already parses for DCGs, and tuples are ordinary compounds.
+already parses for DCGs, and tuples are ordinary compounds — including the
+1-tuple, which is a compound `-(1)` and not the integer `-1`.
 
-**Object references.** The spec states the representation is system-dependent
-(XSB uses `pyObj/1`, SWI a blob with a GC finalizer). Trealla has no blob type
-with finalizers, so: `'$py_obj'(Ptr)` holding the raw `PyObject*`. This is
-sound because *both* reference systems already export `py_free/1` — explicit
-release is part of the agreed interface, not a workaround for Trealla.
+Two cases the table above is easy to read past. The **empty dict** is the atom
+`{}`, not a compound, so marshalling needs an explicit branch in both directions
+and a dict test cannot simply check for `{}/1`. And `@` **needs no `op/3`
+declaration**: Trealla already defines it as `100 fy`, so `@true`, `@false` and
+`@none` parse as they stand. SWI declares it at 200; re-declaring it here would
+change an existing operator to no purpose.
+
+**Object references, and who owns them.** The spec states the representation is
+system-dependent (XSB uses `pyObj/1`, SWI a blob with a GC finalizer). Trealla
+has no blob type with finalizers, so: `'$py_obj'(Ptr)` holding the raw
+`PyObject*`.
+
+This is the weakest point in the design and worth being blunt about. A Prolog
+term is copied and backtracked freely, so `'$py_obj'(Ptr)` has no unique owner:
+two copies of the same term are two references to one `PyObject`, and nothing
+tells them apart. Freeing through one leaves the other dangling; freeing through
+neither leaks. `py_free/1` being part of the agreed interface makes *explicit*
+release legitimate — it does not solve aliasing, and SWI only escapes this
+because its blobs are garbage collected.
+
+The rule has to be fixed in phase 1 and written into the module header:
+
+- Marshalling **borrows**. A `PyObject` reaching Prolog as a translated term
+  (int, atom, list, dict) is decref'd immediately; nothing outlives the call.
+- Only an *untranslatable* object becomes a `'$py_obj'/1`, and that term owns
+  exactly one reference, released by `py_free/1`.
+- Freeing a handle twice, or using one after freeing, is a program error the
+  same way `free()` twice is. Do not attempt to detect it by scanning the store.
+
+That keeps the count exact for everything the marshaller understands, and
+confines manual bookkeeping to handles the user asked for by name.
 
 ---
 
@@ -127,12 +162,29 @@ Everything above the marshalling layer is ordinary Prolog. Consequences:
   real backtracking with no non-deterministic foreign predicate required.
 - `keys/2`, `key/2`, `values/3`, `items/2` are pure term manipulation on the
   curly form — no Python involvement at all.
-- If marshalling later proves hot, it can move into C without changing the
-  interface.
+- `py_call/2,3` is *derived*, not primitive: XSB implements it in Prolog over
+  `py_func`/`py_dot`, walking `:` chains. Worth copying, with one consequence —
+  the dispatcher pattern-matches on the object representation (XSB on
+  `pyObj(O)`, us on `'$py_obj'/1`), so the term shape chosen in §3 leaks into
+  `py_call`'s clause heads.
 
 The FFI signatures needed are all plain pointer and integer types. No struct
 passes by value anywhere in the CPython API we touch, so none of the
 `foreign_struct` machinery is involved.
+
+**This is fast enough, measured rather than assumed.** **[checked]**
+
+| | µs per iteration |
+|---|---|
+| bare Prolog call, as a baseline | 0.17 |
+| one FFI call (`PyLong_FromLongLong`) | 0.21 |
+| integer round trip, 3 FFI calls | 0.37 |
+| `math.factorial(20)`, 7 FFI calls | 0.71 |
+
+So the FFI costs about 35ns over a plain Prolog call, and a complete Python
+call with argument marshalling lands near 0.7µs — roughly 1.4M calls a second.
+Moving the marshalling into C remains possible without changing the interface,
+but nothing in these numbers asks for it.
 
 ### 4.2 Python → Prolog: an extension module
 
@@ -304,19 +356,43 @@ Ordered so each phase leaves something usable. Phases 1–5 have no dependency o
 phase 6, which is where all the C lives — so the Prolog → Python half can ship
 on its own.
 
-**Phase 0 — build wiring and finding libpython.**
+**Phase 0 — build wiring, finding libpython, shutdown.**
 The `JANUS` makefile target and `#ifdef USE_JANUS` guards of §5, so the feature
 is opt-in from the first commit rather than retrofitted. Then locate the
-interpreter at run time across platforms: Homebrew framework (no `.so` suffix),
-Debian `libpython3.x.so`, Windows DLL. That search belongs in Prolog, not
-configure — configure-time detection would put a Python dependency back into the
-build. Ship `py_version/0` as the smoke test.
+interpreter at run time. That search belongs in Prolog, not configure —
+configure-time detection would put a Python dependency back into the build.
+
+Three platforms, three shapes:
+
+- macOS/Homebrew: a framework path with no `.so` suffix. `do_dlopen` handles it
+  as-is. **[checked]**
+- Linux: `libpython3.x.so`, ordinary `dlopen`.
+- Windows: `python3X.dll`. Untested and unaddressed so far. The FFI *is* built
+  on Windows — the `WIN` block does not set `NOFFI` — so this is in scope, but
+  `do_dlopen` only rewrites `.so` to `.dylib` under `__APPLE__`, and nothing
+  maps it to `.dll`. Decide here rather than discovering it late.
+
+Also decide what happens at `halt`: there is no hook for a library to run
+`Py_Finalize`, so it will not run. That is usually harmless — the process is
+exiting — but it means Python `atexit` handlers and buffered file writes on the
+Python side may not complete. Say so in the module docs rather than pretending
+otherwise.
+
+Ship `py_version/0` as the smoke test.
 *No dependencies.*
 
 **Phase 1 — marshalling.**
 The §3 table, both directions, recursive. The bulk of the Prolog, and everything
-later sits on it. Testable standalone by round-tripping nested structures before
-any API exists. Fix the reference-ownership rule here and write it down.
+later sits on it. Fix the reference-ownership rule of §3 here and write it into
+the module header.
+
+Test it here too, not at phase 7. Conformance arrives far too late to be the
+first thing that exercises the marshaller, and almost every marshalling bug is
+catchable by a round trip: build a term, send it, read it back, compare. Cover
+the awkward cases deliberately — empty dict, empty list, 1-tuple, nested
+dict-in-list-in-tuple, an atom needing UTF-8, an integer past 64 bits, and
+`@true`/`@false`/`@none` — since those are exactly what a conformance suite
+written against another system will not think to probe.
 *Largest single piece.*
 
 **Phase 2 — calling.**
@@ -374,9 +450,13 @@ output landed *after* Trealla's, because each buffers independently.
 **[checked]** Anything interleaving output from both sides needs an explicit
 flush discipline; `py_shell/0` would need it badly.
 
-**The GIL versus Trealla threads.** Trealla builds with `USE_THREADS=1`. A thread
-entering Python without holding the GIL is a crash, not a race that will be
-forgiven. Cheap in phase 4, expensive to retrofit.
+**The GIL versus Trealla threads.** Trealla builds with `USE_THREADS=1`, its
+threads are real pthreads (`src/bif_threads.c` calls `pthread_create`), and the
+FFI is reentrant across them — three threads making 15,000 FFI calls
+concurrently ran clean. **[checked]** So two threads entering CPython at once is
+reachable in ordinary code, not a theoretical hazard, and without the GIL that
+is a crash rather than a race that will be forgiven. Cheap in phase 4, expensive
+to retrofit.
 
 **Python version skew.** The C-API is stable across 3.x for what we use, but the
 *library name and location* are not. Phase 0 owns this; do not let it leak into
