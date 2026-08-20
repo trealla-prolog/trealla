@@ -49,6 +49,10 @@ ifeq ($(UNAME_S), FreeBSD)
 LDFLAGS += -lrt
 endif
 
+ifeq ($(UNAME_S), Haiku)
+LDFLAGS += -lnetwork
+endif
+
 ifdef HOMEBREW_PREFIX
 LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib
 CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
@@ -114,7 +118,7 @@ endif
 ifndef NOFFI
 CFLAGS += -DUSE_FFI=1 -I/usr/local/opt/libffi/include
 LDFLAGS += -lffi
-ifneq ($(UNAME_S),OpenBSD)
+ifeq ($(filter OpenBSD Haiku,$(UNAME_S)),)
 LDFLAGS += -ldl
 endif
 endif

@@ -132,7 +132,8 @@
         - name: Build
           run: make WIN=1 CC=clang HOST_CC=clang AR=llvm-ar release
         - name: Verify architecture
-          run: file tpl.exe | grep -qi 'PE32+.*Aarch64'
+          run: |
+            llvm-readobj --file-headers tpl.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_ARM64'
         - name: Test
           run: make test
         - name: Make Windows-friendly
@@ -313,12 +314,40 @@
               ln -sf /usr/local/bin/gtimeout /usr/local/bin/timeout
               ln -sf /usr/local/bin/gdiff /usr/local/bin/diff
             run: |
-              make release
-              make test
+              gmake release
+              gmake test
         - name: Upload artifacts
           uses: actions/upload-artifact@v4
           with:
             name: tpl-OpenBSD-X64
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
+    haiku:
+      name: Haiku (experimental)
+      runs-on: ubuntu-latest
+      continue-on-error: true
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Build and smoke-test in Haiku
+          uses: vmactions/haiku-vm@v1.1.3
+          with:
+            release: "r1beta5"
+            usesh: true
+            cache-after-prepare: true
+            prepare: pkgman install -y git make libffi_devel openssl3_devel
+            run: |
+              make ISOCLINE=1 release
+              ./tpl -q -g 'writeln(haiku_ok),halt'
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-Haiku-X64
             path: |
               tpl
               LICENSE
