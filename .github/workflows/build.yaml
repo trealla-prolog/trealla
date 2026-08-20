@@ -213,6 +213,8 @@
             docker run --rm --platform linux/s390x \
               --volume "$GITHUB_WORKSPACE:/workspace" \
               --workdir /workspace \
+              --env LANG=C.UTF-8 \
+              --env LC_ALL=C.UTF-8 \
               ubuntu:24.04 \
               bash -euxo pipefail -c '
                 export DEBIAN_FRONTEND=noninteractive
