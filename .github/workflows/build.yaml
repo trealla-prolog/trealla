@@ -237,6 +237,47 @@
               ATTRIBUTION
               README.md
 
+    # Native RISC-V, no emulation. These runners are not GitHub's: they
+    # come from the RISE Project, free for open source, and the label
+    # only resolves once their GitHub App is installed on the account.
+    # Without it the job sits queued rather than failing, so if this one
+    # never starts, that is the reason.
+    #
+    #   https://riscv-runners.riseproject.dev/
+
+    riscv64:
+      name: Linux riscv64 (experimental)
+      runs-on: ubuntu-24.04-riscv
+      continue-on-error: true
+      timeout-minutes: 45
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Install deps
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y build-essential file libedit-dev libffi-dev libssl-dev xxd
+        - name: Fetch tags
+          run: git fetch --tags --force origin
+        - name: Build
+          run: make release
+        - name: Check we really are on RISC-V
+          run: |
+            uname -m
+            file tpl | grep -q "ELF 64-bit LSB.*RISC-V"
+        - name: Test
+          run: make test
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-Linux-RISCV64
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
     cosmo:
       name: Cosmopolitan
       runs-on: ubuntu-latest
