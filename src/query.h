@@ -227,7 +227,7 @@ inline static bool interrupt_pending(query *q)
 {
 	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
 
-#if defined(_WIN32) || defined(__wasi__)
+#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__)
 	if (!self->timedout && self->alarms && has_expired_alarm(q))
 		self->timedout = 1;
 #endif

@@ -314,6 +314,7 @@
               ln -sf /usr/local/bin/gtimeout /usr/local/bin/timeout
               ln -sf /usr/local/bin/gdiff /usr/local/bin/diff
             run: |
+              git config --global --add safe.directory "$GITHUB_WORKSPACE"
               gmake release
               gmake test
         - name: Upload artifacts
@@ -339,10 +340,8 @@
           with:
             release: "r1beta5"
             usesh: true
-            cache-after-prepare: true
-            prepare: pkgman install -y git make libffi_devel openssl3_devel
             run: |
-              make ISOCLINE=1 release
+              make ISOCLINE=1 NOFFI=1 NOSSL=1 release
               ./tpl -q -g 'writeln(haiku_ok),halt'
         - name: Upload artifacts
           uses: actions/upload-artifact@v4

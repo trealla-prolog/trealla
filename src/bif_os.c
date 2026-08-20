@@ -452,7 +452,7 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
-#if !defined(_WIN32) && !defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__OpenBSD__)
 static void s_sigfn(int s)
 {
 	(void)s;
@@ -618,9 +618,10 @@ static bool bif_sys_alarm_2(query *q)
 #endif
 #else
 
-// Windows and WASI have no usable POSIX per-thread timer here. Polling a
-// monotonic deadline from the normal interrupt checks preserves nested timers
-// and avoids a helper thread (WASI builds are deliberately threadless).
+// Windows, WASI and OpenBSD have no usable POSIX per-thread timer here.
+// Polling a monotonic deadline from the normal interrupt checks preserves
+// nested timers and avoids a helper thread (WASI builds are deliberately
+// threadless).
 
 struct alarm_entry_ {
 	alarm_entry *next;
@@ -1174,7 +1175,9 @@ static bool bif_process_create_3(query *q)
 				return throw_error(q, c, c_ctx, "system_error", "posix_spawnattr_setflags");
 #endif
 				const char *cwd = C_STR(q, name);
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
+#if defined(__OpenBSD__)
+				return throw_error(q, c, c_ctx, "system_error", "posix_spawn_file_actions_addchdir");
+#elif !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
 				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
 #else
 				posix_spawn_file_actions_addchdir(&file_actions, cwd);
