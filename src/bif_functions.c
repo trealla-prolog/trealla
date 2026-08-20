@@ -18,7 +18,7 @@
 
 static inline unsigned tpl_rand_r(unsigned *seed)
 {
-#ifdef __COSMOPOLITAN__
+#if defined(__COSMOPOLITAN__) || defined(__riscos__)
 	*seed = *seed * 1103515245u + 12345u;
 	return *seed & RAND_MAX;
 #else

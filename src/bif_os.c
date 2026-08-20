@@ -11,7 +11,7 @@
 #include <sys/syscall.h>
 #endif
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__riscos__)
 #include <spawn.h>
 #include <sys/wait.h>
 #endif
@@ -1095,7 +1095,7 @@ static bool bif_pclose_1(query *q)
 
 char **g_envp = NULL;		// set by the front end, if there is one
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__riscos__)
 static bool bif_process_create_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -1439,7 +1439,7 @@ builtins g_os_bifs[] =
 	{"$tty_size", 2, bif_sys_tty_size_2, "-integer,-integer", false, false, BLAH},
 #endif
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__riscos__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
 	{"$process_wait", 3, bif_process_wait_3, "+integer,-term,+list", false, false, BLAH},
 	{"process_kill", 2, bif_process_kill_2, "+integer,+integer", false, false, BLAH},
