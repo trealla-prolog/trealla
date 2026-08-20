@@ -18,7 +18,11 @@
 
 #if defined(USE_EDITLINE) && !defined(__wasi__)
 #include <histedit.h>
+#if defined(__OpenBSD__)
+#include <readline/readline.h>
+#else
 #include <editline/readline.h>
+#endif
 #if defined __NetBSD__
 #include <editline/history.h>
 #endif
