@@ -47,6 +47,9 @@ static SSL_CTX *g_ctx = NULL;
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/ioctl.h>
+#if defined(__sun)
+#include <sys/filio.h>
+#endif
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
