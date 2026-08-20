@@ -12,6 +12,10 @@
 // You can compile the entire library just as: 
 // $ gcc -c src/isocline.c 
 //-------------------------------------------------------------
+#if defined(__sun)
+# define __EXTENSIONS__
+#endif
+
 #if !defined(IC_SEPARATE_OBJS)
 # define _CRT_SECURE_NO_WARNINGS  // for msvc
 # define _XOPEN_SOURCE   700      // for wcwidth
@@ -586,4 +590,3 @@ ic_public void ic_init_custom_malloc( ic_malloc_fun_t* _malloc, ic_realloc_fun_t
     }
   }
 }
-
