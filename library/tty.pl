@@ -61,6 +61,8 @@ tty_clear :-
 	write(S),
 	ttyflush.
 
+:- help(tty_clear, [iso(false), desc('Clear the display.')]).
+
 %% tty_flash is det.
 %
 % Give a visual signal if possible, otherwise beep. The reverse-video
@@ -76,10 +78,14 @@ tty_flash :-
 	write(Off),
 	ttyflush.
 
+:- help(tty_flash, [iso(false), desc('Flash the screen, or beep if it cannot.')]).
+
 %% ttyflush is det.
 
 ttyflush :-
 	flush_output.
+
+:- help(ttyflush, [iso(false), desc('Flush pending terminal output.')]).
 
 %% tty_size(-Rows, -Cols) is det.
 %
@@ -108,6 +114,8 @@ env_num(Name, Value, _) :-
 	!.
 env_num(_, Default, Default).
 
+:- help(tty_size(-integer,-integer), [iso(false), desc('Rows and columns of the terminal, falling back on 24x80.')]).
+
 %% tty_goto(+X, +Y) is det.
 %
 % Put the cursor at column X, row Y, both counted from 0. The argument
@@ -119,6 +127,8 @@ tty_goto(X, Y) :-
 	Col is X + 1,
 	format("\x1b\[~d;~dH", [Row, Col]),
 	ttyflush.
+
+:- help(tty_goto(+integer,+integer), [iso(false), desc('Move the cursor to column X, row Y, both counted from 0.')]).
 
 %% tty_action(+Action) is det.
 %
@@ -164,6 +174,8 @@ tty_action(Action) :-
 tty_action(Action) :-
 	throw(error(domain_error(tty_action, Action), tty_action/1)).
 
+:- help(tty_action(+term), [iso(false), desc('Perform a screen action, or a list of them.')]).
+
 %% tty_nl(+N) is det.
 %
 % N newlines, each clearing the rest of the line first. This is SWI's ~l
@@ -175,6 +187,8 @@ tty_nl(default) :-
 tty_nl(N) :-
 	esc(clear_line, Ce),
 	forall(between(1, N, _), (write(Ce), nl)).
+
+:- help(tty_nl(+integer), [iso(false), desc('N newlines, each clearing the rest of its line first.')]).
 
 
                  /*******************************
@@ -224,6 +238,8 @@ menu(Title, List, Choice) :-
 	show_title(Title),
 	build_menu(List),
 	get_answer(List, Choice).
+
+:- help(menu(+term,+list,-term), [iso(false), desc('Show a menu of Name:Label options and return the chosen Name.')]).
 
 show_title(Title) :-
 	to_text(Title, T),

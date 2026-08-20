@@ -38,8 +38,14 @@ def declarations():
 			if m: decl.setdefault((m.group(1), int(m.group(2))), os.path.basename(f))
 	for f in glob.glob('library/*.pl'):
 		for l in open(f, errors='ignore'):
-			m = re.search(r':-\s*help\(([a-z_]\w*)\(', l)
+			# The head is an atom for a zero-arity predicate and a
+			# compound otherwise, so the character after the name says
+			# which: '(' opens an argument list, ',' means there is none.
+			m = re.search(r':-\s*help\(([a-z_]\w*)\s*([(,])', l)
 			if not m: continue
+			if m.group(2) == ',':
+				decl.setdefault((m.group(1), 0), 'library/' + os.path.basename(f))
+				continue
 			args = l[l.index('(', l.index(m.group(1))) + 1:]
 			depth, i = 1, 0
 			for i, ch in enumerate(args):
@@ -64,7 +70,18 @@ def main():
 	if not os.path.exists(TPL):
 		sys.exit(f"{TPL} not found - run make first")
 
-	out = subprocess.run([TPL, '-q', '-g', 'help,halt'],
+	# `help` only reports what is loaded, and most libraries are not
+	# autoloaded - so their predicates were missing from the reference
+	# even when documented. Load the ones that document themselves: a
+	# ':- help/2' in the file is the signal that its predicates belong
+	# here, and it keeps the FFI wrappers out, where raylib alone would
+	# add 700-odd entries nobody wants inline. Best effort, since a few
+	# need a shared library that may not be installed.
+
+	libs = sorted(os.path.basename(f)[:-3] for f in glob.glob('library/*.pl')
+		if re.search(r'^:-\s*help\(', open(f, errors='ignore').read(), re.M))
+	goal = ''.join("catch(use_module(library(%s)),_,true)," % l for l in libs)
+	out = subprocess.run([TPL, '-q', '-g', goal + 'help,halt'],
 		capture_output=True, text=True).stdout
 	decl = declarations()
 	rows, seen = [], set()

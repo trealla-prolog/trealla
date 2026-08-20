@@ -1402,7 +1402,11 @@ static bool directive_term(parser *p, cell *c)
 	cell *p1 = c + 1;
 
 	if (!strcmp(dirname, "help") && (c->arity == 2)) {
-		if (!is_compound(p1)) return true;
+		// An atom here is a zero-arity predicate. This used to bail out,
+		// so ':- help(foo, [...])' was accepted and silently did nothing
+		// - which is why nothing in library/ documents a 0-arity
+		// predicate.
+		if (!is_compound(p1) && !is_atom(p1)) return true;
 		cell *p2 = p1 + p1->num_cells;
 		if (!is_iso_list_or_nil(p2)) return true;
 		LIST_HANDLER(p2);
@@ -1451,8 +1455,14 @@ static bool directive_term(parser *p, cell *c)
 		if (*src == '(')
 			src++;
 
-		char *end = dst + strlen(dst) - 1;
-		*end = '\0';
+		// Strip the closing paren of the argument list. With no arguments
+		// there is no paren, and chopping the last character would eat a
+		// letter off the name.
+
+		if (p1->arity) {
+			char *end = dst + strlen(dst) - 1;
+			*end = '\0';
+		}
 
 		ptr->help = *src ? src : dst;
 		ptr->help2 = dst;
