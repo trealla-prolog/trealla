@@ -1,3 +1,7 @@
+#if defined(__sun)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
