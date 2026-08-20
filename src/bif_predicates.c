@@ -4517,7 +4517,7 @@ static int do_b64encode_2(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	size_t len = C_STRLEN(q, p1);
 	char *dstbuf = TPL_malloc((len*3)+1);	// BASE64 can increase length x3
 	CHECKED(dstbuf);
-	b64_encode(str, len, &dstbuf, 0, 0);
+	tpl_b64_encode(str, len, &dstbuf, 0, 0);
 	cell tmp;
 	make_string(&tmp, dstbuf);
 	TPL_free(dstbuf);
@@ -4532,7 +4532,7 @@ static int do_b64decode_2(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	size_t len = C_STRLEN(q, p2);
 	char *dstbuf = TPL_malloc(len+1);
 	CHECKED(dstbuf);
-	b64_decode(str, len, &dstbuf);
+	tpl_b64_decode(str, len, &dstbuf);
 	cell tmp;
 	make_string(&tmp, dstbuf);
 	TPL_free(dstbuf);

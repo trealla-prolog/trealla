@@ -6,5 +6,5 @@
 // a buffer will be allocated which must subsequently be freed by the
 // caller...
 
-size_t b64_encode(const char *src, size_t nbytes, char **pdst, int breaks, int cr);
-size_t b64_decode(const char *src, size_t nbytes, char **pdst);
+size_t tpl_b64_encode(const char *src, size_t nbytes, char **pdst, int breaks, int cr);
+size_t tpl_b64_decode(const char *src, size_t nbytes, char **pdst);

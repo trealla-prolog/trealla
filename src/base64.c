@@ -36,7 +36,7 @@ static size_t encode_base64(char *ostr, uint8_t *inbuf, int *inbuf_size, int *li
 	return len;
 }
 
-size_t b64_encode(const char *s, size_t nbytes, char **pdst, int breaks, int cr)
+size_t tpl_b64_encode(const char *s, size_t nbytes, char **pdst, int breaks, int cr)
 {
 	if (!pdst)
 		return 0;
@@ -127,7 +127,7 @@ static int conv_to_number(uint8_t inbyte)
 	return -1;
 }
 
-size_t b64_decode(const char *s, size_t nbytes, char **pdst)
+size_t tpl_b64_decode(const char *s, size_t nbytes, char **pdst)
 {
 	if (!pdst)
 		return 0;
