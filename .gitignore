@@ -19,3 +19,4 @@ tpl
 *.gcda
 faultinject*
 util/bin2c
+samples/embed

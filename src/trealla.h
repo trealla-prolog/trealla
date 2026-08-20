@@ -4,7 +4,9 @@
 #include <stdio.h>
 
 typedef struct prolog_ prolog;
-typedef struct {} pl_sub_query;
+// Opaque. An empty struct is a GNU extension and not valid ISO C, which
+// matters now this header is installed for embedders to include.
+typedef struct pl_sub_query_ pl_sub_query;
 
 prolog *pl_create(void);
 void pl_destroy(prolog*);

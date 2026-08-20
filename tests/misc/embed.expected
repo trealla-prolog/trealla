@@ -1,0 +1,25 @@
+=== results ===
+
+  ok   pl_create
+  ok   pl_consult loads a file
+  ok   goal succeeds
+  ok   goal fails
+  ok   consulted predicate runs
+  ok   consulted predicate fails
+  ok   error sets get_error
+  ok   error clears afterwards
+  ok   4 solutions: likes(_, _)
+  ok   2 solutions: likes(mary, _)
+  ok   1 solution: likes(john, mary)
+  ok   3 solutions: member/2
+  ok   pl_query on a fresh goal
+  ok   pl_done releases it
+  ok   second pl_create
+  ok   assert visible in its own engine
+  ok   assert invisible to the other
+  ok   first engine survives the second's destroy
+  --   gap: string literal in a backtracked goal    fewer than 4 solutions, or an error: the goal's string was freed by pl_query
+  --   gap: no-solution vs one-solution after pl_query indistinguishable, both report 1
+
+all checks passed (0 failures)
+

@@ -1089,7 +1089,7 @@ static bool bif_pclose_1(query *q)
 }
 #endif
 
-extern char **g_envp;
+char **g_envp = NULL;		// set by the front end, if there is one
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 static bool bif_process_create_3(query *q)

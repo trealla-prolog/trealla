@@ -738,6 +738,15 @@ void pl_destroy(prolog *pl)
 	TPL_free(pl);
 }
 
+// Defined here rather than in tpl.c so that the engine links without a
+// front end: src/prolog.h declares it and src/toplevel.c installs it, so
+// tpl.o was the odd file out. Same reason for g_envp in src/bif_os.c.
+
+void g_sigfn(int s)
+{
+	g_tpl_interrupt = s;
+}
+
 prolog *pl_create()
 {
 	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));

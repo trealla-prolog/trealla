@@ -36,11 +36,6 @@
 }
 #endif
 
-void g_sigfn(int s)
-{
-	g_tpl_interrupt = s;
-}
-
 #ifndef __wasi__
 static int daemonize(int argc, char *argv[])
 {
@@ -143,7 +138,7 @@ static int daemonize(int argc, char *argv[])
 }
 #endif
 
-char **g_envp = NULL;
+extern char **g_envp;
 
 extern int g_index_check;
 extern unsigned long g_index_check_lookups, g_index_check_bad;
