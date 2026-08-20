@@ -369,14 +369,7 @@
               export LC_ALL
               echo "using LC_ALL=$LC_ALL"
               version=$(printf '%s' "$GITHUB_SHA" | cut -c1-7)
-              # NOPIC=1 is a deliberate experiment, not a permanent setting.
-              # test0779 (number_chars of a 4-byte codepoint) dumps core here
-              # and nowhere else, and -fPIC - added when libtrealla.a joined
-              # the default build - is the one codegen-affecting difference on
-              # this runner. It reproduces under neither locale on macOS/arm64
-              # with ASAN and UBSan. If the crash survives NOPIC=1 it predates
-              # that change and this line should come out again.
-              gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 NOPIC=1 release
+              gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
               ./tpl -q -g 'writeln(netbsd_x64_ok),halt'
               gmake test
         - name: Upload artifacts
