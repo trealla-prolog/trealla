@@ -348,13 +348,12 @@
             usesh: true
             cache-after-prepare: true
             prepare: |
-              /usr/sbin/pkg_add -u bash coreutils diffutils git gmake
+              /usr/sbin/pkg_add -u bash coreutils gmake
               ln -sf /usr/pkg/bin/gtimeout /usr/pkg/bin/timeout
-              ln -sf /usr/pkg/bin/gdiff /usr/pkg/bin/diff
             run: |
               export PATH="/usr/pkg/bin:$PATH"
-              git config --global --add safe.directory "$GITHUB_WORKSPACE"
-              gmake CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
+              version=$(printf '%s' "$GITHUB_SHA" | cut -c1-7)
+              gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
               ./tpl -q -g 'writeln(netbsd_sparc64_ok),halt'
               gmake test
         - name: Upload artifacts
