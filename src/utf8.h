@@ -55,6 +55,26 @@ extern int put_len_utf8(int ch);								// returns #bytes
 extern bool is_char_utf8(const char *src);
 extern size_t len_char_utf8(const char *src);					// returns #bytes
 
+// Trealla is UTF-8 only, so the C library's classification is usable
+// directly here and there is no need to write Unicode's White_Space
+// property out by hand. The one addition is U+0085 NEXT LINE, which
+// iswspace() reports as false in every locale.
+//
+// is_blank_utf8 is the horizontal form, for the places the tokenizer
+// counts line breaks separately. Note the two do not agree on U+00A0:
+// iswblank says no and iswspace says yes, which is the library's call,
+// not ours.
+
+static inline bool is_blank_utf8(int ch)
+{
+	return iswblank(ch);
+}
+
+static inline bool is_space_utf8(int ch)
+{
+	return iswspace(ch) || (ch == 0x85);		// NEXT LINE
+}
+
 /*
  *  Get indexed char
  */

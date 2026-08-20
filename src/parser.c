@@ -4082,16 +4082,16 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 		//src = eat_space(p);
 		bool nl = false;
 
-		while (isblank((unsigned char)*src))
-			src++;
+		while (is_blank_utf8(peek_char_utf8(src)))
+			src += len_char_utf8(src);
 
 		while (*src == '\n') {
 			nl = true;
 			src++;
 		}
 
-		while (isblank((unsigned char)*src))
-			src++;
+		while (is_blank_utf8(peek_char_utf8(src)))
+			src += len_char_utf8(src);
 
 		if ((!src || !*src) && !nl) {
 			if (!p->do_read_term)
@@ -4516,8 +4516,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		return false;
 
 	if (*src) {
-		while (isspace((unsigned char)*src))
-			src++;
+		while (is_space_utf8(peek_char_utf8(src)))
+			src += len_char_utf8(src);
 	}
 
 	ch = peek_char_utf8(src);

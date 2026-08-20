@@ -12,7 +12,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 	SB(pr);
 
 	if (params->trim) {
-		while (isspace((unsigned char)*src))
+		while (is_space_utf8(peek_char_utf8(src)))
 			get_char_utf8(&src);
 	}
 
@@ -149,7 +149,8 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 		SB_init(pr);
 
 		if (params->trim) {
-			while (isspace((unsigned char)*src))				get_char_utf8(&src);
+			while (is_space_utf8(peek_char_utf8(src)))
+				get_char_utf8(&src);
 		}
 	}
 
