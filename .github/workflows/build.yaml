@@ -362,6 +362,44 @@
               ATTRIBUTION
               README.md
 
+    riscos:
+      name: RISC OS ARM EABI (experimental)
+      runs-on: ubuntu-24.04
+      continue-on-error: true
+      timeout-minutes: 30
+      env:
+        RISCOS_TOOLCHAIN_URL: https://github.com/netsurf-browser/toolchains/releases/download/gh-master-unstable/arm-riscos-gnueabi.tar.gz
+        RISCOS_TOOLCHAIN_SHA256: 1b7aaa8b4a35e8de9e263d7bd36e52e6f960b360a4ffb0e5c0068de5a07fb102
+        GCCSDK_INSTALL_CROSSBIN: /opt/netsurf/arm-riscos-gnueabi/cross/bin
+        GCCSDK_INSTALL_ENV: /opt/netsurf/arm-riscos-gnueabi/env
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Install RISC OS cross-toolchain
+          run: |
+            curl --fail --location --retry 3 \
+              --output "${RUNNER_TEMP}/arm-riscos-gnueabi.tar.gz" \
+              "$RISCOS_TOOLCHAIN_URL"
+            echo "$RISCOS_TOOLCHAIN_SHA256  ${RUNNER_TEMP}/arm-riscos-gnueabi.tar.gz" | sha256sum --check
+            sudo tar -xzf "${RUNNER_TEMP}/arm-riscos-gnueabi.tar.gz" -C /
+        - name: Cross-build for RISC OS
+          run: |
+            export PATH="$GCCSDK_INSTALL_CROSSBIN:$PATH"
+            make CC=arm-riscos-gnueabi-gcc HOST_CC=cc \
+              ISOCLINE=1 NOFFI=1 NOSSL=1 NOTHREADS=1 NOPIC=1 NOLIB=1 release
+            cp tpl 'tpl,e1f'
+            file 'tpl,e1f'
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-RISCOS-ARM-EABI
+            path: |
+              tpl,e1f
+              LICENSE
+              ATTRIBUTION
+              README.md
+
     haiku:
       name: Haiku (experimental)
       runs-on: ubuntu-latest
