@@ -90,7 +90,7 @@ static bool bif_posix_strftime_3(query *q)
 	return false;
 }
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__riscos__)
 static bool bif_posix_strptime_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -715,7 +715,7 @@ static bool bif_posix_set_file_times_3(query *q)
 builtins g_posix_bifs[] =
 {
     {"posix_strftime", 3, bif_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__riscos__)
     {"posix_strptime", 3, bif_posix_strptime_3, "+atom,+atom,-compound", false, false, BLAH},
 #endif
 	{"posix_gmtime", 2, bif_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
@@ -750,4 +750,3 @@ builtins g_posix_bifs[] =
 
 	{0}
 };
-
