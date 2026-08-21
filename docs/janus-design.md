@@ -174,21 +174,51 @@ Nor is this reachable only by trying. §4.1's own benchmark calls
 `factorial(21)` = 5.1e19 does not, and neither does an `int` out of `hashlib`,
 `secrets`, or any ordinary use of `**`.
 
-**It is addressable, in Prolog, with no C change.** The way through is text on
-the slow path only, and it was run end to end before being written down:
-**[checked]**
+**It is addressable, in Prolog, with no C change.** The way through is text, on
+the slow path only — **in base 16, and that is a correctness requirement rather
+than a preference.** Since 3.11 CPython caps *decimal* conversion of integers at
+`sys.get_int_max_str_digits()`, 4300 digits by default, in both directions. Hex
+is exempt. **[checked]**
 
-```prolog
-?- X is 2^70, atom_number(A, X), 'PyLong_FromString'(A, 0, 10, Obj),
-   'PyNumber_Multiply'(Obj, Obj, Sq),
-   'PyObject_Str'(Sq, S), 'PyUnicode_AsUTF8'(S, T), atom_number(T, Y).
-   Y = 1393796574908163946345982392040522594123776
+```python
+>>> str(2**40000)
+ValueError: Exceeds the limit (4300 digits) for integer string conversion
+>>> len(hex(2**40000))
+10003
 ```
 
-The value leaves as a decimal string, is squared *by CPython* as a genuine
-`int`, and returns through `str()` — 2^140, matching `X*X` computed in Prolog.
-Note the two ownership obligations this creates: `PyUnicode_AsUTF8` must be
-`ccstr` (§8), and the `str` object it borrows from is a new reference to release.
+A decimal exchange therefore works to about 2^14270 and then raises — the kind
+of ceiling that surfaces in somebody else's program rather than in our tests.
+Round-tripped through the FFI, at four sizes and with every negative
+counterpart: **[checked]**
+
+| | 2^70 | 2^4000 | 2^40000 | 2^400000 |
+|---|---|---|---|---|
+| `str()`, base 10 | ok | ok | **fails** | **fails** |
+| `PyNumber_ToBase`, base 16 | ok | ok | ok | ok |
+
+**SWI arrived at the same place**, which is worth knowing before rediscovering
+it: `py_unify_long()` in `janus.c` branches on `PyLong_AsLongLongAndOverflow` and
+takes a hex path when it overflows, with `#define BASE 16` outbound and a base-10
+fallback only for SWI-Prolog older than 9.1.16. Two details we can improve on.
+SWI reaches Python's `hex()` through `PyEval_GetBuiltins` +
+`PyDict_GetItemString`, cached in a static — `PyNumber_ToBase(obj, 16)` is public
+C-API, does it in one non-variadic call, and holds no borrowed reference to a
+builtin. And where SWI hands the resulting `0x...` to `PL_put_term_from_chars`,
+Trealla's `atom_number/2` parses `'0x...'` and `'-0x...'` as they stand.
+**[checked]** So both directions are two lines:
+
+```prolog
+out(X, Obj) :- format(atom(A), "~16r", [X]), 'PyLong_FromString'(A, 0, 16, Obj).
+in(Obj, X)  :- 'PyNumber_ToBase'(Obj, 16, S),
+               'PyUnicode_AsUTF8'(S, T), atom_number(T, X), 'Py_DecRef'(S).
+```
+
+Confirmed to be a real Python integer rather than text being shuffled about:
+2^40000 sent out, squared with `PyNumber_Multiply`, read back equal to `X*X`
+computed in Prolog. **[checked]** Two ownership obligations come with it —
+`PyUnicode_AsUTF8` must be `ccstr` (§8), and the string object it borrows from is
+a new reference to release.
 
 **Detection is exact, and free inbound.** `PyLong_AsLongLongAndOverflow` reports
 overflow through an out-parameter — Trealla's FFI spells that `-sint32` in the
@@ -207,21 +237,19 @@ error state to clear and no dependence on the zero-argument registration fix of
 Outbound, the same test is a Prolog comparison against those bounds and costs
 nothing.
 
-**Keep the fast path anyway.** Text is not cheap enough to use unconditionally —
-200,000 iterations each, interleaved and repeated, since this machine drifts
-across a run: **[checked]**
+**Keep the fast path anyway.** Text is not cheap enough to use unconditionally.
+µs per conversion, 4,000 to 50,000 iterations by size, every figure repeated to
+check for drift: **[checked]**
 
-| | µs per conversion |
-|---|---|
-| out, `PyLong_FromLongLong` | 0.32 |
-| out, via `PyLong_FromString` | 0.66 |
-| in, `PyLong_AsLongLongAndOverflow` | 0.25 |
-| in, via `PyObject_Str` | 0.73 |
+| | int64 fast | 2^64 | 2^1024 | 2^4000 |
+|---|---|---|---|---|
+| out | 0.31 | 0.75 hex / 0.91 dec | 5.97 / 8.78 | 33.7 / 47.2 |
+| in | 0.25 | 1.07 hex / 1.12 dec | 5.82 / 8.42 | 20.2 / 40.9 |
 
-That is about 0.4µs added per integer, against the 0.7µs §4.1 measures for a
-complete `math.factorial(20)` call. Unconditional text would add half again to
-every call carrying an integer, so the branch stays and phase 1 owns both sides
-of it.
+Hex leads decimal by 1.2× to 2× wherever decimal still works at all, and the
+`int64` path leads both by 2–4× at the small sizes that dominate ordinary code —
+against the 0.7µs §4.1 measures for a complete `math.factorial(20)` call. So the
+branch stays, and phase 1 owns both sides of it.
 
 §4.2 reaches the same conclusion for the C API — "big integers need a text
 accessor" — for the same reason, so the two halves of the project can share the
@@ -542,7 +570,7 @@ Consequences worth stating:
 | CPython C-API reachable from Prolog | present **[checked]** | none |
 | Dict / tuple / `@` term forms | present **[checked]** | none |
 | Unbounded integers as Prolog terms | present **[checked]** | none |
-| Integers past 64 bits across the FFI | **broken**; fix demonstrated **[checked]** | §3 — text slow path, Prolog only, phase 1 |
+| Integers past 64 bits across the FFI | **broken**; fix demonstrated **[checked]** | §3 — base-16 slow path, Prolog only, phase 1 |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
 | GIL calls reachable | present **[checked]** | none |
 | Shutdown hook for `Py_Finalize` | present **[checked]** | `atexit/0`, asserted; see phase 0 |
@@ -709,6 +737,16 @@ and decref'ing one is the same bug a level up (§3). Both are properties of the
 entry point rather than of the value in hand, so both belong in the shim's
 declaration table, settled once where the function is declared and never at the
 call site.
+
+**A failed CPython call returns NULL, and the FFI will marshal it.** When the
+decimal experiment above hit the digit limit, no Python error reached Prolog:
+`PyObject_Str` returned NULL, that NULL went on into `PyUnicode_AsUTF8` as a
+`ccstr`, and what finally surfaced was `syntax_error(operator_expected)` out of
+`atom_number/2` — several steps downstream of the actual fault, and naming the
+wrong predicate. **[checked]** Every fallible `PyObject*` has to be tested
+against 0 where it is returned, before anything else touches it. Phase 5 owns
+turning that into a proper Prolog exception, but the test itself cannot wait for
+phase 5: without it, failures surface as nonsense.
 
 **Reference counting has no safety net.** There is no finalizer to hang
 `Py_DecRef` on, so every object crossing the boundary is manual. `py_free/1`
