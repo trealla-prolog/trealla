@@ -444,8 +444,6 @@ inline static cell *get_raw_arg(query *q, int n)
 	} \
 }
 
-
-bool bif_iso_halt_0(query *q);
 bool bif_iso_close_1(query *q);
 bool bif_iso_true_0(query *q);
 bool bif_iso_fail_0(query *q);
