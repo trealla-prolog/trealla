@@ -174,11 +174,58 @@ Nor is this reachable only by trying. §4.1's own benchmark calls
 `factorial(21)` = 5.1e19 does not, and neither does an `int` out of `hashlib`,
 `secrets`, or any ordinary use of `**`.
 
-So both directions need a text path, taken only when the fast path does not fit:
-`PyLong_FromString` outbound, `PyObject_Str` + `PyUnicode_AsUTF8` inbound (as
-`ccstr`, per §8), with `number_codes/2` doing the Prolog end. §4.2 already
-reaches this conclusion for the C API — "big integers need a text accessor" —
-and it holds on the FFI side for exactly the same reason.
+**It is addressable, in Prolog, with no C change.** The way through is text on
+the slow path only, and it was run end to end before being written down:
+**[checked]**
+
+```prolog
+?- X is 2^70, atom_number(A, X), 'PyLong_FromString'(A, 0, 10, Obj),
+   'PyNumber_Multiply'(Obj, Obj, Sq),
+   'PyObject_Str'(Sq, S), 'PyUnicode_AsUTF8'(S, T), atom_number(T, Y).
+   Y = 1393796574908163946345982392040522594123776
+```
+
+The value leaves as a decimal string, is squared *by CPython* as a genuine
+`int`, and returns through `str()` — 2^140, matching `X*X` computed in Prolog.
+Note the two ownership obligations this creates: `PyUnicode_AsUTF8` must be
+`ccstr` (§8), and the `str` object it borrows from is a new reference to release.
+
+**Detection is exact, and free inbound.** `PyLong_AsLongLongAndOverflow` reports
+overflow through an out-parameter — Trealla's FFI spells that `-sint32` in the
+argument list — and, unlike `PyLong_AsLongLong`, raises nothing, so there is no
+error state to clear and no dependence on the zero-argument registration fix of
+§4.4. It is right at both ends of the range, including the asymmetric one:
+**[checked]**
+
+| value | overflow reported |
+|---|---|
+| 2^63-1 | 0 |
+| 2^63 | 1 |
+| -(2^63) | 0 |
+| -(2^70) | -1 |
+
+Outbound, the same test is a Prolog comparison against those bounds and costs
+nothing.
+
+**Keep the fast path anyway.** Text is not cheap enough to use unconditionally —
+200,000 iterations each, interleaved and repeated, since this machine drifts
+across a run: **[checked]**
+
+| | µs per conversion |
+|---|---|
+| out, `PyLong_FromLongLong` | 0.32 |
+| out, via `PyLong_FromString` | 0.66 |
+| in, `PyLong_AsLongLongAndOverflow` | 0.25 |
+| in, via `PyObject_Str` | 0.73 |
+
+That is about 0.4µs added per integer, against the 0.7µs §4.1 measures for a
+complete `math.factorial(20)` call. Unconditional text would add half again to
+every call carrying an integer, so the branch stays and phase 1 owns both sides
+of it.
+
+§4.2 reaches the same conclusion for the C API — "big integers need a text
+accessor" — for the same reason, so the two halves of the project can share the
+convention if not the code.
 
 **Object references, and who owns them.** The spec states the representation is
 system-dependent (XSB uses `pyObj/1`, SWI a blob with a GC finalizer). Trealla
@@ -495,7 +542,7 @@ Consequences worth stating:
 | CPython C-API reachable from Prolog | present **[checked]** | none |
 | Dict / tuple / `@` term forms | present **[checked]** | none |
 | Unbounded integers as Prolog terms | present **[checked]** | none |
-| Integers past 64 bits across the FFI | **broken** **[checked]** | §3 — text path both ways, phase 1 |
+| Integers past 64 bits across the FFI | **broken**; fix demonstrated **[checked]** | §3 — text slow path, Prolog only, phase 1 |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
 | GIL calls reachable | present **[checked]** | none |
 | Shutdown hook for `Py_Finalize` | present **[checked]** | `atexit/0`, asserted; see phase 0 |
