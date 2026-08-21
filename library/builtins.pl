@@ -4,6 +4,14 @@
 :- use_module(library(iso_ext)).
 :- use_module(library(gensym)).
 
+:- help(halt, [iso(true)]).
+
+halt :- '$halt'.
+
+:- help(halt(+integer), [iso(true)]).
+
+halt(Status) :- '$halt'(Status).
+
 :- help(term_variables(+term,-list,?tail), [iso(false)]).
 
 term_variables(P1, P2, P3) :-
@@ -817,3 +825,4 @@ thread_join(Tid, Status) :-
 
 sys_forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
+
