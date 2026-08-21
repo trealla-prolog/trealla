@@ -44,7 +44,13 @@ all of it. **[checked]** — this ran before any of this document was written:
 That is `PyImport_ImportModule` → `PyObject_GetAttrString` → `PyTuple_New` /
 `PyTuple_SetItem` → `PyObject_CallObject` → `PyLong_AsLongLong`, plus
 `PyUnicode_FromString`/`AsUTF8` and the `PyObject_GetIter`/`PyIter_Next`
-protocol. That is the whole spine of `py_func/3`, `py_dot/3` and `py_iter/2`.
+protocol. That is the spine of `py_func/3`, `py_dot/3` and `py_iter/2`.
+
+Two things that run did not touch, both still non-variadic and so still
+reachable the same way: keyword arguments need `PyObject_Call` against a dict
+built with `PyDict_New`/`PyDict_SetItemString`, not `PyObject_CallObject`; and
+integers outside `int64` need the text path of §3, because the FFI will not
+carry them.
 
 A second run confirmed `PyGILState_Ensure`/`PyGILState_Release` and error
 detection via `PyErr_Occurred`, and that `do_dlopen` copes with a macOS framework
@@ -77,6 +83,24 @@ synchronisation model; `py_is_dict/1` and SWI's dict support depend on SWI's
 native dict type, which Trealla does not have. Both are SWI extensions, not part
 of the agreed interface.
 
+**The `Options` argument is part of the core, not decoration.** Four of the
+eighteen take one — `py_call/3`, `py_func/4`, `py_dot/4`, `py_iter/3` — and one
+option is implemented by both systems, which puts it inside the agreed
+intersection rather than in either extension set: **[checked]**
+
+| Option | Where | Verdict |
+|---|---|---|
+| `py_object(true)` | SWI `janus.pl`, XSB `janus_opts_1/3` | **implement** — hand back a handle instead of a translated term |
+| `sizecheck(Bool)` | XSB only | accept and ignore; it guards XSB's fixed-width integers, which the text path of §3 makes unnecessary here |
+| `iter(Bool)` | XSB only, commented "keeping around for test suite" | accept and ignore |
+| `py_string_as/1`, `py_dict_as/1` | SWI only, documented there as extensions to the PIP | out of scope |
+
+`py_object(true)` carries more weight than its size suggests: it is how a caller
+*deliberately* asks for an object reference to something that would otherwise
+translate. So handles are not merely the untranslatable residue, and §3's
+ownership rule has to say so. An unrecognised option should raise a domain
+error, which is what both systems do.
+
 ---
 
 ## 3. Bi-translation
@@ -86,7 +110,7 @@ this is implementation, not design. Translation is recursive on both sides.
 
 | Python | Prolog | Note |
 |---|---|---|
-| `int` | integer | Trealla is unbounded, so no clamping — XSB has to range-check here, we do not |
+| `int` | integer | both languages' integers are unbounded; the FFI that carries them is not — see below |
 | `float` | float | |
 | `str` | atom | UTF-8 both sides |
 | `True` / `False` | `@true` / `@false` | no `op/3` needed — see below |
@@ -97,7 +121,7 @@ this is implementation, not design. Translation is recursive on both sides.
 | `dict`, empty | `{}` — an **atom** | not a compound; special case both ways |
 | `set` | `py_set(List)` | element order not preserved |
 | anything else | opaque object reference | representation is explicitly system-dependent |
-| `bytes`, `complex` | — | not in the spec; leave unmapped |
+| `bytes`, `complex` | `'$py_obj'/1` | not in the spec; they fall through to the opaque case |
 
 Every term form needed already exists in Trealla, and none of them needs an
 operator declaration. **[checked]**
@@ -124,7 +148,37 @@ Two cases the table above is easy to read past. The **empty dict** is the atom
 and a dict test cannot simply check for `{}/1`. And `@` **needs no `op/3`
 declaration**: Trealla already defines it as `100 fy`, so `@true`, `@false` and
 `@none` parse as they stand. SWI declares it at 200; re-declaring it here would
-change an existing operator to no purpose.
+change an existing operator to no purpose. SWI's module also exports
+`op(50, fx, #)`, which Trealla has no equivalent for **[checked]** — but `#Value`
+appears nowhere in the common core, so it leaves scope with the rest of the SWI
+extensions.
+
+**Integers wider than 64 bits do not cross the FFI, in either direction.** This
+is the one place this document was flatly wrong, and correcting it adds work to
+phase 1. Both languages have unbounded integers; the bridge between them does
+not. Every integer argument in `src/bif_ffi.c` is guarded by `is_smallint`, so a
+bignum is rejected before the call is even made — here against libc's `llabs`
+registered through `'$register_predicate'/4` as `[sint64] -> sint64`, the
+narrowest possible probe: **[checked]**
+
+```prolog
+?- X is -(2^70), llabs(X, R).
+   error(type_error(integer,-1180591620717411303424),llabs/2)
+```
+
+Inbound is the same story from the other end — `PyLong_AsLongLong` sets
+`OverflowError` and returns -1 for anything that does not fit.
+
+Nor is this reachable only by trying. §4.1's own benchmark calls
+`math.factorial(20)` = 2.4e18, which fits `int64` with one factor to spare;
+`factorial(21)` = 5.1e19 does not, and neither does an `int` out of `hashlib`,
+`secrets`, or any ordinary use of `**`.
+
+So both directions need a text path, taken only when the fast path does not fit:
+`PyLong_FromString` outbound, `PyObject_Str` + `PyUnicode_AsUTF8` inbound (as
+`ccstr`, per §8), with `number_codes/2` doing the Prolog end. §4.2 already
+reaches this conclusion for the C API — "big integers need a text accessor" —
+and it holds on the FFI side for exactly the same reason.
 
 **Object references, and who owns them.** The spec states the representation is
 system-dependent (XSB uses `pyObj/1`, SWI a blob with a GC finalizer). Trealla
@@ -141,10 +195,19 @@ because its blobs are garbage collected.
 
 The rule has to be fixed in phase 1 and written into the module header:
 
-- Marshalling **borrows**. A `PyObject` reaching Prolog as a translated term
-  (int, atom, list, dict) is decref'd immediately; nothing outlives the call.
-- Only an *untranslatable* object becomes a `'$py_obj'/1`, and that term owns
-  exactly one reference, released by `py_free/1`.
+- **Release exactly what we own.** A `PyObject` reaching Prolog as a translated
+  term (int, atom, list, dict) does not outlive the call — but whether ending it
+  means calling `Py_DecRef` depends on the entry point that produced it, and the
+  FFI cannot tell. `PyObject_CallObject`, `PyObject_GetAttrString` and
+  `PyIter_Next` return **new** references, which must be released;
+  `PyTuple_GetItem`, `PyList_GetItem`, `PyDict_GetItemString` and `PyDict_Next`
+  return **borrowed** ones, and releasing those is a double-free. That second
+  list is precisely how a recursive marshaller walks a container, so this sits on
+  the main path rather than in a corner. Each declared entry point carries its
+  new-or-borrowed classification in the shim, next to its type signature.
+- An *untranslatable* object becomes a `'$py_obj'/1`, and so does anything the
+  caller asked for with `py_object(true)` (§2). That term owns exactly one
+  reference, released by `py_free/1`.
 - Freeing a handle twice, or using one after freeing, is a program error the
   same way `free()` twice is. Do not attempt to detect it by scanning the store.
 
@@ -167,10 +230,13 @@ Everything above the marshalling layer is ordinary Prolog. Consequences:
 - `keys/2`, `key/2`, `values/3`, `items/2` are pure term manipulation on the
   curly form — no Python involvement at all.
 - `py_call/2,3` is *derived*, not primitive: XSB implements it in Prolog over
-  `py_func`/`py_dot`, walking `:` chains. Worth copying, with one consequence —
-  the dispatcher pattern-matches on the object representation (XSB on
-  `pyObj(O)`, us on `'$py_obj'/1`), so the term shape chosen in §3 leaks into
-  `py_call`'s clause heads.
+  `py_func`/`py_dot`, walking `:` chains. SWI factors it the other way round —
+  there, `py_func/4` and `py_dot/4` are one-line calls to `py_call/3`
+  **[checked]** — so this is a choice rather than a given. XSB's direction is the
+  one to copy, because it leaves the two primitives where the FFI already is.
+  One consequence: the dispatcher pattern-matches on the object representation
+  (XSB on `pyObj(O)`, us on `'$py_obj'/1`), so the term shape chosen in §3 leaks
+  into `py_call`'s clause heads.
 
 The FFI signatures needed are all plain pointer and integer types. No struct
 passes by value anywhere in the CPython API we touch, so none of the
@@ -352,18 +418,39 @@ resolves `libpython` by `dlopen` when `use_module(library(janus))` runs. So the
 only thing to suppress by default is embedding the library itself.
 
 The existing `USE_MAIN` handling in `src/library.c` is the precedent — an extern
-pair and a table entry, both behind `#ifdef`, driven by a `-D` from the
-makefile. **[checked]** Janus follows it exactly:
+pair and a table entry, both behind `#ifdef`. **[checked]** The C half of Janus
+copies it exactly. The makefile half has to copy it more carefully than this
+document first proposed, because the obvious spelling fails *silently*.
+
+The obvious spelling is `CFLAGS += -DUSE_JANUS=1` under `ifdef JANUS`. Make does
+not track flag changes, so after a plain `make` there is an up-to-date
+`src/library.o` compiled *without* the define, and `make janus` will not rebuild
+it. The link then succeeds, `library/janus.o` is in it, `g_libs[]` has no `janus`
+entry, and `use_module(library(janus))` throws an existence error out of a tree
+that just built the target for it. A wrong result, not a build error.
+
+`USE_MAIN` does not have this problem, and the reason is in the recipe rather
+than in the `#ifdef`: the `compile:` target deletes `src/library.o`, compiles
+that one translation unit with the define, links, and deletes it again, so
+neither build can be satisfied by the other's copy. **[checked]** Janus does the
+same:
 
 ```make
-# GNUmakefile — off unless asked for
+# GNUmakefile — off unless asked for. The define goes on one object and
+# never on CFLAGS, so a plain `make` cannot inherit it and `make janus`
+# cannot be satisfied by a stale src/library.o.
 ifdef JANUS
-CFLAGS     += -DUSE_JANUS=1
 LIBOBJECTS += library/janus.o
 endif
 
 janus:
-	$(MAKE) JANUS=1
+	$(MAKE) JANUS=1 janus-tpl
+
+janus-tpl: $(OBJECTS)
+	rm -f src/library.o
+	$(CC) $(CFLAGS) -DUSE_JANUS=1 -o src/library.o -c src/library.c
+	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
+	rm -f src/library.o
 ```
 
 ```c
@@ -390,9 +477,14 @@ Consequences worth stating:
 - Phase 6 — the extension module and `libtrealla` — is a separate target again,
   and the only part that needs Python *headers*. It should not be reachable from
   `make janus` either, since that target is for the Prolog → Python half.
-- Adding a `-DUSE_JANUS` object to `LIBOBJECTS` changes the link line, so
-  `make janus` and `make` produce different binaries. That is intended, but it
-  means the two should not share an object directory without a clean.
+- `make janus` and `make` produce different binaries out of one object
+  directory. That is intended, and the recipe above is what makes it safe: the
+  only object that differs is `src/library.o`, which exists on disk during
+  neither build's resting state.
+- Going back is still a manual step. `make janus` leaves a `tpl` newer than every
+  object, so a following plain `make` reports nothing to do and the Janus-enabled
+  binary stays. `make clean` is how you get a default build back, and the janus
+  target's help text should say so.
 
 ---
 
@@ -402,7 +494,8 @@ Consequences worth stating:
 |---|---|---|
 | CPython C-API reachable from Prolog | present **[checked]** | none |
 | Dict / tuple / `@` term forms | present **[checked]** | none |
-| Unbounded integers for Python ints | present **[checked]** | none |
+| Unbounded integers as Prolog terms | present **[checked]** | none |
+| Integers past 64 bits across the FFI | **broken** **[checked]** | §3 — text path both ways, phase 1 |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
 | GIL calls reachable | present **[checked]** | none |
 | Shutdown hook for `Py_Finalize` | present **[checked]** | `atexit/0`, asserted; see phase 0 |
@@ -414,13 +507,15 @@ Consequences worth stating:
 | Registering a zero-arg function | broken **[checked]** | §4.4 — one-line fix, needed by phase 0 |
 | Naming a versioned Windows DLL | missing | §4.4 — candidate list on `use_foreign_module/2` |
 | Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
+| Cleanup for an abandoned iterator | present **[checked]** | `setup_call_cleanup/3`, phase 3 |
+| `py_object(true)` option | missing | §2 — phase 2, and it shapes §3's ownership rule |
 | C callbacks from the FFI | absent by design | why §4.2 needs C |
 
 ---
 
 ## 7. Phasing
 
-Ordered so each phase leaves something usable. Phases 1–5 have no dependency on
+Ordered so each phase leaves something usable. Phases 1–5a have no dependency on
 phase 6, which is where all the C lives — so the Prolog → Python half can ship
 on its own.
 
@@ -474,7 +569,9 @@ Ship `py_version/0` as the smoke test.
 **Phase 1 — marshalling.**
 The §3 table, both directions, recursive. The bulk of the Prolog, and everything
 later sits on it. Fix the reference-ownership rule of §3 here and write it into
-the module header.
+the module header, classification of every entry point as new-or-borrowed
+included. The int64 text path of §3 is part of this phase and not an
+optimisation to come back for: without it `math.factorial(21)` is an error.
 
 Test it here too, not at phase 7. Conformance arrives far too late to be the
 first thing that exercises the marshaller, and almost every marshalling bug is
@@ -488,25 +585,56 @@ written against another system will not think to probe.
 **Phase 2 — calling.**
 `py_func/3,4`, `py_dot/3,4`, `py_call/2,3`, `py_setattr/3`. Includes parsing
 keyword arguments out of the goal term (`f(a, kw=v)`, positional before keyword)
-and following `:` chains.
+— which is where `PyObject_Call` and a kwargs dict replace `PyObject_CallObject`
+— following `:` chains, and the `Options` argument of §2. `py_object(true)` is
+the only option with behaviour, and it is the first caller of the handle
+machinery phase 4 finishes.
+
+**The GIL belongs here, not in phase 4.** This phase writes the one wrapper every
+Python call passes through. `PyGILState_Ensure`/`Release` is two lines inside it
+now, and a sweep through finished code later — the retrofit §8 warns about, with
+no reason to schedule it deliberately.
 *Needs 1.*
 
-**Phase 3 — iteration and dict access.**
+**Phase 3 — iteration, dict access, library paths.**
 `py_iter/2,3` as a Prolog generator over `PyIter_Next`; then `keys/2`, `key/2`,
-`values/3`, `items/2`, which are term manipulation only.
+`values/3`, `items/2`, which are term manipulation only; then
+`py_add_lib_dir/1,2` and `py_lib_dirs/1`, which are `sys.path` manipulation and
+belong with the first phase that needs to import something the user wrote.
+
+The generator holds an iterator handle across choice points, and a `once/1`, a
+cut or a throw abandons it with nothing to catch it — the likeliest leak in
+ordinary code, ahead of a forgotten `py_free/1`. Trealla has
+`setup_call_cleanup/3` **[checked]**; use it here rather than meeting the leak in
+phase 4.
 *Needs 1.*
 
-**Phase 4 — lifetime and the GIL.**
-Reference counting across the boundary, `py_free/1`, `py_is_object/1`. Wrap every
-entry point in `PyGILState_Ensure`/`Release` so Trealla threads cannot race the
-interpreter.
+**Phase 4 — lifetime.**
+Reference counting across the boundary, `py_free/1`, `py_is_object/1`, and the
+new-or-borrowed rule of §3 applied to every entry point the shim declares. The
+GIL has moved to phase 2, where the wrapper it belongs inside gets written.
 *Needs 2.*
 
 **Phase 5 — errors.**
 Python exceptions become Prolog exceptions; instantiation, type and domain faults
 stay Prolog errors raised before the call. Both systems agree on this split, so
 it is specified rather than invented.
+
+This is also where §8's "the C-API is stable across 3.x" is thinnest: 3.12
+replaced `PyErr_Fetch`/`PyErr_NormalizeException` with
+`PyErr_GetRaisedException`. The older pair is still exported, but this phase
+should confirm that against the oldest and newest interpreters it claims to
+support instead of assuming it.
 *Needs 2.*
+
+**Phase 5a — the compatibility surface.**
+The six XSB spellings as thin wrappers (`add_py_lib_dir/1`, `obj_dir/2`,
+`obj_dict/2`, `value/3`, `janus_python_version/1`, `py_next/2`), plus the
+toplevel conveniences §2 keeps in scope: `py_type/2` and `py_pp/1`
+(`py_version/0` already shipped in phase 0). Small, and easy to leave until
+phase 7 discovers it — but phase 7 runs XSB's suite, and every one of these is a
+name that suite calls.
+*Needs 2 and 3.*
 
 **Phase 6 — Python → Prolog.**
 The `libtrealla` target is already done (§4.3). What remains: fix the two
@@ -524,11 +652,16 @@ common core, and XSB's `xsbtests/janus_tests`. Both are already on this machine.
 
 ## 8. Traps
 
-**Borrowed pointers must never be typed `cstr`.** `PyUnicode_AsUTF8` returns a
-pointer *into* the Python object. Trealla's `cstr` return type calls `TPL_free`
-on whatever it gets, so typing it `cstr` hands CPython's own buffer to Trealla's
-allocator. Use `ccstr` for every borrowed string. This is the same hazard the
-raylib bindings had to route around, and it is silent until it corrupts the heap.
+**Borrowed things must not be released, and there are two kinds.** Strings:
+`PyUnicode_AsUTF8` returns a pointer *into* the Python object, and Trealla's
+`cstr` return type calls `TPL_free` on whatever it gets, so typing it `cstr`
+hands CPython's own buffer to Trealla's allocator. Use `ccstr` for every borrowed
+string — the same hazard the raylib bindings had to route around, silent until it
+corrupts the heap. Objects: the container accessors return borrowed *references*,
+and decref'ing one is the same bug a level up (§3). Both are properties of the
+entry point rather than of the value in hand, so both belong in the shim's
+declaration table, settled once where the function is declared and never at the
+call site.
 
 **Reference counting has no safety net.** There is no finalizer to hang
 `Py_DecRef` on, so every object crossing the boundary is manual. `py_free/1`
@@ -545,8 +678,9 @@ threads are real pthreads (`src/bif_threads.c` calls `pthread_create`), and the
 FFI is reentrant across them — three threads making 15,000 FFI calls
 concurrently ran clean. **[checked]** So two threads entering CPython at once is
 reachable in ordinary code, not a theoretical hazard, and without the GIL that
-is a crash rather than a race that will be forgiven. Cheap in phase 4, expensive
-to retrofit.
+is a crash rather than a race that will be forgiven. Cheap in phase 2, where the
+call wrapper is written; expensive as a later sweep, which is why phase 4 no
+longer owns it.
 
 **Python version skew.** The C-API is stable across 3.x for what we use, but the
 *library name and location* are not. Phase 0 owns this; do not let it leak into
