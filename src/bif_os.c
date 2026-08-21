@@ -1182,6 +1182,8 @@ static bool bif_process_create_3(query *q)
 				return throw_error(q, c, c_ctx, "system_error", "posix_spawn_file_actions_addchdir");
 #elif !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__NetBSD__)
 				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
+#elif defined(__APPLE__) && defined(__x86_64__)
+				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
 #else
 				posix_spawn_file_actions_addchdir(&file_actions, cwd);
 #endif
