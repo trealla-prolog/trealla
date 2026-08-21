@@ -17,7 +17,8 @@ opt-in makefile target. See §5.
 `janus/janus.c`, `janus/janus.py`, `README.md`, `test_xsb_janus.pl`) and
 `~/xsb-code/XSB/packages/janus` (`../janus.P`, `janusm.c`,
 `XSB/docs/userman/janus-plg.tex` §"Bi-translation", `janus-py.tex`). On the
-Trealla side: `src/bif_ffi.c`, `src/trealla.h`, `src/internal.h`, `GNUmakefile`.
+Trealla side: `src/bif_ffi.c`, `src/trealla.h`, `src/internal.h`,
+`library/builtins.pl` (for `halt/0,1` and `atexit/0`), `GNUmakefile`.
 Facts marked **[checked]** were verified by running code during this pass, on
 Trealla v3.5.11-3 against CPython 3.14.7, macOS/arm64.
 
@@ -148,7 +149,10 @@ The rule has to be fixed in phase 1 and written into the module header:
   same way `free()` twice is. Do not attempt to detect it by scanning the store.
 
 That keeps the count exact for everything the marshaller understands, and
-confines manual bookkeeping to handles the user asked for by name.
+confines manual bookkeeping to handles the user asked for by name. Leaked
+handles are still leaked, but they no longer outlive an orderly exit: the
+`atexit` hook of phase 0 finalizes the interpreter, so Python's own cleanup
+runs even when Prolog forgot a `py_free/1`.
 
 ---
 
@@ -401,6 +405,7 @@ Consequences worth stating:
 | Unbounded integers for Python ints | present **[checked]** | none |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
 | GIL calls reachable | present **[checked]** | none |
+| Shutdown hook for `Py_Finalize` | present **[checked]** | `atexit/0`, asserted; see phase 0 |
 | Build Trealla as a library | **done** **[checked]** | `libtrealla.a`, part of `make`, §4.3 |
 | Structured term inspection | missing **[checked]** | new `trealla.h` API, §4.2 |
 | `pl_query` keeps goal strings alive | broken **[checked]** | §4.2 — blocks phase 6 |
@@ -419,7 +424,7 @@ Ordered so each phase leaves something usable. Phases 1–5 have no dependency o
 phase 6, which is where all the C lives — so the Prolog → Python half can ship
 on its own.
 
-**Phase 0 — build wiring, finding libpython, shutdown.**
+**Phase 0 — build wiring, finding libpython, shutdown hook.**
 The `JANUS` makefile target and `#ifdef USE_JANUS` guards of §5, so the feature
 is opt-in from the first commit rather than retrofitted. Then locate the
 interpreter at run time. That search belongs in Prolog, not configure —
@@ -437,11 +442,31 @@ Three platforms, three shapes:
   the `WIN` block does not set `NOFFI`, and the CI installs
   `mingw-w64-x86_64-dlfcn`, which resolves `dlopen` through `LoadLibrary`.
 
-Also decide what happens at `halt`: there is no hook for a library to run
-`Py_Finalize`, so it will not run. That is usually harmless — the process is
-exiting — but it means Python `atexit` handlers and buffered file writes on the
-Python side may not complete. Say so in the module docs rather than pretending
-otherwise.
+Shutdown is now straightforward, which it was not when this was first written.
+`halt/0` and `halt/1` run `ignore(atexit)` before `'$halt'`, and `atexit/0` is
+dynamic, so a library registers a shutdown action by asserting a clause for it
+(`library/builtins.pl`). `library(janus)` should use that to call
+`Py_Finalize`, so Python's own `atexit` handlers run and its buffered writes
+land.
+
+Three things about the hook, measured rather than assumed: **[checked]**
+
+- The exit status survives it: `halt(3)` with a hook registered still exits 3.
+- `ignore/1` takes the *first solution*, so a clause that succeeds ends the
+  chain and any other library's registration never runs. **End the clause with
+  `fail`** and the next one is tried — verified with two clauses, where the
+  failing first ran and then the second did, and `halt(5)` still exited 5. Janus
+  must do this; it will not be the only thing registering.
+- **Never throw from it.** An exception there aborts the goal before `'$halt'`
+  is reached, and the requested status is lost — `halt(2)` with a throwing hook
+  exited 0. Wrap the `Py_Finalize` call in `catch/3` and discard anything it
+  raises.
+
+So the hook is:
+
+```prolog
+:- assertz((atexit :- catch(py_finalize_, _, true), fail)).
+```
 
 Ship `py_version/0` as the smoke test.
 *No dependencies.*
