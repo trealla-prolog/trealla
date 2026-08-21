@@ -1,0 +1,16 @@
+--- halt/0 runs the hook ---
+hook
+exit=0
+--- halt/1 runs it and keeps the status ---
+hook
+exit=3
+--- a failing clause chains to the next ---
+first
+second
+exit=5
+--- a succeeding clause ends the chain ---
+first
+exit=0
+--- a throwing hook: no crash, status lost ---
+   Warning: Initialization goal exception: oops.
+exit=0
