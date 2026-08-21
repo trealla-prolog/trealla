@@ -8,19 +8,13 @@
 :- help(halt, [iso(true)]).
 
 halt :-
-	atexit,
-	!,
-	'$halt'.
-halt :-
+	ignore(atexit),
 	'$halt'.
 
 :- help(halt(+integer), [iso(true)]).
 
 halt(Status) :-
-	atexit,
-	!,
-	'$halt'(Status).
-halt(Status) :-
+	ignore(atexit),
 	'$halt'(Status).
 
 :- help(term_variables(+term,-list,?tail), [iso(false)]).
