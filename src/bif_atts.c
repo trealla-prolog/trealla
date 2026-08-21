@@ -75,10 +75,10 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 	if (c->val_attrs) {
 		cell *l = c->val_attrs;
 		pl_ctx l_ctx = c_ctx;
-		LIST_HANDLER(l);
+		PROLOG_LIST_HANDLER(l);
 
 		while (is_iso_list(l)) {
-			cell *h = LIST_HEAD(l);
+			cell *h = PROLOG_LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			pl_ctx h_ctx = q->latest_ctx;
 			cell *h1 = deref(q, h+1, h_ctx);
@@ -93,7 +93,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 					return false;
 			}
 
-			l = LIST_TAIL(l);
+			l = PROLOG_LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 		}
@@ -127,17 +127,17 @@ static bool bif_put_atts_2(query *q)
 	bool is_minus = (p2->val_off == g_minus_s) && (p2->arity == 1);
 
 	if (is_iso_list(p2)) {
-		LIST_HANDLER(p2);
+		PROLOG_LIST_HANDLER(p2);
 
 		while (is_iso_list(p2)) {
-			cell *attr = LIST_HEAD(p2);
+			cell *attr = PROLOG_LIST_HEAD(p2);
 			attr = deref(q, attr, p2_ctx);
 			pl_ctx attr_ctx = q->latest_ctx;
 
 			if (!do_put_atts(q, attr, attr_ctx, is_minus))
 				return false;
 
-			p2 = LIST_TAIL(p2);
+			p2 = PROLOG_LIST_TAIL(p2);
 			p2 = deref(q, p2, p2_ctx);
 			p2_ctx = q->latest_ctx;
 		}
@@ -168,17 +168,17 @@ static bool bif_get_atts_2(query *q)
 		cell *l = c->val_attrs;
 		pl_ctx l_ctx = c_ctx;
 		init_tmp_heap(q);
-		LIST_HANDLER(l);
+		PROLOG_LIST_HANDLER(l);
 
 		while (is_iso_list(l)) {
-			cell *h = LIST_HEAD(l);
+			cell *h = PROLOG_LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			cell *h1 = deref(q, h+1, q->latest_ctx);
 
 			if (!is_nil(h1))
 				append_list(q, h1);
 
-			l = LIST_TAIL(l);
+			l = PROLOG_LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 		}
@@ -203,10 +203,10 @@ static bool bif_get_atts_2(query *q)
 	if (!found) return false;
 	cell *l = c->val_attrs;
 	pl_ctx l_ctx = c_ctx;
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 		cell *h1 = deref(q, h+1, h_ctx);
@@ -221,7 +221,7 @@ static bool bif_get_atts_2(query *q)
 			return unify(q, attr, p2_ctx, h1, h1_ctx);
 		}
 
-		l = LIST_TAIL(l);
+		l = PROLOG_LIST_TAIL(l);
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;
 	}
@@ -331,10 +331,10 @@ static bool bif_sys_attributed_var_1(query *q)
 	cell *l = c->val_attrs;
 	pl_ctx l_ctx = c_ctx;
 	bool any = false;
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 		cell *h1 = deref(q, h+1, l_ctx);
 
@@ -343,7 +343,7 @@ static bool bif_sys_attributed_var_1(query *q)
 			break;
 		}
 
-		l = LIST_TAIL(l);
+		l = PROLOG_LIST_TAIL(l);
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;
 	}

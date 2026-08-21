@@ -242,10 +242,10 @@ bool bif_parse_csv_line_3(query *q)
 	const char *functor = NULL;
 	int sep = ',', quote = '"';
 	int arity = 0;
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
 		if (is_compound(h) && (h->arity == 1)) {
@@ -271,7 +271,7 @@ bool bif_parse_csv_line_3(query *q)
 				quote = peek_char_utf8(C_STR(q, c));
 		}
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q,p3,p3_ctx);
 		p3_ctx = q->latest_ctx;
 	}
@@ -292,7 +292,7 @@ bool bif_parse_csv_file_2(query *q)
 	const char *functor = NULL;
 	int sep = ',', quote = '"', comment = '#';
 	int arity = 0;
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 	const char *ext = strrchr(C_STR(q, p1), '.');
 	parser *p = parser_create(q->st.m);
 
@@ -300,7 +300,7 @@ bool bif_parse_csv_file_2(query *q)
 		sep = '\t';
 
 	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
 		if (is_compound(h) && (h->arity == 1)) {
@@ -330,7 +330,7 @@ bool bif_parse_csv_file_2(query *q)
 				quote = peek_char_utf8(C_STR(q, c));
 		}
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q,p3,p3_ctx);
 		p3_ctx = q->latest_ctx;
 	}
@@ -428,10 +428,10 @@ static bool write_csv_field(FILE *fp, const char *src, size_t len, csv *params)
 
 static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_ctx l_ctx)
 {
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 
 	while (is_list(l)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 		h = deref(q,h,l_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 
@@ -446,7 +446,7 @@ static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_ctx 
 
 		TPL_free(dst);
 
-		l = LIST_TAIL(l);
+		l = PROLOG_LIST_TAIL(l);
 		l = deref(q,l,l_ctx);
 		l_ctx = q->latest_ctx;
 
@@ -468,7 +468,7 @@ bool bif_write_csv_file_3(query *q)
 	const char *functor = NULL;
 	int sep = ',', quote = '"', comment = '#';
 	int arity = 0;
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 	const char *ext = strrchr(C_STR(q, p1), '.');
 	parser *p = parser_create(q->st.m);
 
@@ -476,7 +476,7 @@ bool bif_write_csv_file_3(query *q)
 		sep = '\t';
 
 	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
 		if (is_compound(h) && (h->arity == 1)) {
@@ -508,7 +508,7 @@ bool bif_write_csv_file_3(query *q)
 				quote = peek_char_utf8(C_STR(q, c));
 		}
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q,p3,p3_ctx);
 		p3_ctx = q->latest_ctx;
 	}
@@ -517,10 +517,10 @@ bool bif_write_csv_file_3(query *q)
 	p->fp = fopen(C_STR(q, p1), append?"a":"w");
 	if (!p->fp) { parser_destroy(p); return throw_error(q, p1, p1_ctx, "existence_error", "source_sink"); }
 	q->double_quotes = true;
-	LIST_HANDLER(p2);
+	PROLOG_LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
-		cell *h = LIST_HEAD(p2);
+		cell *h = PROLOG_LIST_HEAD(p2);
 		h = deref(q,h,p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 
@@ -543,7 +543,7 @@ bool bif_write_csv_file_3(query *q)
 			return false;
 		}
 
-		p2 = LIST_TAIL(p2);
+		p2 = PROLOG_LIST_TAIL(p2);
 		p2 = deref(q,p2,p2_ctx);
 		p2_ctx = q->latest_ctx;
 	}

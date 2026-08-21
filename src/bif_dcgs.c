@@ -525,7 +525,7 @@ static dcg_rc emit_terminals(dcg_ctx *c, const cell *l, pl_ctx l_ctx,
 	cell *p = (cell*)l;
 	pl_ctx p_ctx = l_ctx;
 	dcg_rc rc = DCG_OK;
-	LIST_HANDLER(p);
+	PROLOG_LIST_HANDLER(p);
 
 	while (is_list(p)) {
 		if (n_opens == cap_opens) {
@@ -542,7 +542,7 @@ static dcg_rc emit_terminals(dcg_ctx *c, const cell *l, pl_ctx l_ctx,
 			cap_opens = newcap;
 		}
 
-		cell *h = LIST_HEAD(p);
+		cell *h = PROLOG_LIST_HEAD(p);
 		pl_ctx h_ctx;
 		h = dcg_deref(c, h, p_ctx, &h_ctx);
 
@@ -558,7 +558,7 @@ static dcg_rc emit_terminals(dcg_ctx *c, const cell *l, pl_ctx l_ctx,
 			goto done;
 		}
 
-		cell *t = LIST_TAIL(p);
+		cell *t = PROLOG_LIST_TAIL(p);
 		p = dcg_deref(c, t, p_ctx, &p_ctx);
 	}
 
@@ -1391,11 +1391,11 @@ static bool sp_construct(query *q, cell *l, pl_ctx l_ctx, cell *tail, pl_ctx tai
 
 	{
 		cell *p = l;
-		LIST_HANDLER(p);
+		PROLOG_LIST_HANDLER(p);
 
 		while (is_list(p)) {
 			n++;
-			p = LIST_TAIL(p);
+			p = PROLOG_LIST_TAIL(p);
 		}
 	}
 
@@ -1406,17 +1406,17 @@ static bool sp_construct(query *q, cell *l, pl_ctx l_ctx, cell *tail, pl_ctx tai
 
 	cell *w = dst;
 	cell *p = l;
-	LIST_HANDLER(p);
+	PROLOG_LIST_HANDLER(p);
 
 	while (is_list(p)) {
-		cell *h = LIST_HEAD(p);
+		cell *h = PROLOG_LIST_HEAD(p);
 		make_struct(w, g_dot_s, 2, 0);
 		w->num_cells = 1 + 1 + 0;	// patched below
 		w++;
 		*w = *h;
 		share_cell(w);
 		w++;
-		p = LIST_TAIL(p);
+		p = PROLOG_LIST_TAIL(p);
 	}
 
 	dup_cells_by_ref(w, tail, tail_ctx, tail->num_cells);
@@ -1445,8 +1445,8 @@ static bool bif_dcg_string_prefix_3(query *q)
 	pl_ctx l_ctx = p1_ctx;
 	cell *s = p3;
 	pl_ctx s_ctx = p3_ctx;
-	LIST_HANDLER(l);
-	LIST_HANDLER(s);
+	PROLOG_LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(s);
 
 	while (is_list(l)) {
 		if (is_var(s)) {
@@ -1464,16 +1464,16 @@ static bool bif_dcg_string_prefix_3(query *q)
 		if (!is_list(s))
 			return false;
 
-		cell *lh = LIST_HEAD(l);
-		cell *sh = LIST_HEAD(s);
+		cell *lh = PROLOG_LIST_HEAD(l);
+		cell *sh = PROLOG_LIST_HEAD(s);
 		sh = deref(q, sh, s_ctx);
 		pl_ctx sh_ctx = q->latest_ctx;
 
 		if (!unify(q, lh, l_ctx, sh, sh_ctx))
 			return false;
 
-		l = LIST_TAIL(l);
-		s = LIST_TAIL(s);
+		l = PROLOG_LIST_TAIL(l);
+		s = PROLOG_LIST_TAIL(s);
 		s = deref(q, s, s_ctx);
 		s_ctx = q->latest_ctx;
 	}

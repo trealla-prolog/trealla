@@ -485,10 +485,10 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_ctx l_ctx, bool 
 	cell *save_l = l;
 	pl_ctx save_l_ctx = l_ctx;
 	bool any1 = false, any2 = false;
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 
 	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 		pl_ctx h_ctx = l_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
@@ -524,7 +524,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_ctx l_ctx, bool 
 		}
 
 		if (e) e->vgen = save_vgen;
-		l = LIST_TAIL(l);
+		l = PROLOG_LIST_TAIL(l);
 		cell *lsave = l;
 
 		both = 0;
@@ -540,11 +540,11 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_ctx l_ctx, bool 
 	if (any2 && !*is_partial) {
 		cell *l2 = save_l;
 		pl_ctx l2_ctx = save_l_ctx;
-		LIST_HANDLER(l2);
+		PROLOG_LIST_HANDLER(l2);
 
 		while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
-			LIST_HEAD(l2);
-			l2 = LIST_TAIL(l2);
+			PROLOG_LIST_HEAD(l2);
+			l2 = PROLOG_LIST_TAIL(l2);
 			RESTORE_VAR(l2, l2_ctx, l2, l2_ctx, q->vgen);
 		}
 	}
@@ -2344,10 +2344,10 @@ static bool consultall(query *q, cell *l, pl_ctx l_ctx)
 	if (is_cyclic_term(q, l, l_ctx))
 		return throw_error(q, l, l_ctx, "type_error", "callable");
 
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 
 	while (is_list(l)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 
@@ -2358,7 +2358,7 @@ static bool consultall(query *q, cell *l, pl_ctx l_ctx)
 			do_load_file(q, h, h_ctx);
 		}
 
-		l = LIST_TAIL(l);
+		l = PROLOG_LIST_TAIL(l);
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;
 	}

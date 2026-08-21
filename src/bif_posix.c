@@ -346,10 +346,10 @@ static bool bif_sys_openlog_3(query *q)
 		return throw_error(q, p3, p3_ctx, "domain_error", "syslog_facility");
 
 	int mask = 0;
-	LIST_HANDLER(p2);
+	PROLOG_LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
-		cell *h = LIST_HEAD(p2);
+		cell *h = PROLOG_LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -362,7 +362,7 @@ static bool bif_sys_openlog_3(query *q)
 			return throw_error(q, c, c_ctx, "domain_error", "syslog_option");
 
 		mask |= opt;
-		p2 = LIST_TAIL(p2);
+		p2 = PROLOG_LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
 	}

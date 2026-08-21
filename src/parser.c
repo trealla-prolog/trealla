@@ -393,10 +393,10 @@ parser *parser_create(module *m)
 
 static void consultall(parser *p, cell *l)
 {
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 
 	while (is_list(l)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 
 		if (is_iso_list(h))
 			consultall(p, h);
@@ -407,7 +407,7 @@ static void consultall(parser *p, cell *l)
 				fprintf(stderr, "Error: file not found: '%s'\n", s);
 		}
 
-		l = LIST_TAIL(l);
+		l = PROLOG_LIST_TAIL(l);
 	}
 }
 
@@ -510,10 +510,10 @@ static void do_op(parser *p, cell *c, bool make_public)
 	}
 
 	TPL_free(spec);
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 
 		if (is_atom(h)) {
 			char *name = DUP_STRING(p, h);
@@ -558,7 +558,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			TPL_free(name);
 		}
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 	}
 
 	if (is_atom(p3) && !is_nil(p3)) {
@@ -1409,12 +1409,12 @@ static bool directive_term(parser *p, cell *c)
 		if (!is_compound(p1) && !is_atom(p1)) return true;
 		cell *p2 = p1 + p1->num_cells;
 		if (!is_iso_list_or_nil(p2)) return true;
-		LIST_HANDLER(p2);
+		PROLOG_LIST_HANDLER(p2);
 		char *desc = NULL;
 		bool iso = false;
 
 		while (is_iso_list(p2)) {
-			cell *h = LIST_HEAD(p2);
+			cell *h = PROLOG_LIST_HEAD(p2);
 
 			if (is_compound(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "iso")) {
 				cell *arg = h + 1;
@@ -1433,7 +1433,7 @@ static bool directive_term(parser *p, cell *c)
 				desc = DUP_STRING(p, arg);
 			}
 
-			p2 = LIST_TAIL(p2);
+			p2 = PROLOG_LIST_TAIL(p2);
 		}
 
 		pl_ctx p1_ctx = 0;
@@ -1568,11 +1568,11 @@ static bool directive_term(parser *p, cell *c)
 		if (tmp_m != p->m)
 			p->m->used[p->m->idx_used++] = tmp_m;
 
-		LIST_HANDLER(p2);
+		PROLOG_LIST_HANDLER(p2);
 
 		while (is_iso_list(p2)) {
-			LIST_HEAD(p2);
-			p2 = LIST_TAIL(p2);
+			PROLOG_LIST_HEAD(p2);
+			p2 = PROLOG_LIST_TAIL(p2);
 		}
 
 		return true;
@@ -1666,10 +1666,10 @@ static bool directive_term(parser *p, cell *c)
 			return true;
 
 		cell *p2 = c + 2;
-		LIST_HANDLER(p2);
+		PROLOG_LIST_HANDLER(p2);
 
 		while (is_iso_list(p2)) {
-			cell *head = LIST_HEAD(p2);
+			cell *head = PROLOG_LIST_HEAD(p2);
 
 			if (is_compound(head)) {
 				if (!strcmp(C_STR(p, head), "/")
@@ -1710,7 +1710,7 @@ static bool directive_term(parser *p, cell *c)
 				}
 			}
 
-			p2 = LIST_TAIL(p2);
+			p2 = PROLOG_LIST_TAIL(p2);
 		}
 
 		return true;
@@ -1807,10 +1807,10 @@ static bool directive_term(parser *p, cell *c)
 	}
 
 	if (is_iso_list(p1)) {
-		LIST_HANDLER(p1);
+		PROLOG_LIST_HANDLER(p1);
 
 		while (is_list(p1)) {
-			cell *h = LIST_HEAD(p1);
+			cell *h = PROLOG_LIST_HEAD(p1);
 
 			if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (h->arity == 2)) {
 				cell *c_name = h + 1;
@@ -1898,7 +1898,7 @@ static bool directive_term(parser *p, cell *c)
 				}
 			}
 
-			p1 = LIST_TAIL(p1);
+			p1 = PROLOG_LIST_TAIL(p1);
 		}
 	}
 
@@ -4610,11 +4610,11 @@ static bool process_term(parser *p, cell *p1)
 
 bool expand_term(parser *p, cell *c)
 {
-	LIST_HANDLER(c);
+	PROLOG_LIST_HANDLER(c);
 	bool tail = false;
 
 	while (is_iso_list(c)) {
-		cell *h = LIST_HEAD(c);
+		cell *h = PROLOG_LIST_HEAD(c);
 		parser *p2 = parser_create(p->m);
 		check_error(p2);
 		TPL_free(p2->cl);
@@ -4646,7 +4646,7 @@ bool expand_term(parser *p, cell *c)
 		}
 
 		parser_destroy(p2);
-		c = LIST_TAIL(c);
+		c = PROLOG_LIST_TAIL(c);
 
 		if (is_nil(c) || is_var(c))
 			tail = true;

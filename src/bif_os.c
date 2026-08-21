@@ -964,10 +964,10 @@ static bool bif_popen_4(query *q)
 	int std_alias = 0;			// 0 none, 1 input, 2 output, 3 error
 	bool binary = false;
 	int eof_action = eof_action_eof_code;
-	LIST_HANDLER(p4);
+	PROLOG_LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
-		cell *h = LIST_HEAD(p4);
+		cell *h = PROLOG_LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
 
 		if (is_var(c))
@@ -1005,7 +1005,7 @@ static bool bif_popen_4(query *q)
 		} else
 			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
 
-		p4 = LIST_TAIL(p4);
+		p4 = PROLOG_LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 
@@ -1127,11 +1127,11 @@ static bool bif_process_create_3(query *q)
 	for (int i = 0; g_envp[i] != NULL; i++)
 		environments[envs++] = strdup(g_envp[i]);
 
-	LIST_HANDLER(p2);
+	PROLOG_LIST_HANDLER(p2);
 
 	while (is_iso_list(p2)) {
 		assert(args < MAX_ARGS);
-		cell *h = LIST_HEAD(p2);
+		cell *h = PROLOG_LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -1139,7 +1139,7 @@ static bool bif_process_create_3(query *q)
 			return throw_error(q, c, c_ctx, "domain_error", "args");
 
 		arguments[args++] = DUP_STRING(q, c);
-		p2 = LIST_TAIL(p2);
+		p2 = PROLOG_LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
 	}
@@ -1152,10 +1152,10 @@ static bool bif_process_create_3(query *q)
 	cell *ppid = NULL;
 	pl_ctx ppid_ctx = 0;
 	int child_stdin_fd = -1, child_stdout_fd = -1, child_stderr_fd = -1;
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 
 	while (is_iso_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -1186,12 +1186,12 @@ static bool bif_process_create_3(query *q)
 				posix_spawn_file_actions_addchdir(&file_actions, cwd);
 #endif
 			} else if (!CMP_STRING_TO_CSTR(q, c, "env") && is_list_or_nil(name)) {
-				LIST_HANDLER(name);
+				PROLOG_LIST_HANDLER(name);
 				memset(environments, 0, sizeof(environments));
 				envs = 0;
 
 				while (is_iso_list(name)) {
-					cell *h = LIST_HEAD(name);
+					cell *h = PROLOG_LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
 
 					if (is_compound(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
@@ -1207,16 +1207,16 @@ static bool bif_process_create_3(query *q)
 						environments[envs++] = SB_cstr(pr);
 					}
 
-					name = LIST_TAIL(name);
+					name = PROLOG_LIST_TAIL(name);
 					name = deref(q, name, name_ctx);
 					name_ctx = q->latest_ctx;
 				}
 
 			} else if (!CMP_STRING_TO_CSTR(q, c, "environment") && is_list_or_nil(name)) {
-				LIST_HANDLER(name);
+				PROLOG_LIST_HANDLER(name);
 
 				while (is_iso_list(name)) {
-					cell *h = LIST_HEAD(name);
+					cell *h = PROLOG_LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
 
 					if (is_compound(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
@@ -1232,7 +1232,7 @@ static bool bif_process_create_3(query *q)
 						environments[envs++] = SB_cstr(pr);
 					}
 
-					name = LIST_TAIL(name);
+					name = PROLOG_LIST_TAIL(name);
 					name = deref(q, name, name_ctx);
 					name_ctx = q->latest_ctx;
 				}
@@ -1316,7 +1316,7 @@ static bool bif_process_create_3(query *q)
 		} else
 			return throw_error(q, c, q->latest_ctx, "domain_error", "process_create_option");
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 	}
@@ -1356,11 +1356,11 @@ static bool bif_process_wait_3(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,list_or_nil);
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 	int secs = -1;
 
 	while (is_iso_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 
 		if (is_compound(c) && (c->arity == 1) && !CMP_STRING_TO_CSTR(q, c, "timeout")) {
@@ -1371,7 +1371,7 @@ static bool bif_process_wait_3(query *q)
 		} else
 			return throw_error(q, c, q->latest_ctx, "domain_error", "process_wait_option");
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 	}

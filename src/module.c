@@ -567,12 +567,12 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 	} else if (is_string(p1) && is_string(p2)) {
 		return strcmp(C_STR(m, p1), C_STR(m, p2));
 	} else if (is_list(p1) && is_list(p2)) {
-		LIST_HANDLER(p1);
-		LIST_HANDLER(p2);
+		PROLOG_LIST_HANDLER(p1);
+		PROLOG_LIST_HANDLER(p2);
 
 		while (is_list(p1) && is_list(p2)) {
-			cell *h1 = LIST_HEAD(p1);
-			cell *h2 = LIST_HEAD(p2);
+			cell *h1 = PROLOG_LIST_HEAD(p1);
+			cell *h2 = PROLOG_LIST_HEAD(p2);
 
 			if (l && (is_var(h1) || is_var(h2))) {
 				if (sl_is_find(l))
@@ -586,8 +586,8 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 					return ok;
 			}
 
-			p1 = LIST_TAIL(p1);
-			p2 = LIST_TAIL(p2);
+			p1 = PROLOG_LIST_TAIL(p1);
+			p2 = PROLOG_LIST_TAIL(p2);
 		}
 
 		if (l && (is_var(p1) || is_var(p2))) {
@@ -1131,10 +1131,10 @@ bool do_use_module_2(module *cur_m, cell *c)
 
 	cell *p1 = c + 1;
 	cell *p2 = p1 + p1->num_cells;
-	LIST_HANDLER(p2);
+	PROLOG_LIST_HANDLER(p2);
 
 	while (is_iso_list(p2)) {
-		cell *head = LIST_HEAD(p2);
+		cell *head = PROLOG_LIST_HEAD(p2);
 
 		if (is_interned(head) && (head->arity == 2)
 			&& ((head->val_off == g_as_s) || (head->val_off == g_colon_s))) {
@@ -1173,7 +1173,7 @@ bool do_use_module_2(module *cur_m, cell *c)
 			}
 		}
 
-		p2 = LIST_TAIL(p2);
+		p2 = PROLOG_LIST_TAIL(p2);
 	}
 
 	return true;
@@ -1196,7 +1196,7 @@ bool do_use_foreign_module(module *m, cell *p)
 {
 	cell *p1 = p + 1;
 	cell *p2 = p1 + p1->num_cells;
-	LIST_HANDLER(p2);
+	PROLOG_LIST_HANDLER(p2);
 
 	const char *name = C_STR(m, p1);
 	void *handle = do_dlopen(name, 0);
@@ -1208,13 +1208,13 @@ bool do_use_foreign_module(module *m, cell *p)
 	}
 
 	while (is_iso_list(p2)) {
-		cell *h = LIST_HEAD(p2);
+		cell *h = PROLOG_LIST_HEAD(p2);
 		const char *symbol = C_STR(m, h);
 		cell *l = h + 1;
 		cell *r = l + l->num_cells;
 		const char *ret_type = C_STR(m, r);
 		do_register_predicate(m, NULL, handle, symbol, l, 0, ret_type);
-		p2 = LIST_TAIL(p2);
+		p2 = PROLOG_LIST_TAIL(p2);
 	}
 
 	return true;

@@ -817,10 +817,10 @@ static bool bif_abolish_2(query *q)
 		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
 
 	bool force = false, tree = false;
-	LIST_HANDLER(p2);
+	PROLOG_LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
-		cell *h = LIST_HEAD(p2);
+		cell *h = PROLOG_LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
 
 		if (is_var(c))
@@ -847,7 +847,7 @@ static bool bif_abolish_2(query *q)
 		} else
 			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
 
-		p2 = LIST_TAIL(p2);
+		p2 = PROLOG_LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
 

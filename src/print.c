@@ -145,13 +145,13 @@ static void clear_visited(visit *visited, visit *save_visited)
 
 cell *string_to_chars_list(query *q, cell *p)
 {
-	LIST_HANDLER(p);
+	PROLOG_LIST_HANDLER(p);
 	init_tmp_heap(q);
 
 	while (is_list(p)) {
-		cell *h = LIST_HEAD(p);
+		cell *h = PROLOG_LIST_HEAD(p);
 		append_list(q, h);
-		p = LIST_TAIL(p);
+		p = PROLOG_LIST_TAIL(p);
 	}
 
 	return end_list(q);
@@ -159,11 +159,11 @@ cell *string_to_chars_list(query *q, cell *p)
 
 char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx)
 {
-	LIST_HANDLER(p_chars);
+	PROLOG_LIST_HANDLER(p_chars);
 	SB(pr);
 
 	while (is_list(p_chars)) {
-		cell *h = LIST_HEAD(p_chars);
+		cell *h = PROLOG_LIST_HEAD(p_chars);
 		h = deref(q, h, p_chars_ctx);
 
 		if (is_integer(h)) {
@@ -175,7 +175,7 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx)
 			SB_putchar(pr, ch);
 		}
 
-		p_chars = LIST_TAIL(p_chars);
+		p_chars = PROLOG_LIST_TAIL(p_chars);
 		p_chars = deref(q, p_chars, p_chars_ctx);
 		p_chars_ctx = q->latest_ctx;
 	}
@@ -724,10 +724,10 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 
 	cell *l = q->variable_names;
 	pl_ctx l_ctx = q->variable_names_ctx;
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 		h = running ? deref(q, h, l_ctx) : h;
 		pl_ctx h_ctx = running ? q->latest_ctx : l_ctx;
 		cell *name = running ? deref(q, h+1, h_ctx) : h+1;
@@ -752,7 +752,7 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 			return true;
 		}
 
-		l = LIST_TAIL(l);
+		l = PROLOG_LIST_TAIL(l);
 		l = running ? deref(q, l, l_ctx) : l;
 		l_ctx = running ? q->latest_ctx : 0;
 	}
@@ -782,12 +782,12 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 static void print_string_canonical(query *q, cell *c)
 {
 	int cnt = 1;
-	LIST_HANDLER(c);
+	PROLOG_LIST_HANDLER(c);
 
 	emit(q, "'.'(");
 
 	while (is_list(c)) {
-		cell *h = LIST_HEAD(c);
+		cell *h = PROLOG_LIST_HEAD(c);
 
 		if (is_number(h)) {
 			SB_sprintf(q->sb, "%d", (int)h->val_int);
@@ -798,7 +798,7 @@ static void print_string_canonical(query *q, cell *c)
 		} else
 			emit(q, C_STR(q, h));
 
-		c = LIST_TAIL(c);
+		c = PROLOG_LIST_TAIL(c);
 
 		if (!is_list(c)) {
 			emit(q, ",[]");
@@ -816,12 +816,12 @@ static void print_string_canonical(query *q, cell *c)
 
 static void print_string_list(query *q, cell *c, bool cons)
 {
-	LIST_HANDLER(c);
+	PROLOG_LIST_HANDLER(c);
 	if (!cons) { emit(q, "["); }
 	unsigned print_list = 0;
 
 	while (is_list(c)) {
-		cell *h = LIST_HEAD(c);
+		cell *h = PROLOG_LIST_HEAD(c);
 
 		if (q->max_depth && (print_list >= q->max_depth)) {
 			emit_unget(q);
@@ -841,7 +841,7 @@ static void print_string_list(query *q, cell *c, bool cons)
 			emit_free(q, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
 		}
 
-		c = LIST_TAIL(c);
+		c = PROLOG_LIST_TAIL(c);
 
 		if (!is_list(c))
 			break;
@@ -1055,7 +1055,7 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 	pl_ctx save_ctx = c_ctx;
 	unsigned print_list = 0;
 	int cnt = 1;
-	LIST_HANDLER(c);
+	PROLOG_LIST_HANDLER(c);
 
 	emit(q, "'.'(");
 
@@ -1068,7 +1068,7 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 			break;
 		}
 
-		cell *head = LIST_HEAD(c);
+		cell *head = PROLOG_LIST_HEAD(c);
 		pl_ctx head_ctx = c_ctx;
 		head = deref_if(q, running, head, &head_ctx);
 		bool special_op = false;
@@ -1086,7 +1086,7 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 		q->parens = false;
 		if (parens) { emit(q, ")"); }
 
-		c = LIST_TAIL(c);
+		c = PROLOG_LIST_TAIL(c);
 		c = deref_if(q, running, c, &c_ctx);
 
 		if (!is_list(c)) {
@@ -1641,7 +1641,7 @@ static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, uns
 	pl_ctx l_ctx = c_ctx;
 	emit(q, "\"");
 	unsigned cnt = 0;
-	LIST_HANDLER(l);
+	PROLOG_LIST_HANDLER(l);
 	bool closing_quote = true;
 	bool any = false, done = false;
 	cell *cut_var = NULL;
@@ -1661,7 +1661,7 @@ static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, uns
 			break;
 		}
 
-		cell *h = LIST_HEAD(l);
+		cell *h = PROLOG_LIST_HEAD(l);
 		pl_ctx h_ctx = l_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
@@ -1683,7 +1683,7 @@ static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, uns
 			emit_free(q, formatted(C_STR(q, h), C_STRLEN(q, h), true, q->json));
 		}
 
-		cell *tail_cell = LIST_TAIL(l);
+		cell *tail_cell = PROLOG_LIST_TAIL(l);
 
 		// Rightslicing: stop at a query var in the unreified
 		// spine so mutual cycles print as L="ab"||I, I="cd"||L (#890).

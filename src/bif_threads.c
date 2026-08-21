@@ -550,13 +550,13 @@ static bool bif_thread_get_message_3(query *q)
 
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,list_or_nil);
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 	cell *p3_orig = p3;
 	pl_ctx p3_orig_ctx = p3_ctx;
 	double timeout = -1.0;
 
 	while (is_iso_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		h = deref(q, h, p3_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 
@@ -580,7 +580,7 @@ static bool bif_thread_get_message_3(query *q)
 			return false;
 		}
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 	}
@@ -671,10 +671,10 @@ static bool bif_pl_thread_3(query *q)
 	}
 
 	thread *t = &q->pl->threads[n];
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -713,7 +713,7 @@ static bool bif_pl_thread_3(query *q)
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 
@@ -827,10 +827,10 @@ static bool bif_thread_create_3(query *q)
 	cell *alias = NULL, *at_exit_goal = NULL;
 	pl_ctx at_exit_goal_ctx = 0;
 	bool is_detached = false;
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -872,7 +872,7 @@ static bool bif_thread_create_3(query *q)
 		} else
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 
@@ -1512,10 +1512,10 @@ static bool bif_is_thread_1(query *q)
 static int parse_thread_opts(query *q, cell *p2, pl_ctx p2_ctx, cell **alias_out)
 {
 	*alias_out = NULL;
-	LIST_HANDLER(p2);
+	PROLOG_LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
-		cell *h = LIST_HEAD(p2);
+		cell *h = PROLOG_LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -1549,7 +1549,7 @@ static int parse_thread_opts(query *q, cell *p2, pl_ctx p2_ctx, cell **alias_out
 			return 0;
 		}
 
-		p2 = LIST_TAIL(p2);
+		p2 = PROLOG_LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
 

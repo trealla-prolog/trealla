@@ -103,10 +103,10 @@ static bool bif_sys_server_3(query *q)
 		filename = chars_list_to_string(q, p1, p1_ctx);
 	}
 
-	LIST_HANDLER(p3);
+	PROLOG_LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
+		cell *h = PROLOG_LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -161,7 +161,7 @@ static bool bif_sys_server_3(query *q)
 			}
 		}
 
-		p3 = LIST_TAIL(p3);
+		p3 = PROLOG_LIST_TAIL(p3);
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 	}
@@ -337,10 +337,10 @@ static bool bif_sys_client_5(query *q)
 		filename = chars_list_to_string(q, p1, p1_ctx);
 	}
 
-	LIST_HANDLER(p5);
+	PROLOG_LIST_HANDLER(p5);
 
 	while (is_iso_list(p5)) {
-		cell *h = LIST_HEAD(p5);
+		cell *h = PROLOG_LIST_HEAD(p5);
 		cell *c = deref(q, h, p5_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -385,7 +385,7 @@ static bool bif_sys_client_5(query *q)
 			}
 		}
 
-		p5 = LIST_TAIL(p5);
+		p5 = PROLOG_LIST_TAIL(p5);
 		p5 = deref(q, p5, p5_ctx);
 		p5_ctx = q->latest_ctx;
 	}
@@ -549,10 +549,10 @@ static bool bif_sys_udp_recv_5(query *q)
 	size_t maxlen = 4096;
 	bool octet = false;
 
-	LIST_HANDLER(p4);
+	PROLOG_LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
-		cell *h = LIST_HEAD(p4);
+		cell *h = PROLOG_LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -572,7 +572,7 @@ static bool bif_sys_udp_recv_5(query *q)
 				octet = true;
 		}
 
-		p4 = LIST_TAIL(p4);
+		p4 = PROLOG_LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 	}
@@ -649,10 +649,10 @@ static bool bif_sys_udp_send_5(query *q)
 	stream *str = &q->pl->streams[n];
 	bool octet = false;
 
-	LIST_HANDLER(p4);
+	PROLOG_LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
-		cell *h = LIST_HEAD(p4);
+		cell *h = PROLOG_LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
@@ -664,7 +664,7 @@ static bool bif_sys_udp_send_5(query *q)
 				octet = true;
 		}
 
-		p4 = LIST_TAIL(p4);
+		p4 = PROLOG_LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 	}
@@ -679,10 +679,10 @@ static bool bif_sys_udp_send_5(query *q)
 		CHECKED(bytes);
 		cell *l = p1;
 		pl_ctx l_ctx = p1_ctx;
-		LIST_HANDLER(l);
+		PROLOG_LIST_HANDLER(l);
 
 		while (is_list(l)) {
-			cell *h = deref(q, LIST_HEAD(l), l_ctx);
+			cell *h = deref(q, PROLOG_LIST_HEAD(l), l_ctx);
 
 			if (!is_smallint(h) || (get_smallint(h) < 0) || (get_smallint(h) > 255)) {
 				free(bytes);
@@ -702,7 +702,7 @@ static bool bif_sys_udp_send_5(query *q)
 			}
 
 			bytes[cnt++] = (char)get_smallint(h);
-			l = deref(q, LIST_TAIL(l), l_ctx);
+			l = deref(q, PROLOG_LIST_TAIL(l), l_ctx);
 			l_ctx = q->latest_ctx;
 		}
 
