@@ -4,13 +4,24 @@
 :- use_module(library(iso_ext)).
 :- use_module(library(gensym)).
 
+:- dynamic(atexit/0).
 :- help(halt, [iso(true)]).
 
-halt :- '$halt'.
+halt :-
+	atexit,
+	!,
+	'$halt'.
+halt :-
+	'$halt'.
 
 :- help(halt(+integer), [iso(true)]).
 
-halt(Status) :- '$halt'(Status).
+halt(Status) :-
+	atexit,
+	!,
+	'$halt'(Status).
+halt(Status) :-
+	'$halt'(Status).
 
 :- help(term_variables(+term,-list,?tail), [iso(false)]).
 
