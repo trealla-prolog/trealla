@@ -77,7 +77,9 @@ defines compatibility. Computed from `janus.pl`'s module declaration and
 
 Scope: the common core, plus the XSB spellings as thin wrappers, plus
 `py_version/0`, `py_type/2` and `py_pp/1` — those three cost almost nothing and
-are what makes the thing usable at a toplevel.
+are what makes the thing usable at a toplevel. Plus one bi-translation
+extension SWI also carries, `fractions.Fraction` ↔ rational, which §3 shows is a
+dozen lines given that Trealla has rationals already.
 
 Out of scope: `py_with_gil/1` and `py_gil_owner/1` expose SWI's thread
 synchronisation model; `py_is_dict/1` and SWI's dict support depend on SWI's
@@ -121,6 +123,7 @@ this is implementation, not design. Translation is recursive on both sides.
 | `dict`, non-empty | `{K:V, K:V}` | curly term wrapping a `:/2` comma-list |
 | `dict`, empty | `{}` — an **atom** | not a compound; special case both ways |
 | `set` | `py_set(List)` | element order not preserved |
+| `fractions.Fraction` | rational (`1 rdiv 3`) | **not in the spec** — an SWI-compatible extension, see below |
 | anything else | opaque object reference | representation is explicitly system-dependent |
 | `bytes`, `complex` | `'$py_obj'/1` | not in the spec; they fall through to the opaque case |
 
@@ -305,6 +308,47 @@ branch stays, and phase 1 owns both sides of it.
 §4.2 reaches the same conclusion for the C API — "big integers need a text
 accessor" — for the same reason, so the two halves of the project can share the
 convention if not the code.
+
+**Rationals — not in the spec, and worth adding anyway.** The PIP table has no
+rational row. SWI added one, mapping `fractions.Fraction` onto its native
+rational type, and Trealla has rationals too, so the same mapping is nearly free.
+Trealla's are *atomic* — `1 rdiv 3` prints as an operator term but `compound/1`
+is false and it does not unify with `A rdiv B` — so decomposition goes through
+the evaluable functions `numerator/1` and `denominator/1`, and construction
+through `X is N rdiv D`. All three carry bignums. **[checked]**
+
+**Do not port SWI's text trick, though.** SWI converts through the printed form:
+outbound it hands `Fraction()` an `"N/D"` string, inbound it takes `str(obj)`,
+swaps `/` for `r`, and reads `1r3` back as a term. Neither half survives the trip
+here. Trealla does not read `1r3`, and `atom_number/2` rejects `'1 rdiv 3'`
+**[checked]**. More seriously, both halves hit the same decimal digit cap as the
+integers above — this is a live limitation in SWI, not only a portability
+problem:
+
+```python
+>>> Fraction(str(2**40000) + '/3')
+ValueError: Exceeds the limit (4300 digits) for integer string conversion
+>>> str(Fraction(2**40000, 3))
+ValueError: Exceeds the limit (4300 digits) for integer string conversion
+```
+
+Going through the parts avoids text at the rational level entirely:
+`Fraction(NumObj, DenObj)` from two already-marshalled int objects outbound, and
+the `.numerator` / `.denominator` attributes inbound. Round-tripped equal over
+`1 rdiv 3`, `-2 rdiv 7`, `2^70 rdiv 3` and `2^40000 rdiv 3`. **[checked]** The
+`Fraction` class itself is cached at load exactly like §3's type objects, and
+`PyObject_IsInstance` against it is the inbound test. Note `PyTuple_SetItem`
+*steals* its reference, which is a third reference convention beside new and
+borrowed.
+
+**The outbound dispatch has the same subtype trap as `bool`.** `rational(3)` is
+true in Trealla, as in SWI — every integer is a rational. **[checked]** So
+`integer/1` must be tested before `rational/1`, or every integer leaves as a
+`Fraction`. It is the mirror image of `bool` before `int` coming the other way,
+and the same mistake.
+
+Normalisation needs no special handling at either end: `Fraction(6, 3)` is
+`Fraction(2, 1)`, and `X is 2 rdiv 1` is the integer 2. **[checked]**
 
 **Object references, and who owns them.** The spec states the representation is
 system-dependent (XSB uses `pyObj/1`, SWI a blob with a GC finalizer). Trealla
@@ -621,6 +665,7 @@ Consequences worth stating:
 | CPython C-API reachable from Prolog | present **[checked]** | none |
 | Dict / tuple / `@` term forms | present **[checked]** | none |
 | Unbounded integers as Prolog terms | present **[checked]** | none |
+| Rationals both sides | present **[checked]** | §3 — `numerator/1`, `denominator/1`, `rdiv`; phase 1 |
 | Python type dispatch from Prolog | `Check` macros unreachable **[checked]** | §3 — exemplar type objects + `PyObject_IsInstance` |
 | Integers past 64 bits across the FFI | **broken**; fix demonstrated **[checked]** | §3 — base-16 slow path, Prolog only, phase 1 |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
@@ -698,8 +743,8 @@ The §3 table, both directions, recursive. The bulk of the Prolog, and everythin
 later sits on it. Fix the reference-ownership rule of §3 here and write it into
 the module header, classification of every entry point as new-or-borrowed
 included, and the exemplar type-object cache of §3, which every dispatch
-decision then reads. Order the dispatch as §3 gives it — `bool` before `int` is
-not a detail. The base-16 path of §3 is part of this phase too, not an
+decision then reads. Order the dispatch as §3 gives it — `bool` before `int` inbound,
+`integer` before `rational` outbound; neither is a detail. The base-16 path of §3 is part of this phase too, not an
 optimisation to come back for: without it `math.factorial(21)` is an error.
 
 Test it here too, not at phase 7. Conformance arrives far too late to be the
