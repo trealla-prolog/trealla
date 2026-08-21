@@ -29,9 +29,10 @@ Trealla v3.5.11-3 against CPython 3.14.7, macOS/arm64.
 The two directions need different mechanisms, and keeping them apart is what
 makes this tractable.
 
-**Prolog → Python needs no C.** Every CPython C-API entry point Janus requires is
-exported by `libpython` and is non-variadic, so Trealla's existing FFI reaches
-all of it. **[checked]** — this ran before any of this document was written:
+**Prolog → Python needs no C.** Almost every CPython C-API entry point Janus
+requires is exported by `libpython` and is non-variadic, so Trealla's existing
+FFI reaches it. The exception is type checking, which is macros over exported
+*data* — §3 says what to do instead, and it needs no C either. **[checked]** — this ran before any of this document was written:
 
 ```
   import math      -> ptr 4387867760
@@ -152,6 +153,56 @@ change an existing operator to no purpose. SWI's module also exports
 `op(50, fx, #)`, which Trealla has no equivalent for **[checked]** — but `#Value`
 appears nowhere in the common core, so it leaves scope with the rest of the SWI
 extensions.
+
+**The table is a dispatch order, not a mapping.** Read as a set of independent
+rules it gets `True` wrong on the first try, because in Python `bool` is a
+subclass of `int`: **[checked]**
+
+```
+isinstance(True, int)  = true      <- bool IS an int
+isinstance(True, bool) = true
+isinstance(1, bool)    = false
+```
+
+An int-first marshaller therefore translates `True` to `1` and never reaches the
+`@true` row. SWI guards this by testing `Py_None` by identity and `PyBool_Check`
+*before* opening its dispatch chain at all (`py_unify()`, `janus.c`). The rest of
+the order is load-bearing for the same reason — `str`, `tuple` and `list` all
+answer to `PySequence_Check`. SWI's order, worth copying wholesale:
+
+```
+None (identity) -> bool -> int -> float -> str -> tuple -> dict
+                -> iterator -> sequence -> set
+```
+
+**And the `Check` macros are not reachable from the FFI.** This is the one place
+§1's "exported and non-variadic" does not hold. `PyLong_Check`, `PyBool_Check`,
+`PyFloat_Check`, `PyUnicode_Check`, `PyDict_Check`, `PyList_Check`,
+`PyTuple_Check` and `PySet_Check` are C macros, so there is no symbol to
+`dlsym`. Nor do the type objects they test against help directly: `PyLong_Type`
+and friends are exported as *data* — `nm` reports `D`, not `T` — and
+`'$register_predicate'/4` registers a symbol as something to *call*.
+`PyIter_Check` is the lone exception, a real function. **[checked]**
+
+The way round uses exported functions only, because `PyObject_Type` of any
+exemplar *is* the type object. Build one of each at load time and cache the
+pointers: **[checked]**
+
+```prolog
+:- 'PyLong_FromLongLong'(1, I), 'PyObject_Type'(I, T), assertz(ty(int, T)).
+```
+
+With those in hand, exact-type dispatch — SWI's `CheckExact`, which is what the
+`py_object(true)` path uses — is a pointer comparison against
+`PyObject_Type(Obj)`; subclass-aware dispatch, SWI's `Check`, is
+`PyObject_IsInstance(Obj, TypeObj)`. Both verified across int, bool, float, str,
+tuple, dict and list, `isinstance(1, bool)` correctly false included.
+`PyObject_Type` returns a **new** reference, which is one more case for the
+ownership rule below.
+
+`py_type/2` then costs nothing extra: `PyType_GetName(PyObject_Type(Obj))`
+returns `int`, `bool`, `float`, `str`, `tuple`, `dict`, `list` as atoms.
+**[checked]**
 
 **Integers wider than 64 bits do not cross the FFI, in either direction.** This
 is the one place this document was flatly wrong, and correcting it adds work to
@@ -570,6 +621,7 @@ Consequences worth stating:
 | CPython C-API reachable from Prolog | present **[checked]** | none |
 | Dict / tuple / `@` term forms | present **[checked]** | none |
 | Unbounded integers as Prolog terms | present **[checked]** | none |
+| Python type dispatch from Prolog | `Check` macros unreachable **[checked]** | §3 — exemplar type objects + `PyObject_IsInstance` |
 | Integers past 64 bits across the FFI | **broken**; fix demonstrated **[checked]** | §3 — base-16 slow path, Prolog only, phase 1 |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
 | GIL calls reachable | present **[checked]** | none |
@@ -645,7 +697,9 @@ Ship `py_version/0` as the smoke test.
 The §3 table, both directions, recursive. The bulk of the Prolog, and everything
 later sits on it. Fix the reference-ownership rule of §3 here and write it into
 the module header, classification of every entry point as new-or-borrowed
-included. The int64 text path of §3 is part of this phase and not an
+included, and the exemplar type-object cache of §3, which every dispatch
+decision then reads. Order the dispatch as §3 gives it — `bool` before `int` is
+not a detail. The base-16 path of §3 is part of this phase too, not an
 optimisation to come back for: without it `math.factorial(21)` is an error.
 
 Test it here too, not at phase 7. Conformance arrives far too late to be the
