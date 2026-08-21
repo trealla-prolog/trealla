@@ -328,7 +328,7 @@ bool bif_iso_unify_2(query *q)
 	return unify(q, p1, p1_ctx, p2, p2_ctx);
 }
 
-bool bif_sys_undo_1(query *q)
+static bool bif_sys_undo_1(query *q)
 {
 	GET_FIRST_RAW_ARG(p1,var);
 	undo_var(q, p1, p1_ctx);
@@ -341,7 +341,7 @@ static bool bif_iso_repeat_0(query *q)
 	return true;
 }
 
-bool bif_iso_halt_0(query *q)
+static bool bif_iso_halt_0(query *q)
 {
 	q->halt_code = 0;
 	q->halt = q->error = true;
@@ -6859,7 +6859,7 @@ builtins g_iso_bifs[] =
 	{"sub_atom", 5, bif_iso_sub_atom_5, "+atom,?before,?length,?after,?atom", true, false, BLAH},
 	{"sub_string", 5, bif_iso_sub_string_5, "+character_list,?before,?length,?after,?character_list", true, false, BLAH},
 	{"current_rule", 1, bif_iso_current_rule_1, "-term", true, false, BLAH},
-	{"end_of_file", 0, bif_iso_halt_0, NULL, true, false, BLAH},
+	{"end_of_file", 0, NULL, NULL, true, false, BLAH},
 	{"$halt", 0, bif_iso_halt_0, NULL, true, false, BLAH},
 	{"$halt", 1, bif_iso_halt_1, "+integer", true, false, BLAH},
 	{"set_prolog_flag", 2, bif_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
