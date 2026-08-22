@@ -708,17 +708,7 @@ expect_do(M, Q, VNs, N, Expect, Output, capture, PrevCs, FullCs) :-
 % discards, used when probing for a further answer after one that wrote.
 
 attempt(M, Q, VNs, N, Expect, no_output) :- !,
-	catch(
-		( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
-			Outcome = matched
-		;	( catch(call_with_time_limit(1.0, \+ \+ call_nth(M:Q, N)), _, fail) ->
-				Outcome = mismatched
-			;	Outcome = none
-			)
-		),
-		Ball0,
-		( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
-	),
+	outcome(M, Q, VNs, N, Expect, Outcome),
 	match_outcome(Q, VNs, Expect, Outcome).
 attempt(M, Q, VNs, N, Expect, silence) :- !,
 	attempt_capture(M, Q, VNs, N, Expect, _).
@@ -729,20 +719,27 @@ attempt(M, Q, VNs, N, Expect, outputs(Expected)) :-
 attempt_capture(M, Q, VNs, N, Expect, Cs) :-
 	setup_call_cleanup(
 		'$capture_output',
-		catch(
-			( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
-				Outcome = matched
-			;	( catch(call_with_time_limit(1.0, \+ \+ call_nth(M:Q, N)), _, fail) ->
-					Outcome = mismatched
-				;	Outcome = none
-				)
-			),
-			Ball0,
-			( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
-		),
+		outcome(M, Q, VNs, N, Expect, Outcome),
 		'$capture_output_to_chars'(Cs)
 	),
 	match_outcome(Q, VNs, Expect, Outcome).
+
+% The query is run once per attempt. An attempt that neither matches
+% nor throws is 'none': a second probe telling a mismatched answer
+% apart from no answer at all named an outcome match_outcome/4 acts on
+% nowhere, and under capture it wrote the query's output a second time,
+% so 'outputs("a"), false' saw "aa" and no failing query could
+% describe what it had written (issue #1118).
+
+outcome(M, Q, VNs, N, Expect, Outcome) :-
+	catch(
+		( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
+			Outcome = matched
+		;	Outcome = none
+		),
+		Ball0,
+		( timeout_ball(Ball0) -> Outcome = loops ; Outcome = ball(Ball0) )
+	).
 
 % Expected is a character list (or double-quoted string under
 % double_quotes(chars)), optionally a DCG body via phrase/2.
