@@ -15,6 +15,92 @@
 #include "openssl/hmac.h"
 #endif
 
+// The host operating system, for current_prolog_flag(os, OS). Every
+// build knows its own at compile time except a Cosmopolitan one, whose
+// single binary runs on several systems and so has to ask.
+
+#if defined(__COSMOPOLITAN__)
+#include <sys/utsname.h>
+
+static const char *host_os(void)
+{
+	// Cosmopolitan builds are NOTHREADS, and the answer never changes
+	// within a run, so the buffer is written once and idempotently.
+
+	static char name[32];
+
+	if (!*name) {
+		struct utsname u;
+
+		if (uname(&u) != 0)
+			return "unknown";
+
+		if (!strcmp(u.sysname, "Darwin"))
+			return strcpy(name, "macos");
+
+		// Otherwise the system's own name in lower case: linux,
+		// freebsd, netbsd, openbsd, windows...
+
+		size_t i = 0;
+
+		for (; u.sysname[i] && (i < sizeof(name)-1); i++)
+			name[i] = tolower((unsigned char)u.sysname[i]);
+
+		name[i] = '\0';
+	}
+
+	return name;
+}
+#else
+static const char *host_os(void)
+{
+#if defined(_WIN32)
+	return "windows";
+#elif defined(__ANDROID__)		// tested first: it defines __linux__ too
+	return "android";
+#elif defined(__APPLE__)
+	return "macos";
+#elif defined(__linux__)
+	return "linux";
+#elif defined(__FreeBSD__)
+	return "freebsd";
+#elif defined(__OpenBSD__)
+	return "openbsd";
+#elif defined(__NetBSD__)
+	return "netbsd";
+#elif defined(__DragonFly__)
+	return "dragonfly";
+#elif defined(__wasi__)
+	return "wasi";
+#elif defined(__EMSCRIPTEN__)
+	return "emscripten";
+#elif defined(__sun)
+	return "solaris";
+#elif defined(__HAIKU__)
+	return "haiku";
+#elif defined(__riscos__)
+	return "riscos";
+#elif defined(__CYGWIN__)
+	return "cygwin";
+#else
+	return "unknown";
+#endif
+}
+#endif
+
+// The unix flag was the atom true whatever the host, Windows included.
+// Deriving it from the same answer keeps the two from disagreeing.
+
+static bool host_is_unix(void)
+{
+	const char *os = host_os();
+
+	return strcmp(os, "windows")
+		&& strcmp(os, "wasi")
+		&& strcmp(os, "riscos")
+		&& strcmp(os, "unknown");
+}
+
 static bool bif_nb_setarg_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -2490,7 +2576,11 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 #endif
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "unix")) {
 		cell tmp;
-		make_atom(&tmp, g_true_s);
+		make_atom(&tmp, host_is_unix() ? g_true_s : g_false_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "os")) {
+		cell tmp;
+		make_atom(&tmp, new_atom(q->pl, host_os()));
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "occurs_check")) {
 		cell tmp;
@@ -2831,6 +2921,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 		|| !CMP_STRING_TO_CSTR(q, p1, "version_git")
 		|| !CMP_STRING_TO_CSTR(q, p1, "encoding")
 		|| !CMP_STRING_TO_CSTR(q, p1, "unix")
+		|| !CMP_STRING_TO_CSTR(q, p1, "os")
 		|| !CMP_STRING_TO_CSTR(q, p1, "threads")
 #if USE_THREADS
 		|| !CMP_STRING_TO_CSTR(q, p1, "hardware_threads")
@@ -6737,7 +6828,8 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "debug", m->flags.debug?"on":"off");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unknown", m->flags.unknown == UNK_ERROR?"error":m->flags.unknown == UNK_WARNING?"warning":m->flags.unknown == UNK_CHANGEABLE?"changeable":"fail");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "encoding", "'UTF-8'");
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", "true");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", host_is_unix()?"true":"false");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "os", host_os());
 #if USE_THREADS
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "hardware_threads", 4);
