@@ -217,9 +217,18 @@ Three notes on where it lives:
   do nothing. Hard-gating them would mean compiling `src/parser.o` twice as
   well, which doubles the fragile surface of §5's build for no behavioural gain.
 
-The writer still prints `'()'(close)` rather than `close()`. That is honest —
-the term really is a compound of arity 1 — and nothing in the interface reads
-its own output back.
+The writer completes the round trip under the same flag: `'()'(close)` prints as
+`close()`, so a term read that way writes back as itself. **[checked]** All four
+of `write/1`, `print/1`, `writeq/1` and `write_canonical/1` agree, quoted
+functors survive (`'hello world'()` reads back), and the special case is narrow —
+it applies only when the single argument is an atom, so `'()'(1)` still prints as
+`'()'(1)` rather than the unreadable `1()`. With the flag off, `'()'(close)`
+prints as itself, which is the only form that reads back there.
+
+`tests/misc/empty_args.pl` covers the flag on its own account, since none of this
+is Janus-specific: the default, the syntax error without it, the term identity
+with it, the round trip through every write form, and the things that must not
+change — ordinary compounds, atoms, lists, curly terms, and bare `()`.
 
 ---
 

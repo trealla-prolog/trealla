@@ -1591,6 +1591,26 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	// ATOM / COMPOUND — choose ISO f/e3 vs h
 	const char *src = !is_ref(c) ? C_STR(q, c) : "_";
 	size_t src_len = !is_ref(c) ? C_STRLEN(q, c) : 1;
+
+	// '()'(foo) writes as foo(), so a term read under the empty_args
+	// flag reads back as itself. Only under the flag: with it off, foo()
+	// would not read back at all, and '()'(foo) - which always does - is
+	// the honest output. The argument has to be an atom for the same
+	// reason; '()'(1) would print as 1(), which reads back as nothing.
+
+	if ((c->arity == 1) && is_interned(c) && (src_len == 2)
+		&& !strcmp(src, "()") && q->st.m->flags.empty_args) {
+		cell *arg = FIRST_ARG(c);
+		pl_ctx arg_ctx = c_ctx;
+		arg = deref_if(q, running, arg, &arg_ctx);
+
+		if (is_interned(arg) && !arg->arity) {
+			print_term_dispatch(q, arg, arg_ctx, running, 0, depth+1, visited);
+			emit(q, "()");
+			q->last_thing = WAS_OTHER;
+			return true;
+		}
+	}
 	unsigned my_specifier = 0;
 	unsigned my_priority = match_op(q->st.m, src, &my_specifier, c->arity);
 
