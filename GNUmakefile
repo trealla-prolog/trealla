@@ -474,7 +474,8 @@ janus-conformance:
 
 janus-test:
 	@$(JANUS_BUILT)
-	@./tests/janus/run.sh 2>&1 | tee tmp.janus.out; \
+	@./tests/janus/run.sh > tmp.janus.out 2>&1; \
+	cat tmp.janus.out; \
 	if diff -a --strip-trailing-cr tests/janus/run.expected tmp.janus.out \
 		> tmp.janus.diff 2>&1; then \
 		rm -f tmp.janus.out tmp.janus.diff; \
