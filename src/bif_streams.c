@@ -6270,6 +6270,10 @@ static bool bif_sys_capture_output_0(query *q)
 	return true;
 }
 
+// A capture that caught nothing is the empty character list, not the
+// empty atom: make_stringn() maps a zero length to '', which is what
+// the atom and string builtins want but not a list of characters.
+
 static bool bif_sys_capture_output_to_chars_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -6278,7 +6282,12 @@ static bool bif_sys_capture_output_to_chars_1(query *q)
 	const char *src = SB_cstr(str->sb);
 	size_t len = SB_strlen(str->sb);
 	cell tmp;
-	make_stringn(&tmp, src, len);
+
+	if (len)
+		make_stringn(&tmp, src, len);
+	else
+		make_atom(&tmp, g_nil_s);
+
 	str->is_memory = false;
 	SB_free(str->sb);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
@@ -6324,7 +6333,12 @@ static bool bif_sys_capture_error_to_chars_1(query *q)
 	const char *src = SB_cstr(str->sb);
 	size_t len = SB_strlen(str->sb);
 	cell tmp;
-	make_stringn(&tmp, src, len);
+
+	if (len)
+		make_stringn(&tmp, src, len);
+	else
+		make_atom(&tmp, g_nil_s);
+
 	str->is_memory = false;
 	SB_free(str->sb);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
