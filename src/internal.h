@@ -687,6 +687,18 @@ struct stream_ {
 	bool is_alias:1;
 };
 
+// Some hosts have no POSIX per-thread timer to arm. Windows and WASI
+// have no such API at all; on OpenBSD and NetBSD timer_create() is
+// there but a limit armed through it never fires - NetBSD's SIGEV_THREAD
+// notification never arrives, so call_with_time_limit/2 was silently no
+// limit at all and a nonterminating goal ran until the test runner
+// killed it. Those hosts poll a monotonic deadline from the normal
+// interrupt checks instead; see has_expired_alarm().
+
+#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#define USE_POLLED_ALARMS 1
+#endif
+
 typedef struct alarm_entry_ alarm_entry;
 typedef struct thread_ thread;
 
@@ -713,7 +725,7 @@ struct thread_ {
 
 	void *tabling_state;
 
-#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__)
+#ifdef USE_POLLED_ALARMS
 	alarm_entry *alarms;					// polled timers for hosts without POSIX per-thread timers
 #endif
 

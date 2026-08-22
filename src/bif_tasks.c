@@ -45,7 +45,7 @@ static void msleep(int ms)
 // this is also the worst case for how late a timeout can fire, and has
 // to stay small enough not to be noticed.
 
-#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__)
+#ifdef USE_POLLED_ALARMS
 #define SCHED_MAX_SLEEP_MS 5
 #else
 #define SCHED_MAX_SLEEP_MS 250

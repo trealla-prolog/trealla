@@ -455,7 +455,7 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__OpenBSD__)
+#ifndef USE_POLLED_ALARMS
 static void s_sigfn(int s)
 {
 	(void)s;
@@ -560,12 +560,12 @@ static bool bif_sys_alarm_2(query *q)
 	sevp.sigev_value.sival_ptr = e;
 #endif
 
-	// Not every system has a per-thread POSIX timer to give. NetBSD's
-	// SIGEV_THREAD notification is the case in hand: timer_create()
-	// fails, and leaving that unchecked armed nothing at all - a
-	// timer_settime() on an uninitialised handle, no SIGALRM ever, and
-	// call_with_time_limit/2 silently without a limit, so a
-	// nonterminating query ran until the test runner killed it.
+	// Not every system has a per-thread POSIX timer to give, and
+	// leaving a failed timer_create() unchecked armed nothing at all -
+	// a timer_settime() on an uninitialised handle, no SIGALRM ever,
+	// and call_with_time_limit/2 silently without a limit. The hosts
+	// known to have no usable one take USE_POLLED_ALARMS instead and
+	// never reach here; this is for a host that surprises us.
 	//
 	// The process-wide interval timer is the fallback, which is what
 	// the threadless build below uses throughout. There is only one of
@@ -654,7 +654,7 @@ static bool bif_sys_alarm_2(query *q)
 #endif
 #else
 
-// Windows, WASI and OpenBSD have no usable POSIX per-thread timer here.
+// Hosts with no usable POSIX per-thread timer - see USE_POLLED_ALARMS.
 // Polling a monotonic deadline from the normal interrupt checks preserves
 // nested timers and avoids a helper thread (WASI builds are deliberately
 // threadless).

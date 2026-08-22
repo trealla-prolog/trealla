@@ -71,7 +71,7 @@ void call_attrs(query *q, cell *attrs);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
-#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__)
+#ifdef USE_POLLED_ALARMS
 bool has_expired_alarm(query *q);
 #endif
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
@@ -226,7 +226,7 @@ inline static bool interrupt_pending(query *q)
 {
 	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
 
-#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__)
+#ifdef USE_POLLED_ALARMS
 	if (!self->timedout && self->alarms && has_expired_alarm(q))
 		self->timedout = 1;
 #endif
