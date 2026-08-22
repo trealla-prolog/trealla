@@ -898,6 +898,7 @@ struct parser_ {
 	prolog_flags flags;
 	query *q;
 	char *save_line, *srcptr, *error_desc;
+	const char *error_type;				// NULL means syntax_error
 	size_t token_size, n_line, pos_start;
 	unsigned line_num, line_num_start;
 	unsigned depth, read_term_slots, num_vars;

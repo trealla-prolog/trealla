@@ -355,6 +355,7 @@ void parser_reset(parser *p)
 	p->start_term = true;
 	p->error = false;
 	p->error_desc = NULL;
+	p->error_type = NULL;
 	p->cl->cidx = 0;
 	p->flags = p->m->flags;
 }
@@ -5030,6 +5031,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 						fprintf(stderr, "Error: max arity reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "max_arity";
+					p->error_type = "representation_error";
 					p->error = true;
 					break;
 				}

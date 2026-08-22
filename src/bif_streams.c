@@ -1707,7 +1707,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		}
 
 		if (str->p->error)
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "syntax_error", str->p->error_desc?str->p->error_desc:"read_term");
+			return throw_error(q, q->st.instr, q->st.cur_ctx,
+				str->p->error_type?str->p->error_type:"syntax_error",
+				str->p->error_desc?str->p->error_desc:"read_term");
 
 		str->p->line_num_start = str->p->line_num;
 		str->p->srcptr = src;
@@ -1829,7 +1831,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		}
 
 		str->p->do_read_term = false;
-		return throw_error(q, make_nil(), q->st.cur_ctx, "syntax_error", str->p->error_desc?str->p->error_desc:"read_term");
+		return throw_error(q, make_nil(), q->st.cur_ctx,
+			str->p->error_type?str->p->error_type:"syntax_error",
+			str->p->error_desc?str->p->error_desc:"read_term");
 	}
 
 	str->p->do_read_term = false;
@@ -3936,8 +3940,12 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 	}
 
 	if (str->p->error) {
+		// Note: grab these before the parser (and its strings) go away...
+		const char *error_type = str->p->error_type?str->p->error_type:"syntax_error";
+		const char *error_desc = str->p->error_desc?str->p->error_desc:"read_term";
 		parser_destroy(str->p);
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "syntax_error", str->p->error_desc?str->p->error_desc:"read_term");
+		str->p = NULL;
+		return throw_error(q, q->st.instr, q->st.cur_ctx, error_type, error_desc);
 	}
 
 	cell tmp;

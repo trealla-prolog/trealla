@@ -20,7 +20,14 @@ opt-in makefile target. See §5.
 Trealla side: `src/bif_ffi.c`, `src/trealla.h`, `src/internal.h`,
 `library/builtins.pl` (for `halt/0,1` and `atexit/0`), `GNUmakefile`.
 Facts marked **[checked]** were verified by running code during this pass, on
-Trealla v3.5.11-3 against CPython 3.14.7, macOS/arm64.
+Trealla v3.5.11-3 against CPython 3.14.7, macOS/arm64. Facts marked **[read]**
+come from reading the named source and were *not* executed — neither reference
+system runs on this machine: XSB is an unbuilt source checkout (`bin/` empty, no
+`config/`), and while `swipl` itself is built, its `janus` package is not
+installed, so `use_module(library(janus))` fails there. Every claim about how SWI
+or XSB *behaves* is therefore an inference from their source, and is marked as
+such. Anything that matters should be confirmed against a running copy before it
+is relied on.
 
 ---
 
@@ -67,7 +74,7 @@ as SWI ships `mod_swipl.c`.
 
 SWI and XSB each extend the agreed core. The intersection of their exports
 defines compatibility. Computed from `janus.pl`'s module declaration and
-`janus.P`'s `:- export` lines: **[checked]**
+`janus.P`'s `:- export` lines: **[read]**
 
 | Group | Predicates |
 |---|---|
@@ -89,7 +96,7 @@ of the agreed interface.
 **The `Options` argument is part of the core, not decoration.** Four of the
 eighteen take one — `py_call/3`, `py_func/4`, `py_dot/4`, `py_iter/3` — and one
 option is implemented by both systems, which puts it inside the agreed
-intersection rather than in either extension set: **[checked]**
+intersection rather than in either extension set: **[read]**
 
 | Option | Where | Verdict |
 |---|---|---|
@@ -309,9 +316,20 @@ branch stays, and phase 1 owns both sides of it.
 accessor" — for the same reason, so the two halves of the project can share the
 convention if not the code.
 
-**Rationals — not in the spec, and worth adding anyway.** The PIP table has no
-rational row. SWI added one, mapping `fractions.Fraction` onto its native
-rational type, and Trealla has rationals too, so the same mapping is nearly free.
+**Rationals — not in the spec because XSB has no rationals.** That is the whole
+reason the PIP table has no rational row: the agreed core is an *intersection*,
+so it records what both systems could do, not what either thought worth doing.
+XSB has no rational type and its `janus.P` has no `Fraction` handling at all
+**[read]** — a grep over an unbuilt checkout, so the weakest evidence in this
+document; SWI has rationals and duly added the mapping. Trealla is on SWI's
+side of that line, so the omission carries no argument against implementing it.
+
+The same intersection artifact explains `sizecheck/1` above. XSB's integers are
+fixed-width, so the spec's numeric model is really XSB's numeric model, and both
+places where Trealla's arithmetic is richer than the spec — unbounded integers,
+rationals — are places to follow SWI rather than the PIP.
+
+Mapping `fractions.Fraction` onto Trealla's rationals is nearly free.
 Trealla's are *atomic* — `1 rdiv 3` prints as an operator term but `compound/1`
 is false and it does not unify with `A rdiv B` — so decomposition goes through
 the evaluable functions `numerator/1` and `denominator/1`, and construction
@@ -321,9 +339,11 @@ through `X is N rdiv D`. All three carry bignums. **[checked]**
 outbound it hands `Fraction()` an `"N/D"` string, inbound it takes `str(obj)`,
 swaps `/` for `r`, and reads `1r3` back as a term. Neither half survives the trip
 here. Trealla does not read `1r3`, and `atom_number/2` rejects `'1 rdiv 3'`
-**[checked]**. More seriously, both halves hit the same decimal digit cap as the
-integers above — this is a live limitation in SWI, not only a portability
-problem:
+**[checked]**. More seriously, both halves route through the same decimal digit
+cap as the integers above. What was actually established is narrower than it
+first looks, and worth separating: SWI's `py_fraction_from_rational` builds its
+`Fraction` from a string **[read]**, and CPython rejects such a string past the
+cap **[checked]**:
 
 ```python
 >>> Fraction(str(2**40000) + '/3')
@@ -331,6 +351,11 @@ ValueError: Exceeds the limit (4300 digits) for integer string conversion
 >>> str(Fraction(2**40000, 3))
 ValueError: Exceeds the limit (4300 digits) for integer string conversion
 ```
+
+Those two together imply SWI fails on a rational with a numerator past ~4300
+digits, but that was never run against SWI and should not be repeated as though
+it had been. It is a reason to avoid the technique here, not a bug report to
+file there.
 
 Going through the parts avoids text at the rational level entirely:
 `Fraction(NumObj, DenObj)` from two already-marshalled int objects outbound, and
@@ -342,7 +367,9 @@ the `.numerator` / `.denominator` attributes inbound. Round-tripped equal over
 borrowed.
 
 **The outbound dispatch has the same subtype trap as `bool`.** `rational(3)` is
-true in Trealla, as in SWI — every integer is a rational. **[checked]** So
+true in Trealla **[checked]**, and SWI's `py_from_prolog` tests `PL_is_integer`
+inside its rational branch for the same reason **[read]** — every integer is a
+rational. So
 `integer/1` must be tested before `rational/1`, or every integer leaves as a
 `Fraction`. It is the mirror image of `bool` before `int` coming the other way,
 and the same mistake.
@@ -402,7 +429,7 @@ Everything above the marshalling layer is ordinary Prolog. Consequences:
 - `py_call/2,3` is *derived*, not primitive: XSB implements it in Prolog over
   `py_func`/`py_dot`, walking `:` chains. SWI factors it the other way round —
   there, `py_func/4` and `py_dot/4` are one-line calls to `py_call/3`
-  **[checked]** — so this is a choice rather than a given. XSB's direction is the
+  **[read]** — so this is a choice rather than a given. XSB's direction is the
   one to copy, because it leaves the two primitives where the FFI already is.
   One consequence: the dispatcher pattern-matches on the object representation
   (XSB on `pyObj(O)`, us on `'$py_obj'/1`), so the term shape chosen in §3 leaks
@@ -743,9 +770,10 @@ The §3 table, both directions, recursive. The bulk of the Prolog, and everythin
 later sits on it. Fix the reference-ownership rule of §3 here and write it into
 the module header, classification of every entry point as new-or-borrowed
 included, and the exemplar type-object cache of §3, which every dispatch
-decision then reads. Order the dispatch as §3 gives it — `bool` before `int` inbound,
-`integer` before `rational` outbound; neither is a detail. The base-16 path of §3 is part of this phase too, not an
-optimisation to come back for: without it `math.factorial(21)` is an error.
+decision then reads. Order the dispatch as §3 gives it — `bool` before `int`
+inbound, `integer` before `rational` outbound; neither is a detail. The base-16
+path of §3 belongs here too, not to a later optimisation pass: without it
+`math.factorial(21)` is an error.
 
 Test it here too, not at phase 7. Conformance arrives far too late to be the
 first thing that exercises the marshaller, and almost every marshalling bug is
@@ -866,6 +894,12 @@ is a crash rather than a race that will be forgiven. Cheap in phase 2, where the
 call wrapper is written; expensive as a later sweep, which is why phase 4 no
 longer owns it.
 
-**Python version skew.** The C-API is stable across 3.x for what we use, but the
-*library name and location* are not. Phase 0 owns this; do not let it leak into
-the marshalling code.
+**Python version skew, in two separate places.** The *library name and location*
+vary by platform and installation; phase 0 owns that, and it must not leak into
+the marshalling code. The *C-API* is stable across 3.x for most of what we use,
+but not all of it, and both exceptions are recent: 3.11 introduced the
+`int_max_str_digits` cap that makes decimal integer exchange fail (§3), and 3.12
+replaced `PyErr_Fetch` with `PyErr_GetRaisedException` (phase 5). Neither is
+visible on the interpreter this document was written against, which is the
+reason to state the supported range and test its ends rather than infer
+stability from one machine.
