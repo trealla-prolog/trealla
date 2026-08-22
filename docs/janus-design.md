@@ -1,9 +1,11 @@
 # Janus Prolog–Python interface for Trealla — design
 
-Status: the library build of §4.3 is done and in the tree. **Phase 0 is done**
-on branch `janus` — `library/janus.pl`, the `make janus` wiring of §5, the
+Status: the library build of §4.3 is done and in the tree. **Phases 0 and 1 are
+done** on branch `janus` — `library/janus.pl`, the `make janus` wiring of §5, the
 `'$register_predicate'/4` fix of §4.4, and `tests/janus/` behind `make
-janus-test`. Phases 1 onwards are still design only.
+janus-test`. Phase 1 is the marshaller of §3, both directions, recursive, with
+the ownership rule and dispatch order as specified. Phases 2 onwards are still
+design only.
 
 Goal: a bidirectional Prolog–Python bridge presenting the *Janus* interface that
 SWI-Prolog and XSB have agreed on (established as a PIP, a Prolog Improvement
@@ -254,6 +256,14 @@ narrowest possible probe: **[checked]**
 
 Inbound is the same story from the other end — `PyLong_AsLongLong` sets
 `OverflowError` and returns -1 for anything that does not fit.
+
+One boundary the implementation found that reading would not: **Trealla's
+smallint range is asymmetric.** `is_smallint` rejects exactly
+`-9223372036854775808` while accepting `-9223372036854775807` and
+`9223372036854775807`, so the one value C would call representable in an
+`int64_t` is the one the FFI will not carry. **[checked]** The fast-path guard is
+therefore `INT64_MIN + 1`, and `INT64_MIN` itself takes the hex path, which
+handles it correctly.
 
 Nor is this reachable only by trying. §4.1's own benchmark calls
 `math.factorial(20)` = 2.4e18, which fits `int64` with one factor to spare;
@@ -743,7 +753,7 @@ Consequences worth stating:
 | Unbounded integers as Prolog terms | present **[checked]** | none |
 | Rationals both sides | present **[checked]** | §3 — `numerator/1`, `denominator/1`, `rdiv`; phase 1 |
 | Python type dispatch from Prolog | `Check` macros unreachable **[checked]** | §3 — exemplar type objects + `PyObject_IsInstance` |
-| Integers past 64 bits across the FFI | **broken**; fix demonstrated **[checked]** | §3 — base-16 slow path, Prolog only, phase 1 |
+| Integers past 64 bits across the FFI | **done** **[checked]** | §3 — base-16 slow path, phase 1 |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
 | GIL calls reachable | present **[checked]** | none |
 | Shutdown hook for `Py_Finalize` | present **[checked]** | `atexit/0`, asserted; see phase 0 |
@@ -859,6 +869,25 @@ the awkward cases deliberately — empty dict, empty list, 1-tuple, nested
 dict-in-list-in-tuple, an atom needing UTF-8, an integer past 64 bits, and
 `@true`/`@false`/`@none` — since those are exactly what a conformance suite
 written against another system will not think to probe.
+**Done.** The shape held: the exemplar type cache, the ordered dispatch, the
+base-16 integer path and the `numerator`/`denominator` route for rationals all
+worked as designed, and 50,000 round trips of a nested term leak 1 allocated
+block, which is noise. **[checked]** Two things the design did not predict, both
+found by the tests rather than by reading:
+
+- **The smallint asymmetry above.** The obvious guard, `N >= -(2^63)`, admits one
+  value that `PyLong_FromLongLong` then rejects with a `type_error`.
+- **A comma-list cannot be taken apart by running its constructor backwards.**
+  `py_comma_list([X], X) :- !.` builds `{a:1, b:2}` correctly, but in reverse the
+  cut fires on the first clause and yields the single element `[(a:1,b:2)]`, so
+  every dict with more than one key was rejected as a malformed entry. It needs a
+  separate predicate. Worth naming because the symptom — a `type_error` on a
+  perfectly good dict — points at the dict code rather than at the list utility.
+
+One deliberate narrowing: SWI translates an arbitrary *iterator* eagerly, between
+`dict` and `sequence` in its chain. Phase 1 does not, so a generator becomes an
+opaque handle; `py_iter/2` in phase 3 is what walks it, and XSB gates the eager
+behaviour behind `iter/1` anyway.
 *Largest single piece.*
 
 **Phase 2 — calling.**

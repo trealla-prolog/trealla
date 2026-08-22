@@ -1,3 +1,54 @@
+=== phase 1: marshalling ===
+scalars
+  @none                    ok
+  @true                    ok
+  @false                   ok
+  small int                ok
+  negative int             ok
+  zero                     ok
+  float                    ok
+  atom                     ok
+  atom, UTF-8              ok
+  empty atom               ok
+
+integers at and past the int64 edge
+  2^63-1                   ok
+  -2^63                    ok
+  2^63                     ok
+  2^70                     ok
+  -2^70                    ok
+  2^40000 (past the        ok
+  2^400000  digit cap)     ok
+
+rationals
+  1 rdiv 3                 ok
+  -2 rdiv 7                ok
+  (2^70) rdiv 3            ok
+  (2^40000) rdiv 3         ok
+
+containers, and the awkward ones
+  empty list               ok
+  list                     ok
+  mixed list               ok
+  empty dict is an atom    ok
+  dict                     ok
+  single-entry dict        ok
+  1-tuple                  ok
+  2-tuple                  ok
+  3-tuple                  ok
+  nested dict-in-list-in-tuple ok
+  set                      ok
+  empty set                ok
+
+opaque fallback
+  bytes stays opaque       ok
+
+errors
+instantiation_error  unbound                  
+type_error(python_term,foo(1))  unknown functor          
+domain_error(py_constant,maybe)  bad @ constant           
+
+=== phase 0: startup and shutdown ===
 found libpython
 version starts 3.
 prolog done
