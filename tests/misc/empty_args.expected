@@ -1,0 +1,18 @@
+default: off
+off, f() rejected: syntax error
+off, term prints as: '()'(foo)  reads back
+after set: on
+foo() reads as foo()
+same as '()'(foo)
+distinct from the atom foo
+compound: yes
+functor '()'/1
+on, plain: foo()  reads back
+on, quoted name: 'hello world'()  reads back
+on, nested: f(a,close(),b)  reads back
+on, non-atom arg: '()'(1)  reads back
+on, ordinary compound: foo(bar)  reads back
+on, atom: foo  reads back
+on, list: [a,b]  reads back
+on, curly: {a}  reads back
+bare () still rejected: syntax error
