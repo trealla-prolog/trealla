@@ -2236,6 +2236,37 @@ writes back as `f()`. Without it, write `'()'(f)` directly.
 
 `make janus-test` runs the acceptance suite. See `docs/janus-design.md`.
 
+The other direction — calling Prolog from Python — is a CPython extension
+module built separately. It is the only part of the project that needs
+Python *headers* rather than a libpython to `dlopen`:
+
+	make janus-py
+
+That produces `janus_trealla.so`, which links `libtrealla.a`:
+
+	import janus_trealla as janus
+
+	janus.consult("facts.pl")
+
+	janus.query_once("X is 6*7")         # {'X': 42, 'truth': True}
+	janus.query_once("fail")             # {'truth': False}
+
+	for answer in janus.query("member(X, [a,b,c])"):
+	    print(answer["X"])               # a b c
+
+	with janus.query("between(1, 1000000, X)") as q:
+	    first = next(iter(q))["X"]       # closing releases the query
+
+Answers are read through the `pl_term` API above, not scraped from what
+the engine prints, and the translation table runs in reverse: unbounded
+integers, floats, atoms as `str`, lists, `-/N` as tuples, `{k:v}` as
+dicts, `py_set/1` as sets, `@true`/`@false`/`@none`, and anything with no
+Python counterpart as its canonical text. A goal that will not parse
+raises `SyntaxError`, one that throws raises `RuntimeError`, and a goal
+that merely fails is `{'truth': False}`.
+
+`make janus-py-test` runs its acceptance suite.
+
 
 Compile to standalone
 =====================

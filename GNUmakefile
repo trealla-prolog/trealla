@@ -430,6 +430,29 @@ misc:
 # a default build has no janus module, which is the point - so this is
 # deliberately not reachable from `make test`.
 
+# The Python -> Prolog half: a CPython extension module linking
+# libtrealla.a. Separate from `make janus`, and the ONLY part of the
+# project that needs Python headers rather than a libpython to dlopen -
+# which is why it is not reachable from a plain `make` either.
+#
+# -bundle on macOS, -shared elsewhere; the module resolves the CPython
+# symbols from the interpreter that loads it, so libpython is not linked.
+
+PYINCS = $(shell python3-config --includes)
+
+ifeq ($(shell uname -s),Darwin)
+PYLDFLAGS = -bundle -undefined dynamic_lookup
+else
+PYLDFLAGS = -shared
+endif
+
+janus-py: $(LIBTREALLA)
+	$(CC) $(CFLAGS) $(PYINCS) $(PYLDFLAGS) -o janus_trealla.so \
+		src/janus_py.c $(LIBTREALLA) $(OPT) $(LDFLAGS)
+
+janus-py-test: janus-py
+	@python3 tests/janus/test_janus_py.py
+
 janus-test:
 	@./tests/janus/run.sh > tmp.janus.out 2>&1; \
 	diff -a --strip-trailing-cr tests/janus/run.expected tmp.janus.out; \
@@ -449,6 +472,7 @@ clean:
 		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		samples/embed samples/*.d samples/embed_demo.pl \
+		janus_trealla.so \
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

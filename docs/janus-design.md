@@ -9,8 +9,9 @@ the `Options` argument, and the GIL; **phase 3** is `py_iter/2,3`, the dict
 accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
 `py_is_object/1`; **phase 5** is errors; **phase 5a** is the compatibility
 surface. **Phase 6 is part done**: both `pl_query` defects are fixed and the
-term-inspection API is in `src/trealla.h`; the extension module remains, as does
-phase 7 (conformance).
+term-inspection API is in `src/trealla.h`, and the extension module is built by
+`make janus-py`. What remains is the construction side — passing Python values
+*in* as arguments — and phase 7 (conformance).
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -1213,6 +1214,28 @@ The `libtrealla` target is already done (§4.3). What remains: fix the two
 `pl_query` defects of §4.2, add the term-inspection API, then the extension
 module exposing `query`, `query_once`, `consult`, `apply`. Independent of
 everything above.
+
+**Mostly done.** `src/janus_py.c` is a CPython extension module linking
+`libtrealla.a`, built by `make janus-py` — separate from `make janus`, and the
+only part of the project needing Python headers. `consult`, `query_once` and
+`query` are implemented, the last as a proper iterator type with `close()` and
+the context-manager protocol, so abandoning a million-solution query releases it
+rather than leaving it to the interpreter's exit.
+
+Answers are read through the phase-6 `pl_term` API rather than scraped from what
+the engine prints, which is what `set_dump_vars` exists for. The §3 table runs in
+reverse, and two atoms needed the same special-casing they need going out: `[]`
+is the empty list and `{}` the empty dict, neither having a compound to be.
+
+One distinction the C API makes available and the first draft of this module
+missed: **a goal that will not parse is not a goal that failed.** `pl_query`
+reports no error for a syntax error, and `get_status` is false either way — but a
+parse failure produces no query at all, and that absence is the signal. It raises
+`SyntaxError`; a goal that throws raises `RuntimeError`; a goal that fails is
+`{'truth': False}`.
+
+Still to come: `apply/3`, and the construction side, so a Python value can be
+passed in as an argument instead of being formatted into the goal text.
 *All the C lives here.*
 
 **Phase 7 — conformance.**
