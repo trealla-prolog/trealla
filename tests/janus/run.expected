@@ -1,0 +1,6 @@
+found libpython
+version starts 3.
+prolog done
+python atexit ran
+second hook ran
+exit status 3
