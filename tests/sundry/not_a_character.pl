@@ -10,7 +10,10 @@
 % Each check states what it expects, so not_a_character.expected is a
 % list of "ok" lines and a regression reads as "FAILED got ...".
 
-tmpfile('/tmp/tpl_not_a_character.txt').
+% In the current directory, not /tmp: Windows and WASI have no such
+% path. Deleted at the end of main/0.
+
+tmpfile('tmp.not_a_character.txt').
 
 % Write Text, then the octet 0xff behind it.
 

@@ -10,7 +10,11 @@
 
 :- use_module(library(lists)).
 
-tmpfile('/tmp/tpl_csv_test.csv').
+% In the current directory, not /tmp: Windows and WASI have no such
+% path, and the runner already works from the repo root. Deleted by
+% cleanup/0 below.
+
+tmpfile('tmp.csv_test.csv').
 
 % --------------------------------------------------------------- util
 

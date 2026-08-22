@@ -10,7 +10,10 @@
 % buffer into the same one-character slot before overwriting it, so
 % ungetting after read/1 swallowed whatever the term was followed by.
 
-tmpfile('/tmp/tpl_unget_char.txt').
+% In the current directory, not /tmp: Windows and WASI have no such
+% path. Deleted at the end of main/0.
+
+tmpfile('tmp.unget_char.txt').
 
 make_file(Text) :-
 	tmpfile(F),
