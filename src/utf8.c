@@ -167,6 +167,13 @@ int get_char_utf8(const char **_src)
 		if (cnt++ > MAX_BYTES_PER_CODEPOINT)
 			return EOF;
 
+		// A lead byte may announce more continuation bytes than the
+		// buffer holds. Being liberal means accepting what is there,
+		// not reading whatever follows the terminator.
+
+		if ((cnt > 1) && !*src)
+			break;
+
 		unsigned char ch = *src++;
 
 		if ((ch & 0b11111100) == 0b11111100) {
@@ -265,6 +272,29 @@ int xgetc_utf8(void* p0, void *p1)
 		return UTF8_INVALID;
 
 	return (int)n;
+}
+
+// The strict decoder over a NUL-terminated buffer: the in-memory
+// counterpart of xgetc_utf8(), for a buffer holding data that came
+// from outside - a line the parser read from a stream - rather than
+// text the system built itself. get_char_utf8() is liberal and so can
+// never say "not a character"; these can, and neither reads past the
+// terminator.
+
+static int getc_str(void *p)
+{
+	const char **src = (const char**)p;
+	return **src ? (unsigned char)*(*src)++ : EOF;
+}
+
+int get_char_utf8_strict(const char **src)
+{
+	return xgetc_utf8(getc_str, src);
+}
+
+int peek_char_utf8_strict(const char *src)
+{
+	return xgetc_utf8(getc_str, &src);
 }
 
 int character_at_pos(const char *buffer, size_t buflen, size_t i)

@@ -4162,6 +4162,24 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		return false;
 	}
 
+	// Where a token would start there may be no character at all: an
+	// ill-formed UTF-8 sequence is not text, so there is nothing here
+	// for a syntax to be wrong about. It is reported as the same
+	// representation error a character-level read of it gives (ISO
+	// 13211-1 8.12.1.3 i), which is what lets read/1 meet a stream's
+	// 0xff sentinel and say so (issue #1099).
+
+	if (peek_char_utf8_strict(src) == UTF8_INVALID) {
+		if (!p->do_read_term)
+			fprintf(stderr, "Error: not a character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+		p->error_desc = "character";
+		p->error_type = "representation_error";
+		p->error = true;
+		p->srcptr = (char*)src;
+		return false;
+	}
+
 	if (p->double_bar) {
 		p->double_bar = false;
 		p->is_op = true;

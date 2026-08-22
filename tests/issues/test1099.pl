@@ -102,6 +102,23 @@
 ?- read(X).
    inputs("1.\n"), X = 1, unexpected.
 
+% An ill-formed byte is no character at all, so the parser meets the
+% sentinel the way a character-level read does: with a representation
+% error rather than a syntax error, which is what lets read/1 be
+% described as waiting.
+
+?- read(_).
+   waits.
+
+% and the sentinel is still there to be found after read/1 has taken
+% the line it sits on into the parser's buffer
+
+?- read(X).
+   inputs("1."), peeks(" "), X = 1.
+
+?- read(X).
+   inputs("1. "), peeks(" "), X = 1, unexpected.
+
 % run_quads names the file as it was consulted, so the report would
 % otherwise depend on the path this was invoked with. Keep the base
 % name only.

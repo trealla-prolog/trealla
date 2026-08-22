@@ -50,6 +50,13 @@ extern const char *strrchr_utf8(const char *s, int ch);
 
 extern int get_char_utf8(const char **src);
 extern int peek_char_utf8(const char *src);
+
+// ...and the strict forms, which return UTF8_INVALID where
+// xgetc_utf8() would. For buffers holding data read from a stream,
+// where an ill-formed sequence must be rejected rather than decoded...
+
+extern int get_char_utf8_strict(const char **src);
+extern int peek_char_utf8_strict(const char *src);
 extern int put_char_utf8(char *dst, int ch);					// returns #bytes
 extern int put_len_utf8(int ch);								// returns #bytes
 extern bool is_char_utf8(const char *src);

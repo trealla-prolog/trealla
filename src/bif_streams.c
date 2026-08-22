@@ -2814,6 +2814,36 @@ static bool bif_iso_put_byte_2(query *q)
 			"representation_error", "character");					\
 	}
 
+// A character may also come from the line the parser has already read
+// off the stream, and those bytes are the stream's bytes: an
+// ill-formed sequence among them is no more a character there than it
+// is when read directly (issue #1099). The liberal in-memory decoder
+// cannot say so - it decodes 0xff to 0, and the caller then reads on
+// past the buffer and reports the end of the file - so the buffer is
+// decoded strictly here too.
+//
+// Unlike the stream, the buffer can hold an ill-formed sequence back:
+// a peek simply does not advance srcptr, so repeated peeks throw
+// again on their own and there is no invalid_pending to remember.
+
+#define TAKE_BUFFERED_CHAR(q, str)									\
+	if (!(str)->ungetch && (str)->p								\
+		&& (str)->p->srcptr && *(str)->p->srcptr) {					\
+		int _ch = get_char_utf8_strict((const char**)&(str)->p->srcptr);	\
+		CHECK_UTF8_INPUT((q), (str), _ch);							\
+		(str)->ungetch = _ch;										\
+	}
+
+#define PEEK_BUFFERED_CHAR(q, str)									\
+	if (!(str)->ungetch && (str)->p								\
+		&& (str)->p->srcptr && *(str)->p->srcptr) {					\
+		int _ch = peek_char_utf8_strict((const char*)(str)->p->srcptr);	\
+		if (_ch == UTF8_INVALID)									\
+			return throw_error((q), (q)->st.instr, (q)->st.cur_ctx,	\
+				"representation_error", "character");				\
+		(str)->ungetch = _ch;										\
+	}
+
 static bool bif_iso_get_char_1(query *q)
 {
 	GET_FIRST_ARG(p1,in_character_or_var);
@@ -2833,13 +2863,7 @@ static bool bif_iso_get_char_1(query *q)
 	}
 
 	GET_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = get_char_utf8((const char**)&str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	TAKE_BUFFERED_CHAR(q, str);
 
 	if (isatty(fileno(str->fp_in)) && !str->did_getc && !str->ungetch) {
 		fprintf(str->fp_out, "%s", PROMPT);
@@ -2915,13 +2939,7 @@ static bool bif_iso_get_char_2(query *q)
 	}
 
 	GET_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = get_char_utf8((const char**)&str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	TAKE_BUFFERED_CHAR(q, str);
 
 	if (isatty(fileno(str->fp)) && !str->did_getc && !str->ungetch) {
 		fprintf(str->fp_out, "%s", PROMPT);
@@ -2999,13 +3017,7 @@ static bool bif_iso_get_code_1(query *q)
 	}
 
 	GET_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = get_char_utf8((const char**)&str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	TAKE_BUFFERED_CHAR(q, str);
 
 	if (isatty(fileno(str->fp)) && !str->did_getc && !str->ungetch) {
 		fprintf(str->fp_out, "%s", PROMPT);
@@ -3084,13 +3096,7 @@ static bool bif_iso_get_code_2(query *q)
 	}
 
 	GET_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = get_char_utf8((const char**)&str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	TAKE_BUFFERED_CHAR(q, str);
 
 	if (isatty(fileno(str->fp)) && !str->did_getc && !str->ungetch) {
 		fprintf(str->fp_out, "%s", PROMPT);
@@ -3437,13 +3443,7 @@ static bool bif_iso_peek_char_1(query *q)
 	}
 
 	PEEK_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = peek_char_utf8((const char*)str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	PEEK_BUFFERED_CHAR(q, str);
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
@@ -3498,13 +3498,7 @@ static bool bif_iso_peek_char_2(query *q)
 	}
 
 	PEEK_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = peek_char_utf8((const char*)str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	PEEK_BUFFERED_CHAR(q, str);
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
@@ -3561,13 +3555,7 @@ static bool bif_iso_peek_code_1(query *q)
 	}
 
 	PEEK_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = peek_char_utf8((const char*)str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	PEEK_BUFFERED_CHAR(q, str);
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
@@ -3626,13 +3614,7 @@ static bool bif_iso_peek_code_2(query *q)
 	}
 
 	PEEK_UTF8_PENDING(q, str);
-
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = peek_char_utf8((const char*)str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	PEEK_BUFFERED_CHAR(q, str);
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
