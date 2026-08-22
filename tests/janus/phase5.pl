@@ -60,7 +60,9 @@ main :-
 	plerr('options not a list', py_call(builtins:str(1), _, nope)),
 	plerr('bad @ constant', py_call(builtins:str(@maybe), _)),
 	plerr('py_free of a non-object', py_free(hello)),
-	plerr('unknown module', py_call(no_such_module_qq:f(), _)),
+	% an unknown module is a Python error like any other
+	pyerr('unknown module', py_call(no_such_module_qq:f(), _),
+	      'ModuleNotFoundError'),
 
 	nl, write('the interpreter is still usable afterwards'), nl,
 	chk('a call after an error', py_call(builtins:str(42), R1), R1, '42'),

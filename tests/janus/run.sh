@@ -11,6 +11,10 @@
 # Phase 4: reference counting, py_free/1, py_is_object/1.
 # Phase 5: Python exceptions as Prolog exceptions.
 # Phase 5a: the XSB spellings, py_type/2, py_pp/1.
+#
+# Phase 7's conformance suite is NOT here: it drives third-party Python
+# fixtures that are not vendored, so its output depends on whether they
+# are installed. `make janus-conformance` runs it.
 
 TPL=${TPL:-./tpl}
 

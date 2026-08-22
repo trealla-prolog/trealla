@@ -925,13 +925,16 @@ py_gil(Goal) :-
 py_module(Name, Obj) :-
 	py_module_(Name, Obj),
 	!.
+% A failed import raises whatever Python raised - ModuleNotFoundError for
+% a module that is not there, but ImportError or SyntaxError for one that
+% is there and broken. Turning all three into
+% existence_error(python_module, Name) was wrong twice over: it discarded
+% the reason, and it reported "no such module" for a module that exists.
+
 py_module(Name, Obj) :-
 	'PyImport_ImportModule'(Name, Obj),
-	(   Obj =:= 0
-	->  'PyErr_Clear',
-	    throw(error(existence_error(python_module, Name), janus))
-	;   assertz(py_module_(Name, Obj))
-	).
+	py_check(Obj),
+	assertz(py_module_(Name, Obj)).
 
 %   py_resolve(+Expr, -Obj) is det.
 %

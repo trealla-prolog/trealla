@@ -10,7 +10,7 @@ accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
 `py_is_object/1`; **phase 5** is errors; **phase 5a** is the compatibility
 surface. **Phase 6 is part done**: both `pl_query` defects are fixed and the
 term-inspection API is in `src/trealla.h`, and the extension module is built by
-`make janus-py`. **Phase 6 is done**; phase 7 (conformance) remains.
+`make janus-py`. **All seven phases are done.**
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -1269,6 +1269,38 @@ allocated singly now and only the index of pointers grows.
 **Phase 7 — conformance.**
 Run SWI's `test_xsb_janus.pl`, which is precisely the compatibility suite for the
 common core, and XSB's `xsbtests/janus_tests`. Both are already on this machine.
+
+**Done, and it earned its place: 20 of 21 passed on the first run and the one
+failure was a real defect.** `tests/janus/conformance.pl` drives the *same*
+Python fixtures (`xsb_tests/*.py`) the SWI suite does, so what is compared is
+this implementation against theirs rather than against itself. `make
+janus-conformance` runs it; it is not part of `make janus-test`, because the
+fixtures are third-party and not vendored, and it reports a skip rather than a
+failure when they are absent.
+
+**It could not run unmodified, and §2a was only part of the reason.** The
+`empty_args` flag handled the `f()` syntax as intended, but four other things
+needed adapting, none of them about the agreed interface:
+
+- it is written for `plunit`;
+- its expected dicts are SWI's native `py{k:v}`, not the `{k:v}` the interface
+  specifies and this side produces;
+- it reads error text through SWI's `message_to_string/2`;
+- `min_tagged_integer` and `max_tagged_integer` are SWI flags. Trealla's
+  integers are unbounded, so the boundary worth testing is the FFI's — the
+  smallint asymmetry of §3.
+
+The test content is otherwise unchanged, and every expectation that differs
+differs because the systems do.
+
+**The defect it found.** `py_module/2` caught a failed import and threw
+`existence_error(python_module, Name)`. That is wrong twice: it discards the
+reason, and it says "no such module" for a module that exists but failed to load
+— an `ImportError` or a `SyntaxError` inside the module reported as absence. It
+now lets the real exception through, which is what phase 5's rule says anyway.
+Two earlier tests pinned the old behaviour and were updated; conformance is
+exactly the kind of test that catches a rule applied everywhere except one
+place.
 *The real acceptance test.*
 
 ---

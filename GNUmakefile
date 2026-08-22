@@ -453,12 +453,39 @@ janus-py: $(LIBTREALLA)
 janus-py-test: janus-py
 	@python3 tests/janus/test_janus_py.py
 
+# Both janus test targets run against whatever ./tpl is, and a default
+# build has no janus module - which shows up as every phase failing at
+# once, a long way from the cause. Say so instead.
+
+JANUS_BUILT = ./tpl -q -g "(catch(use_module(library(janus)),_,fail)->halt(0);halt(1))" \
+	2>/dev/null || { echo "this ./tpl has no janus module - run 'make janus' first"; exit 1; }
+
+# Phase 7. Drives the Python fixtures from SWI's swipy package, which are
+# third-party and not vendored, so this is separate from janus-test and
+# reports a skip rather than a failure when they are absent. Point
+# JANUS_XSB_TESTS at them if they are somewhere unusual.
+
+janus-conformance:
+	@$(JANUS_BUILT)
+	@./tpl -q -f tests/janus/conformance.pl -g "main,halt" </dev/null
+
+# The per-test results are shown as they run; the diff against
+# run.expected is the check, and only appears when something differs.
+
 janus-test:
-	@./tests/janus/run.sh > tmp.janus.out 2>&1; \
-	diff -a --strip-trailing-cr tests/janus/run.expected tmp.janus.out; \
-	rc=$$?; rm -f tmp.janus.out; \
-	if [ $$rc -eq 0 ]; then echo "janus: ok"; else echo "janus: FAILED"; fi; \
-	exit $$rc
+	@$(JANUS_BUILT)
+	@./tests/janus/run.sh 2>&1 | tee tmp.janus.out; \
+	if diff -a --strip-trailing-cr tests/janus/run.expected tmp.janus.out \
+		> tmp.janus.diff 2>&1; then \
+		rm -f tmp.janus.out tmp.janus.diff; \
+		echo; echo "janus: ok"; \
+	else \
+		echo; \
+		echo "janus: FAILED - differs from tests/janus/run.expected:"; \
+		cat tmp.janus.diff; \
+		rm -f tmp.janus.out tmp.janus.diff; \
+		exit 1; \
+	fi
 
 slow:
 	./tests/run_slow.sh
@@ -472,7 +499,7 @@ clean:
 		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		samples/embed samples/*.d samples/embed_demo.pl \
-		janus_trealla.so \
+		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

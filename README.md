@@ -2277,6 +2277,11 @@ hex, in both directions.
 
 `make janus-py-test` runs its acceptance suite.
 
+`make janus-conformance` runs a port of the shared XSB/SWI compatibility
+suite against that suite's own Python fixtures. It needs those fixtures,
+which are not shipped here — set `JANUS_XSB_TESTS` to the `xsb_tests`
+directory of SWI's swipy package, or it reports a skip.
+
 
 Compile to standalone
 =====================

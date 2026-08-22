@@ -80,6 +80,8 @@ main :-
 	err('options not a list', py_call(builtins:int(1), _, no_such_option)),
 
 	nl, write('errors'), nl,
+	% a failed import reports what Python raised, not a Prolog
+	% existence_error that would hide an ImportError behind it
 	err('no such module', py_call(no_such_module_xyz:f(), _)),
 	err('no such attribute', py_call(math:no_such_attr, _)),
 	err('unbound call', py_call(_, _)),

@@ -63,7 +63,7 @@ py_call and : chains
   dict round trip through Python ok
 
 py_dot on an object
-existence_error(python_module,hello)  bare atom is a module        
+python_error('ModuleNotFoundError','No module named \'hello\'')  bare atom is a module        
   method on a handle           ok
 
 keyword arguments
@@ -87,7 +87,7 @@ domain_error(py_option,no_such_option(x))  unknown option
 type_error(list,no_such_option)  options not a list           
 
 errors
-existence_error(python_module,no_such_module_xyz)  no such module               
+python_error('ModuleNotFoundError','No module named \'no_such_module_xyz\'')  no such module               
 python_error('AttributeError','module \'math\' has no attribute \'no_such_attr\'')  no such attribute            
 instantiation_error  unbound call                 
 
@@ -178,7 +178,7 @@ domain_error(py_option,nope(x))  bad option
 type_error(list,nope)  options not a list           
 domain_error(py_constant,maybe)  bad @ constant               
 type_error(py_object,hello)  py_free of a non-object      
-existence_error(python_module,no_such_module_qq)  unknown module               
+  unknown module               ModuleNotFoundError: No module named 'no_such_module_qq'
 
 the interpreter is still usable afterwards
   a call after an error        ok
