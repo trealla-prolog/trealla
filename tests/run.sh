@@ -32,7 +32,7 @@ describe_rc() {
 	esac
 }
 
-for source in tests/tests/* tests/issues*/*
+for source in tests/tests/* tests/issues*/* tests/sundry/*
 
 do
 	case "$source" in

@@ -1,0 +1,7 @@
+get_char ok
+peek_char ok
+read ok
+read_then_get ok
+read_then_get2 ok
+peek_twice ok
+read_accented ok
