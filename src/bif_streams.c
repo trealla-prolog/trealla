@@ -3274,6 +3274,38 @@ static bool bif_iso_get_byte_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+// The argument is a character, not its code - the type check is
+// in_character - so the code point comes out of the atom the way
+// put_char/2 takes it. get_smallint() read the val_int arm of the
+// cell's union instead, which for an atom is its offset in the symbol
+// table: unget_char(S, a) pushed back U+6101, wherever 'a' happened to
+// sit.
+//
+// One character can be held back at a time, str->ungetch being a
+// single code point, so ungetting twice without an intervening read
+// keeps only the second.
+
+static bool do_unget_char(query *q, stream *str, cell *p1, pl_ctx p1_ctx)
+{
+	// in_character admits end_of_file, and a get_char/2 that reported
+	// it consumed nothing, so putting it back restores nothing: the
+	// stream is left exactly as it is, rather than having a genuine
+	// end-of-file state cleared under it.
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "end_of_file"))
+		return true;
+
+	const char *src = C_STR(q, p1);
+
+	if (!*src)				// '' passes the type check but is no character
+		return throw_error(q, p1, p1_ctx, "type_error", "in_character");
+
+	str->did_getc = false;
+	str->at_end_of_file = false;
+	str->ungetch = get_char_utf8(&src);
+	return true;
+}
+
 static bool bif_unget_char_1(query *q)
 {
 	GET_FIRST_ARG(p1,in_character);
@@ -3292,10 +3324,7 @@ static bool bif_unget_char_1(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,past_end_of_stream");
 	}
 
-	str->did_getc = false;
-	str->at_end_of_file = false;
-	str->ungetch = get_smallint(p1);
-	return true;
+	return do_unget_char(q, str, p1, p1_ctx);
 }
 
 static bool bif_unget_char_2(query *q)
@@ -3314,22 +3343,12 @@ static bool bif_unget_char_2(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "input,binary_stream");
 	}
 
-	if (!str->ungetch && str->p) {
-		if (str->p->srcptr && *str->p->srcptr) {
-			int ch = get_char_utf8((const char**)&str->p->srcptr);
-			str->ungetch = ch;
-		}
-	}
+	// Nothing is read here, so there is no character to fetch ahead
+	// into str->ungetch first: the block that did consumed one out of
+	// the parser's line buffer and then had it overwritten below,
+	// losing it.
 
-	if (isatty(fileno(str->fp)) && !str->did_getc && !str->ungetch) {
-		fprintf(str->fp_out, "%s", PROMPT);
-		fflush(str->fp_out);
-	}
-
-	str->did_getc = false;
-	str->at_end_of_file = false;
-	str->ungetch = get_smallint(p1);
-	return true;
+	return do_unget_char(q, str, p1, p1_ctx);
 }
 
 static bool bif_unget_code_1(query *q)
@@ -6869,8 +6888,8 @@ builtins g_streams_bifs[] =
 	// Other...
 
 	{"is_stream", 1, bif_is_stream_1, "+term", false, false, BLAH},
-	{"unget_char", 1, bif_unget_char_1, "+integer", true, false, BLAH},
-	{"unget_char", 2, bif_unget_char_2, "+stream,+integer", true, false, BLAH},
+	{"unget_char", 1, bif_unget_char_1, "+character", true, false, BLAH},
+	{"unget_char", 2, bif_unget_char_2, "+stream,+character", true, false, BLAH},
 	{"unget_code", 1, bif_unget_code_1, "+integer", true, false, BLAH},
 	{"unget_code", 2, bif_unget_code_2, "+stream,+integer", true, false, BLAH},
 	{"unget_byte", 1, bif_unget_byte_1, "+integer", true, false, BLAH},
