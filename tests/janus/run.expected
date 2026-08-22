@@ -94,6 +94,42 @@ instantiation_error  unbound call
 the GIL: four threads into CPython at once
   1000 calls across 4 threads  ok
 
+=== phase 3: iteration, dicts, library paths ===
+py_iter as a generator
+  range(4)                       ok
+  empty range                    ok
+  list of mixed                  ok
+  filters on a bound value       ok
+  a generator, not a list        ok
+  nested iteration               ok
+  once/1 does not leak or crash  ok
+  iteration survives an exception ok
+
+dict access, no Python involved
+  keys                           ok
+  keys of empty dict             ok
+  items                          ok
+  items of empty dict            ok
+  single-entry keys              ok
+  key enumerates                 ok
+  key of empty dict              ok
+  values by key                  ok
+  values, missing key            ok
+  values enumerates              ok
+  values by path                 ok
+  values, empty path             ok
+type_error(py_dict,notadict)  keys of a non-dict             
+
+round trip through Python
+  dict from Python then keys     ok
+
+library paths
+  py_lib_dirs is a list          ok
+  add last                       ok
+  add first                      ok
+domain_error(py_lib_dir_position,sideways)  bad position                   
+type_error(atom,123)  non-atom dir                   
+
 === phase 0: startup and shutdown ===
 found libpython
 version starts 3.

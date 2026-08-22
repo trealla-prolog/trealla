@@ -28,7 +28,11 @@
 	py_call/2, py_call/3,
 	py_func/3, py_func/4,
 	py_dot/3,  py_dot/4,
+	py_iter/2, py_iter/3,
 	py_setattr/3,
+	keys/2, key/2, values/3, items/2,
+	py_add_lib_dir/1, py_add_lib_dir/2,
+	py_lib_dirs/1,
 	py_version/0,
 	py_lib/1
 	]).
@@ -989,3 +993,180 @@ py_setattr_(On, Name, Value) :-
 		    )
 		),
 		'Py_DecRef'(Obj)).
+
+
+		 /*******************************
+		 *   PHASE 3: ITERATION         *
+		 *******************************/
+
+%   py_iter(+Call, -Value) is nondet.
+%   py_iter(+Call, -Value, +Options) is nondet.
+%
+%   Backtrack over a Python iterable, one PyIter_Next at a time. No
+%   non-deterministic foreign predicate is involved: the generator is
+%   ordinary Prolog over an iterator handle.
+%
+%   The handle is the reason for setup_call_cleanup/3. It lives across
+%   choice points, so a once/1, a cut or an exception would otherwise
+%   abandon it with nothing to release it - the likeliest leak in
+%   ordinary code, ahead of a forgotten py_free/1. Trealla runs the
+%   cleanup on exhaustion, on cut, on failure and on exception.
+
+py_iter(Call, Value) :-
+	py_iter(Call, Value, []).
+
+py_iter(Call, Value, Options) :-
+	py_mode(Options, Mode),
+	setup_call_cleanup(
+		py_iter_open(Call, Iter),
+		py_iter_value(Iter, Mode, Value),
+		py_iter_close(Iter)).
+
+py_iter_open(Call, Iter) :-
+	py_gil(py_iter_open_(Call, Iter)).
+
+py_iter_open_(Call, Iter) :-
+	py_resolve(Call, Obj),
+	setup_call_cleanup(true,
+		( 'PyObject_GetIter'(Obj, Iter), py_check(Iter) ),
+		'Py_DecRef'(Obj)).
+
+py_iter_close(Iter) :-
+	py_gil('Py_DecRef'(Iter)).
+
+py_iter_value(Iter, Mode, Value) :-
+	repeat,
+	  py_gil(py_iter_step(Iter, Mode, Step)),
+	  (   Step == end
+	  ->  !,
+	      fail
+	  ;   Step = item(Value)      % may fail, which backtracks for the next
+	  ).
+
+py_iter_step(Iter, Mode, Step) :-
+	'PyIter_Next'(Iter, Item),
+	(   Item =:= 0
+	->  Step = end
+	;   setup_call_cleanup(true, py_to_pl(Item, Mode, Value), 'Py_DecRef'(Item)),
+	    Step = item(Value)
+	).
+
+
+		 /*******************************
+		 *   PHASE 3: DICT ACCESS       *
+		 *******************************/
+
+% Pure term manipulation on the curly form of section 3 - no Python is
+% involved, and none of these starts the interpreter. The empty dict is
+% the ATOM {}, so it needs its own clause everywhere: it does not unify
+% with {Comma}, which is {}/1.
+
+%   keys(+Dict, -Keys) is det.
+
+keys({}, Keys) :-
+	!,
+	Keys = [].
+keys({Comma}, Keys) :-
+	!,
+	py_comma_keys(Comma, Keys).
+keys(Dict, _) :-
+	throw(error(type_error(py_dict, Dict), janus)).
+
+py_comma_keys((K:_, T), [K|Ks]) :-
+	!,
+	py_comma_keys(T, Ks).
+py_comma_keys(K:_, [K]).
+
+%   key(+Dict, ?Key) is nondet.
+
+key({}, _) :-
+	!,
+	fail.
+key({Comma}, Key) :-
+	!,
+	py_comma_pair(Comma, Key, _).
+key(Dict, _) :-
+	throw(error(type_error(py_dict, Dict), janus)).
+
+%   items(+Dict, -Items) is det.
+%
+%   Items is a list of Key:Value, the same shape the dict carries.
+
+items({}, Items) :-
+	!,
+	Items = [].
+items({Comma}, Items) :-
+	!,
+	py_comma_items(Comma, Items).
+items(Dict, _) :-
+	throw(error(type_error(py_dict, Dict), janus)).
+
+py_comma_items((K:V, T), [K:V|Is]) :-
+	!,
+	py_comma_items(T, Is).
+py_comma_items(K:V, [K:V]).
+
+%   values(+Dict, +KeyOrPath, ?Val) is nondet.
+%
+%   A list navigates nested dicts. A bound key is a lookup and commits
+%   to the first match; an unbound one enumerates, which is XSB's
+%   behaviour and more useful than SWI's, where an unbound key is not
+%   handled at all.
+
+values(Dict, Path, Val) :-
+	is_list(Path),
+	!,
+	py_values_path(Path, Dict, Val).
+values(Dict, Key, Val) :-
+	py_values_key(Dict, Key, Val).
+
+py_values_path([], Val, Val).
+py_values_path([K|Ks], Dict, Val) :-
+	py_values_key(Dict, K, Mid),
+	py_values_path(Ks, Mid, Val).
+
+py_values_key({}, _, _) :-
+	!,
+	fail.
+py_values_key({Comma}, Key, Val) :-
+	!,
+	(   nonvar(Key)
+	->  once(py_comma_pair(Comma, Key, Val))
+	;   py_comma_pair(Comma, Key, Val)
+	).
+py_values_key(Dict, _, _) :-
+	throw(error(type_error(py_dict, Dict), janus)).
+
+py_comma_pair((K:V, _), K, V).
+py_comma_pair((_, T), K, V) :-
+	py_comma_pair(T, K, V).
+py_comma_pair(K:V, K, V).
+
+
+		 /*******************************
+		 *   PHASE 3: LIBRARY PATHS     *
+		 *******************************/
+
+%   py_lib_dirs(-Dirs) is det.
+%
+%   sys.path, as a list of atoms.
+
+py_lib_dirs(Dirs) :-
+	py_call(sys:path, Dirs).
+
+%   py_add_lib_dir(+Dir) is det.
+%   py_add_lib_dir(+Dir, +Where) is det.
+%
+%   Where is first or last; last is the default, matching SWI.
+
+py_add_lib_dir(Dir) :-
+	py_add_lib_dir(Dir, last).
+
+py_add_lib_dir(Dir, Where) :-
+	must_be(atom, Dir),
+	(   Where == last
+	->  py_call(sys:path:append(Dir), _)
+	;   Where == first
+	->  py_call(sys:path:insert(0, Dir), _)
+	;   throw(error(domain_error(py_lib_dir_position, Where), janus))
+	).

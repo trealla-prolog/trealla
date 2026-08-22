@@ -7,6 +7,7 @@
 # Phase 0: build wiring, libpython discovery, shutdown hook.
 # Phase 1: the bi-translation table, both directions.
 # Phase 2: calling, keyword arguments, options, the GIL.
+# Phase 3: iteration, dict access, sys.path.
 
 TPL=${TPL:-./tpl}
 
@@ -20,6 +21,10 @@ $TPL -q -f tests/janus/phase1.pl -g "main,halt" </dev/null
 echo
 echo "=== phase 2: calling ==="
 $TPL -q -f tests/janus/phase2.pl -g "main,halt" </dev/null
+
+echo
+echo "=== phase 3: iteration, dicts, library paths ==="
+$TPL -q -f tests/janus/phase3.pl -g "main,halt" </dev/null
 
 echo
 echo "=== phase 0: startup and shutdown ==="

@@ -5,7 +5,8 @@ done**, and **phase 2 with them**, on branch `janus` — `library/janus.pl`, the
 `make janus` wiring of §5, the `'$register_predicate'/4` fix of §4.4, and
 `tests/janus/` behind `make janus-test`. Phase 1 is the marshaller of §3; phase 2
 is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments,
-the `Options` argument, and the GIL. Phases 3 onwards are still design only.
+the `Options` argument, and the GIL; **phase 3** is `py_iter/2,3`, the dict
+accessors, and `sys.path`. Phases 4 onwards are still design only.
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -859,7 +860,7 @@ Consequences worth stating:
 | Registering a zero-arg function | **fixed** **[checked]** | §4.4 — `iso_list_or_nil`, phase 0 |
 | Naming a versioned Windows DLL | missing | §4.4 — candidate list on `use_foreign_module/2` |
 | Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
-| Cleanup for an abandoned iterator | present **[checked]** | `setup_call_cleanup/3`, phase 3 |
+| Cleanup for an abandoned iterator | **done** **[checked]** | `setup_call_cleanup/3`, phase 3 |
 | `py_object(true)` option | **done** **[checked]** | §2 — exact-type mode, phase 2 |
 | Spelling a zero-argument call `f()` | **done** **[checked]** | §2a — `empty_args` flag, reads as `'()'(Name)`; off by default |
 | C callbacks from the FFI | absent by design | why §4.2 needs C |
@@ -1039,6 +1040,27 @@ cut or a throw abandons it with nothing to catch it — the likeliest leak in
 ordinary code, ahead of a forgotten `py_free/1`. Trealla has
 `setup_call_cleanup/3` **[checked]**; use it here rather than meeting the leak in
 phase 4.
+
+**Done, and it went in as designed** — the only phase so far with nothing to
+correct. `py_iter/2,3` is a `repeat` loop over `PyIter_Next` wrapped in
+`setup_call_cleanup/3`; the dict accessors are pure term manipulation that never
+start the interpreter; `py_add_lib_dir/1,2` and `py_lib_dirs/1` fall out of the
+phase 2 chain walker, since `py_call(sys:path:append(Dir), _)` resolves `sys`,
+then `path`, then calls `append` on the result.
+
+Two things confirmed rather than assumed: **[checked]**
+
+- Trealla's `setup_call_cleanup/3` runs the cleanup on all five endings that
+  matter here — exhaustion, cut, `once/1`, failure and exception — which is what
+  makes the iterator handle safe to hold across choice points.
+- 9,000 iterations abandoned by `once/1`, by a cut and by a throw move CPython's
+  allocated block count by 1. The leak the design warned about is closed rather
+  than merely intended to be.
+
+One deviation from SWI, in `values/3`: an unbound key enumerates rather than
+failing. SWI's clauses only match an atom key or a list path, so an unbound key
+falls through; XSB enumerates, and that is both more useful and the behaviour the
+tests here pin.
 *Needs 1.*
 
 **Phase 4 — lifetime.**
