@@ -185,6 +185,13 @@ static inline bool sb_try_putchar(stringbuf *sb, int ch)
 	*pr##_buf.dst = '\0'; 										\
 }
 
+// Drop everything past an offset taken earlier with SB_strlen()...
+
+#define SB_setlen(pr,n) {										\
+	pr##_buf.dst = pr##_buf.buf + (n);							\
+	*pr##_buf.dst = '\0';										\
+}
+
 #define SB_try_strcatn(pr,s,len) sb_try_strcatn(&pr##_buf, s, len)
 #define SB_try_putchar(pr,ch) sb_try_putchar(&pr##_buf, ch)
 

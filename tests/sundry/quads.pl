@@ -244,10 +244,32 @@ more_3 ?- member(X, [1,2,3]).
 % tests/issues/test1074.pl; a '$quad' fact can also be asserted by hand,
 % and library(quads) makes the same check on those.
 
+% run_quads names each file as it was consulted, so the report would
+% otherwise depend on where in the tree this one sits and have to be
+% reissued every time it moves. Keep the base name only, the way
+% tests/issues/test1099.pl does. 'hand-written.pl' has no directory to
+% strip and passes through unchanged.
+
+strip_dirs(Cs, Out) :- strip_dirs(Cs, [], Out).
+
+strip_dirs([], W, Out) :- reverse(W, Out).
+strip_dirs([C|Cs], W, Out) :-
+	(	C == (/)
+	->	strip_dirs(Cs, [], Out)
+	;	C == ' '
+	->	reverse([C|W], Pre), append(Pre, Out0, Out), strip_dirs(Cs, [], Out0)
+	;	C == '\n'
+	->	reverse([C|W], Pre), append(Pre, Out0, Out), strip_dirs(Cs, [], Out0)
+	;	strip_dirs(Cs, [C|W], Out)
+	).
+
 main :-
 	use_module(library(quads)),
 	assertz('$quad'(hand_1, (X=1), ['X'=X], (1 = X), 'hand-written.pl', 1)),
 	assertz('$quad'(hand_2, (Y=1), ['Y'=Y], (Y = 1, Y = 2), 'hand-written.pl', 2)),
 	assertz('$quad'(hand_3, (Z=1), ['Z'=Z], (Z = 1), 'hand-written.pl', 3)),
 	assertz('$quad'(hand_4, (V=f(W),W=1), ['V'=V,'W'=W], (V = f(W), W = 1), 'hand-written.pl', 4)),
-	run_quads.
+	with_output_to(chars(Cs), run_quads),
+	strip_dirs(Cs, Out),
+	atom_chars(A, Out),
+	write(A).

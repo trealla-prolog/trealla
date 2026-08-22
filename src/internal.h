@@ -326,6 +326,7 @@ typedef struct frame_ frame;
 typedef struct parser_ parser;
 typedef struct page_ page;
 typedef struct stream_ stream;
+typedef struct capture_ capture;
 typedef struct slot_ slot;
 typedef struct choice_ choice;
 typedef struct run_state_ run_state;
@@ -625,6 +626,18 @@ struct choice_page_ {
 
 enum { eof_action_eof_code, eof_action_error, eof_action_reset };
 
+// with_output_to/2 captures what a goal writes by making the stream
+// hold its output in memory. Captures nest, so each one records where
+// in that buffer it began: the text it captured is what was appended
+// past its mark, and taking it truncates the buffer back so that the
+// capture around it never sees it. The marks form a stack because
+// setup_call_cleanup/3 makes the pairing last-in-first-out.
+
+struct capture_ {
+	capture *prev;
+	size_t at;
+};
+
 struct stream_ {
 	union {
 		FILE *fp;
@@ -640,6 +653,7 @@ struct stream_ {
 	skiplist *alias;
 	void *sslptr;
 	parser *p;
+	capture *captures;					// innermost first, NULL when not capturing
 
 	union {
 		char srcbuf[MAX_STREAM_BUFLEN];

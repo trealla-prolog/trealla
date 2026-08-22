@@ -690,6 +690,15 @@ int tpl_close(stream *str)
 	if (str->is_memory)
 		SB_free(str->sb);
 
+	// A stream closed part-way through a with_output_to/2 still owns
+	// the marks of the captures that were running on it.
+
+	while (str->captures) {
+		capture *c = str->captures;
+		str->captures = c->prev;
+		TPL_free(c);
+	}
+
 	return ok;
 }
 

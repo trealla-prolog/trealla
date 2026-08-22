@@ -1,34 +1,34 @@
-quads: FAILED tests/sundry/quads.pl:97
+quads: FAILED quads.pl:97
    ?- member(X,[1,2]).
    expected: X=1;X=99
-quads: FAILED tests/sundry/quads.pl:103
+quads: FAILED quads.pl:103
    ?- X=1.
    expected: X=1,unexpected
-quads: FAILED tests/sundry/quads.pl:108
+quads: FAILED quads.pl:108
    ?- X=f(Y,Z),Y=Z.
    expected: X=f(Y,Y)
-quads: FAILED member_2, tests/sundry/quads.pl:126
+quads: FAILED member_2, quads.pl:126
    ?- member(X,[1,2]).
    expected: X=1;X=99
-quads: FAILED ball_1, tests/sundry/quads.pl:148
+quads: FAILED ball_1, quads.pl:148
    ?- throw(error(_A,_B)).
    expected: error(X,X)
-quads: FAILED ball_2, tests/sundry/quads.pl:154
+quads: FAILED ball_2, quads.pl:154
    ?- throw(f(A,A)).
    expected: throw(f(X,Y))
-quads: FAILED ball_3, tests/sundry/quads.pl:160
+quads: FAILED ball_3, quads.pl:160
    ?- throw(f(X)).
    expected: throw(f(X))
-quads: FAILED ball_4, tests/sundry/quads.pl:163
+quads: FAILED ball_4, quads.pl:163
    ?- throw(error(type_error(atom,[X,Y]),[])).
    expected: type_error(atom,[X,X])
-quads: FAILED outputs_4, tests/sundry/quads.pl:208
+quads: FAILED outputs_4, quads.pl:208
    ?- write(abc),nl.
    expected: outputs([n,o,p,e]),true
-quads: FAILED ellipsis_3, tests/sundry/quads.pl:222
+quads: FAILED ellipsis_3, quads.pl:222
    ?- X=1.
    expected: X=f(...)
-quads: FAILED more_3, tests/sundry/quads.pl:237
+quads: FAILED more_3, quads.pl:237
    ?- member(X,[1,2,3]).
    expected: X=9, ...
 quads: MALFORMED hand_1, hand-written.pl:1

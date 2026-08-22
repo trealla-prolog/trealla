@@ -425,6 +425,7 @@ int new_stream(prolog *pl)
 		str->is_engine = false;
 		str->is_map = false;
 		str->is_memory = false;
+		str->captures = NULL;
 		str->idx = i;
 		str->bom = false;
 		str->repo = false;
@@ -6257,18 +6258,70 @@ static bool bif_sys_put_chars_2(query *q)
 	return true;
 }
 
+// Begin a capture on a stream. Starting one inside another does not
+// stop the outer one: the two share the buffer, and the inner capture
+// remembers how much of it was already there so it can take only what
+// its own goal writes. Toggling is_memory instead - which is what this
+// did - turned capturing off on the nested call and freed the outer
+// buffer with it, so with_output_to/2 inside with_output_to/2 lost
+// both and let the text through to the real output.
+
+static bool begin_capture(query *q, stream *str)
+{
+	capture *c = TPL_malloc(sizeof(capture));
+
+	if (!c)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+
+	if (!str->captures) {
+		SB_init(str->sb);
+		str->is_memory = true;
+	}
+
+	c->at = SB_strlen(str->sb);
+	c->prev = str->captures;
+	str->captures = c;
+	return true;
+}
+
+// Where the innermost capture's text starts in the buffer.
+
+static size_t capture_start(stream *str)
+{
+	return str->captures ? str->captures->at : 0;
+}
+
+// End it, once its text has been taken: an outer capture carries on
+// with the buffer truncated to where this one began, and the last one
+// out gives the stream back to its file.
+
+static void end_capture(stream *str)
+{
+	capture *c = str->captures;
+
+	if (!c) {							// unpaired, as a toggle-off used to be
+		str->is_memory = false;
+		SB_free(str->sb);
+		return;
+	}
+
+	size_t at = c->at;
+	str->captures = c->prev;
+	TPL_free(c);
+
+	if (str->captures) {
+		SB_setlen(str->sb, at);			// the capture around this must not see it
+	} else {
+		str->is_memory = false;
+		SB_free(str->sb);
+	}
+}
+
 static bool bif_sys_capture_output_0(query *q)
 {
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-
-	if (str->is_memory) {
-		str->is_memory = false;
-		SB_free(str->sb);
-	} else
-		str->is_memory = true;
-
-	return true;
+	return begin_capture(q, str);
 }
 
 // A capture that caught nothing is the empty character list, not the
@@ -6280,8 +6333,10 @@ static bool bif_sys_capture_output_to_chars_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	const char *src = SB_cstr(str->sb);
-	size_t len = SB_strlen(str->sb);
+	size_t at = capture_start(str);
+	const char *buf = SB_cstr(str->sb);		// a conditional expression, so bind it first
+	const char *src = buf + at;
+	size_t len = SB_strlen(str->sb) - at;
 	cell tmp;
 
 	if (len)
@@ -6289,8 +6344,7 @@ static bool bif_sys_capture_output_to_chars_1(query *q)
 	else
 		make_atom(&tmp, g_nil_s);
 
-	str->is_memory = false;
-	SB_free(str->sb);
+	end_capture(str);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -6301,12 +6355,13 @@ static bool bif_sys_capture_output_to_atom_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	const char *src = SB_cstr(str->sb);
-	size_t len = SB_strlen(str->sb);
+	size_t at = capture_start(str);
+	const char *buf = SB_cstr(str->sb);		// a conditional expression, so bind it first
+	const char *src = buf + at;
+	size_t len = SB_strlen(str->sb) - at;
 	cell tmp;
 	make_cstringn(&tmp, src, len);
-	str->is_memory = false;
-	SB_free(str->sb);
+	end_capture(str);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -6316,14 +6371,7 @@ static bool bif_sys_capture_error_0(query *q)
 {
 	int n = q->pl->current_error;
 	stream *str = &q->pl->streams[n];
-
-	if (str->is_memory) {
-		str->is_memory = false;
-		SB_free(str->sb);
-	} else
-		str->is_memory = true;
-
-	return true;
+	return begin_capture(q, str);
 }
 
 static bool bif_sys_capture_error_to_chars_1(query *q)
@@ -6331,8 +6379,10 @@ static bool bif_sys_capture_error_to_chars_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	int n = q->pl->current_error;
 	stream *str = &q->pl->streams[n];
-	const char *src = SB_cstr(str->sb);
-	size_t len = SB_strlen(str->sb);
+	size_t at = capture_start(str);
+	const char *buf = SB_cstr(str->sb);		// a conditional expression, so bind it first
+	const char *src = buf + at;
+	size_t len = SB_strlen(str->sb) - at;
 	cell tmp;
 
 	if (len)
@@ -6340,8 +6390,7 @@ static bool bif_sys_capture_error_to_chars_1(query *q)
 	else
 		make_atom(&tmp, g_nil_s);
 
-	str->is_memory = false;
-	SB_free(str->sb);
+	end_capture(str);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -6352,12 +6401,13 @@ static bool bif_sys_capture_error_to_atom_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	int n = q->pl->current_error;
 	stream *str = &q->pl->streams[n];
-	const char *src = SB_cstr(str->sb);
-	size_t len = SB_strlen(str->sb);
+	size_t at = capture_start(str);
+	const char *buf = SB_cstr(str->sb);		// a conditional expression, so bind it first
+	const char *src = buf + at;
+	size_t len = SB_strlen(str->sb) - at;
 	cell tmp;
 	make_cstringn(&tmp, src, len);
-	str->is_memory = false;
-	SB_free(str->sb);
+	end_capture(str);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
