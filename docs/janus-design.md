@@ -20,14 +20,16 @@ opt-in makefile target. See §5.
 Trealla side: `src/bif_ffi.c`, `src/trealla.h`, `src/internal.h`,
 `library/builtins.pl` (for `halt/0,1` and `atexit/0`), `GNUmakefile`.
 Facts marked **[checked]** were verified by running code during this pass, on
-Trealla v3.5.11-3 against CPython 3.14.7, macOS/arm64. Facts marked **[read]**
-come from reading the named source and were *not* executed — neither reference
-system runs on this machine: XSB is an unbuilt source checkout (`bin/` empty, no
-`config/`), and while `swipl` itself is built, its `janus` package is not
-installed, so `use_module(library(janus))` fails there. Every claim about how SWI
-or XSB *behaves* is therefore an inference from their source, and is marked as
-such. Anything that matters should be confirmed against a running copy before it
-is relied on.
+Trealla v3.5.11-3 against CPython 3.14.7, macOS/arm64. Both reference systems
+were built so their behaviour could be measured rather than inferred: SWI-Prolog
+10.1.13 with the `swipy` package, in `~/swipl-devel/build-janus` (a separate
+build directory — the existing `build/` has `SWIPL_PACKAGES=OFF` and was left
+alone), and XSB 5.0.0 in `~/xsb-code/XSB`. Facts still marked **[read]** come
+from reading source that was not exercised — mostly claims about *how* an
+implementation is written rather than what it does. Three claims in an earlier
+draft of this document were inferences that turned out to be wrong when run; they
+are corrected below rather than quietly deleted, because the same reasoning would
+otherwise be repeated.
 
 ---
 
@@ -100,16 +102,35 @@ intersection rather than in either extension set: **[read]**
 
 | Option | Where | Verdict |
 |---|---|---|
-| `py_object(true)` | SWI `janus.pl`, XSB `janus_opts_1/3` | **implement** — hand back a handle instead of a translated term |
-| `sizecheck(Bool)` | XSB only | accept and ignore; it guards XSB's fixed-width integers, which the text path of §3 makes unnecessary here |
+| `py_object(true)` | SWI `janus.pl`, XSB `janus_opts_1/3` | **implement** — narrows what gets translated, see below |
+| `sizecheck(Bool)` | XSB only | accept and ignore; it guards XSB's saturating integers (§3), which Trealla does not have |
 | `iter(Bool)` | XSB only, commented "keeping around for test suite" | accept and ignore |
 | `py_string_as/1`, `py_dict_as/1` | SWI only, documented there as extensions to the PIP | out of scope |
 
-`py_object(true)` carries more weight than its size suggests: it is how a caller
-*deliberately* asks for an object reference to something that would otherwise
-translate. So handles are not merely the untranslatable residue, and §3's
-ownership rule has to say so. An unrecognised option should raise a domain
-error, which is what both systems do.
+**`py_object(true)` does not mean "give me a handle instead of a value",** which
+is what this document assumed until SWI was built and asked. It leaves the exact
+scalar types translating and turns everything else into a handle: **[checked]**
+
+| call | default | with `py_object(true)` |
+|---|---|---|
+| `int(42)` | `42` | `42` — unchanged |
+| `tuple([1,2])` | `1-2` | `1-2` — unchanged |
+| `list([1,2])` | `[1,2]` | `<py_list>(0x…)` |
+| `dict()` | `py{}` | `<py_dict>(0x…)` |
+
+That matches the source exactly — the option swaps SWI's subclass-aware
+`PyLong_Check` chain for a short `PyLong_CheckExact` one, so int, float, str and
+tuple still translate and containers no longer do. It is a *narrowing of
+translation*, not a request for a reference, and §3's ownership rule has to say
+that rather than the simpler thing.
+
+**Unknown options are silently accepted by SWI**, which is also not what this
+document assumed. Both `sizecheck(true)` and an invented `no_such_option(x)` are
+taken without complaint. **[checked]** XSB's `janus_opts_1/3` ends in a
+`domain_error` clause instead **[read]**, so the two disagree and the PIP does
+not settle it. Following XSB here is the better behaviour and costs nothing —
+but it means a goal that is quietly ignored on SWI raises here, which is worth a
+line in the module documentation.
 
 ---
 
@@ -175,7 +196,9 @@ isinstance(1, bool)    = false
 ```
 
 An int-first marshaller therefore translates `True` to `1` and never reaches the
-`@true` row. SWI guards this by testing `Py_None` by identity and `PyBool_Check`
+`@true` row. SWI gets this right, which is the standard to match:
+`py_call(builtins:bool(1), X)` gives `@true` while `py_call(builtins:int(1), X)`
+gives `1`. **[checked]** SWI guards this by testing `Py_None` by identity and `PyBool_Check`
 *before* opening its dispatch chain at all (`py_unify()`, `janus.c`). The rest of
 the order is load-bearing for the same reason — `str`, `tuple` and `list` all
 answer to `PySequence_Check`. SWI's order, worth copying wholesale:
@@ -312,6 +335,11 @@ Hex leads decimal by 1.2× to 2× wherever decimal still works at all, and the
 against the 0.7µs §4.1 measures for a complete `math.factorial(20)` call. So the
 branch stays, and phase 1 owns both sides of it.
 
+**SWI's integer half works, measured against a built copy:** `2^70`, `2^40000`
+and `-(2^400000)` all round-trip through `py_call(builtins:abs(X), Y)` intact.
+**[checked]** That is the hex path doing its job, and it is the standard the
+implementation here should meet.
+
 §4.2 reaches the same conclusion for the C API — "big integers need a text
 accessor" — for the same reason, so the two halves of the project can share the
 convention if not the code.
@@ -319,15 +347,23 @@ convention if not the code.
 **Rationals — not in the spec because XSB has no rationals.** That is the whole
 reason the PIP table has no rational row: the agreed core is an *intersection*,
 so it records what both systems could do, not what either thought worth doing.
-XSB has no rational type and its `janus.P` has no `Fraction` handling at all
-**[read]** — a grep over an unbuilt checkout, so the weakest evidence in this
-document; SWI has rationals and duly added the mapping. Trealla is on SWI's
-side of that line, so the omission carries no argument against implementing it.
+XSB has no rational type — it has no `rdiv` operator at all, so `X is 1 rdiv 3`
+does not even parse there **[checked]** — and its `janus.P` has no `Fraction`
+handling. SWI has rationals and duly added the mapping. Trealla is on SWI's side
+of that line, so the omission carries no argument against implementing it.
 
-The same intersection artifact explains `sizecheck/1` above. XSB's integers are
-fixed-width, so the spec's numeric model is really XSB's numeric model, and both
-places where Trealla's arithmetic is richer than the spec — unbounded integers,
-rationals — are places to follow SWI rather than the PIP.
+The same intersection artifact explains `sizecheck/1` above, and XSB's integers
+turn out to be worth seeing directly: **[checked]**
+
+```prolog
+| ?- Y is 2^70.
+Y = 9223372036854775807
+```
+
+Not an error — a silent saturation at `INT64_MAX`. So `sizecheck/1` guards a
+real hazard on XSB, and the spec's numeric model is XSB's numeric model. Both
+places where Trealla's arithmetic is richer than the PIP — unbounded integers,
+rationals — are places to follow SWI rather than the spec.
 
 Mapping `fractions.Fraction` onto Trealla's rationals is nearly free.
 Trealla's are *atomic* — `1 rdiv 3` prints as an operator term but `compound/1`
@@ -340,10 +376,18 @@ outbound it hands `Fraction()` an `"N/D"` string, inbound it takes `str(obj)`,
 swaps `/` for `r`, and reads `1r3` back as a term. Neither half survives the trip
 here. Trealla does not read `1r3`, and `atom_number/2` rejects `'1 rdiv 3'`
 **[checked]**. More seriously, both halves route through the same decimal digit
-cap as the integers above. What was actually established is narrower than it
-first looks, and worth separating: SWI's `py_fraction_from_rational` builds its
-`Fraction` from a string **[read]**, and CPython rejects such a string past the
-cap **[checked]**:
+cap as the integers above. An earlier draft called this an inference and warned
+against repeating it as fact; with SWI built, it is now simply a fact.
+**[checked]**
+
+```prolog
+?- X is (2^40000) rdiv 3, py_call(builtins:abs(X), Y).
+ERROR: python_error('ValueError', ...)
+```
+
+The same goal with `2^40000` as a plain integer succeeds — so it is specifically
+the rational path, which converts through `str`, and not SWI's integer handling,
+which converts through hex. The underlying refusal is CPython's:
 
 ```python
 >>> Fraction(str(2**40000) + '/3')
@@ -352,10 +396,11 @@ ValueError: Exceeds the limit (4300 digits) for integer string conversion
 ValueError: Exceeds the limit (4300 digits) for integer string conversion
 ```
 
-Those two together imply SWI fails on a rational with a numerator past ~4300
-digits, but that was never run against SWI and should not be repeated as though
-it had been. It is a reason to avoid the technique here, not a bug report to
-file there.
+So SWI's Janus translates rationals correctly only up to roughly 2^14270, and
+fails with a Python `ValueError` above it. Going through `.numerator` and
+`.denominator` as below has no such ceiling — the design here is better than the
+system it is modelled on, on this one point, and phase 7 should not treat SWI's
+behaviour as the reference for it.
 
 Going through the parts avoids text at the rational level entirely:
 `Fraction(NumObj, DenObj)` from two already-marshalled int objects outbound, and
@@ -402,9 +447,10 @@ The rule has to be fixed in phase 1 and written into the module header:
   list is precisely how a recursive marshaller walks a container, so this sits on
   the main path rather than in a corner. Each declared entry point carries its
   new-or-borrowed classification in the shim, next to its type signature.
-- An *untranslatable* object becomes a `'$py_obj'/1`, and so does anything the
-  caller asked for with `py_object(true)` (§2). That term owns exactly one
-  reference, released by `py_free/1`.
+- An *untranslatable* object becomes a `'$py_obj'/1`, and under
+  `py_object(true)` so does everything outside the exact scalar types — see the
+  measured table in §2, which is narrower than "whatever the caller asked for".
+  That term owns exactly one reference, released by `py_free/1`.
 - Freeing a handle twice, or using one after freeing, is a program error the
   same way `free()` twice is. Do not attempt to detect it by scanning the store.
 
