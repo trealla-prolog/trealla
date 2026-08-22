@@ -10,6 +10,7 @@
 # Phase 3: iteration, dict access, sys.path.
 # Phase 4: reference counting, py_free/1, py_is_object/1.
 # Phase 5: Python exceptions as Prolog exceptions.
+# Phase 5a: the XSB spellings, py_type/2, py_pp/1.
 
 TPL=${TPL:-./tpl}
 
@@ -35,6 +36,10 @@ $TPL -q -f tests/janus/phase4.pl -g "main,halt" </dev/null
 echo
 echo "=== phase 5: errors ==="
 $TPL -q -f tests/janus/phase5.pl -g "main,halt" </dev/null
+
+echo
+echo "=== phase 5a: compatibility surface ==="
+$TPL -q -f tests/janus/phase5a.pl -g "main,halt" </dev/null
 
 echo
 echo "=== phase 0: startup and shutdown ==="

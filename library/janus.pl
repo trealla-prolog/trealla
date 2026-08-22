@@ -34,6 +34,9 @@
 	keys/2, key/2, values/3, items/2,
 	py_add_lib_dir/1, py_add_lib_dir/2,
 	py_lib_dirs/1,
+	py_type/2, py_pp/1,
+	add_py_lib_dir/1, obj_dir/2, obj_dict/2, value/3,
+	janus_python_version/1, py_next/2,
 	py_version/0,
 	py_lib/1
 	]).
@@ -1390,3 +1393,114 @@ py_free(Term) :-
 
 py_refcount_(Term, Count) :-
 	py_call(sys:getrefcount(Term), Count).
+
+
+		 /*******************************
+		 *   PHASE 5a: COMPATIBILITY    *
+		 *******************************/
+
+% The six XSB spellings, and the two SWI conveniences section 2 keeps in
+% scope. Thin by design: every one of them is a line or two over what
+% phases 1-5 already do, and phase 7 runs a suite that calls them by
+% these names.
+
+%   py_type(+Term, -Type) is det.
+%
+%   The Python type name, as an atom. SWI's takes an object reference;
+%   this takes anything the marshaller can send, so py_type([1,2], T)
+%   answers list rather than erroring.
+
+%   NOTE the helper is py_type_of_/2, not py_type_/2: py_type_/2 is the
+%   dynamic fact holding the type-object cache, and adding clauses to it
+%   made py_isa/2 match them instead - which crashed every phase, not
+%   just this one.
+
+py_type(Term, Type) :-
+	py_gil(py_type_of_(Term, Type)).
+
+py_type_of_(Term, Type) :-
+	pl_to_py(Term, Obj),
+	setup_call_cleanup(true,
+		(   'PyObject_Type'(Obj, T),
+		    py_check(T),
+		    setup_call_cleanup(true, py_type_name(T, Type), 'Py_DecRef'(T))
+		),
+		'Py_DecRef'(Obj)).
+
+%   py_pp(+Term) is det.
+%
+%   Pretty-print Term the way Python would show it.
+%
+%   pformat rather than pprint: the formatted text comes back as an atom
+%   and is written by Prolog, so there is no interleaving to get wrong.
+%   Printing from the Python side would land in CPython's stdio buffer
+%   and appear out of order against Prolog's - the trap in section 8 of
+%   the design, avoided rather than worked around.
+
+py_pp(Term) :-
+	py_call(pprint:pformat(Term), Text),
+	write(Text),
+	nl.
+
+%   add_py_lib_dir(+Dir) is det.
+%
+%   XSB's spelling of py_add_lib_dir/1.
+
+add_py_lib_dir(Dir) :-
+	py_add_lib_dir(Dir).
+
+%   obj_dir(+Obj, -Dir) is det.
+%   obj_dict(+Obj, -Dict) is det.
+%
+%   XSB defines both as one py_dot each, and so do these.
+
+obj_dir(Obj, Dir) :-
+	py_dot(Obj, '()'('__dir__'), Dir).
+
+obj_dict(Obj, Dict) :-
+	py_dot(Obj, '__dict__', Dict).
+
+%   value(+Dict, +Key, -Val) is semidet.
+%
+%   The deterministic singular of values/3. XSB exports value/3 but ships
+%   no clause for it anywhere in the tree, so there is no behaviour to
+%   copy - committing to the first match is the only reading the name
+%   supports next to values/3, which enumerates.
+
+value(Dict, Key, Val) :-
+	once(values(Dict, Key, Val)).
+
+%   janus_python_version(-Version) is det.
+%
+%   The interpreter version, as an atom: '3.14.7'.
+%
+%   XSB answers something else entirely - PYTHON_BIN_QUOTED, the path of
+%   the python binary that configure found. There is no analogue here,
+%   since libpython is opened by dlopen and no binary is involved, and
+%   the name plainly describes a version. py_lib/1 is where the path
+%   lives if that is what was wanted.
+
+janus_python_version(Version) :-
+	py_gil('Py_GetVersion'(Full)),
+	(   sub_atom(Full, Before, 1, _, ' ')
+	->  sub_atom(Full, 0, Before, _, Version)
+	;   Version = Full
+	).
+
+%   py_next(+Iterator, -Value) is semidet.
+%
+%   One step of an iterator handle, failing when it is exhausted. The
+%   manual form of py_iter/2, which is what XSB means by "py_next is
+%   subsumed by py_iter": use py_iter/2 unless the stepping has to be
+%   driven from outside.
+
+py_next(Handle, Value) :-
+	(   py_is_object(Handle)
+	->  true
+	;   var(Handle)
+	->  throw(error(instantiation_error, janus))
+	;   throw(error(type_error(py_object, Handle), janus))
+	),
+	Handle = '$py_obj'(Iter),
+	py_gil(py_iter_step(Iter, full, Step)),
+	Step = item(Value).

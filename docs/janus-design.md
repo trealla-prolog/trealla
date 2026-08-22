@@ -7,8 +7,8 @@ done**, and **phase 2 with them**, on branch `janus` — `library/janus.pl`, the
 is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments,
 the `Options` argument, and the GIL; **phase 3** is `py_iter/2,3`, the dict
 accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
-`py_is_object/1`; **phase 5** is errors. Phases 5a onwards are still design
-only.
+`py_is_object/1`; **phase 5** is errors; **phase 5a** is the compatibility
+surface. Phase 6 (the C half) and phase 7 (conformance) remain.
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -1158,6 +1158,34 @@ toplevel conveniences §2 keeps in scope: `py_type/2` and `py_pp/1`
 (`py_version/0` already shipped in phase 0). Small, and easy to leave until
 phase 7 discovers it — but phase 7 runs XSB's suite, and every one of these is a
 name that suite calls.
+
+**Done**, and two of the six needed a decision rather than a translation:
+
+- **`value/3` has no definition in XSB.** It is exported from `janus.P` and no
+  clause for it exists anywhere in the tree. **[read]** With nothing to copy, it
+  is the deterministic singular of `values/3` — the only reading the name
+  supports beside a `values/3` that enumerates.
+- **`janus_python_version/1` does not return a version in XSB.** It answers
+  `PYTHON_BIN_QUOTED`, the path of the python binary configure found.
+  **[read]** There is no analogue here — `libpython` is opened by `dlopen` and no
+  binary is involved — and the name plainly describes a version, so this returns
+  `'3.14.7'`. `py_lib/1` is where the library path lives.
+
+The rest are one line each over what phases 1-5 already do: `obj_dir/2` and
+`obj_dict/2` are a `py_dot/3` apiece, exactly as XSB defines them; `py_next/2` is
+one step of the phase 3 iterator, failing at exhaustion; `add_py_lib_dir/1` is
+`py_add_lib_dir/1`. `py_type/2` reports the Python type of anything the
+marshaller can send rather than only an object reference, so `py_type([1,2], T)`
+answers `list`. `py_pp/1` goes through `pprint.pformat` and writes the result
+from Prolog, which sidesteps the two-stdio-buffers trap of §8 rather than
+managing it.
+
+One bug worth recording, because the failure was so much larger than the cause:
+naming the `py_type/2` helper `py_type_/2` collided with the *dynamic* `py_type_/2`
+holding the exemplar type cache. `py_isa/2` then matched the new clauses instead
+of the cached facts, and every phase segfaulted — including ones that never call
+`py_type/2`. A helper suffixed `_` is the convention here for internal
+predicates, and it is also the convention for the dynamic caches.
 *Needs 2 and 3.*
 
 **Phase 6 — Python → Prolog.**

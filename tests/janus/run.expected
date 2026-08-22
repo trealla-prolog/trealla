@@ -190,6 +190,43 @@ the pre-3.12 fetch path gives the same answer
   api in use                   raised_exception
   back to GetRaisedException   ValueError
 
+=== phase 5a: compatibility surface ===
+py_type
+  an integer                   ok
+  a bignum                     ok
+  a float                      ok
+  an atom                      ok
+  a list                       ok
+  a tuple                      ok
+  a dict                       ok
+  the empty dict               ok
+  a set                        ok
+  a rational                   ok
+  @true                        ok
+  @none                        ok
+  a handle                     ok
+
+py_pp
+  a dict prints as Python      ok
+  a list prints as Python      ok
+
+XSB spellings
+  add_py_lib_dir               ok
+  janus_python_version         ok
+  value/3 commits              ok
+  values/3 still enumerates    ok
+  value/3 by key               ok
+
+obj_dir and obj_dict
+  obj_dir of a list lists methods ok
+  obj_dict of an instance      ok
+
+py_next
+  steps an iterator            ok
+  fails when exhausted         ok
+type_error(py_object,hello)  py_next of a non-object      
+instantiation_error  py_next of an unbound var    
+
 === phase 0: startup and shutdown ===
 found libpython
 version starts 3.

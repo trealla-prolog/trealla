@@ -431,7 +431,7 @@ misc:
 # deliberately not reachable from `make test`.
 
 janus-test:
-	./tests/janus/run.sh > tmp.janus.out 2>&1; \
+	@./tests/janus/run.sh > tmp.janus.out 2>&1; \
 	diff -a --strip-trailing-cr tests/janus/run.expected tmp.janus.out; \
 	rc=$$?; rm -f tmp.janus.out; \
 	if [ $$rc -eq 0 ]; then echo "janus: ok"; else echo "janus: FAILED"; fi; \
