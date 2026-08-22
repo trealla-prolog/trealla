@@ -1374,6 +1374,7 @@ static bool directive_term(parser *p, cell *c)
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
 		p->m->run_init = true;
+		p->saw_initialization = true;
 		return false;
 	}
 

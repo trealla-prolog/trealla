@@ -953,6 +953,7 @@ struct parser_ {
 	bool is_command:1;
 	bool is_comment:1;
 	bool is_consulting:1;
+	bool saw_initialization:1;		// this load recorded a goal of its own
 	bool is_symbol:1;
 	bool is_string:1;
 	bool is_quoted:1;

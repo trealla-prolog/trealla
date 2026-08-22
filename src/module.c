@@ -2318,6 +2318,22 @@ rule *erase_from_db(module *m, uuid *ref)
 
 // Retract and run the initialization goals recorded while loading, in
 // the order they were seen. Shared by the two load paths below.
+//
+// run_init lives on the module, and library(builtins) and
+// library(iso_ext) have no module directive of their own, so they load
+// into whatever module is consulting them. A file that recorded a goal
+// and then used one of those would have it run at the end of *that*
+// nested load - before the rest of the file defining it had been read:
+//
+//     :- initialization(main).
+//     :- use_module(library(iso_ext)).
+//     main :- write(ran), nl.
+//
+//         Warning: Initialization goal exception:
+//             error(existence_error(procedure,main/0),main/0).
+//
+// So the callers ask the parser as well: a load runs the goals only if
+// it recorded one itself.
 
 static void run_initialization_goals(parser *p)
 {
@@ -2357,7 +2373,7 @@ module *load_text(module *m, const char *src, const char *filename)
 		p->pl->halt = false;
 		p->is_directive = true;
 
-		if (p->m->run_init) {
+		if (p->m->run_init && p->saw_initialization) {
 			run_initialization_goals(p);
 		}
 
@@ -2491,7 +2507,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 		int save = p->pl->quiet;
 		p->is_directive = true;
 
-		if (p->m->run_init && init) {
+		if (p->m->run_init && p->saw_initialization && init) {
 			run_initialization_goals(p);
 		}
 
