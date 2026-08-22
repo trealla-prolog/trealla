@@ -243,6 +243,13 @@ LIBOBJECTS +=  \
 	library/uuid.o \
 	library/when.o \
 	library/yall.o
+
+# Janus is opt-in: `make janus`, never a plain `make`. Inside the EMBED
+# block because that is where the embedded library list lives.
+
+ifdef JANUS
+LIBOBJECTS += library/janus.o
+endif
 endif
 
 SRCOBJECTS += src/imath/imath.o
@@ -380,6 +387,28 @@ compile: util/bin2c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) main.o $(OPT) $(LDFLAGS)
 	rm -f main.pl main.c main.o src/library.o
 
+# Janus: the Prolog-Python interface, off unless asked for. See
+# docs/janus-design.md.
+#
+# -DUSE_JANUS goes on one object and never on CFLAGS. Make does not track
+# flag changes, so a global define would let a plain `make`'s src/library.o
+# satisfy this target - linking library/janus.o in while g_libs[] still has
+# no janus entry, and leaving use_module(library(janus)) to fail from a
+# tree that just built it. Deleting that object either side of the link is
+# what the USE_MAIN handling in `compile:` above does, for the same reason.
+#
+# Carries no Python dependency: library/janus.pl is pure Prolog and finds
+# libpython by dlopen at run time.
+
+janus:
+	$(MAKE) JANUS=1 janus-tpl
+
+janus-tpl: $(OBJECTS)
+	rm -f src/library.o
+	$(CC) $(CFLAGS) -DUSE_JANUS=1 -o src/library.o -c src/library.c
+	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
+	rm -f src/library.o
+
 reference: tpl
 	$(PYTHON) util/gen_reference.py --in-place README.md
 
@@ -396,6 +425,17 @@ test:
 
 misc:
 	./tests/run_misc.sh
+
+# Phase 0 acceptance for library(janus). Needs a `make janus` binary -
+# a default build has no janus module, which is the point - so this is
+# deliberately not reachable from `make test`.
+
+janus-test:
+	./tests/janus/run.sh > tmp.janus.out 2>&1; \
+	diff -a --strip-trailing-cr tests/janus/run.expected tmp.janus.out; \
+	rc=$$?; rm -f tmp.janus.out; \
+	if [ $$rc -eq 0 ]; then echo "janus: ok"; else echo "janus: FAILED"; fi; \
+	exit $$rc
 
 slow:
 	./tests/run_slow.sh

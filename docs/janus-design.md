@@ -1,7 +1,9 @@
 # Janus Prolog–Python interface for Trealla — design
 
-Status: the library build of §4.3 is done and in the tree. Everything else here
-is design only.
+Status: the library build of §4.3 is done and in the tree. **Phase 0 is done**
+on branch `janus` — `library/janus.pl`, the `make janus` wiring of §5, the
+`'$register_predicate'/4` fix of §4.4, and `tests/janus/` behind `make
+janus-test`. Phases 1 onwards are still design only.
 
 Goal: a bidirectional Prolog–Python bridge presenting the *Janus* interface that
 SWI-Prolog and XSB have agreed on (established as a PIP, a Prolog Improvement
@@ -724,10 +726,11 @@ Consequences worth stating:
   directory. That is intended, and the recipe above is what makes it safe: the
   only object that differs is `src/library.o`, which exists on disk during
   neither build's resting state.
-- Going back is still a manual step. `make janus` leaves a `tpl` newer than every
-  object, so a following plain `make` reports nothing to do and the Janus-enabled
-  binary stays. `make clean` is how you get a default build back, and the janus
-  target's help text should say so.
+- Going back is automatic, which was not obvious until it was tried. The recipe
+  deletes `src/library.o` *after* linking as well as before, so a following plain
+  `make` finds that object missing, rebuilds it without the define, and relinks a
+  default `tpl`. **[checked]** No `make clean` needed in either direction: the
+  one object that distinguishes the two builds never survives either of them.
 
 ---
 
@@ -749,7 +752,7 @@ Consequences worth stating:
 | `pl_query` keeps goal strings alive | broken **[checked]** | §4.2 — blocks phase 6 |
 | Success/failure after `pl_query` | broken **[checked]** | §4.2 — blocks `query_once` |
 | Runtime library resolution | works **[checked]** | `$dlopen` + `$register_predicate`, §4.4 |
-| Registering a zero-arg function | broken **[checked]** | §4.4 — one-line fix, needed by phase 0 |
+| Registering a zero-arg function | **fixed** **[checked]** | §4.4 — `iso_list_or_nil`, phase 0 |
 | Naming a versioned Windows DLL | missing | §4.4 — candidate list on `use_foreign_module/2` |
 | Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
 | Cleanup for an abandoned iterator | present **[checked]** | `setup_call_cleanup/3`, phase 3 |
@@ -809,6 +812,34 @@ So the hook is:
 ```
 
 Ship `py_version/0` as the smoke test.
+
+**Three things this phase found the hard way**, none of them visible from
+reading, and all of which fail *silently* rather than loudly: **[checked]**
+
+- **A registered foreign predicate is reachable only from an unqualified call
+  inside the module that registered it.** `'$register_predicate'/4` puts it on
+  the prolog instance rather than in the module's table, so neither
+  `janus:'Py_GetVersion'(V)` from outside nor a bare call from `user` finds it —
+  both raise `existence_error`. Every C-API call has to live in
+  `library/janus.pl`, which is the design anyway, but it also means tests cannot
+  reach the API directly and must go through a Prolog wrapper.
+- **`Py_IsInitialized` returns *nonzero*, not 1.** Writing the guard as
+  `'Py_IsInitialized'(1)` makes it fail rather than throw, so `py_init`
+  initialises twice (harmless) and `py_finalize` quietly does nothing. The first
+  symptom is Python's buffered output vanishing at exit, which reads like the
+  stdio trap of §8 rather than a bug in the guard. Bind and compare.
+- **`assertz/1` inside a module targets that module.** `halt/0,1` call
+  `ignore(atexit)` against the global `atexit/0`, so a bare
+  `assertz((atexit :- ...))` in `library/janus.pl` creates `janus:atexit/0`,
+  which nothing ever calls. It must be `assertz(user:(atexit :- ...))`. Same
+  symptom as the previous item, which is what makes the pair confusing: two
+  independent bugs presenting as one missing flush.
+
+The acceptance test registers a Python-side `atexit` handler through
+`PyRun_SimpleString` and checks its output appears at exit — that is what proves
+`Py_FinalizeEx` genuinely ran, rather than merely being called. It also registers
+a second Prolog hook, to prove the janus clause's trailing `fail` leaves the
+chain intact, and exits 3 to prove the status survives.
 *No dependencies.*
 
 **Phase 1 — marshalling.**

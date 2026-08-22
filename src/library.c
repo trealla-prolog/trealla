@@ -94,6 +94,11 @@ extern unsigned int library_tty_pl_len;
 extern unsigned char library_yall_pl[];
 extern unsigned int library_yall_pl_len;
 
+#ifdef USE_JANUS
+extern unsigned char library_janus_pl[];
+extern unsigned int library_janus_pl_len;
+#endif
+
 #ifdef USE_MAIN
 extern unsigned char main_pl[];
 extern unsigned int main_pl_len;
@@ -122,6 +127,9 @@ library g_libs[] = {
 	 {"gsl", library_gsl_pl, &library_gsl_pl_len},
 	 {"http", library_http_pl, &library_http_pl_len},
 	 {"iso_ext", library_iso_ext_pl, &library_iso_ext_pl_len},
+#ifdef USE_JANUS
+	 {"janus", library_janus_pl, &library_janus_pl_len},
+#endif
 	 {"json", library_json_pl, &library_json_pl_len},
 	 {"lambda", library_lambda_pl, &library_lambda_pl_len},
 	 {"lists", library_lists_pl, &library_lists_pl_len},
