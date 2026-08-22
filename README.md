@@ -2223,6 +2223,22 @@ spellings `add_py_lib_dir/1`, `obj_dir/2`, `obj_dict/2`, `value/3`,
 `janus_python_version/1`, `py_next/2`, and `py_version/0`, `py_type/2`,
 `py_pp/1`.
 
+Translation follows subclasses, so a `fractions.Fraction`, a
+`collections.Counter` and a namedtuple all arrive as the right Prolog
+term without being named anywhere. What a library declares is up to the
+library, though, and numpy is not consistent with itself: `np.float64`
+and `np.str_` are subclasses of `float` and `str` and cross cleanly,
+while `np.int64`, `np.bool_` and `ndarray` are not subclasses of
+anything and arrive as opaque handles. Call `.item()` on a scalar and
+`.tolist()` on an array at the boundary:
+
+	?- py_call(numpy:mean([1,2,3]), M).       % a float
+	   M = 2.0
+	?- py_call(numpy:sum([1,2,3]), S).        % np.int64 - a handle
+	   S = '$py_obj'(...)
+	?- py_call(numpy:sum([1,2,3]), H), py_dot(H, item(), S), py_free(H).
+	   S = 6
+
 A zero-argument method call is written `f()` in both reference systems.
 ISO has no such term, so it is off by default and enabled per file:
 

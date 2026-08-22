@@ -340,6 +340,10 @@ ownership rule below.
 returns `int`, `bool`, `float`, `str`, `tuple`, `dict`, `list` as atoms.
 **[checked]**
 
+Subclass-awareness is what carries `fractions.Fraction`, `collections.Counter`
+and a namedtuple across without any of them being named here. It also has a
+limit that is not ours to set — see the numpy entry in §8.
+
 **Integers wider than 64 bits do not cross the FFI, in either direction.** This
 is the one place this document was flatly wrong, and correcting it adds work to
 phase 1. Both languages have unbounded integers; the bridge between them does
@@ -1327,6 +1331,31 @@ wrong predicate. **[checked]** Every fallible `PyObject*` has to be tested
 against 0 where it is returned, before anything else touches it. Phase 5 owns
 turning that into a proper Prolog exception, but the test itself cannot wait for
 phase 5: without it, failures surface as nonsense.
+
+**A library's scalars are not necessarily Python's scalars.** The dispatch of §3
+is subclass-aware, which is what makes a `Fraction` or a `Counter` or a
+namedtuple arrive as the right Prolog term without anyone teaching it about
+them. The limit of that is not in this code: it is whether the library declared
+its type a subclass at all. numpy is the case everyone meets first, and it is
+inconsistent with itself: **[checked]**
+
+| | subclass of the Python type? | arrives as |
+|---|---|---|
+| `np.float64` | yes | a Prolog float |
+| `np.str_` | yes | an atom |
+| `np.int64` | **no** | an opaque handle |
+| `np.bool_` | **no** | an opaque handle |
+| `ndarray` | no | an opaque handle |
+
+So `py_call(numpy:mean(L), M)` gives a number and `py_call(numpy:sum(L), S)` over
+integers gives a handle — same library, same shape of call, different outcome,
+and nothing in the translation table predicts it. There is no fix on this side
+that would not amount to special-casing one library: `.item()` on a scalar and
+`.tolist()` on an array are the boundary, and they belong in the user's code
+where the library is known.
+
+Worth saying plainly in the module documentation, because the first thing anyone
+does with this is reach for numpy.
 
 **Reference counting has no safety net.** There is no finalizer to hang
 `Py_DecRef` on, so every object crossing the boundary is manual. `py_free/1`

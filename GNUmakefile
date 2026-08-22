@@ -450,7 +450,9 @@ janus-py: $(LIBTREALLA)
 	$(CC) $(CFLAGS) $(PYINCS) $(PYLDFLAGS) -o janus_trealla.so \
 		src/janus_py.c $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
-janus-py-test: janus-py
+janus-py-test:
+	@test -f janus_trealla.so || \
+		{ echo "janus_trealla.so is not built - run 'make janus-py' first"; exit 1; }
 	@python3 tests/janus/test_janus_py.py
 
 # Both janus test targets run against whatever ./tpl is, and a default
