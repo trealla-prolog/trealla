@@ -478,6 +478,7 @@ static void s_sigfn(int s)
 typedef struct  {
 	timer_t my_timer;
 	pthread_t thread_id;
+	bool via_setitimer;			// timer_create() failed; see below
 } timer_entry;
 
 static void timer_callback(union sigval sv)
@@ -521,7 +522,15 @@ static bool bif_sys_alarm_2(query *q)
 
 		timer_entry *e = get_voidptr(p2);
 
-		if (e->thread_id)
+		// Cancel whichever was armed. timer_callback() zeroes the entry
+		// once a POSIX timer has fired and deleted itself, which is what
+		// a cleared thread_id means; a setitimer one has no callback to
+		// zero it, so its flag still stands.
+
+		if (e->via_setitimer) {
+			struct itimerval tv = {0};
+			setitimer(ITIMER_REAL, &tv, NULL);
+		} else if (e->thread_id)
 			timer_delete(e->my_timer);
 
 		TPL_free(e);
@@ -551,18 +560,42 @@ static bool bif_sys_alarm_2(query *q)
 	sevp.sigev_value.sival_ptr = e;
 #endif
 
-	timer_t my_timer;
-	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
+	// Not every system has a per-thread POSIX timer to give. NetBSD's
+	// SIGEV_THREAD notification is the case in hand: timer_create()
+	// fails, and leaving that unchecked armed nothing at all - a
+	// timer_settime() on an uninitialised handle, no SIGALRM ever, and
+	// call_with_time_limit/2 silently without a limit, so a
+	// nonterminating query ran until the test runner killed it.
+	//
+	// The process-wide interval timer is the fallback, which is what
+	// the threadless build below uses throughout. There is only one of
+	// it per process and it cannot pick out the thread that armed it,
+	// so where this path is taken two threads arming a limit at once
+	// clobber each other - tests/misc/timeout.pl is that case, and it
+	// hangs if this branch is forced on. Better than a limit that never
+	// fires, but a system that needs both this and threaded timeouts
+	// wants the polled deadlines the Windows/WASI/OpenBSD build below
+	// keeps per thread. None of it arises where timer_create() works.
 
-	e->my_timer = my_timer;
+	timer_t my_timer = {0};
 	e->thread_id = pthread_self();
+	e->via_setitimer = timer_create(CLOCK_REALTIME, &sevp, &my_timer) == -1;
 
-	struct itimerspec value = {0};
-	value.it_value.tv_sec = time_ms / 1000;
-	value.it_value.tv_nsec = (time_ms % 1000) * 1000000;   // ms -> ns
-	value.it_interval.tv_sec = 0;
-	value.it_interval.tv_nsec = 0;
-	timer_settime(my_timer, 0, &value, NULL);
+	if (e->via_setitimer) {
+		struct itimerval tv = {0};
+		tv.it_value.tv_sec = time_ms / 1000;
+		tv.it_value.tv_usec = (time_ms % 1000) * 1000;
+		setitimer(ITIMER_REAL, &tv, NULL);
+	} else {
+		e->my_timer = my_timer;
+
+		struct itimerspec value = {0};
+		value.it_value.tv_sec = time_ms / 1000;
+		value.it_value.tv_nsec = (time_ms % 1000) * 1000000;   // ms -> ns
+		value.it_interval.tv_sec = 0;
+		value.it_interval.tv_nsec = 0;
+		timer_settime(my_timer, 0, &value, NULL);
+	}
 
 	cell tmp;
 	make_ptr(&tmp, e);
