@@ -1794,6 +1794,11 @@ static bool directive_term(parser *p, cell *c)
 				p->m->flags.strict_iso = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.strict_iso = false;
+		} else if (!strcmp(C_STR(p, p1), "empty_args")) {
+			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
+				p->m->flags.empty_args = true;
+			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
+				p->m->flags.empty_args = false;
 		} else {
 			//fprintf(stderr, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
@@ -4925,6 +4930,32 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				break;
 
 			if (is_func) {
+				// f() is how both SWI and XSB spell a zero-argument
+				// call, and the Janus interface is written in it
+				// throughout. ISO has no such term and Trealla has no
+				// way to represent one - functor(X, f, 0) is the atom f
+				// - so under the empty_args flag it reads as '()'(f):
+				// an ordinary compound, distinct from the atom, that
+				// every other part of the system already understands.
+				// The functor is not a possible identifier, so nothing
+				// can collide with it.
+
+				if ((tmp_arity == 1) && p->flags.empty_args && p->last_empty_arglist) {
+					cell *arg = make_a_cell(p);
+					cell *c = p->cl->cells + save_idx;	// may have moved
+					*arg = *c;
+					arg->num_cells = 1;
+					arg->arity = 0;
+					arg->priority = 0;
+					SET_OP(arg, 0);
+					c->tag = TAG_INTERNED;
+					c->flags = 0;
+					c->priority = 0;
+					SET_OP(c, 0);
+					c->val_off = new_atom(p->pl, "()");
+					tmp_arity = 1;
+				}
+
 				cell *c = p->cl->cells + save_idx;
 				c->arity = tmp_arity;
 				c->num_cells = p->cl->cidx - save_idx;
@@ -5075,7 +5106,14 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			break;
 		}
 
-		if (!p->quote_char && p->start_term &&
+		// f() under the empty_args flag: an empty argument list is
+		// allowed for a functor, and only for a functor. Bare () stays a
+		// syntax error, as do [] spelled this way and {}.
+
+		bool empty_arglist = is_arg_processing && p->flags.empty_args
+			&& !p->quote_char && !SB_strcmp(p->token, ")");
+
+		if (!p->quote_char && p->start_term && !empty_arglist &&
 			(!SB_strcmp(p->token, "]") || !SB_strcmp(p->token, ")") || !SB_strcmp(p->token, "}"))) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, start of rule expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -5086,7 +5124,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		}
 
 		if (!p->quote_char && !SB_strcmp(p->token, ")")) {
-			if (arg_idx == p->cl->cidx) {
+			if ((arg_idx == p->cl->cidx) && !empty_arglist) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -5105,6 +5143,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			}
 
 			p->last_close = true;
+			p->last_empty_arglist = (arg_idx == p->cl->cidx);
 			p->nesting_parens--;
 			analyze(p, arg_idx, last_op=false);
 			return arity;
@@ -5444,8 +5483,15 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		query *q = query_create(p->m);
 		CHECKED(q, p->srcptr = NULL, SB_free(pr));
 
-		if (subq)
+		// A returned query outlives this call, and its goal's cells -
+		// a string literal among them - live in this parser's clause.
+		// So the parser goes with the query rather than being destroyed
+		// underneath it.
+
+		if (subq) {
 			*subq = q;
+			q->owns_top = true;
+		}
 
 		if (yield_time_in_ms > 0)
 			do_yield_at(q, yield_time_in_ms);

@@ -134,6 +134,8 @@ int get_halt_code(prolog *pl) { return pl->halt_code; }
 
 void set_trace(prolog *pl) { pl->trace = true; }
 void set_autofail(prolog *pl) { pl->autofail = true; }
+void set_dump_vars(prolog *pl, int onoff) { pl->no_dump_vars = !onoff; }
+
 void set_quiet(prolog *pl) { pl->quiet = true; }
 void set_opt(prolog *pl, int level) { pl->opt = level; }
 void set_limit(prolog *pl, int level) { pl->limit = level; }
@@ -168,9 +170,18 @@ bool pl_query(prolog *pl, const char *s, pl_sub_query **subq, unsigned int yield
 	pl->p = parser_create(pl->m);
 	if (!pl->p) return false;
 	pl->is_query = true;
-	bool ok = run(pl->p, s, true, (query**)subq, yield_time_in_ms);
+	*subq = NULL;
+	bool ok = run(pl->p, s, !pl->no_dump_vars, (query**)subq, yield_time_in_ms);
 	if (get_status(pl)) pl->m = pl->p->m;
-	parser_destroy(pl->p);
+
+	// Only ours to free if no query took it - see run(). Destroying it
+	// here regardless freed the goal's strings while the query was still
+	// reading them, so the first solution was fine and later ones read
+	// freed memory.
+
+	if (!*subq)
+		parser_destroy(pl->p);
+
 	pl->p = NULL;
 	return ok;
 }
@@ -181,12 +192,272 @@ bool pl_redo(pl_sub_query *subq)
 		return false;
 
 	query *q = (query*)subq;
+	release_pl_terms(q);				// the previous answer's views die here
 
 	if (query_redo(q))
 		return true;
 
 	query_destroy(q);
 	return false;
+}
+
+		 /*******************************
+		 *   INSPECTING AN ANSWER       *
+		 *******************************/
+
+// Handles are arena-allocated on the query and released with it, so an
+// embedder never frees one and a leak is impossible. The arena resets on
+// pl_redo, which is what makes "valid until the next redo" true rather
+// than merely advisory.
+
+// Each handle is allocated on its own and only the INDEX of pointers
+// grows. Handing out interior pointers into one growable block looks
+// tidier and is wrong: realloc moves it, and every handle the caller is
+// still holding dangles. That only bites once the block outgrows its
+// first capacity, so it survives every shallow term and crashes on a
+// nested one - which is exactly how it was found.
+
+static pl_term *new_pl_term(query *q, cell *c, pl_ctx c_ctx)
+{
+	if (!c)
+		return NULL;
+
+	if (q->terms_used == q->terms_cap) {
+		unsigned cap = q->terms_cap ? q->terms_cap * 2 : 16;
+		struct pl_term_ **tmp = realloc(q->terms, cap * sizeof(*tmp));
+		if (!tmp) return NULL;
+		q->terms = tmp;
+		q->terms_cap = cap;
+	}
+
+	pl_term *t = malloc(sizeof(struct pl_term_));
+
+	if (!t)
+		return NULL;
+
+	t->q = q;
+	t->c = c;
+	t->ctx = c_ctx;
+	q->terms[q->terms_used++] = t;
+	return t;
+}
+
+void release_pl_terms(query *q)
+{
+	for (unsigned i = 0; i < q->terms_used; i++)
+		free(q->terms[i]);
+
+	q->terms_used = 0;
+}
+
+int pl_term_type(pl_term *t)
+{
+	if (!t) return PL_TYPE_VAR;
+	cell *c = t->c;
+	if (is_var(c)) return PL_TYPE_VAR;
+	if (is_integer(c)) return PL_TYPE_INTEGER;
+	if (is_float(c)) return PL_TYPE_FLOAT;
+	if (is_string(c)) return PL_TYPE_STRING;
+	if (is_compound(c)) return PL_TYPE_COMPOUND;
+	if (is_atom(c)) return PL_TYPE_ATOM;
+	return PL_TYPE_VAR;
+}
+
+const char *pl_atom_text(pl_term *t)
+{
+	if (!t || !(is_atom(t->c) || is_string(t->c)))
+		return NULL;
+
+	return C_STR(t->q, t->c);
+}
+
+size_t pl_atom_len(pl_term *t)
+{
+	if (!t || !(is_atom(t->c) || is_string(t->c)))
+		return 0;
+
+	return C_STRLEN(t->q, t->c);
+}
+
+// Only a smallint fits. A bignum is not clamped or rounded here - it
+// says no, and pl_term_text is how it is read. Trealla's integers are
+// unbounded and an embedder that silently truncated them would be worse
+// than one that made the caller ask.
+
+bool pl_get_int64(pl_term *t, int64_t *v)
+{
+	if (!t || !is_smallint(t->c))
+		return false;
+
+	*v = get_smallint(t->c);
+	return true;
+}
+
+bool pl_get_float(pl_term *t, double *v)
+{
+	if (!t || !is_float(t->c))
+		return false;
+
+	*v = get_float(t->c);
+	return true;
+}
+
+char *pl_term_text(pl_term *t)
+{
+	if (!t)
+		return NULL;
+
+	return print_term_to_strbuf(t->q, t->c, t->ctx, 1);
+}
+
+// Radix matters more than it looks. CPython refuses to parse a decimal
+// integer over sys.get_int_max_str_digits() - 4300 by default - so a host
+// reading an unbounded Prolog integer through decimal text hits a wall
+// that base 16 does not have. The same asymmetry the Prolog side of Janus
+// has to route around going the other way.
+
+char *pl_int_text(pl_term *t, int radix)
+{
+	if (!t || !is_integer(t->c) || (radix < 2) || (radix > 36))
+		return NULL;
+
+	if (is_smallint(t->c)) {
+		char buf[80];
+		int64_t v = get_smallint(t->c), n = v;
+		bool neg = v < 0;
+		int i = 0;
+
+		if (!n)
+			buf[i++] = '0';
+
+		while (n) {
+			int d = (int)(neg ? -(n % radix) : (n % radix));
+			buf[i++] = (char)(d < 10 ? '0' + d : 'a' + d - 10);
+			n /= radix;
+		}
+
+		if (neg)
+			buf[i++] = '-';
+
+		char *out = malloc(i + 1);
+
+		if (!out)
+			return NULL;
+
+		for (int j = 0; j < i; j++)
+			out[j] = buf[i - 1 - j];
+
+		out[i] = '\0';
+		return out;
+	}
+
+	mp_result len = mp_int_string_len(&t->c->val_bigint->ival, radix);
+
+	if (len <= 0)
+		return NULL;
+
+	char *out = malloc(len);
+
+	if (!out)
+		return NULL;
+
+	if (mp_int_to_string(&t->c->val_bigint->ival, radix, out, len) != MP_OK) {
+		free(out);
+		return NULL;
+	}
+
+	return out;
+}
+
+const char *pl_functor(pl_term *t)
+{
+	if (!t || !is_interned(t->c))
+		return NULL;
+
+	return C_STR(t->q, t->c);
+}
+
+unsigned pl_arity(pl_term *t)
+{
+	return t && is_compound(t->c) ? t->c->arity : 0;
+}
+
+pl_term *pl_arg(pl_term *t, unsigned n)
+{
+	if (!t || !is_compound(t->c) || (n >= t->c->arity))
+		return NULL;
+
+	cell *c = t->c + 1;
+
+	for (unsigned i = 0; i < n; i++)
+		c += c->num_cells;
+
+	c = deref(t->q, c, t->ctx);
+	return new_pl_term(t->q, c, t->q->latest_ctx);
+}
+
+		 /*******************************
+		 *   BINDINGS OF THE ANSWER     *
+		 *******************************/
+
+// The names come from the parser that read the goal, which the query now
+// owns (see run()), and the values from frame 0's slots - the same pair
+// dump_vars/2 walks to print an answer at the toplevel.
+
+unsigned pl_num_bindings(pl_sub_query *subq)
+{
+	if (!subq)
+		return 0;
+
+	query *q = (query*)subq;
+	return q->top ? q->top->num_vars : 0;
+}
+
+const char *pl_binding_name(pl_sub_query *subq, unsigned i)
+{
+	if (!subq)
+		return NULL;
+
+	query *q = (query*)subq;
+
+	if (!q->top || (i >= q->top->num_vars))
+		return NULL;
+
+	return GET_POOL(q, q->top->vartab.off[i]);
+}
+
+pl_term *pl_binding_value(pl_sub_query *subq, unsigned i)
+{
+	if (!subq)
+		return NULL;
+
+	query *q = (query*)subq;
+
+	if (!q->top || (i >= q->top->num_vars))
+		return NULL;
+
+	const frame *f = GET_FRAME(0);
+	slot *e = get_slot(q, f, i);
+
+	if (is_empty(&e->c))
+		return NULL;					// never bound
+
+	cell *c = deref(q, &e->c, 0);
+	return new_pl_term(q, c, q->latest_ctx);
+}
+
+pl_term *pl_binding(pl_sub_query *subq, const char *name)
+{
+	unsigned n = pl_num_bindings(subq);
+
+	for (unsigned i = 0; i < n; i++) {
+		const char *s = pl_binding_name(subq, i);
+
+		if (s && !strcmp(s, name))
+			return pl_binding_value(subq, i);
+	}
+
+	return NULL;
 }
 
 bool pl_yield_at(pl_sub_query *subq, unsigned int time_in_ms)

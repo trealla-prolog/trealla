@@ -330,6 +330,15 @@ typedef struct slot_ slot;
 typedef struct choice_ choice;
 typedef struct run_state_ run_state;
 typedef struct prolog_flags_ prolog_flags;
+
+// A term handed to an embedder through src/trealla.h. Owned by the
+// query, invalidated by pl_redo/pl_done - see the header.
+
+struct pl_term_ {
+	struct query_ *q;
+	cell *c;
+	pl_ctx ctx;
+};
 typedef struct builtins_ builtins;
 typedef struct scheduler_ scheduler;
 
@@ -729,6 +738,13 @@ struct prolog_flags_ {
 	bool debug:1;
 	bool json:1;
 	bool var_prefix:1;
+
+	// Read f() as '()'(f) instead of rejecting it. Off by default, so
+	// nothing changes unless a file asks for it. Deliberately NOT behind
+	// #ifdef USE_JANUS: only src/library.o is compiled with that define,
+	// so an #ifdef here would give that one object a different
+	// prolog_flags layout from the rest of the engine.
+	bool empty_args:1;
 };
 
 typedef struct {
@@ -761,6 +777,9 @@ struct query_ {
 	module *current_m;
 	prolog *pl;
 	parser *top, *p;
+	bool owns_top;						// destroy top with the query
+	struct pl_term_ **terms;			// arena for the embedding API
+	unsigned terms_used, terms_cap;
 	slot *slots;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	void *oom_reserve;					// emergency headroom for constructing a memory error
@@ -927,6 +946,7 @@ struct parser_ {
 	bool is_op:1;
 	bool skip:1;
 	bool last_close:1;
+	bool last_empty_arglist:1;		// the arg list just closed was f()
 	bool last_neg:1;
 	bool no_fp:1;
 	bool reuse:1;
@@ -1003,6 +1023,7 @@ struct prolog_ {
 	bool def_double_quotes:1;
 	bool is_redo:1;
 	bool is_query:1;
+	bool no_dump_vars:1;				// set_dump_vars(pl, 0)
 	bool halt:1;
 	bool status:1;
 	bool error:1;

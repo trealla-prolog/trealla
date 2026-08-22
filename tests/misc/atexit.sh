@@ -9,7 +9,13 @@
 #     ends the chain and a later registration never runs. Ending with
 #     fail lets the next one through;
 #   - an exception in the hook aborts the goal before '$halt' is
-#     reached, and the requested exit status is lost.
+#     reached, and the requested exit status is lost;
+#   - a thread FINISHING is not process exit, so it must not run the
+#     hook. thread_create/3 appends '$halt' to the goal for exactly that
+#     reason - it used to append halt/0, which is ignore(atexit) then
+#     '$halt', so every thread that ended ran every registered hook.
+#     Anything registering process-level cleanup that way had it done
+#     early, and repeatedly, by whichever thread finished first.
 #
 # The last of those records current behaviour rather than endorsing it.
 # If halt/1 is ever hardened to keep its status across a throwing hook,
@@ -71,5 +77,33 @@ run "$DIR/chain.pl"
 echo "--- a succeeding clause ends the chain ---"
 run "$DIR/commit.pl"
 
+cat > "$DIR/thread.pl" <<'EOF'
+:- initialization(main).
+w :- true.
+main :-
+	assertz((atexit :- write(hook), nl, fail)),
+	thread_create(w, T, []),
+	thread_join(T, _),
+	write(joined), nl,
+	halt(7).
+EOF
+
+cat > "$DIR/thread_halt.pl" <<'EOF'
+:- initialization(main).
+w :- halt.
+main :-
+	assertz((atexit :- write(hook), nl, fail)),
+	thread_create(w, T, []),
+	thread_join(T, _),
+	write(joined), nl,
+	halt(7).
+EOF
+
 echo "--- a throwing hook: no crash, status lost ---"
 run "$DIR/throws.pl"
+
+echo "--- a thread ending does NOT run the hook ---"
+run "$DIR/thread.pl"
+
+echo "--- but halt/0 inside a thread still does ---"
+run "$DIR/thread_halt.pl"

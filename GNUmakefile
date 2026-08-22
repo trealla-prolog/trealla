@@ -243,6 +243,13 @@ LIBOBJECTS +=  \
 	library/uuid.o \
 	library/when.o \
 	library/yall.o
+
+# Janus is opt-in: `make janus`, never a plain `make`. Inside the EMBED
+# block because that is where the embedded library list lives.
+
+ifdef JANUS
+LIBOBJECTS += library/janus.o
+endif
 endif
 
 SRCOBJECTS += src/imath/imath.o
@@ -380,6 +387,28 @@ compile: util/bin2c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) main.o $(OPT) $(LDFLAGS)
 	rm -f main.pl main.c main.o src/library.o
 
+# Janus: the Prolog-Python interface, off unless asked for. See
+# docs/janus-design.md.
+#
+# -DUSE_JANUS goes on one object and never on CFLAGS. Make does not track
+# flag changes, so a global define would let a plain `make`'s src/library.o
+# satisfy this target - linking library/janus.o in while g_libs[] still has
+# no janus entry, and leaving use_module(library(janus)) to fail from a
+# tree that just built it. Deleting that object either side of the link is
+# what the USE_MAIN handling in `compile:` above does, for the same reason.
+#
+# Carries no Python dependency: library/janus.pl is pure Prolog and finds
+# libpython by dlopen at run time.
+
+janus:
+	$(MAKE) JANUS=1 janus-tpl
+
+janus-tpl: $(OBJECTS)
+	rm -f src/library.o
+	$(CC) $(CFLAGS) -DUSE_JANUS=1 -o src/library.o -c src/library.c
+	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
+	rm -f src/library.o
+
 reference: tpl
 	$(PYTHON) util/gen_reference.py --in-place README.md
 
@@ -397,6 +426,70 @@ test:
 misc:
 	./tests/run_misc.sh
 
+# Phase 0 acceptance for library(janus). Needs a `make janus` binary -
+# a default build has no janus module, which is the point - so this is
+# deliberately not reachable from `make test`.
+
+# The Python -> Prolog half: a CPython extension module linking
+# libtrealla.a. Separate from `make janus`, and the ONLY part of the
+# project that needs Python headers rather than a libpython to dlopen -
+# which is why it is not reachable from a plain `make` either.
+#
+# -bundle on macOS, -shared elsewhere; the module resolves the CPython
+# symbols from the interpreter that loads it, so libpython is not linked.
+
+PYINCS = $(shell python3-config --includes)
+
+ifeq ($(shell uname -s),Darwin)
+PYLDFLAGS = -bundle -undefined dynamic_lookup
+else
+PYLDFLAGS = -shared
+endif
+
+janus-py: $(LIBTREALLA)
+	$(CC) $(CFLAGS) $(PYINCS) $(PYLDFLAGS) -o janus_trealla.so \
+		src/janus_py.c $(LIBTREALLA) $(OPT) $(LDFLAGS)
+
+janus-py-test:
+	@test -f janus_trealla.so || \
+		{ echo "janus_trealla.so is not built - run 'make janus-py' first"; exit 1; }
+	@python3 tests/janus/test_janus_py.py
+
+# Both janus test targets run against whatever ./tpl is, and a default
+# build has no janus module - which shows up as every phase failing at
+# once, a long way from the cause. Say so instead.
+
+JANUS_BUILT = ./tpl -q -g "(catch(use_module(library(janus)),_,fail)->halt(0);halt(1))" \
+	2>/dev/null || { echo "this ./tpl has no janus module - run 'make janus' first"; exit 1; }
+
+# Phase 7. Drives the Python fixtures from SWI's swipy package, which are
+# third-party and not vendored, so this is separate from janus-test and
+# reports a skip rather than a failure when they are absent. Point
+# JANUS_XSB_TESTS at them if they are somewhere unusual.
+
+janus-conformance:
+	@$(JANUS_BUILT)
+	@./tpl -q -f tests/janus/conformance.pl -g "main,halt" </dev/null
+
+# The per-test results are shown as they run; the diff against
+# run.expected is the check, and only appears when something differs.
+
+janus-test:
+	@$(JANUS_BUILT)
+	@./tests/janus/run.sh > tmp.janus.out 2>&1; \
+	cat tmp.janus.out; \
+	if diff -a --strip-trailing-cr tests/janus/run.expected tmp.janus.out \
+		> tmp.janus.diff 2>&1; then \
+		rm -f tmp.janus.out tmp.janus.diff; \
+		echo; echo "janus: ok"; \
+	else \
+		echo; \
+		echo "janus: FAILED - differs from tests/janus/run.expected:"; \
+		cat tmp.janus.diff; \
+		rm -f tmp.janus.out tmp.janus.diff; \
+		exit 1; \
+	fi
+
 slow:
 	./tests/run_slow.sh
 
@@ -409,6 +502,7 @@ clean:
 		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		samples/embed samples/*.d samples/embed_demo.pl \
+		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

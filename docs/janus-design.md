@@ -1,7 +1,19 @@
 # Janus Prolog–Python interface for Trealla — design
 
-Status: the library build of §4.3 is done and in the tree. Everything else here
-is design only.
+Status: the library build of §4.3 is done and in the tree. **Phases 0 and 1 are
+done**, and **phase 2 with them**, on branch `janus` — `library/janus.pl`, the
+`make janus` wiring of §5, the `'$register_predicate'/4` fix of §4.4, and
+`tests/janus/` behind `make janus-test`. Phase 1 is the marshaller of §3; phase 2
+is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments,
+the `Options` argument, and the GIL; **phase 3** is `py_iter/2,3`, the dict
+accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
+`py_is_object/1`; **phase 5** is errors; **phase 5a** is the compatibility
+surface. **Phase 6 is part done**: both `pl_query` defects are fixed and the
+term-inspection API is in `src/trealla.h`, and the extension module is built by
+`make janus-py`. **All seven phases are done.**
+
+§2a covers the one place the interface could not be spelled here, and how that
+was resolved: the `empty_args` flag.
 
 Goal: a bidirectional Prolog–Python bridge presenting the *Janus* interface that
 SWI-Prolog and XSB have agreed on (established as a PIP, a Prolog Improvement
@@ -134,6 +146,97 @@ line in the module documentation.
 
 ---
 
+## 2a. The one thing that cannot be spelled here
+
+Every zero-argument method call in the Janus interface is written `f()` —
+`py_dot(Stream, close(), Return)` is from XSB's own manual, and `.upper()`,
+`.keys()`, `.sort()`, `.copy()` are the shape of ordinary Python. **Both
+reference systems parse it and Trealla cannot.** **[checked]**
+
+Both agree on what matters and disagree on almost everything else, which is
+itself useful: **[checked]**
+
+| probe | SWI 10.1.13 | XSB 5.0.0 | Trealla 3.5.25 |
+|---|---|---|---|
+| `X = close()` | parses | parses | **syntax error** |
+| `compound(close())` | true | true | — |
+| `close() == close` | **false** | **false** | — |
+| `functor(close(), N, A)` | raises `domain_error(compound_non_zero_arity, close())` | `close/0` | — |
+| `close() =.. L` | raises | `[close]` — lossy, the atom gives the same | — |
+| `functor(Y, close, 0)` | — | the **atom** `close` | the **atom** `close` |
+
+Nor is this only the reader. Trealla has no zero-arity compound to read *into*:
+`functor(X, close, 0)` yields the atom. So supporting the spec's spelling is a
+change to the term representation, not to the parser.
+
+The disagreement in the lower half of that table is the encouraging part. Both
+systems treat `f()` as a genuine term distinct from the atom, but the feature is
+*shallow* in both: SWI refuses to decompose it at all, XSB decomposes it
+inconsistently — `close() =.. [close]` while `Y =.. [close]` gives back the atom
+— and **neither can construct one programmatically.** Nothing in the Janus
+interface needs to: a zero-argument call is written by a human and read once.
+
+A bare atom cannot stand in, because `Obj:name` has to keep meaning attribute
+access — that is exactly what `math:pi` and `sys:maxsize` are, and both are in
+the tests. The distinction `()` encodes is real.
+
+**Resolved without an ISO violation: the `empty_args` flag.** A zero-arity
+compound *is* the non-conformance, so Trealla does not gain one. Instead the
+reader gains a rule, off by default, that turns the spec's syntax into an
+ordinary ISO term: **[checked]**
+
+```prolog
+:- set_prolog_flag(empty_args, true).
+
+?- X = close(), write_canonical(X).
+'()'(close)
+```
+
+`'()'(close)` is a plain compound of arity 1. It satisfies everything the
+interface needs — it parses, it is a compound, and it is distinct from the atom
+`close` — while `functor/3`, `=..` and the writer keep working on it exactly as
+they do on any other term, with no new shape to teach them. The functor is not a
+possible Python identifier, so nothing can collide with it. Written by hand,
+`'()'(sort)` and `sort()` are the same term, so both spellings work.
+
+With the flag off, which is the default in every build, `close()` is the syntax
+error it has always been. Bare `()` stays an error either way, and `[]` and `{}`
+are untouched. The full suite is unchanged: 342 pass, with the same three
+failures a `main` build has. **[checked]**
+
+Three notes on where it lives:
+
+- The flag is module-scoped like `double_quotes`, so a file that wants the syntax
+  says so itself. `library(janus)` deliberately does not turn it on globally.
+  Phase 7's conformance suites need one directive at the top rather than a
+  rewrite of every `f()` in them.
+- It is registered in **two** places, which is easy to miss: the runtime
+  `set_prolog_flag/2` in `src/bif_predicates.c`, and the parser's own directive
+  handler in `src/parser.c`, which recognises a fixed list of flags at read time
+  and silently ignores anything else. Adding it to only the first leaves the
+  directive with no effect and no diagnostic.
+- The flag bit is **not** behind `#ifdef USE_JANUS`. Only `src/library.o` is
+  compiled with that define (§5), so an `#ifdef` inside `prolog_flags_` would
+  give that one object a different struct layout from the rest of the engine.
+  The few lines of parser support are unconditional too; with the flag off they
+  do nothing. Hard-gating them would mean compiling `src/parser.o` twice as
+  well, which doubles the fragile surface of §5's build for no behavioural gain.
+
+The writer completes the round trip under the same flag: `'()'(close)` prints as
+`close()`, so a term read that way writes back as itself. **[checked]** All four
+of `write/1`, `print/1`, `writeq/1` and `write_canonical/1` agree, quoted
+functors survive (`'hello world'()` reads back), and the special case is narrow —
+it applies only when the single argument is an atom, so `'()'(1)` still prints as
+`'()'(1)` rather than the unreadable `1()`. With the flag off, `'()'(close)`
+prints as itself, which is the only form that reads back there.
+
+`tests/misc/empty_args.pl` covers the flag on its own account, since none of this
+is Janus-specific: the default, the syntax error without it, the term identity
+with it, the round trip through every write form, and the things that must not
+change — ordinary compounds, atoms, lists, curly terms, and bare `()`.
+
+---
+
 ## 3. Bi-translation
 
 Fully specified by the agreed interface (`janus-plg.tex` §"Bi-translation"), so
@@ -237,6 +340,10 @@ ownership rule below.
 returns `int`, `bool`, `float`, `str`, `tuple`, `dict`, `list` as atoms.
 **[checked]**
 
+Subclass-awareness is what carries `fractions.Fraction`, `collections.Counter`
+and a namedtuple across without any of them being named here. It also has a
+limit that is not ours to set — see the numpy entry in §8.
+
 **Integers wider than 64 bits do not cross the FFI, in either direction.** This
 is the one place this document was flatly wrong, and correcting it adds work to
 phase 1. Both languages have unbounded integers; the bridge between them does
@@ -252,6 +359,14 @@ narrowest possible probe: **[checked]**
 
 Inbound is the same story from the other end — `PyLong_AsLongLong` sets
 `OverflowError` and returns -1 for anything that does not fit.
+
+One boundary the implementation found that reading would not: **Trealla's
+smallint range is asymmetric.** `is_smallint` rejects exactly
+`-9223372036854775808` while accepting `-9223372036854775807` and
+`9223372036854775807`, so the one value C would call representable in an
+`int64_t` is the one the FFI will not carry. **[checked]** The fast-path guard is
+therefore `INT64_MIN + 1`, and `INT64_MIN` itself takes the hex path, which
+handles it correctly.
 
 Nor is this reachable only by trying. §4.1's own benchmark calls
 `math.factorial(20)` = 2.4e18, which fits `int64` with one factor to spare;
@@ -514,7 +629,7 @@ Three things are still missing, all on the critical path for this direction:
 answers reach the caller by being *printed* (`dump_vars`), not returned.
 **[checked]** This is the one genuine piece of new API design in the project.
 
-**`pl_query` frees the goal's strings before the query finishes.** It calls
+**Fixed.** **`pl_query` freed the goal's strings before the query finished.** It calls
 `parser_destroy` before returning, so a string literal in the goal is freed while
 the running query still refers to it. The first solution is fine; later ones read
 freed memory. **[checked]** — `member(X,[a,b,c]), format("~w",[X])` yields 2
@@ -522,11 +637,15 @@ solutions and a bogus `type_error(atom, mmy)` instead of 3, and suppressing the
 `parser_destroy` call makes it 3. Janus goals routinely carry strings, so this
 blocks phase 6 outright.
 
-**`get_status` is not meaningful after `pl_query`.** It reads false even for a
-goal that just succeeded, so a goal with no solutions cannot be told from one
-with a single solution. **[checked]** — `pl_eval` sets it correctly, only the
-`pl_query` path does not. `janus.query_once()` has to report truth, so this needs
-fixing too.
+**Fixed, and narrower than it looked. `get_status` was wrong only after a
+*non-deterministic* success.** A failing goal and a deterministic success were
+always reported correctly; it was a first solution with choicepoints left that
+read false. **[checked]** `execute()` returns early on that path — there may be
+more solutions — and simply did not set the status on the way out. One line.
+
+Both fixes are ordinary checks in `samples/embed.c` now rather than the two
+"gap:" notes it used to carry, and `tests/misc/embed.expected` is updated as the
+design said it would have to be.
 
 A sketch of the minimum surface, following the existing header's style:
 
@@ -545,9 +664,23 @@ bool        pl_binding(pl_sub_query*, const char *var_name, pl_term**);
 bool        pl_bindings(pl_sub_query*, unsigned n, const char **name, pl_term**);
 ```
 
-Plus a matching construction side so Python values can be passed *in* as
-arguments rather than formatted into the goal string. Big integers need a text
-accessor, since Trealla's are unbounded and will not always fit an `int64_t`.
+**Done, close to that sketch.** `pl_term` is a view onto part of the current
+answer, arena-allocated on the query and invalidated by the next `pl_redo` — so
+an embedder never frees one and cannot leak one. `pl_get_int64` refuses a bignum
+rather than truncating it, and `pl_term_text` is how any term including a bignum
+is read. Bindings are reached by index or by name.
+
+Two things the sketch did not anticipate:
+
+- **`pl_query` prints every answer**, the way the toplevel does, which is exactly
+  what an embedder reading answers itself does not want. `set_dump_vars(pl, 0)`
+  turns it off; it stays on by default so existing hosts — WASM, Go — are
+  unaffected.
+- **`pl_num_bindings` counts the anonymous `_` too**, since the parser does.
+  Enumerate by name rather than assuming a count.
+
+Still to come: a matching construction side, so Python values can be passed *in*
+as arguments rather than formatted into the goal string.
 
 Note this API is not Janus-specific — it is what any embedder has wanted, and it
 would serve the WASM and Go hosts too.
@@ -724,10 +857,11 @@ Consequences worth stating:
   directory. That is intended, and the recipe above is what makes it safe: the
   only object that differs is `src/library.o`, which exists on disk during
   neither build's resting state.
-- Going back is still a manual step. `make janus` leaves a `tpl` newer than every
-  object, so a following plain `make` reports nothing to do and the Janus-enabled
-  binary stays. `make clean` is how you get a default build back, and the janus
-  target's help text should say so.
+- Going back is automatic, which was not obvious until it was tried. The recipe
+  deletes `src/library.o` *after* linking as well as before, so a following plain
+  `make` finds that object missing, rebuilds it without the define, and relinks a
+  default `tpl`. **[checked]** No `make clean` needed in either direction: the
+  one object that distinguishes the two builds never survives either of them.
 
 ---
 
@@ -740,7 +874,7 @@ Consequences worth stating:
 | Unbounded integers as Prolog terms | present **[checked]** | none |
 | Rationals both sides | present **[checked]** | §3 — `numerator/1`, `denominator/1`, `rdiv`; phase 1 |
 | Python type dispatch from Prolog | `Check` macros unreachable **[checked]** | §3 — exemplar type objects + `PyObject_IsInstance` |
-| Integers past 64 bits across the FFI | **broken**; fix demonstrated **[checked]** | §3 — base-16 slow path, Prolog only, phase 1 |
+| Integers past 64 bits across the FFI | **done** **[checked]** | §3 — base-16 slow path, phase 1 |
 | Backtracking query engine | present **[checked]** | `pl_query`/`pl_redo`/`pl_done` |
 | GIL calls reachable | present **[checked]** | none |
 | Shutdown hook for `Py_Finalize` | present **[checked]** | `atexit/0`, asserted; see phase 0 |
@@ -749,11 +883,12 @@ Consequences worth stating:
 | `pl_query` keeps goal strings alive | broken **[checked]** | §4.2 — blocks phase 6 |
 | Success/failure after `pl_query` | broken **[checked]** | §4.2 — blocks `query_once` |
 | Runtime library resolution | works **[checked]** | `$dlopen` + `$register_predicate`, §4.4 |
-| Registering a zero-arg function | broken **[checked]** | §4.4 — one-line fix, needed by phase 0 |
+| Registering a zero-arg function | **fixed** **[checked]** | §4.4 — `iso_list_or_nil`, phase 0 |
 | Naming a versioned Windows DLL | missing | §4.4 — candidate list on `use_foreign_module/2` |
-| Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
-| Cleanup for an abandoned iterator | present **[checked]** | `setup_call_cleanup/3`, phase 3 |
-| `py_object(true)` option | missing | §2 — phase 2, and it shapes §3's ownership rule |
+| Opaque handle with finalizer | missing | `'$py_obj'/1` + explicit `py_free/1`, phase 4 **[checked]** |
+| Cleanup for an abandoned iterator | **done** **[checked]** | `setup_call_cleanup/3`, phase 3 |
+| `py_object(true)` option | **done** **[checked]** | §2 — exact-type mode, phase 2 |
+| Spelling a zero-argument call `f()` | **done** **[checked]** | §2a — `empty_args` flag, reads as `'()'(Name)`; off by default |
 | C callbacks from the FFI | absent by design | why §4.2 needs C |
 
 ---
@@ -809,6 +944,34 @@ So the hook is:
 ```
 
 Ship `py_version/0` as the smoke test.
+
+**Three things this phase found the hard way**, none of them visible from
+reading, and all of which fail *silently* rather than loudly: **[checked]**
+
+- **A registered foreign predicate is reachable only from an unqualified call
+  inside the module that registered it.** `'$register_predicate'/4` puts it on
+  the prolog instance rather than in the module's table, so neither
+  `janus:'Py_GetVersion'(V)` from outside nor a bare call from `user` finds it —
+  both raise `existence_error`. Every C-API call has to live in
+  `library/janus.pl`, which is the design anyway, but it also means tests cannot
+  reach the API directly and must go through a Prolog wrapper.
+- **`Py_IsInitialized` returns *nonzero*, not 1.** Writing the guard as
+  `'Py_IsInitialized'(1)` makes it fail rather than throw, so `py_init`
+  initialises twice (harmless) and `py_finalize` quietly does nothing. The first
+  symptom is Python's buffered output vanishing at exit, which reads like the
+  stdio trap of §8 rather than a bug in the guard. Bind and compare.
+- **`assertz/1` inside a module targets that module.** `halt/0,1` call
+  `ignore(atexit)` against the global `atexit/0`, so a bare
+  `assertz((atexit :- ...))` in `library/janus.pl` creates `janus:atexit/0`,
+  which nothing ever calls. It must be `assertz(user:(atexit :- ...))`. Same
+  symptom as the previous item, which is what makes the pair confusing: two
+  independent bugs presenting as one missing flush.
+
+The acceptance test registers a Python-side `atexit` handler through
+`PyRun_SimpleString` and checks its output appears at exit — that is what proves
+`Py_FinalizeEx` genuinely ran, rather than merely being called. It also registers
+a second Prolog hook, to prove the janus clause's trailing `fail` leaves the
+chain intact, and exits 3 to prove the status survives.
 *No dependencies.*
 
 **Phase 1 — marshalling.**
@@ -828,6 +991,25 @@ the awkward cases deliberately — empty dict, empty list, 1-tuple, nested
 dict-in-list-in-tuple, an atom needing UTF-8, an integer past 64 bits, and
 `@true`/`@false`/`@none` — since those are exactly what a conformance suite
 written against another system will not think to probe.
+**Done.** The shape held: the exemplar type cache, the ordered dispatch, the
+base-16 integer path and the `numerator`/`denominator` route for rationals all
+worked as designed, and 50,000 round trips of a nested term leak 1 allocated
+block, which is noise. **[checked]** Two things the design did not predict, both
+found by the tests rather than by reading:
+
+- **The smallint asymmetry above.** The obvious guard, `N >= -(2^63)`, admits one
+  value that `PyLong_FromLongLong` then rejects with a `type_error`.
+- **A comma-list cannot be taken apart by running its constructor backwards.**
+  `py_comma_list([X], X) :- !.` builds `{a:1, b:2}` correctly, but in reverse the
+  cut fires on the first clause and yields the single element `[(a:1,b:2)]`, so
+  every dict with more than one key was rejected as a malformed entry. It needs a
+  separate predicate. Worth naming because the symptom — a `type_error` on a
+  perfectly good dict — points at the dict code rather than at the list utility.
+
+One deliberate narrowing: SWI translates an arbitrary *iterator* eagerly, between
+`dict` and `sequence` in its chain. Phase 1 does not, so a generator becomes an
+opaque handle; `py_iter/2` in phase 3 is what walks it, and XSB gates the eager
+behaviour behind `iter/1` anyway.
 *Largest single piece.*
 
 **Phase 2 — calling.**
@@ -842,6 +1024,44 @@ machinery phase 4 finishes.
 Python call passes through. `PyGILState_Ensure`/`Release` is two lines inside it
 now, and a sweep through finished code later — the retrofit §8 warns about, with
 no reason to schedule it deliberately.
+**Done.** `py_call/2,3` walks the `:` chain, with `py_func` and `py_dot` over it;
+keyword arguments split positional-then-keyword and go through `PyObject_Call`
+with a kwargs dict; `py_object(true)` selects the exact-type mode measured in §2.
+Confirmed against SWI where behaviour was in doubt: `py_dot(hello, ...)` treats
+the atom as a module name and raises there exactly as it does here. **[checked]**
+
+Three things the GIL cost that the design did not anticipate, all of them silent
+or misdirected: **[checked]**
+
+- **`Py_InitializeEx` leaves the GIL held by the calling thread, and nothing ever
+  drops it.** Every other thread then blocks in `PyGILState_Ensure` forever — not
+  a crash, a deadlock, first seen as a test that never returns.
+  `PyEval_SaveThread` after startup is what releases it.
+- **Trealla ran the global `atexit/0` hook when any *thread* exited, not only at
+  process exit.** **[checked]** So the first worker thread to finish called
+  `Py_FinalizeEx` and tore CPython down underneath the threads still inside it.
+  The symptom was a CPython fatal error — `gilstate_tss_set: failed to set
+  current tstate (TSS)`, runtime state `preinitialized` — raised on a thread that
+  had done nothing wrong.
+
+  The cause was one token: `bif_thread_create_3` built the thread's goal as
+  `(Goal, halt)`, and `halt/0` is `ignore(atexit)` then `'$halt'`. It now appends
+  `'$halt'` directly, so a thread finishing no longer runs process-exit hooks —
+  which was never specific to Janus: any library registering cleanup that way had
+  it run early and repeatedly. `tests/misc/atexit.sh` now covers both the fixed
+  case and the one that legitimately remains, an explicit `halt/0` *inside* a
+  thread goal.
+
+  `library(janus)` still guards its own hook to the thread that started the
+  interpreter, because that last case is real: a user goal may call `halt/0` from
+  a thread, and finalizing CPython from there would be just as wrong.
+- **`Py_FinalizeEx` pairs with `PyEval_RestoreThread`, not `PyGILState_Ensure`.**
+  Taking the GIL through the auto-state machinery leaves a reference held while
+  the runtime is torn down, and the process segfaults on the way out *after every
+  test has passed* — the worst possible place for it to show up.
+
+A smaller one: `kw=@true` does not parse, because `=@` lexes as a single symbol
+atom. It has to be written `kw = @true`.
 *Needs 1.*
 
 **Phase 3 — iteration, dict access, library paths.**
@@ -855,12 +1075,63 @@ cut or a throw abandons it with nothing to catch it — the likeliest leak in
 ordinary code, ahead of a forgotten `py_free/1`. Trealla has
 `setup_call_cleanup/3` **[checked]**; use it here rather than meeting the leak in
 phase 4.
+
+**Done, and it went in as designed** — the only phase so far with nothing to
+correct. `py_iter/2,3` is a `repeat` loop over `PyIter_Next` wrapped in
+`setup_call_cleanup/3`; the dict accessors are pure term manipulation that never
+start the interpreter; `py_add_lib_dir/1,2` and `py_lib_dirs/1` fall out of the
+phase 2 chain walker, since `py_call(sys:path:append(Dir), _)` resolves `sys`,
+then `path`, then calls `append` on the result.
+
+Two things confirmed rather than assumed: **[checked]**
+
+- Trealla's `setup_call_cleanup/3` runs the cleanup on all five endings that
+  matter here — exhaustion, cut, `once/1`, failure and exception — which is what
+  makes the iterator handle safe to hold across choice points.
+- 9,000 iterations abandoned by `once/1`, by a cut and by a throw move CPython's
+  allocated block count by 1. The leak the design warned about is closed rather
+  than merely intended to be.
+
+One deviation from SWI, in `values/3`: an unbound key enumerates rather than
+failing. SWI's clauses only match an atom key or a list path, so an unbound key
+falls through; XSB enumerates, and that is both more useful and the behaviour the
+tests here pin.
 *Needs 1.*
 
 **Phase 4 — lifetime.**
 Reference counting across the boundary, `py_free/1`, `py_is_object/1`, and the
 new-or-borrowed rule of §3 applied to every entry point the shim declares. The
 GIL has moved to phase 2, where the wrapper it belongs inside gets written.
+
+**Done.** The ownership rule is now checked against CPython's own counts through
+`sys.getrefcount`, rather than argued from the code: **[checked]**
+
+| claim | measured |
+|---|---|
+| marshalling borrows | 2,000 translations of one object, refcount drift **0** |
+| a handle owns exactly one reference | 50 handles, refcount **+50** |
+| `py_free/1` releases exactly one | after freeing all 50, back to **+0** |
+
+The classification stopped being a comment and became data: `py_sig/4` carries
+`new`, `borrowed`, `foreign` or `none` beside each signature, and `py_steals/2`
+records the two setters that consume an argument. That is worth doing for its own
+sake — the tests can then assert what prose cannot: every `ptr` return is
+classified, no pointer return claims `none`, every `ccstr` return is `borrowed`,
+nothing that is not a pointer claims a reference, and every `py_steals/2` names a
+real entry point. Forty-four entry points, all conforming.
+
+Making it checkable immediately found an imprecision. `PyEval_SaveThread` returns
+`ptr`, but a `PyThreadState*` rather than a `PyObject*`, so refcounting does not
+apply to it — it had been lumped in with `none`, which also covers "returns no
+pointer at all". `foreign` now names that case, which is what keeps "every `ptr`
+return is classified" a claim with content.
+
+One place Trealla cannot match SWI, recorded rather than worked around:
+`py_is_object/1` is a type test and nothing more. SWI clears its blob in
+`py_free/1`, so `py_is_object/1` goes false on a freed handle; a Prolog term
+cannot be cleared from under its own copies, so a freed `'$py_obj'/1` still looks
+like an object. That is the aliasing weakness §3 called the weakest point in the
+design, showing up exactly where it said it would.
 *Needs 2.*
 
 **Phase 5 — errors.**
@@ -870,9 +1141,38 @@ it is specified rather than invented.
 
 This is also where §8's "the C-API is stable across 3.x" is thinnest: 3.12
 replaced `PyErr_Fetch`/`PyErr_NormalizeException` with
-`PyErr_GetRaisedException`. The older pair is still exported, but this phase
-should confirm that against the oldest and newest interpreters it claims to
-support instead of assuming it.
+`PyErr_GetRaisedException`.
+
+**Done, and the version skew is handled by asking rather than guessing.** Both
+symbols are looked up at load and remembered if they resolve —
+`'$register_predicate'/4` simply fails when `dlsym` misses, which is exactly the
+test needed, so no version string is parsed anywhere. `py_error_api/1` reports
+which is in use and `py_use_error_api_/1` overrides it, which is how the pre-3.12
+path gets exercised on a 3.14 interpreter: both produce the identical error term
+for the same fault. **[checked]** `PyType_GetName` (3.11+) is treated the same
+way, falling back to trimming the type's `repr`.
+
+The term is `error(python_error(Type, Message), janus)`, with both arguments
+atoms:
+
+```prolog
+?- py_call(math:sqrt(hello), X).
+   error(python_error('TypeError', 'must be real number, not str'), janus)
+```
+
+The functor and arity match SWI so that `catch(..., error(python_error(T,_),_), ...)`
+is portable, but the second argument deliberately differs: SWI hands back the
+exception *object*, and an object arriving on an error path is a handle the
+catcher must remember to `py_free/1` — a poor bargain on the one code path
+nobody tests. XSB does not offer a portable term here at all; its
+`janus_python_error()` goes through `xsb_library_error_vargs`.
+
+Verified: seven exception classes arrive with their real type and message; the
+Prolog-side faults all stay Prolog errors raised before the call
+(`instantiation_error`, `type_error(python_term, _)`, `domain_error(py_option, _)`
+and the rest); the interpreter is fully usable afterwards with nothing left
+pending; and 9,000 raised-and-caught errors move CPython's allocated block count
+by 1. **[checked]**
 *Needs 2.*
 
 **Phase 5a — the compatibility surface.**
@@ -882,6 +1182,34 @@ toplevel conveniences §2 keeps in scope: `py_type/2` and `py_pp/1`
 (`py_version/0` already shipped in phase 0). Small, and easy to leave until
 phase 7 discovers it — but phase 7 runs XSB's suite, and every one of these is a
 name that suite calls.
+
+**Done**, and two of the six needed a decision rather than a translation:
+
+- **`value/3` has no definition in XSB.** It is exported from `janus.P` and no
+  clause for it exists anywhere in the tree. **[read]** With nothing to copy, it
+  is the deterministic singular of `values/3` — the only reading the name
+  supports beside a `values/3` that enumerates.
+- **`janus_python_version/1` does not return a version in XSB.** It answers
+  `PYTHON_BIN_QUOTED`, the path of the python binary configure found.
+  **[read]** There is no analogue here — `libpython` is opened by `dlopen` and no
+  binary is involved — and the name plainly describes a version, so this returns
+  `'3.14.7'`. `py_lib/1` is where the library path lives.
+
+The rest are one line each over what phases 1-5 already do: `obj_dir/2` and
+`obj_dict/2` are a `py_dot/3` apiece, exactly as XSB defines them; `py_next/2` is
+one step of the phase 3 iterator, failing at exhaustion; `add_py_lib_dir/1` is
+`py_add_lib_dir/1`. `py_type/2` reports the Python type of anything the
+marshaller can send rather than only an object reference, so `py_type([1,2], T)`
+answers `list`. `py_pp/1` goes through `pprint.pformat` and writes the result
+from Prolog, which sidesteps the two-stdio-buffers trap of §8 rather than
+managing it.
+
+One bug worth recording, because the failure was so much larger than the cause:
+naming the `py_type/2` helper `py_type_/2` collided with the *dynamic* `py_type_/2`
+holding the exemplar type cache. `py_isa/2` then matched the new clauses instead
+of the cached facts, and every phase segfaulted — including ones that never call
+`py_type/2`. A helper suffixed `_` is the convention here for internal
+predicates, and it is also the convention for the dynamic caches.
 *Needs 2 and 3.*
 
 **Phase 6 — Python → Prolog.**
@@ -889,11 +1217,94 @@ The `libtrealla` target is already done (§4.3). What remains: fix the two
 `pl_query` defects of §4.2, add the term-inspection API, then the extension
 module exposing `query`, `query_once`, `consult`, `apply`. Independent of
 everything above.
+
+**Mostly done.** `src/janus_py.c` is a CPython extension module linking
+`libtrealla.a`, built by `make janus-py` — separate from `make janus`, and the
+only part of the project needing Python headers. `consult`, `query_once` and
+`query` are implemented, the last as a proper iterator type with `close()` and
+the context-manager protocol, so abandoning a million-solution query releases it
+rather than leaving it to the interpreter's exit.
+
+Answers are read through the phase-6 `pl_term` API rather than scraped from what
+the engine prints, which is what `set_dump_vars` exists for. The §3 table runs in
+reverse, and two atoms needed the same special-casing they need going out: `[]`
+is the empty list and `{}` the empty dict, neither having a compound to be.
+
+One distinction the C API makes available and the first draft of this module
+missed: **a goal that will not parse is not a goal that failed.** `pl_query`
+reports no error for a syntax error, and `get_status` is false either way — but a
+parse failure produces no query at all, and that absence is the signal. It raises
+`SyntaxError`; a goal that throws raises `RuntimeError`; a goal that fails is
+`{'truth': False}`.
+
+`apply(module, pred, *args)` calls `Module:Pred(Args..., Out)` and yields each
+`Out`, which is the shape both reference systems give it.
+
+**The construction side went in as text after all, and the reasoning is worth
+recording** because this document asked for the opposite. Binding built terms
+into the query's frame needs a heap that does not exist until the query is
+created, and the query is created by the same call that runs it — so it would
+mean splitting `run()` into a parse phase and an execute phase. Against that:
+every type in the §3 table has an exact readable form, so text loses nothing.
+Values are converted to canonical Prolog and bound by a prefixed unification.
+
+Two hazards, both found by the tests rather than by reasoning:
+
+- **An integer over 4300 digits cannot be read *in* either.** §3 covers the
+  outbound side; CPython refuses to *parse* a long decimal just as it refuses to
+  print one, so `PyLong_FromString` on the engine's decimal text raises. Hence
+  `pl_int_text(t, 16)` in the C API: an integer in any base 2-36, which is how a
+  host with a decimal limit reads an unbounded integer.
+- **`Key:Value` glues into `:-` when the value starts with a minus.**
+  `{'a': -5}` becomes `a:-5`, which reads as the clause neck `:-(a, 5)`, and
+  `{'a': (1,[2])}` becomes `a:-(1,[2])` the same way. Not a syntax error —
+  silently the wrong term. The value is parenthesised. This is the fragility of
+  building terms as text arriving exactly where it was predicted, and the reason
+  the frame-binding API stays the better answer if an opaque object ever has to
+  be passed.
+
+A third defect the same tests found was in the phase-6 C API rather than in this
+module: `new_pl_term` handed out interior pointers into one `realloc`'d block, so
+every handle a caller still held dangled once the block grew. Shallow terms
+always fit the first allocation; it took a nested one to crash. Handles are
+allocated singly now and only the index of pointers grows.
 *All the C lives here.*
 
 **Phase 7 — conformance.**
 Run SWI's `test_xsb_janus.pl`, which is precisely the compatibility suite for the
 common core, and XSB's `xsbtests/janus_tests`. Both are already on this machine.
+
+**Done, and it earned its place: 20 of 21 passed on the first run and the one
+failure was a real defect.** `tests/janus/conformance.pl` drives the *same*
+Python fixtures (`xsb_tests/*.py`) the SWI suite does, so what is compared is
+this implementation against theirs rather than against itself. `make
+janus-conformance` runs it; it is not part of `make janus-test`, because the
+fixtures are third-party and not vendored, and it reports a skip rather than a
+failure when they are absent.
+
+**It could not run unmodified, and §2a was only part of the reason.** The
+`empty_args` flag handled the `f()` syntax as intended, but four other things
+needed adapting, none of them about the agreed interface:
+
+- it is written for `plunit`;
+- its expected dicts are SWI's native `py{k:v}`, not the `{k:v}` the interface
+  specifies and this side produces;
+- it reads error text through SWI's `message_to_string/2`;
+- `min_tagged_integer` and `max_tagged_integer` are SWI flags. Trealla's
+  integers are unbounded, so the boundary worth testing is the FFI's — the
+  smallint asymmetry of §3.
+
+The test content is otherwise unchanged, and every expectation that differs
+differs because the systems do.
+
+**The defect it found.** `py_module/2` caught a failed import and threw
+`existence_error(python_module, Name)`. That is wrong twice: it discards the
+reason, and it says "no such module" for a module that exists but failed to load
+— an `ImportError` or a `SyntaxError` inside the module reported as absence. It
+now lets the real exception through, which is what phase 5's rule says anyway.
+Two earlier tests pinned the old behaviour and were updated; conformance is
+exactly the kind of test that catches a rule applied everywhere except one
+place.
 *The real acceptance test.*
 
 ---
@@ -921,6 +1332,31 @@ against 0 where it is returned, before anything else touches it. Phase 5 owns
 turning that into a proper Prolog exception, but the test itself cannot wait for
 phase 5: without it, failures surface as nonsense.
 
+**A library's scalars are not necessarily Python's scalars.** The dispatch of §3
+is subclass-aware, which is what makes a `Fraction` or a `Counter` or a
+namedtuple arrive as the right Prolog term without anyone teaching it about
+them. The limit of that is not in this code: it is whether the library declared
+its type a subclass at all. numpy is the case everyone meets first, and it is
+inconsistent with itself: **[checked]**
+
+| | subclass of the Python type? | arrives as |
+|---|---|---|
+| `np.float64` | yes | a Prolog float |
+| `np.str_` | yes | an atom |
+| `np.int64` | **no** | an opaque handle |
+| `np.bool_` | **no** | an opaque handle |
+| `ndarray` | no | an opaque handle |
+
+So `py_call(numpy:mean(L), M)` gives a number and `py_call(numpy:sum(L), S)` over
+integers gives a handle — same library, same shape of call, different outcome,
+and nothing in the translation table predicts it. There is no fix on this side
+that would not amount to special-casing one library: `.item()` on a scalar and
+`.tolist()` on an array are the boundary, and they belong in the user's code
+where the library is known.
+
+Worth saying plainly in the module documentation, because the first thing anyone
+does with this is reach for numpy.
+
 **Reference counting has no safety net.** There is no finalizer to hang
 `Py_DecRef` on, so every object crossing the boundary is manual. `py_free/1`
 makes that legitimate, but a long-running program that forgets it leaks. Decide
@@ -940,7 +1376,8 @@ is a crash rather than a race that will be forgiven. Cheap in phase 2, where the
 call wrapper is written; expensive as a later sweep, which is why phase 4 no
 longer owns it.
 
-**Python version skew, in two separate places.** The *library name and location*
+**Python version skew, in two separate places.** *(Both are now handled; kept
+here because the reasoning is what matters, not the outcome.)* The *library name and location*
 vary by platform and installation; phase 0 owns that, and it must not leak into
 the marshalling code. The *C-API* is stable across 3.x for most of what we use,
 but not all of it, and both exceptions are recent: 3.11 introduced the

@@ -18,6 +18,7 @@ and using a plain old Makefile.
 	Access SQLITE databases using builtin module (uses FFI)
 	FFIs for GNU Scientific Library (GSL) ##EXPERIMENTAL##
 	FFIs for Raylib & Raymath
+	Python interface (Janus), opt-in via 'make janus'		##EXPERIMENTAL##
 	Concurrency via threads / tasks / futures / engines (aka. generators)
 	Definite Clause Grammar (DCGs)
 	Attributed variables with freeze/2, dif/2 & when/2
@@ -2127,6 +2128,176 @@ For example:
 	   Sols = [1,2,3,4,5].
 	?- ^D%
 ```
+
+Embedding in C
+==============
+
+A normal `make` builds `libtrealla.a` alongside `tpl`, from every object
+except the one carrying `main()`. Link against it and include
+`src/trealla.h`; `make install` installs both.
+
+	#include "trealla.h"
+
+	prolog *pl = pl_create();
+	set_dump_vars(pl, 0);			// don't also print answers
+	pl_consult(pl, "facts.pl");
+
+	pl_sub_query *q = NULL;
+	pl_query(pl, "likes(john, X)", &q, 0);
+
+	if (get_status(pl)) {			// was there a first solution?
+		do {
+			pl_term *x = pl_binding(q, "X");
+			printf("%s\n", pl_atom_text(x));
+		} while (pl_redo(q));
+	}
+
+	pl_destroy(pl);
+
+The return value of `pl_eval` and `pl_query` says only that no *error*
+occurred. Success or failure is `get_status()`, errors are `get_error()`:
+
+| Call | Returns | Success/failure |
+|---|---|---|
+| `pl_eval` | `!error` | `get_status()` |
+| `pl_query` | `!error` | `get_status()` — whether a first solution was found |
+| `pl_redo` | another solution exists | destroys the query itself on false |
+| `pl_done` | released | only on a query `pl_redo` has not exhausted |
+
+Answers can be inspected rather than printed. A `pl_term` is a view onto
+part of the current answer, owned by the query and valid until the next
+`pl_redo()` or `pl_done()`:
+
+| Call | |
+|---|---|
+| `pl_num_bindings/pl_binding_name/pl_binding_value` | enumerate the goal's variables |
+| `pl_binding(q, "X")` | the value bound to a named variable, or NULL if unbound |
+| `pl_term_type` | `PL_TYPE_VAR`, `_INTEGER`, `_FLOAT`, `_ATOM`, `_STRING`, `_COMPOUND` |
+| `pl_atom_text`, `pl_atom_len` | an atom or string |
+| `pl_get_int64`, `pl_get_float` | false if it does not fit — integers are unbounded |
+| `pl_term_text` | canonical text of any term, caller frees — this is how a bignum is read |
+| `pl_functor`, `pl_arity`, `pl_arg` | walking a compound |
+
+`pl_query` prints each answer the way the toplevel does, which an
+embedder reading them itself will not want: `set_dump_vars(pl, 0)` turns
+that off. It is on by default, so existing hosts are unaffected.
+
+`samples/embed.c` is a worked example and a smoke test: it links exactly
+the way an embedder would, and `make misc` runs it.
+
+
+Python interface (Janus)			##EXPERIMENTAL##
+========================
+
+`library(janus)` presents the Janus interface that SWI-Prolog and XSB
+have agreed on. It is **not** in a default build and a stock `make`
+references Python in no form at all — no header, no library, no embedded
+module. Build it explicitly:
+
+	make janus
+
+libpython is then found by `dlopen` at run time, so nothing about the
+build depends on Python being installed. Set `PROLOG_PYTHON_LIB` to
+override the search.
+
+	:- use_module(library(janus)).
+
+	?- py_call(math:factorial(30), X).
+	   X = 265252859812191058636308480000000
+
+	?- py_func(builtins, sorted([3,1,2], reverse = @true), X).
+	   X = [3,2,1]
+
+	?- forall(py_iter(builtins:range(4), X), (write(X), nl)).
+
+Values are translated both ways: integers (unbounded, both sides),
+floats, atoms as `str`, lists, `-/N` compounds as tuples, `{k:v}` as
+dicts, `py_set/1` as sets, rationals as `fractions.Fraction`, and
+`@true`/`@false`/`@none`. Anything else becomes an opaque handle
+released with `py_free/1`.
+
+Implemented: `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_iter/2,3`,
+`py_setattr/3`, `py_free/1`, `py_is_object/1`, `py_add_lib_dir/1,2`,
+`py_lib_dirs/1`, `keys/2`, `key/2`, `values/3`, `items/2`, plus the XSB
+spellings `add_py_lib_dir/1`, `obj_dir/2`, `obj_dict/2`, `value/3`,
+`janus_python_version/1`, `py_next/2`, and `py_version/0`, `py_type/2`,
+`py_pp/1`.
+
+Translation follows subclasses, so a `fractions.Fraction`, a
+`collections.Counter` and a namedtuple all arrive as the right Prolog
+term without being named anywhere. What a library declares is up to the
+library, though, and numpy is not consistent with itself: `np.float64`
+and `np.str_` are subclasses of `float` and `str` and cross cleanly,
+while `np.int64`, `np.bool_` and `ndarray` are not subclasses of
+anything and arrive as opaque handles. Call `.item()` on a scalar and
+`.tolist()` on an array at the boundary:
+
+	?- py_call(numpy:mean([1,2,3]), M).       % a float
+	   M = 2.0
+	?- py_call(numpy:sum([1,2,3]), S).        % np.int64 - a handle
+	   S = '$py_obj'(...)
+	?- py_call(numpy:sum([1,2,3]), H), py_dot(H, item(), S), py_free(H).
+	   S = 6
+
+A zero-argument method call is written `f()` in both reference systems.
+ISO has no such term, so it is off by default and enabled per file:
+
+	:- set_prolog_flag(empty_args, true).
+
+	?- py_call(builtins:dict(), X).
+	   X = {}
+
+With the flag set, `f()` reads as the ordinary compound `'()'(f)` and
+writes back as `f()`. Without it, write `'()'(f)` directly.
+
+`make janus-test` runs the acceptance suite. See `docs/janus-design.md`.
+
+The other direction — calling Prolog from Python — is a CPython extension
+module built separately. It is the only part of the project that needs
+Python *headers* rather than a libpython to `dlopen`:
+
+	make janus-py
+
+That produces `janus_trealla.so`, which links `libtrealla.a`:
+
+	import janus_trealla as janus
+
+	janus.consult("facts.pl")
+
+	janus.query_once("X is 6*7")         # {'X': 42, 'truth': True}
+	janus.query_once("fail")             # {'truth': False}
+
+	for answer in janus.query("member(X, [a,b,c])"):
+	    print(answer["X"])               # a b c
+
+	# values go in as bindings, not as text spliced into the goal
+	janus.query_once("Y is X*2", {"X": 21})          # {'X': 21, 'Y': 42, ...}
+
+	# apply appends the output as the last argument
+	list(janus.apply("user", "between", 1, 6))       # [1, 2, 3, 4, 5, 6]
+
+	with janus.query("between(1, 1000000, X)") as q:
+	    first = next(iter(q))["X"]       # closing releases the query
+
+Answers are read through the `pl_term` API above, not scraped from what
+the engine prints, and the translation table runs in reverse: unbounded
+integers, floats, atoms as `str`, lists, `-/N` as tuples, `{k:v}` as
+dicts, `py_set/1` as sets, `@true`/`@false`/`@none`, and anything with no
+Python counterpart as its canonical text. A goal that will not parse
+raises `SyntaxError`, one that throws raises `RuntimeError`, and a goal
+that merely fails is `{'truth': False}`.
+
+`inputs` takes the same types in the other direction, including integers
+past CPython's 4300-digit limit on decimal conversion — those cross as
+hex, in both directions.
+
+`make janus-py-test` runs its acceptance suite.
+
+`make janus-conformance` runs a port of the shared XSB/SWI compatibility
+suite against that suite's own Python fixtures. It needs those fixtures,
+which are not shipped here — set `JANUS_XSB_TESTS` to the `xsb_tests`
+directory of SWI's swipy package, or it reports a skip.
+
 
 Compile to standalone
 =====================

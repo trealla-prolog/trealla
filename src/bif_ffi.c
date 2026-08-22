@@ -568,7 +568,13 @@ bool bif_sys_register_predicate_4(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
-	GET_NEXT_ARG(p3,iso_list);
+
+	// [] is an atom, not an iso_list, so demanding iso_list here made a
+	// zero-argument function impossible to register - Py_Finalize and
+	// Py_GetVersion among them. use_foreign_module/2 has always accepted
+	// it; see the 'CloseWindow'([], void) entries in library/raylib.pl.
+
+	GET_NEXT_ARG(p3,iso_list_or_nil);
 	GET_NEXT_ARG(p4,atom);
 
 	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))

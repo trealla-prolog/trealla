@@ -82,3 +82,5 @@ inline static void prolog_unlock(prolog *pl)
 {
 	release_lock(&pl->guard);
 }
+
+extern void release_pl_terms(query *q);

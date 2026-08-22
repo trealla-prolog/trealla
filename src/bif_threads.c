@@ -916,7 +916,14 @@ static bool bif_thread_create_3(query *q)
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
 	num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
-	make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), NULL, 0, 0);
+	// '$halt' and not halt/0: halt/0 is ignore(atexit) then '$halt', so
+	// appending it here ran the GLOBAL atexit/0 hook every time any
+	// thread finished, not only at process exit. A library that
+	// registers process-level cleanup that way - closing a connection,
+	// finalizing an embedded interpreter - had it torn down under the
+	// threads still using it, by whichever thread happened to end first.
+
+	make_instr(tmp2+num_cells++, new_atom(q->pl, "$halt"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
 
 	if (at_exit_goal) {
