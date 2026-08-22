@@ -130,6 +130,36 @@ library paths
 domain_error(py_lib_dir_position,sideways)  bad position                   
 type_error(atom,123)  non-atom dir                   
 
+=== phase 4: lifetime ===
+py_is_object
+  a handle is an object            ok
+  a list is not                    ok
+  an atom is not                   ok
+  an unbound var is not            ok
+
+marshalling borrows
+  2000 translations, count drift   ok
+
+a handle owns exactly one reference
+  50 handles, count rises by       ok
+  after py_free of all 50          ok
+
+py_free of the first handle
+  releases one reference           ok
+
+errors
+instantiation_error  py_free of an unbound var        
+type_error(py_object,foo)  py_free of a non-object          
+type_error(py_object,[1,2])  py_free of a list                
+
+the declared reference discipline
+  every ptr return is classified   ok
+  no pointer return says none      ok
+  every ccstr return is borrowed   ok
+  nothing else claims a reference  ok
+  every steals names a real entry  ok
+  44 entry points declared
+
 === phase 0: startup and shutdown ===
 found libpython
 version starts 3.

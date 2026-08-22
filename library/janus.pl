@@ -30,6 +30,7 @@
 	py_dot/3,  py_dot/4,
 	py_iter/2, py_iter/3,
 	py_setattr/3,
+	py_free/1, py_is_object/1,
 	keys/2, key/2, values/3, items/2,
 	py_add_lib_dir/1, py_add_lib_dir/2,
 	py_lib_dirs/1,
@@ -84,66 +85,91 @@ py_open(Handle, Lib) :-
 % Every entry point phase 0 needs. Two of them take no arguments at all,
 % which is why this phase also carries the '$register_predicate'/4 fix.
 
-% The third column of the comment is the reference the call returns:
-% (new) must be released, (borrowed) must not, (steals) consumes the one
-% handed to it. A borrowed char* must be ccstr and never cstr, or
-% Trealla's allocator is handed CPython's own buffer.
+% py_sig(Name, ArgTypes, ReturnType, Reference).
+%
+% Reference is what the call HANDS BACK, and it is data rather than a
+% comment so that the tests can check it:
+%
+%   new       a reference this side owns and must release
+%   borrowed  a reference owned elsewhere, which must NOT be released
+%   foreign   a pointer that is not a PyObject at all, so refcounting
+%             does not apply - PyEval_SaveThread's PyThreadState* is the
+%             only one, and giving it a name of its own is what keeps
+%             "every ptr return is classified" a checkable claim
+%   none      the call does not return a pointer
+%
+% Whether a result is new or borrowed is a property of the function,
+% never of the value, so it is settled here and never at the call site.
+%
+% A borrowed char* must be ccstr and never cstr - Trealla's cstr return
+% type calls TPL_free on what it is given, which would hand CPython's own
+% buffer to Trealla's allocator.
+%
+% py_steals/2 records the other direction: an argument the callee takes
+% ownership of, so the caller must NOT release it.
 
-py_sig('Py_InitializeEx',   [sint32], void).
-py_sig('Py_FinalizeEx',     [],       sint32).
-py_sig('Py_IsInitialized',  [],       sint32).
-py_sig('Py_GetVersion',     [],       ccstr).           % borrowed
-py_sig('PyRun_SimpleString', [cstr],  sint32).
-py_sig('Py_IncRef',         [ptr],    void).
-py_sig('Py_DecRef',         [ptr],    void).
+py_sig('Py_InitializeEx', [sint32], void, none).
+py_sig('Py_FinalizeEx', [],       sint32, none).
+py_sig('Py_IsInitialized', [],       sint32, none).
+py_sig('Py_GetVersion', [],       ccstr, borrowed).
+py_sig('PyRun_SimpleString', [cstr],  sint32, none).
+py_sig('Py_IncRef', [ptr],    void, none).
+py_sig('Py_DecRef', [ptr],    void, none).
 
 % Errors. Phase 5 turns these into Prolog exceptions properly; phase 1
 % only needs to notice a NULL and not marshal it.
-py_sig('PyErr_Occurred',    [],       ptr).             % borrowed
-py_sig('PyErr_Clear',       [],       void).
+py_sig('PyErr_Occurred', [],       ptr, borrowed).
+py_sig('PyErr_Clear', [],       void, none).
 
 % Prolog -> Python
-py_sig('PyLong_FromLongLong', [sint64],           ptr). % new
-py_sig('PyLong_FromString',   [cstr, ptr, sint32], ptr).% new
-py_sig('PyFloat_FromDouble',  [double],           ptr). % new
-py_sig('PyUnicode_FromString',[cstr],             ptr). % new
-py_sig('PyBool_FromLong',     [sint32],           ptr). % new
-py_sig('PyList_New',          [sint64],           ptr). % new
-py_sig('PyList_SetItem',      [ptr, sint64, ptr], sint32). % steals
-py_sig('PyTuple_New',         [sint64],           ptr). % new
-py_sig('PyTuple_SetItem',     [ptr, sint64, ptr], sint32). % steals
-py_sig('PyDict_New',          [],                 ptr). % new
-py_sig('PyDict_SetItem',      [ptr, ptr, ptr],    sint32).
-py_sig('PySet_New',           [ptr],              ptr). % new
-py_sig('PySet_Add',           [ptr, ptr],         sint32).
+py_sig('PyLong_FromLongLong', [sint64],           ptr, new).
+py_sig('PyLong_FromString', [cstr, ptr, sint32], ptr, new).
+py_sig('PyFloat_FromDouble', [double],           ptr, new).
+py_sig('PyUnicode_FromString', [cstr],             ptr, new).
+py_sig('PyBool_FromLong', [sint32],           ptr, new).
+py_sig('PyList_New', [sint64],           ptr, new).
+py_sig('PyList_SetItem', [ptr, sint64, ptr], sint32, none).
+py_sig('PyTuple_New', [sint64],           ptr, new).
+py_sig('PyTuple_SetItem', [ptr, sint64, ptr], sint32, none).
+py_sig('PyDict_New', [],                 ptr, new).
+py_sig('PyDict_SetItem', [ptr, ptr, ptr],    sint32, none).
+py_sig('PySet_New', [ptr],              ptr, new).
+py_sig('PySet_Add', [ptr, ptr],         sint32, none).
 
 % Python -> Prolog
-py_sig('PyObject_Type',       [ptr],              ptr). % new
-py_sig('PyObject_IsInstance', [ptr, ptr],         sint32).
-py_sig('PyObject_IsTrue',     [ptr],              sint32).
-py_sig('PyLong_AsLongLongAndOverflow', [ptr, -sint32], sint64).
-py_sig('PyNumber_ToBase',     [ptr, sint32],      ptr). % new
-py_sig('PyFloat_AsDouble',    [ptr],              double).
-py_sig('PyUnicode_AsUTF8',    [ptr],              ccstr).% borrowed
-py_sig('PySequence_Size',     [ptr],              sint64).
-py_sig('PySequence_GetItem',  [ptr, sint64],      ptr). % new
-py_sig('PyDict_Keys',         [ptr],              ptr). % new
-py_sig('PyObject_GetItem',    [ptr, ptr],         ptr). % new
-py_sig('PyObject_GetIter',    [ptr],              ptr). % new
-py_sig('PyIter_Next',         [ptr],              ptr). % new, 0 at end
+py_sig('PyObject_Type', [ptr],              ptr, new).
+py_sig('PyObject_IsInstance', [ptr, ptr],         sint32, none).
+py_sig('PyObject_IsTrue', [ptr],              sint32, none).
+py_sig('PyLong_AsLongLongAndOverflow', [ptr, -sint32], sint64, none).
+py_sig('PyNumber_ToBase', [ptr, sint32],      ptr, new).
+py_sig('PyFloat_AsDouble', [ptr],              double, none).
+py_sig('PyUnicode_AsUTF8', [ptr], ccstr, borrowed).
+py_sig('PySequence_Size', [ptr],              sint64, none).
+py_sig('PySequence_GetItem', [ptr, sint64],      ptr, new).
+py_sig('PyDict_Keys', [ptr],              ptr, new).
+py_sig('PyObject_GetItem', [ptr, ptr],         ptr, new).
+py_sig('PyObject_GetIter', [ptr],              ptr, new).
+py_sig('PyIter_Next', [ptr],              ptr, new).
 
 % Building the type-object cache, and reaching fractions.Fraction
-py_sig('PyImport_ImportModule',  [cstr],          ptr). % new
-py_sig('PyObject_GetAttrString', [ptr, cstr],     ptr). % new
-py_sig('PyObject_CallObject',    [ptr, ptr],      ptr). % new
+py_sig('PyImport_ImportModule', [cstr],          ptr, new).
+py_sig('PyObject_GetAttrString', [ptr, cstr],     ptr, new).
+py_sig('PyObject_CallObject', [ptr, ptr],      ptr, new).
 
 % Phase 2: calling, and the GIL that has to wrap it
-py_sig('PyObject_Call',          [ptr, ptr, ptr],  ptr). % new
-py_sig('PyObject_SetAttrString', [ptr, cstr, ptr], sint32).
-py_sig('PyGILState_Ensure',      [],               sint32).
-py_sig('PyGILState_Release',     [sint32],         void).
-py_sig('PyEval_SaveThread',      [],               ptr).
-py_sig('PyEval_RestoreThread',   [ptr],            void).
+py_sig('PyObject_Call', [ptr, ptr, ptr],  ptr, new).
+py_sig('PyObject_SetAttrString', [ptr, cstr, ptr], sint32, none).
+py_sig('PyGILState_Ensure', [],               sint32, none).
+py_sig('PyGILState_Release', [sint32],         void, none).
+py_sig('PyEval_SaveThread', [],               ptr, foreign).
+py_sig('PyEval_RestoreThread', [ptr],            void, none).
+
+% Argument position (1-based) whose reference the callee consumes, so the
+% caller must NOT release it. Both of these are why a list or tuple is
+% filled without a matching Py_DecRef, while a dict or set is not.
+
+py_steals('PyList_SetItem',  3).
+py_steals('PyTuple_SetItem', 3).
 
 % A registered foreign predicate is reachable only from an unqualified
 % call inside the module that registered it: '$register_predicate'/4 puts
@@ -160,7 +186,7 @@ py_sig('PyEval_RestoreThread',   [ptr],            void).
 
 :- (   py_open(H, Lib)
    ->  assertz(py_lib_(Lib)),
-       forall(py_sig(N, A, R), '$register_predicate'(H, N, A, R))
+       forall(py_sig(N, A, R, _), '$register_predicate'(H, N, A, R))
    ;   throw(error(existence_error(foreign_library, libpython),
                    'library(janus)':py_open/2))
    ).
@@ -1170,3 +1196,59 @@ py_add_lib_dir(Dir, Where) :-
 	->  py_call(sys:path:insert(0, Dir), _)
 	;   throw(error(domain_error(py_lib_dir_position, Where), janus))
 	).
+
+
+		 /*******************************
+		 *   PHASE 4: LIFETIME          *
+		 *******************************/
+
+%   py_is_object(@Term) is semidet.
+%
+%   True when Term is an object reference. A type test and nothing more:
+%   it says the term IS a handle, not that the handle is still live.
+%
+%   SWI can do better here - its blob is cleared by py_free/1, so
+%   py_is_object/1 goes false afterwards. A Prolog term cannot be cleared
+%   from under its copies, so this one cannot. See the ownership rule in
+%   section 3 of docs/janus-design.md: using a handle after freeing it is
+%   a program error the same way use-after-free is, and detecting it by
+%   scanning the store is not attempted.
+
+py_is_object(Term) :-
+	nonvar(Term),
+	Term = '$py_obj'(Ptr),
+	integer(Ptr).
+
+%   py_free(+Obj) is det.
+%
+%   Release the reference a handle owns. Exactly one reference: the
+%   marshaller decrefs everything it translates, so only a handle - an
+%   untranslatable object, or one asked for with py_object(true) - ever
+%   needs this.
+%
+%   Freeing twice, or using the handle afterwards, is undefined in the
+%   same way free() twice is. That is the price of a term the runtime
+%   copies and backtracks freely; py_free/1 being part of the agreed
+%   interface is what makes explicit release legitimate in the first
+%   place.
+
+py_free(Term) :-
+	var(Term),
+	!,
+	throw(error(instantiation_error, janus)).
+py_free('$py_obj'(Ptr)) :-
+	integer(Ptr),
+	!,
+	py_gil('Py_DecRef'(Ptr)).
+py_free(Term) :-
+	throw(error(type_error(py_object, Term), janus)).
+
+%   py_refcount_(+Obj, -Count) is det.
+%
+%   Not part of the interface, and not exported: the phase 4 tests need
+%   to see the count they are reasoning about, and sys.getrefcount is the
+%   only way to. The number is inflated by the reference the call itself
+%   holds, so only differences are meaningful.
+
+py_refcount_(Term, Count) :-
+	py_call(sys:getrefcount(Term), Count).

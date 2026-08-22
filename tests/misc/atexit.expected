@@ -14,3 +14,12 @@ exit=0
 --- a throwing hook: no crash, status lost ---
    Warning: Initialization goal exception: oops.
 exit=0
+--- a thread ending does NOT run the hook ---
+joined
+hook
+exit=7
+--- but halt/0 inside a thread still does ---
+hook
+joined
+hook
+exit=7

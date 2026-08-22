@@ -6,7 +6,8 @@ done**, and **phase 2 with them**, on branch `janus` — `library/janus.pl`, the
 `tests/janus/` behind `make janus-test`. Phase 1 is the marshaller of §3; phase 2
 is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments,
 the `Options` argument, and the GIL; **phase 3** is `py_iter/2,3`, the dict
-accessors, and `sys.path`. Phases 4 onwards are still design only.
+accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
+`py_is_object/1`. Phases 5 onwards are still design only.
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -859,7 +860,7 @@ Consequences worth stating:
 | Runtime library resolution | works **[checked]** | `$dlopen` + `$register_predicate`, §4.4 |
 | Registering a zero-arg function | **fixed** **[checked]** | §4.4 — `iso_list_or_nil`, phase 0 |
 | Naming a versioned Windows DLL | missing | §4.4 — candidate list on `use_foreign_module/2` |
-| Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
+| Opaque handle with finalizer | missing | `'$py_obj'/1` + explicit `py_free/1`, phase 4 **[checked]** |
 | Cleanup for an abandoned iterator | **done** **[checked]** | `setup_call_cleanup/3`, phase 3 |
 | `py_object(true)` option | **done** **[checked]** | §2 — exact-type mode, phase 2 |
 | Spelling a zero-argument call `f()` | **done** **[checked]** | §2a — `empty_args` flag, reads as `'()'(Name)`; off by default |
@@ -1011,15 +1012,24 @@ or misdirected: **[checked]**
   drops it.** Every other thread then blocks in `PyGILState_Ensure` forever — not
   a crash, a deadlock, first seen as a test that never returns.
   `PyEval_SaveThread` after startup is what releases it.
-- **Trealla runs the global `atexit/0` hook when any *thread* exits, not only at
+- **Trealla ran the global `atexit/0` hook when any *thread* exited, not only at
   process exit.** **[checked]** So the first worker thread to finish called
   `Py_FinalizeEx` and tore CPython down underneath the threads still inside it.
   The symptom was a CPython fatal error — `gilstate_tss_set: failed to set
   current tstate (TSS)`, runtime state `preinitialized` — raised on a thread that
-  had done nothing wrong. The hook is now guarded to the thread that started the
-  interpreter. This is worth raising against Trealla independently: any library
-  registering process-level cleanup has the same problem, and
-  `tests/misc/atexit.sh` does not cover threads.
+  had done nothing wrong.
+
+  The cause was one token: `bif_thread_create_3` built the thread's goal as
+  `(Goal, halt)`, and `halt/0` is `ignore(atexit)` then `'$halt'`. It now appends
+  `'$halt'` directly, so a thread finishing no longer runs process-exit hooks —
+  which was never specific to Janus: any library registering cleanup that way had
+  it run early and repeatedly. `tests/misc/atexit.sh` now covers both the fixed
+  case and the one that legitimately remains, an explicit `halt/0` *inside* a
+  thread goal.
+
+  `library(janus)` still guards its own hook to the thread that started the
+  interpreter, because that last case is real: a user goal may call `halt/0` from
+  a thread, and finalizing CPython from there would be just as wrong.
 - **`Py_FinalizeEx` pairs with `PyEval_RestoreThread`, not `PyGILState_Ensure`.**
   Taking the GIL through the auto-state machinery leaves a reference held while
   the runtime is torn down, and the process segfaults on the way out *after every
@@ -1067,6 +1077,36 @@ tests here pin.
 Reference counting across the boundary, `py_free/1`, `py_is_object/1`, and the
 new-or-borrowed rule of §3 applied to every entry point the shim declares. The
 GIL has moved to phase 2, where the wrapper it belongs inside gets written.
+
+**Done.** The ownership rule is now checked against CPython's own counts through
+`sys.getrefcount`, rather than argued from the code: **[checked]**
+
+| claim | measured |
+|---|---|
+| marshalling borrows | 2,000 translations of one object, refcount drift **0** |
+| a handle owns exactly one reference | 50 handles, refcount **+50** |
+| `py_free/1` releases exactly one | after freeing all 50, back to **+0** |
+
+The classification stopped being a comment and became data: `py_sig/4` carries
+`new`, `borrowed`, `foreign` or `none` beside each signature, and `py_steals/2`
+records the two setters that consume an argument. That is worth doing for its own
+sake — the tests can then assert what prose cannot: every `ptr` return is
+classified, no pointer return claims `none`, every `ccstr` return is `borrowed`,
+nothing that is not a pointer claims a reference, and every `py_steals/2` names a
+real entry point. Forty-four entry points, all conforming.
+
+Making it checkable immediately found an imprecision. `PyEval_SaveThread` returns
+`ptr`, but a `PyThreadState*` rather than a `PyObject*`, so refcounting does not
+apply to it — it had been lumped in with `none`, which also covers "returns no
+pointer at all". `foreign` now names that case, which is what keeps "every `ptr`
+return is classified" a claim with content.
+
+One place Trealla cannot match SWI, recorded rather than worked around:
+`py_is_object/1` is a type test and nothing more. SWI clears its blob in
+`py_free/1`, so `py_is_object/1` goes false on a freed handle; a Prolog term
+cannot be cleared from under its own copies, so a freed `'$py_obj'/1` still looks
+like an object. That is the aliasing weakness §3 called the weakest point in the
+design, showing up exactly where it said it would.
 *Needs 2.*
 
 **Phase 5 — errors.**
