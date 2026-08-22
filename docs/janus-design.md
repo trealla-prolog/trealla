@@ -1,11 +1,13 @@
 # Janus Prolog–Python interface for Trealla — design
 
 Status: the library build of §4.3 is done and in the tree. **Phases 0 and 1 are
-done** on branch `janus` — `library/janus.pl`, the `make janus` wiring of §5, the
-`'$register_predicate'/4` fix of §4.4, and `tests/janus/` behind `make
-janus-test`. Phase 1 is the marshaller of §3, both directions, recursive, with
-the ownership rule and dispatch order as specified. Phases 2 onwards are still
-design only.
+done**, and **phase 2 with them**, on branch `janus` — `library/janus.pl`, the
+`make janus` wiring of §5, the `'$register_predicate'/4` fix of §4.4, and
+`tests/janus/` behind `make janus-test`. Phase 1 is the marshaller of §3; phase 2
+is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments,
+the `Options` argument, and the GIL. Phases 3 onwards are still design only.
+
+**One open decision, in §2a below: Trealla cannot spell `f()`.**
 
 Goal: a bidirectional Prolog–Python bridge presenting the *Janus* interface that
 SWI-Prolog and XSB have agreed on (established as a PIP, a Prolog Improvement
@@ -135,6 +137,71 @@ taken without complaint. **[checked]** XSB's `janus_opts_1/3` ends in a
 not settle it. Following XSB here is the better behaviour and costs nothing —
 but it means a goal that is quietly ignored on SWI raises here, which is worth a
 line in the module documentation.
+
+---
+
+## 2a. The one thing that cannot be spelled here
+
+Every zero-argument method call in the Janus interface is written `f()` —
+`py_dot(Stream, close(), Return)` is from XSB's own manual, and `.upper()`,
+`.keys()`, `.sort()`, `.copy()` are the shape of ordinary Python. **Both
+reference systems parse it and Trealla cannot.** **[checked]**
+
+Both agree on what matters and disagree on almost everything else, which is
+itself useful: **[checked]**
+
+| probe | SWI 10.1.13 | XSB 5.0.0 | Trealla 3.5.25 |
+|---|---|---|---|
+| `X = close()` | parses | parses | **syntax error** |
+| `compound(close())` | true | true | — |
+| `close() == close` | **false** | **false** | — |
+| `functor(close(), N, A)` | raises `domain_error(compound_non_zero_arity, close())` | `close/0` | — |
+| `close() =.. L` | raises | `[close]` — lossy, the atom gives the same | — |
+| `functor(Y, close, 0)` | — | the **atom** `close` | the **atom** `close` |
+
+Nor is this only the reader. Trealla has no zero-arity compound to read *into*:
+`functor(X, close, 0)` yields the atom. So supporting the spec's spelling is a
+change to the term representation, not to the parser.
+
+The disagreement in the lower half of that table is the encouraging part. Both
+systems treat `f()` as a genuine term distinct from the atom, but the feature is
+*shallow* in both: SWI refuses to decompose it at all, XSB decomposes it
+inconsistently — `close() =.. [close]` while `Y =.. [close]` gives back the atom
+— and **neither can construct one programmatically.** Nothing in the Janus
+interface needs to: a zero-argument call is written by a human and read once.
+
+A bare atom cannot stand in, because `Obj:name` has to keep meaning attribute
+access — that is exactly what `math:pi` and `sys:maxsize` are, and both are in
+the tests. The distinction `()` encodes is real.
+
+Phase 2 therefore spells a zero-argument call `'()'(Name)`:
+
+```prolog
+?- py_dot(Handle, '()'(sort), _).
+?- py_call(builtins:'()'(dict), X).
+```
+
+The functor is not a possible Python identifier, so nothing can ever collide with
+it. But this is a divergence from the agreed interface in the most visible place
+there is, and it lands squarely on phase 7: SWI's `test_xsb_janus.pl` and XSB's
+`janus_tests` use `f()` throughout, so they cannot run unmodified.
+
+Two ways out, and the choice is not obvious:
+
+- **Rewrite the conformance suites** as they are ported. Cheap now, and it means
+  every future comparison against upstream carries a translation step, plus a
+  standing incompatibility for anyone moving Janus code between systems.
+- **Give Trealla zero-arity compounds.** Cheaper than it first looks, given what
+  the table above shows the reference systems actually implement: parse it, write
+  it, make `compound/1` true and keep it distinct from the atom. Term inspection
+  can follow either precedent — SWI raises, XSB answers `close/0` — and
+  *construction* need not be supported at all, since neither system supports it.
+  That is a new term shape in the parser and writer rather than a rewrite of the
+  term-inspection builtins. It removes the divergence entirely and is not
+  Janus-specific: it is an SWI extension that other ported code will want too.
+
+Nothing else in phases 0-2 is blocked either way, so this can be decided late.
+It should be decided before phase 7.
 
 ---
 
@@ -766,7 +833,8 @@ Consequences worth stating:
 | Naming a versioned Windows DLL | missing | §4.4 — candidate list on `use_foreign_module/2` |
 | Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
 | Cleanup for an abandoned iterator | present **[checked]** | `setup_call_cleanup/3`, phase 3 |
-| `py_object(true)` option | missing | §2 — phase 2, and it shapes §3's ownership rule |
+| `py_object(true)` option | **done** **[checked]** | §2 — exact-type mode, phase 2 |
+| Zero-arity compound `f()` | **absent, and not representable** **[checked]** | §2a — spelled `'()'(Name)`; blocks phase 7 conformance |
 | C callbacks from the FFI | absent by design | why §4.2 needs C |
 
 ---
@@ -902,6 +970,35 @@ machinery phase 4 finishes.
 Python call passes through. `PyGILState_Ensure`/`Release` is two lines inside it
 now, and a sweep through finished code later — the retrofit §8 warns about, with
 no reason to schedule it deliberately.
+**Done.** `py_call/2,3` walks the `:` chain, with `py_func` and `py_dot` over it;
+keyword arguments split positional-then-keyword and go through `PyObject_Call`
+with a kwargs dict; `py_object(true)` selects the exact-type mode measured in §2.
+Confirmed against SWI where behaviour was in doubt: `py_dot(hello, ...)` treats
+the atom as a module name and raises there exactly as it does here. **[checked]**
+
+Three things the GIL cost that the design did not anticipate, all of them silent
+or misdirected: **[checked]**
+
+- **`Py_InitializeEx` leaves the GIL held by the calling thread, and nothing ever
+  drops it.** Every other thread then blocks in `PyGILState_Ensure` forever — not
+  a crash, a deadlock, first seen as a test that never returns.
+  `PyEval_SaveThread` after startup is what releases it.
+- **Trealla runs the global `atexit/0` hook when any *thread* exits, not only at
+  process exit.** **[checked]** So the first worker thread to finish called
+  `Py_FinalizeEx` and tore CPython down underneath the threads still inside it.
+  The symptom was a CPython fatal error — `gilstate_tss_set: failed to set
+  current tstate (TSS)`, runtime state `preinitialized` — raised on a thread that
+  had done nothing wrong. The hook is now guarded to the thread that started the
+  interpreter. This is worth raising against Trealla independently: any library
+  registering process-level cleanup has the same problem, and
+  `tests/misc/atexit.sh` does not cover threads.
+- **`Py_FinalizeEx` pairs with `PyEval_RestoreThread`, not `PyGILState_Ensure`.**
+  Taking the GIL through the auto-state machinery leaves a reference held while
+  the runtime is torn down, and the process segfaults on the way out *after every
+  test has passed* — the worst possible place for it to show up.
+
+A smaller one: `kw=@true` does not parse, because `=@` lexes as a single symbol
+atom. It has to be written `kw = @true`.
 *Needs 1.*
 
 **Phase 3 — iteration, dict access, library paths.**

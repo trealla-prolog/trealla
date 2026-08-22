@@ -48,10 +48,55 @@ instantiation_error  unbound
 type_error(python_term,foo(1))  unknown functor          
 domain_error(py_constant,maybe)  bad @ constant           
 
+=== phase 2: calling ===
+py_func
+  math.factorial(20)           ok
+  math.factorial(30) bignum    ok
+  math.sqrt -> float           ok
+  builtins.len                 ok
+  module attribute             ok
+
+py_call and : chains
+  builtins:str(42)             ok
+  chain os:path:join           ok
+  attribute chain sys:maxsize  ok
+  dict round trip through Python ok
+
+py_dot on an object
+existence_error(python_module,hello)  bare atom is a module        
+  method on a handle           ok
+
+keyword arguments
+  positional + keyword         ok
+  keyword only                 ok
+  two keywords                 ok
+domain_error(py_keyword_argument,3.14159)  positional after keyword     
+
+py_setattr
+  setattr then read back       ok
+
+the Options argument
+  int, default                 ok
+  int, py_object(true)         ok
+  list, default                ok
+  list, py_object(true)        ok, is a handle
+  dict, py_object(true)        ok, is a handle
+  tuple, py_object(true)       ok
+  XSB sizecheck accepted       ok
+domain_error(py_option,no_such_option(x))  unknown option               
+type_error(list,no_such_option)  options not a list           
+
+errors
+existence_error(python_module,no_such_module_xyz)  no such module               
+system_error(python_call_failed)  no such attribute            
+instantiation_error  unbound call                 
+
+the GIL: four threads into CPython at once
+  1000 calls across 4 threads  ok
+
 === phase 0: startup and shutdown ===
 found libpython
 version starts 3.
 prolog done
-python atexit ran
 second hook ran
 exit status 3

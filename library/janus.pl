@@ -25,6 +25,10 @@
 % reference to Python of any kind.
 
 :- module(janus, [
+	py_call/2, py_call/3,
+	py_func/3, py_func/4,
+	py_dot/3,  py_dot/4,
+	py_setattr/3,
 	py_version/0,
 	py_lib/1
 	]).
@@ -129,6 +133,14 @@ py_sig('PyImport_ImportModule',  [cstr],          ptr). % new
 py_sig('PyObject_GetAttrString', [ptr, cstr],     ptr). % new
 py_sig('PyObject_CallObject',    [ptr, ptr],      ptr). % new
 
+% Phase 2: calling, and the GIL that has to wrap it
+py_sig('PyObject_Call',          [ptr, ptr, ptr],  ptr). % new
+py_sig('PyObject_SetAttrString', [ptr, cstr, ptr], sint32).
+py_sig('PyGILState_Ensure',      [],               sint32).
+py_sig('PyGILState_Release',     [sint32],         void).
+py_sig('PyEval_SaveThread',      [],               ptr).
+py_sig('PyEval_RestoreThread',   [ptr],            void).
+
 % A registered foreign predicate is reachable only from an unqualified
 % call inside the module that registered it: '$register_predicate'/4 puts
 % it on the prolog instance rather than in the module's own table, and
@@ -167,7 +179,18 @@ py_init :-
 	py_types_ready, !.
 py_init :-
 	(   py_initialized -> true ;   'Py_InitializeEx'(0)   ),
-	py_learn_types.
+	py_learn_types,
+
+	% Py_InitializeEx leaves the GIL HELD by the calling thread, and
+	% nothing ever drops it. Any other Trealla thread then blocks in
+	% PyGILState_Ensure forever - not a crash or a race, a silent
+	% deadlock, and the first symptom is a test that never returns.
+	% PyEval_SaveThread releases it and hands back the main thread's
+	% state. Every entry point from here on acquires the GIL through
+	% py_gil/1 - but the saved state is kept, because shutdown has to
+	% put it back.
+	'PyEval_SaveThread'(TState),
+	assertz(py_tstate_(TState)).
 
 % Shutdown. Registered by asserting a clause for atexit/0, which halt/0,1
 % run through ignore/1 before '$halt'.
@@ -178,10 +201,42 @@ py_init :-
 % never throws, because an exception here aborts the goal before '$halt'
 % is reached and the exit status is lost.
 
+% Py_FinalizeEx needs the GIL held, which after py_init/0 nobody holds.
+%
+% And it must run only once, on the thread that started the interpreter.
+% Trealla runs the GLOBAL atexit/0 hook when any thread exits, not only
+% at process exit, so without this guard the first worker thread to
+% finish tears CPython down underneath the ones still inside it. That
+% surfaces as a CPython fatal error - "gilstate_tss_set: failed to set
+% current tstate (TSS)", runtime state "preinitialized" - from a thread
+% that did nothing wrong, which is about as far from the cause as a
+% symptom can get.
+
+:- ( thread_self(Me) -> assertz(py_main_thread_(Me)) ; true ).
+
+:- dynamic(py_main_thread_/1).
+:- dynamic(py_tstate_/1).
+
+py_on_main_thread :-
+	py_main_thread_(Main),
+	thread_self(Main).
+
+% Shutdown pairs with PyEval_SaveThread above: the main thread's state
+% is restored, which reacquires the GIL and makes this thread current
+% again. PyGILState_Ensure is NOT the way to do it - it takes the GIL
+% through the auto-state machinery, which is still holding a reference
+% when Py_FinalizeEx tears the runtime down, and the process segfaults
+% on the way out with every test having already passed.
+
 py_finalize :-
+	py_on_main_thread,
 	py_initialized,
 	!,
 	py_forget_types,
+	(   retract(py_tstate_(TState))
+	->  'PyEval_RestoreThread'(TState)
+	;   true
+	),
 	'Py_FinalizeEx'(_).
 py_finalize.
 
@@ -199,8 +254,7 @@ py_finalize.
 % Py_FinalizeEx really ran rather than merely being called.
 
 py_run_(Source) :-
-	py_init,
-	'PyRun_SimpleString'(Source, 0).
+	py_gil('PyRun_SimpleString'(Source, _)).
 
 %   py_version is det.
 %
@@ -209,9 +263,7 @@ py_run_(Source) :-
 %   registration, a borrowed string return, and startup.
 
 py_version :-
-	py_init,
-	'Py_GetVersion'(Version),
-	py_lib_(Lib),
+	py_gil(('Py_GetVersion'(Version), py_lib_(Lib))),
 	format("Python ~w~nlibrary ~w~n", [Version, Lib]).
 
 
@@ -304,19 +356,50 @@ py_isa(Obj, Name) :-
 %   the opaque path where the spec leaves it.
 
 py_to_pl(Obj, Term) :-
+	py_to_pl(Obj, full, Term).
+
+%   py_to_pl(+Obj, +Mode, -Term) is det.
+%
+%   Mode is full or exact. exact is what py_object(true) selects: it
+%   swaps the subclass-aware chain below for a short exact-type one, so
+%   int, float, str and tuple still translate and everything else comes
+%   back as a handle. None and bool are decided before the split,
+%   because SWI decides them before opening its chain at all and the
+%   option is not meant to change them.
+
+py_to_pl(Obj, Mode, Term) :-
 	py_check(Obj),
 	(   py_is_none(Obj)       ->  Term = @none
 	;   py_isa(Obj, bool)     ->  py_bool_to_pl(Obj, Term)
+	;   Mode == exact         ->  py_to_pl_exact(Obj, Term)
 	;   py_isa(Obj, int)      ->  py_int_to_pl(Obj, Term)
 	;   py_isa(Obj, float)    ->  'PyFloat_AsDouble'(Obj, Term)
 	;   py_isa(Obj, str)      ->  'PyUnicode_AsUTF8'(Obj, Term)
-	;   py_isa(Obj, tuple)    ->  py_tuple_to_pl(Obj, Term)
-	;   py_isa(Obj, dict)     ->  py_dict_to_pl(Obj, Term)
+	;   py_isa(Obj, tuple)    ->  py_tuple_to_pl(Obj, Mode, Term)
+	;   py_isa(Obj, dict)     ->  py_dict_to_pl(Obj, Mode, Term)
 	;   py_isa(Obj, fraction) ->  py_fraction_to_pl(Obj, Term)
-	;   py_isa(Obj, list)     ->  py_seq_to_pl(Obj, Term)
-	;   py_isa(Obj, set)      ->  py_set_to_pl(Obj, Term)
+	;   py_isa(Obj, list)     ->  py_seq_to_pl(Obj, Mode, Term)
+	;   py_isa(Obj, set)      ->  py_set_to_pl(Obj, Mode, Term)
 	;   py_opaque(Obj, Term)
 	).
+
+py_to_pl_exact(Obj, Term) :-
+	(   py_is_exact(Obj, int)   ->  py_int_to_pl(Obj, Term)
+	;   py_is_exact(Obj, float) ->  'PyFloat_AsDouble'(Obj, Term)
+	;   py_is_exact(Obj, str)   ->  'PyUnicode_AsUTF8'(Obj, Term)
+	;   py_is_exact(Obj, tuple) ->  py_tuple_to_pl(Obj, exact, Term)
+	;   py_opaque(Obj, Term)
+	).
+
+% Exact type identity, the equivalent of CPython's *_CheckExact macros.
+% The type object is immortal, so releasing the reference PyObject_Type
+% hands back before comparing it is safe.
+
+py_is_exact(Obj, Name) :-
+	py_type_(Name, Type),
+	'PyObject_Type'(Obj, T),
+	'Py_DecRef'(T),
+	T =:= Type.
 
 py_is_none(Obj) :-
 	py_const_(none, None),
@@ -353,57 +436,57 @@ py_attr_int(Obj, Name, N) :-
 	py_int_to_pl(A, N),
 	'Py_DecRef'(A).
 
-py_seq_items(Obj, I, N, []) :-
+py_seq_items(_, I, N, _, []) :-
 	I >= N,
 	!.
-py_seq_items(Obj, I, N, [H|T]) :-
+py_seq_items(Obj, I, N, Mode, [H|T]) :-
 	'PySequence_GetItem'(Obj, I, Item),
 	py_check(Item),
-	py_to_pl(Item, H),
+	py_to_pl(Item, Mode, H),
 	'Py_DecRef'(Item),
 	J is I + 1,
-	py_seq_items(Obj, J, N, T).
+	py_seq_items(Obj, J, N, Mode, T).
 
-py_seq_to_pl(Obj, List) :-
+py_seq_to_pl(Obj, Mode, List) :-
 	'PySequence_Size'(Obj, N),
-	py_seq_items(Obj, 0, N, List).
+	py_seq_items(Obj, 0, N, Mode, List).
 
 % A tuple of arity N is a compound -/N. The empty tuple has nowhere else
 % to go than the atom '-', since a compound of arity zero is not a term.
 
-py_tuple_to_pl(Obj, Term) :-
-	py_seq_to_pl(Obj, Items),
+py_tuple_to_pl(Obj, Mode, Term) :-
+	py_seq_to_pl(Obj, Mode, Items),
 	Term =.. [-|Items].
 
 % A dict is a curly term wrapping a comma-list of :/2 - except the empty
 % one, which is the ATOM {} and not a compound at all.
 
-py_dict_to_pl(Obj, Term) :-
+py_dict_to_pl(Obj, Mode, Term) :-
 	'PyDict_Keys'(Obj, Keys),
 	py_check(Keys),
 	'PySequence_Size'(Keys, N),
 	(   N =:= 0
 	->  Term = {}
-	;   py_dict_pairs(Obj, Keys, 0, N, Pairs),
+	;   py_dict_pairs(Obj, Keys, 0, N, Mode, Pairs),
 	    py_comma_list(Pairs, Inner),
 	    Term = {Inner}
 	),
 	'Py_DecRef'(Keys).
 
-py_dict_pairs(_, _, I, N, []) :-
+py_dict_pairs(_, _, I, N, _, []) :-
 	I >= N,
 	!.
-py_dict_pairs(Obj, Keys, I, N, [K:V|T]) :-
+py_dict_pairs(Obj, Keys, I, N, Mode, [K:V|T]) :-
 	'PySequence_GetItem'(Keys, I, KeyObj),
 	py_check(KeyObj),
-	py_to_pl(KeyObj, K),
+	py_to_pl(KeyObj, Mode, K),
 	'PyObject_GetItem'(Obj, KeyObj, ValObj),
 	'Py_DecRef'(KeyObj),
 	py_check(ValObj),
-	py_to_pl(ValObj, V),
+	py_to_pl(ValObj, Mode, V),
 	'Py_DecRef'(ValObj),
 	J is I + 1,
-	py_dict_pairs(Obj, Keys, J, N, T).
+	py_dict_pairs(Obj, Keys, J, N, Mode, T).
 
 py_comma_list([X], X) :-
 	!.
@@ -422,20 +505,20 @@ py_uncomma(X, [X]).
 % A set is not a sequence, so it goes through the iterator protocol.
 % Element order is not preserved, which the spec says explicitly.
 
-py_set_to_pl(Obj, py_set(List)) :-
+py_set_to_pl(Obj, Mode, py_set(List)) :-
 	'PyObject_GetIter'(Obj, Iter),
 	py_check(Iter),
-	py_iter_items(Iter, List),
+	py_iter_items(Iter, Mode, List),
 	'Py_DecRef'(Iter).
 
-py_iter_items(Iter, List) :-
+py_iter_items(Iter, Mode, List) :-
 	'PyIter_Next'(Iter, Item),
 	(   Item =:= 0
 	->  List = []                  % exhausted, or an error phase 5 owns
-	;   py_to_pl(Item, H),
+	;   py_to_pl(Item, Mode, H),
 	    'Py_DecRef'(Item),
 	    List = [H|T],
-	    py_iter_items(Iter, T)
+	    py_iter_items(Iter, Mode, T)
 	).
 
 % Everything the table does not name - bytes, complex, a module, a class,
@@ -637,7 +720,272 @@ py_fill_set([H|T], Obj) :-
 %   2, and this is what phase 1's tests exercise it through.
 
 py_round_trip(Term, Back) :-
+	py_gil(( pl_to_py(Term, Obj),
+	         py_to_pl(Obj, Back),
+	         'Py_DecRef'(Obj) )).
+
+
+		 /*******************************
+		 *      PHASE 2: CALLING        *
+		 *******************************/
+
+% The GIL is taken here rather than in phase 4, because this is where
+% the one wrapper every Python call passes through gets written, and
+% adding it later would mean a sweep through finished code. Trealla's
+% threads are real pthreads and the FFI is reentrant across them, so two
+% threads entering CPython at once is reachable in ordinary code.
+%
+% PyGILState_Ensure/Release nest, so an outer py_gil/1 costs an inner
+% one nothing. setup_call_cleanup/3 releases on failure and on exception
+% as well as on success.
+
+py_gil(Goal) :-
 	py_init,
-	pl_to_py(Term, Obj),
-	py_to_pl(Obj, Back),
-	'Py_DecRef'(Obj).
+	setup_call_cleanup(
+		'PyGILState_Ensure'(State),
+		once(Goal),
+		'PyGILState_Release'(State)).
+
+% Imported modules are cached. PyImport_ImportModule consults
+% sys.modules itself, so this saves the lookup rather than the import.
+
+:- dynamic(py_module_/2).
+
+py_module(Name, Obj) :-
+	py_module_(Name, Obj),
+	!.
+py_module(Name, Obj) :-
+	'PyImport_ImportModule'(Name, Obj),
+	(   Obj =:= 0
+	->  'PyErr_Clear',
+	    throw(error(existence_error(python_module, Name), janus))
+	;   assertz(py_module_(Name, Obj))
+	).
+
+%   py_resolve(+Expr, -Obj) is det.
+%
+%   Walk a `:` chain to an object, returning a new reference. `:` is
+%   600 xfy, so a:b:c parses as a:(b:c) and the recursion has to handle
+%   a chain on the right of the first step, not only on the left.
+%
+%   The leftmost element decides the starting point: an atom is a module
+%   name, anything else is marshalled - which is what makes
+%   py_dot('hello':upper(), X) work as well as an object reference.
+
+py_resolve(Expr, _) :-
+	var(Expr),
+	!,
+	throw(error(instantiation_error, janus)).
+py_resolve(Target:Rest, Obj) :-
+	!,
+	py_resolve(Target, Base),
+	setup_call_cleanup(true, py_apply(Base, Rest, Obj), 'Py_DecRef'(Base)).
+py_resolve(Name, Obj) :-
+	atom(Name),
+	\+ Name == {},
+	!,
+	py_module(Name, Obj),
+	'Py_IncRef'(Obj).            % the cache keeps its own reference
+py_resolve(Term, Obj) :-
+	pl_to_py(Term, Obj).
+
+%   py_apply(+Target, +Spec, -Obj) is det.
+%
+%   Spec is an attribute name, a method call, or another `:` chain.
+
+py_apply(_, Spec, _) :-
+	var(Spec),
+	!,
+	throw(error(instantiation_error, janus)).
+py_apply(Target, A:B, Obj) :-
+	!,
+	py_apply(Target, A, Mid),
+	setup_call_cleanup(true, py_apply(Mid, B, Obj), 'Py_DecRef'(Mid)).
+% A zero-argument method call. Both reference systems spell this
+% `close()`, and both parse it: SWI and XSB each accept a zero-arity
+% compound, and SWI gives it a term type of its own - functor/3 there
+% rejects it with domain_error(compound_non_zero_arity, close()).
+% Trealla has no such term: functor(X, close, 0) yields the ATOM close,
+% so the spelling cannot be parsed OR represented here.
+%
+% A bare atom cannot stand in for it either, because `Obj:name` has to
+% keep meaning attribute access - that is what math:pi and sys:maxsize
+% are. So a zero-argument call is written '()'(Name). The functor is not
+% a possible Python identifier, so nothing can collide with it.
+%
+% This is the one place the interface cannot be spelled as the spec
+% writes it, and phase 7's conformance suites use `f()` throughout. See
+% docs/janus-design.md.
+
+py_apply(Target, '()'(Name), Obj) :-
+	!,
+	must_be(atom, Name),
+	'PyObject_GetAttrString'(Target, Name, Fn),
+	py_check(Fn),
+	setup_call_cleanup(true, py_invoke(Fn, [], Obj), 'Py_DecRef'(Fn)).
+py_apply(Target, Name, Obj) :-
+	atom(Name),
+	!,
+	'PyObject_GetAttrString'(Target, Name, Obj),
+	py_check(Obj).
+py_apply(Target, Call, Obj) :-
+	compound(Call),
+	!,
+	Call =.. [Name|RawArgs],
+	'PyObject_GetAttrString'(Target, Name, Fn),
+	py_check(Fn),
+	setup_call_cleanup(true,
+		py_invoke(Fn, RawArgs, Obj),
+		'Py_DecRef'(Fn)).
+py_apply(_, Spec, _) :-
+	throw(error(type_error(py_attribute, Spec), janus)).
+
+% f(a, b, kw=v): positional first, keyword after. A positional argument
+% following a keyword one is an error rather than a silent reordering,
+% which is what Python itself does with the same syntax.
+
+py_invoke(Fn, RawArgs, Obj) :-
+	py_split_args(RawArgs, Positional, Keyword),
+	length(Positional, N),
+	'PyTuple_New'(N, Args),
+	py_check(Args),
+	setup_call_cleanup(true,
+		(   py_fill_seq(Positional, 0, Args, tuple),
+		    py_call_with(Fn, Args, Keyword, Obj)
+		),
+		'Py_DecRef'(Args)),
+	py_check(Obj).
+
+py_call_with(Fn, Args, [], Obj) :-
+	!,
+	'PyObject_CallObject'(Fn, Args, Obj).
+py_call_with(Fn, Args, Keyword, Obj) :-
+	'PyDict_New'(Kwargs),
+	py_check(Kwargs),
+	setup_call_cleanup(true,
+		(   py_fill_kwargs(Keyword, Kwargs),
+		    'PyObject_Call'(Fn, Args, Kwargs, Obj)
+		),
+		'Py_DecRef'(Kwargs)).
+
+py_fill_kwargs([], _).
+py_fill_kwargs([Name=Value|T], Kwargs) :-
+	pl_to_py(Name, KO),
+	pl_to_py(Value, VO),
+	'PyDict_SetItem'(Kwargs, KO, VO, _),      % does not steal
+	'Py_DecRef'(KO),
+	'Py_DecRef'(VO),
+	py_fill_kwargs(T, Kwargs).
+
+py_split_args([], [], []) :-
+	!.
+py_split_args([A|As], Positional, Keyword) :-
+	(   py_is_keyword(A)
+	->  Positional = [],
+	    py_all_keywords([A|As], Keyword)
+	;   Positional = [A|More],
+	    py_split_args(As, More, Keyword)
+	).
+
+py_is_keyword(A) :-
+	nonvar(A),
+	A = (Name=_),
+	atom(Name).
+
+py_all_keywords([], []).
+py_all_keywords([A|As], [A|Rest]) :-
+	(   py_is_keyword(A)
+	->  py_all_keywords(As, Rest)
+	;   throw(error(domain_error(py_keyword_argument, A), janus))
+	).
+
+% Options. py_object(true) is the only one with behaviour and the only
+% one both reference systems implement; sizecheck/1 and iter/1 are XSB
+% spellings with nothing to do here. An unrecognised option is a domain
+% error, which is XSB's behaviour - SWI accepts anything silently, and
+% the PIP does not settle it.
+
+py_mode(Options, _) :-
+	var(Options),
+	!,
+	throw(error(instantiation_error, janus)).
+py_mode(Options, Mode) :-
+	\+ is_list(Options),
+	!,
+	throw(error(type_error(list, Options), janus)).
+py_mode(Options, Mode) :-
+	py_check_options(Options),
+	(   memberchk(py_object(true), Options)
+	->  Mode = exact
+	;   Mode = full
+	).
+
+py_check_options([]).
+py_check_options([O|Os]) :-
+	(   py_known_option(O)
+	->  py_check_options(Os)
+	;   throw(error(domain_error(py_option, O), janus))
+	).
+
+py_known_option(py_object(B))  :- py_boolean(B).
+py_known_option(sizecheck(B))  :- py_boolean(B).   % XSB, no effect here
+py_known_option(iter(B))       :- py_boolean(B).   % XSB, no effect here
+
+py_boolean(true).
+py_boolean(false).
+
+%   py_call(+Call, -Return) is det.
+%   py_call(+Call, -Return, +Options) is det.
+%
+%   Call is a `:` chain: a module or object on the left, attributes and
+%   method calls to its right.
+
+py_call(Call, Return) :-
+	py_call(Call, Return, []).
+
+py_call(Call, Return, Options) :-
+	py_mode(Options, Mode),
+	py_gil(py_call_(Call, Mode, Return)).
+
+py_call_(Call, Mode, Return) :-
+	py_resolve(Call, Obj),
+	setup_call_cleanup(true, py_to_pl(Obj, Mode, Return), 'Py_DecRef'(Obj)).
+
+%   py_func(+Module, +Function, -Return) is det.
+%   py_dot(+ObjRef, +MethAttr, -Return) is det.
+%
+%   The two primitives the chain is built from, kept as their own
+%   entry points because both reference systems export them.
+
+py_func(Module, Function, Return) :-
+	py_func(Module, Function, Return, []).
+
+py_func(Module, Function, Return, Options) :-
+	py_call(Module:Function, Return, Options).
+
+py_dot(ObjRef, MethAttr, Return) :-
+	py_dot(ObjRef, MethAttr, Return, []).
+
+py_dot(ObjRef, MethAttr, Return, Options) :-
+	py_call(ObjRef:MethAttr, Return, Options).
+
+%   py_setattr(+On, +Name, +Value) is det.
+
+py_setattr(On, Name, Value) :-
+	must_be(atom, Name),
+	py_gil(py_setattr_(On, Name, Value)).
+
+py_setattr_(On, Name, Value) :-
+	py_resolve(On, Obj),
+	setup_call_cleanup(true,
+		(   pl_to_py(Value, VO),
+		    setup_call_cleanup(true,
+			    'PyObject_SetAttrString'(Obj, Name, VO, R),
+			    'Py_DecRef'(VO)),
+		    (   R =:= 0
+		    ->  true
+		    ;   'PyErr_Clear',
+			throw(error(permission_error(modify, py_attribute, Name), janus))
+		    )
+		),
+		'Py_DecRef'(Obj)).

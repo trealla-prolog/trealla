@@ -81,11 +81,13 @@ main :-
 
 % bytes is a sequence but not in the table, so it must stay opaque and
 % not quietly become a list of integers.
+% Anything reaching the C API directly has to hold the GIL: since phase
+% 2 nobody holds it between calls, and a bare py_to_pl/2 here segfaults
+% the process on the way out with every test already reported as passed.
 opaque_check :-
-	janus:py_init,
 	janus:py_run_('import builtins\nbuiltins._probe = b"xy"'),
-	janus:py_import_attr(builtins, '_probe', Obj),
-	janus:py_to_pl(Obj, Term),
+	janus:py_gil(( janus:py_import_attr(builtins, '_probe', Obj),
+	               janus:py_to_pl(Obj, Term) )),
 	(   Term = '$py_obj'(_)
 	->  format("  bytes stays opaque~t~26| ok~n")
 	;   format("  bytes~t~26| LEAKED AS ~p~n", [Term])
