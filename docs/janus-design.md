@@ -7,7 +7,8 @@ done**, and **phase 2 with them**, on branch `janus` — `library/janus.pl`, the
 is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments,
 the `Options` argument, and the GIL. Phases 3 onwards are still design only.
 
-**One open decision, in §2a below: Trealla cannot spell `f()`.**
+§2a covers the one place the interface could not be spelled here, and how that
+was resolved: the `empty_args` flag.
 
 Goal: a bidirectional Prolog–Python bridge presenting the *Janus* interface that
 SWI-Prolog and XSB have agreed on (established as a PIP, a Prolog Improvement
@@ -174,34 +175,51 @@ A bare atom cannot stand in, because `Obj:name` has to keep meaning attribute
 access — that is exactly what `math:pi` and `sys:maxsize` are, and both are in
 the tests. The distinction `()` encodes is real.
 
-Phase 2 therefore spells a zero-argument call `'()'(Name)`:
+**Resolved without an ISO violation: the `empty_args` flag.** A zero-arity
+compound *is* the non-conformance, so Trealla does not gain one. Instead the
+reader gains a rule, off by default, that turns the spec's syntax into an
+ordinary ISO term: **[checked]**
 
 ```prolog
-?- py_dot(Handle, '()'(sort), _).
-?- py_call(builtins:'()'(dict), X).
+:- set_prolog_flag(empty_args, true).
+
+?- X = close(), write_canonical(X).
+'()'(close)
 ```
 
-The functor is not a possible Python identifier, so nothing can ever collide with
-it. But this is a divergence from the agreed interface in the most visible place
-there is, and it lands squarely on phase 7: SWI's `test_xsb_janus.pl` and XSB's
-`janus_tests` use `f()` throughout, so they cannot run unmodified.
+`'()'(close)` is a plain compound of arity 1. It satisfies everything the
+interface needs — it parses, it is a compound, and it is distinct from the atom
+`close` — while `functor/3`, `=..` and the writer keep working on it exactly as
+they do on any other term, with no new shape to teach them. The functor is not a
+possible Python identifier, so nothing can collide with it. Written by hand,
+`'()'(sort)` and `sort()` are the same term, so both spellings work.
 
-Two ways out, and the choice is not obvious:
+With the flag off, which is the default in every build, `close()` is the syntax
+error it has always been. Bare `()` stays an error either way, and `[]` and `{}`
+are untouched. The full suite is unchanged: 342 pass, with the same three
+failures a `main` build has. **[checked]**
 
-- **Rewrite the conformance suites** as they are ported. Cheap now, and it means
-  every future comparison against upstream carries a translation step, plus a
-  standing incompatibility for anyone moving Janus code between systems.
-- **Give Trealla zero-arity compounds.** Cheaper than it first looks, given what
-  the table above shows the reference systems actually implement: parse it, write
-  it, make `compound/1` true and keep it distinct from the atom. Term inspection
-  can follow either precedent — SWI raises, XSB answers `close/0` — and
-  *construction* need not be supported at all, since neither system supports it.
-  That is a new term shape in the parser and writer rather than a rewrite of the
-  term-inspection builtins. It removes the divergence entirely and is not
-  Janus-specific: it is an SWI extension that other ported code will want too.
+Three notes on where it lives:
 
-Nothing else in phases 0-2 is blocked either way, so this can be decided late.
-It should be decided before phase 7.
+- The flag is module-scoped like `double_quotes`, so a file that wants the syntax
+  says so itself. `library(janus)` deliberately does not turn it on globally.
+  Phase 7's conformance suites need one directive at the top rather than a
+  rewrite of every `f()` in them.
+- It is registered in **two** places, which is easy to miss: the runtime
+  `set_prolog_flag/2` in `src/bif_predicates.c`, and the parser's own directive
+  handler in `src/parser.c`, which recognises a fixed list of flags at read time
+  and silently ignores anything else. Adding it to only the first leaves the
+  directive with no effect and no diagnostic.
+- The flag bit is **not** behind `#ifdef USE_JANUS`. Only `src/library.o` is
+  compiled with that define (§5), so an `#ifdef` inside `prolog_flags_` would
+  give that one object a different struct layout from the rest of the engine.
+  The few lines of parser support are unconditional too; with the flag off they
+  do nothing. Hard-gating them would mean compiling `src/parser.o` twice as
+  well, which doubles the fragile surface of §5's build for no behavioural gain.
+
+The writer still prints `'()'(close)` rather than `close()`. That is honest —
+the term really is a compound of arity 1 — and nothing in the interface reads
+its own output back.
 
 ---
 
@@ -834,7 +852,7 @@ Consequences worth stating:
 | Opaque handle with finalizer | missing | use `'$py_obj'/1` + explicit `py_free/1` |
 | Cleanup for an abandoned iterator | present **[checked]** | `setup_call_cleanup/3`, phase 3 |
 | `py_object(true)` option | **done** **[checked]** | §2 — exact-type mode, phase 2 |
-| Zero-arity compound `f()` | **absent, and not representable** **[checked]** | §2a — spelled `'()'(Name)`; blocks phase 7 conformance |
+| Spelling a zero-argument call `f()` | **done** **[checked]** | §2a — `empty_args` flag, reads as `'()'(Name)`; off by default |
 | C callbacks from the FFI | absent by design | why §4.2 needs C |
 
 ---

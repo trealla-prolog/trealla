@@ -729,6 +729,13 @@ struct prolog_flags_ {
 	bool debug:1;
 	bool json:1;
 	bool var_prefix:1;
+
+	// Read f() as '()'(f) instead of rejecting it. Off by default, so
+	// nothing changes unless a file asks for it. Deliberately NOT behind
+	// #ifdef USE_JANUS: only src/library.o is compiled with that define,
+	// so an #ifdef here would give that one object a different
+	// prolog_flags layout from the rest of the engine.
+	bool empty_args:1;
 };
 
 typedef struct {
@@ -927,6 +934,7 @@ struct parser_ {
 	bool is_op:1;
 	bool skip:1;
 	bool last_close:1;
+	bool last_empty_arglist:1;		// the arg list just closed was f()
 	bool last_neg:1;
 	bool no_fp:1;
 	bool reuse:1;

@@ -1,3 +1,9 @@
+% The zero-argument call is written the way the Janus interface writes
+% it - f() - which needs the empty_args flag. Without it the reader
+% rejects f() outright; with it, f() reads as '()'(f), which is what
+% py_apply/3 dispatches on. See docs/janus-design.md section 2a.
+:- set_prolog_flag(empty_args, true).
+
 % Phase 2 acceptance: calling. py_func/3,4, py_dot/3,4, py_call/2,3,
 % py_setattr/3, keyword arguments, `:` chains, and the Options argument.
 
@@ -36,11 +42,11 @@ main :-
 	nl, write('py_dot on an object'), nl,
 	% An atom on the left of : is a MODULE name, in this port as in SWI,
 	% where py_dot(hello, upper(), X) raises ModuleNotFoundError too.
-	err('bare atom is a module', py_dot(hello, '()'(upper), _)),
+	err('bare atom is a module', py_dot(hello, upper(), _)),
 	chk('method on a handle',
 	    ( py_call(builtins:list([3,1,2]), L, [py_object(true)]),
-	      py_dot(L, '()'(sort), _),
-	      py_dot(L, '()'(copy), R11) ), R11, [1,2,3]),
+	      py_dot(L, sort(), _),
+	      py_dot(L, copy(), R11) ), R11, [1,2,3]),
 
 	nl, write('keyword arguments'), nl,
 	chk('positional + keyword',
@@ -65,7 +71,7 @@ main :-
 	handle('list, py_object(true)',
 	    py_call(builtins:list([1,2]), R19, [py_object(true)]), R19),
 	handle('dict, py_object(true)',
-	    py_call(builtins:'()'(dict), R20, [py_object(true)]), R20),
+	    py_call(builtins:dict(), R20, [py_object(true)]), R20),
 	chk('tuple, py_object(true)',
 	    py_call(builtins:tuple([1,2]), R21, [py_object(true)]), R21, -(1,2)),
 	chk('XSB sizecheck accepted',
@@ -74,7 +80,7 @@ main :-
 	err('options not a list', py_call(builtins:int(1), _, no_such_option)),
 
 	nl, write('errors'), nl,
-	err('no such module', py_call(no_such_module_xyz:'()'(f), _)),
+	err('no such module', py_call(no_such_module_xyz:f(), _)),
 	err('no such attribute', py_call(math:no_such_attr, _)),
 	err('unbound call', py_call(_, _)),
 

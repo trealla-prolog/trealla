@@ -2507,6 +2507,15 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, "UTF-8"));
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "empty_args")) {
+		cell tmp;
+
+		if (q->st.m->flags.empty_args)
+			make_atom(&tmp, g_on_s);
+		else
+			make_atom(&tmp, g_off_s);
+
+		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "strict_iso")) {
 		cell tmp;
 
@@ -2790,6 +2799,14 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 			q->st.m->flags.strict_iso = true;
 		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
 			q->st.m->flags.strict_iso = false;
+		else {
+			return flag_value_error(q, p1, p2);
+		}
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "empty_args")) {
+		if (!CMP_STRING_TO_CSTR(q, p2, "true") || !CMP_STRING_TO_CSTR(q, p2, "on"))
+			q->st.m->flags.empty_args = true;
+		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
+			q->st.m->flags.empty_args = false;
 		else {
 			return flag_value_error(q, p1, p2);
 		}
