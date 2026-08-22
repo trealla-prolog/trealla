@@ -3,3 +3,6 @@ stable ok
 enumerated ok
 agrees_with_unix ok
 read_only ok
+rationals_boolean ok
+rationals_agree ok
+rationals_read_only ok

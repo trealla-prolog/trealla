@@ -1,12 +1,13 @@
 :- initialization(main).
 
-% current_prolog_flag(os, OS) names the host operating system. Its
-% value differs by platform, so what is checked here is everything
-% about it that does not: that it is a known atom, that it agrees with
-% the unix flag, that it enumerates, and that it cannot be set.
+% The flags describing the build: os names the host operating system
+% and rationals says whether this one has rational numbers.
 %
-% The unix flag said true on every host, Windows included, until it was
-% derived from the same answer.
+% The value of os differs by platform, so what is checked here is
+% everything about it that does not: that it is a known atom, that it
+% agrees with the unix flag, that it enumerates, and that it cannot be
+% set. The unix flag said true on every host, Windows included, until
+% it was derived from the same answer.
 
 :- use_module(library(lists)).
 
@@ -69,9 +70,39 @@ read_only :-
 	nonvar(E),
 	E = permission_error(modify, flag, os).
 
+% rationals is a plain boolean, and it enumerates too
+
+rationals_boolean :-
+	current_prolog_flag(rationals, R),
+	memberchk(R, [true,false]),
+	findall(V, (current_prolog_flag(F, V), F == rationals), Vs),
+	Vs == [R].
+
+% and it says what the build actually does: rdiv/2 yields a rational
+% where they are supported, and there are none to yield where they
+% are not
+
+rationals_agree :-
+	current_prolog_flag(rationals, R),
+	(	R == true
+	->	X is 1 rdiv 3,
+		rational(X),
+		\+ integer(X),
+		Y is 2 rdiv 1, Y =:= 2			% a whole one normalises to an integer
+	;	\+ catch((Z is 1 rdiv 3, rational(Z)), _, fail)
+	).
+
+rationals_read_only :-
+	catch(set_prolog_flag(rationals, false), error(E, _), true),
+	nonvar(E),
+	E = permission_error(modify, flag, rationals).
+
 main :-
 	check(named, named),
 	check(stable, stable),
 	check(enumerated, enumerated),
 	check(agrees_with_unix, agrees_with_unix),
-	check(read_only, read_only).
+	check(read_only, read_only),
+	check(rationals_boolean, rationals_boolean),
+	check(rationals_agree, rationals_agree),
+	check(rationals_read_only, rationals_read_only).

@@ -88,6 +88,14 @@ static const char *host_os(void)
 }
 #endif
 
+// Whether this build has rational numbers, for
+// current_prolog_flag(rationals, B). imath's imrat is compiled in
+// unconditionally today, so this is true everywhere; it is a flag
+// rather than a constant so that a build without it has somewhere to
+// say so, and so that library code can ask instead of assuming.
+
+#define HAS_RATIONALS true
+
 // The unix flag was the atom true whatever the host, Windows included.
 // Deriving it from the same answer keeps the two from disagreeing.
 
@@ -2582,6 +2590,10 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, host_os()));
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "rationals")) {
+		cell tmp;
+		make_atom(&tmp, HAS_RATIONALS ? g_true_s : g_false_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "occurs_check")) {
 		cell tmp;
 
@@ -2922,6 +2934,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 		|| !CMP_STRING_TO_CSTR(q, p1, "encoding")
 		|| !CMP_STRING_TO_CSTR(q, p1, "unix")
 		|| !CMP_STRING_TO_CSTR(q, p1, "os")
+		|| !CMP_STRING_TO_CSTR(q, p1, "rationals")
 		|| !CMP_STRING_TO_CSTR(q, p1, "threads")
 #if USE_THREADS
 		|| !CMP_STRING_TO_CSTR(q, p1, "hardware_threads")
@@ -6830,6 +6843,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "encoding", "'UTF-8'");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", host_is_unix()?"true":"false");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "os", host_os());
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "rationals", HAS_RATIONALS?"true":"false");
 #if USE_THREADS
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "hardware_threads", 4);
