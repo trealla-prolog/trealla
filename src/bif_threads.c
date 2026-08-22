@@ -923,7 +923,7 @@ static bool bif_thread_create_3(query *q)
 	// finalizing an embedded interpreter - had it torn down under the
 	// threads still using it, by whichever thread happened to end first.
 
-	make_instr(tmp2+num_cells++, new_atom(q->pl, "$halt"), NULL, 0, 0);
+	make_instr(tmp2+num_cells++, new_atom(q->pl, "$halt"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
 
 	if (at_exit_goal) {

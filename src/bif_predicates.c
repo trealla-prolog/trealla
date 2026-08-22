@@ -341,7 +341,7 @@ static bool bif_iso_repeat_0(query *q)
 	return true;
 }
 
-static bool bif_iso_halt_0(query *q)
+bool bif_iso_halt_0(query *q)
 {
 	q->halt_code = 0;
 	q->halt = q->error = true;
