@@ -1,0 +1,8 @@
+roundtrip ok
+arbitrary ok
+unget_eof ok
+at_real_eof ok
+empty ok
+current_input ok
+multibyte ok
+after_read ok
