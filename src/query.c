@@ -2521,6 +2521,13 @@ bool start(query *q)
 				if (!check_redo(q))
 					break;
 
+				// A solution HAS been found; this return only means
+				// there may be more. Without this the status stays
+				// false for every non-deterministic success, so an
+				// embedder cannot tell a goal that failed from one
+				// that succeeded with choicepoints left.
+
+				q->status = true;
 				return true;
 			}
 
@@ -2639,6 +2646,18 @@ void query_destroy(query *q)
 	TPL_free(q->tabs);
 	TPL_free(q->unify_seen);
 	release_oom_reserve(q);
+
+	// Set by run() for a query handed back to an embedder: the goal's
+	// cells live in that parser's clause, so it could not be destroyed
+	// until now.
+
+	if (q->owns_top) {
+		parser_destroy(q->top);
+		q->top = NULL;
+	}
+
+	free(q->terms);					// the embedding API's term arena
+
 	q->pl->q_cnt--;
 	TPL_free(q);
 }

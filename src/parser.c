@@ -5483,8 +5483,15 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		query *q = query_create(p->m);
 		CHECKED(q, p->srcptr = NULL, SB_free(pr));
 
-		if (subq)
+		// A returned query outlives this call, and its goal's cells -
+		// a string literal among them - live in this parser's clause.
+		// So the parser goes with the query rather than being destroyed
+		// underneath it.
+
+		if (subq) {
 			*subq = q;
+			q->owns_top = true;
+		}
 
 		if (yield_time_in_ms > 0)
 			do_yield_at(q, yield_time_in_ms);

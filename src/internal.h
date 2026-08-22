@@ -330,6 +330,15 @@ typedef struct slot_ slot;
 typedef struct choice_ choice;
 typedef struct run_state_ run_state;
 typedef struct prolog_flags_ prolog_flags;
+
+// A term handed to an embedder through src/trealla.h. Owned by the
+// query, invalidated by pl_redo/pl_done - see the header.
+
+struct pl_term_ {
+	struct query_ *q;
+	cell *c;
+	pl_ctx ctx;
+};
 typedef struct builtins_ builtins;
 typedef struct scheduler_ scheduler;
 
@@ -768,6 +777,9 @@ struct query_ {
 	module *current_m;
 	prolog *pl;
 	parser *top, *p;
+	bool owns_top;						// destroy top with the query
+	struct pl_term_ *terms;				// arena for the embedding API
+	unsigned terms_used, terms_cap;
 	slot *slots;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	void *oom_reserve;					// emergency headroom for constructing a memory error
@@ -1011,6 +1023,7 @@ struct prolog_ {
 	bool def_double_quotes:1;
 	bool is_redo:1;
 	bool is_query:1;
+	bool no_dump_vars:1;				// set_dump_vars(pl, 0)
 	bool halt:1;
 	bool status:1;
 	bool error:1;

@@ -8,7 +8,9 @@ is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments
 the `Options` argument, and the GIL; **phase 3** is `py_iter/2,3`, the dict
 accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
 `py_is_object/1`; **phase 5** is errors; **phase 5a** is the compatibility
-surface. Phase 6 (the C half) and phase 7 (conformance) remain.
+surface. **Phase 6 is part done**: both `pl_query` defects are fixed and the
+term-inspection API is in `src/trealla.h`; the extension module remains, as does
+phase 7 (conformance).
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -623,7 +625,7 @@ Three things are still missing, all on the critical path for this direction:
 answers reach the caller by being *printed* (`dump_vars`), not returned.
 **[checked]** This is the one genuine piece of new API design in the project.
 
-**`pl_query` frees the goal's strings before the query finishes.** It calls
+**Fixed.** **`pl_query` freed the goal's strings before the query finished.** It calls
 `parser_destroy` before returning, so a string literal in the goal is freed while
 the running query still refers to it. The first solution is fine; later ones read
 freed memory. **[checked]** — `member(X,[a,b,c]), format("~w",[X])` yields 2
@@ -631,11 +633,15 @@ solutions and a bogus `type_error(atom, mmy)` instead of 3, and suppressing the
 `parser_destroy` call makes it 3. Janus goals routinely carry strings, so this
 blocks phase 6 outright.
 
-**`get_status` is not meaningful after `pl_query`.** It reads false even for a
-goal that just succeeded, so a goal with no solutions cannot be told from one
-with a single solution. **[checked]** — `pl_eval` sets it correctly, only the
-`pl_query` path does not. `janus.query_once()` has to report truth, so this needs
-fixing too.
+**Fixed, and narrower than it looked. `get_status` was wrong only after a
+*non-deterministic* success.** A failing goal and a deterministic success were
+always reported correctly; it was a first solution with choicepoints left that
+read false. **[checked]** `execute()` returns early on that path — there may be
+more solutions — and simply did not set the status on the way out. One line.
+
+Both fixes are ordinary checks in `samples/embed.c` now rather than the two
+"gap:" notes it used to carry, and `tests/misc/embed.expected` is updated as the
+design said it would have to be.
 
 A sketch of the minimum surface, following the existing header's style:
 
@@ -654,9 +660,23 @@ bool        pl_binding(pl_sub_query*, const char *var_name, pl_term**);
 bool        pl_bindings(pl_sub_query*, unsigned n, const char **name, pl_term**);
 ```
 
-Plus a matching construction side so Python values can be passed *in* as
-arguments rather than formatted into the goal string. Big integers need a text
-accessor, since Trealla's are unbounded and will not always fit an `int64_t`.
+**Done, close to that sketch.** `pl_term` is a view onto part of the current
+answer, arena-allocated on the query and invalidated by the next `pl_redo` — so
+an embedder never frees one and cannot leak one. `pl_get_int64` refuses a bignum
+rather than truncating it, and `pl_term_text` is how any term including a bignum
+is read. Bindings are reached by index or by name.
+
+Two things the sketch did not anticipate:
+
+- **`pl_query` prints every answer**, the way the toplevel does, which is exactly
+  what an embedder reading answers itself does not want. `set_dump_vars(pl, 0)`
+  turns it off; it stays on by default so existing hosts — WASM, Go — are
+  unaffected.
+- **`pl_num_bindings` counts the anonymous `_` too**, since the parser does.
+  Enumerate by name rather than assuming a count.
+
+Still to come: a matching construction side, so Python values can be passed *in*
+as arguments rather than formatted into the goal string.
 
 Note this API is not Janus-specific — it is what any embedder has wanted, and it
 would serve the WASM and Go hosts too.

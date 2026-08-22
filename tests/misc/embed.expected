@@ -18,8 +18,27 @@
   ok   assert visible in its own engine
   ok   assert invisible to the other
   ok   first engine survives the second's destroy
-  --   gap: string literal in a backtracked goal    fewer than 4 solutions, or an error: the goal's string was freed by pl_query
-  --   gap: no-solution vs one-solution after pl_query indistinguishable, both report 1
+  ok   string literal survives backtracking
+  ok   no solutions counts 0
+  ok   one solution counts 1
+  ok   two solutions count 2
+  ok   query for inspection
+  ok   pl_binding finds X
+  ok   X is a compound
+  ok   functor is foo
+  ok   arity is 5
+  ok   arg 0 is the integer 1
+  ok   arg 1 is the float 2.5
+  ok   arg 2 is the atom bar
+  ok   arg 3 is a compound (a list)
+  ok   arg 5 is out of range
+  ok   Y is an integer
+  ok   Y does not fit an int64
+  ok   Y reads as text
+  ok   Z is unbound
+  ok   an unknown name is not found
+  ok   bindings enumerate by name
+  ok   names past the end are NULL
 
 all checks passed (0 failures)
 

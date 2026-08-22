@@ -18,6 +18,7 @@ and using a plain old Makefile.
 	Access SQLITE databases using builtin module (uses FFI)
 	FFIs for GNU Scientific Library (GSL) ##EXPERIMENTAL##
 	FFIs for Raylib & Raymath
+	Python interface (Janus), opt-in via 'make janus'		##EXPERIMENTAL##
 	Concurrency via threads / tasks / futures / engines (aka. generators)
 	Definite Clause Grammar (DCGs)
 	Attributed variables with freeze/2, dif/2 & when/2
@@ -2127,6 +2128,114 @@ For example:
 	   Sols = [1,2,3,4,5].
 	?- ^D%
 ```
+
+Embedding in C
+==============
+
+A normal `make` builds `libtrealla.a` alongside `tpl`, from every object
+except the one carrying `main()`. Link against it and include
+`src/trealla.h`; `make install` installs both.
+
+	#include "trealla.h"
+
+	prolog *pl = pl_create();
+	set_dump_vars(pl, 0);			// don't also print answers
+	pl_consult(pl, "facts.pl");
+
+	pl_sub_query *q = NULL;
+	pl_query(pl, "likes(john, X)", &q, 0);
+
+	if (get_status(pl)) {			// was there a first solution?
+		do {
+			pl_term *x = pl_binding(q, "X");
+			printf("%s\n", pl_atom_text(x));
+		} while (pl_redo(q));
+	}
+
+	pl_destroy(pl);
+
+The return value of `pl_eval` and `pl_query` says only that no *error*
+occurred. Success or failure is `get_status()`, errors are `get_error()`:
+
+| Call | Returns | Success/failure |
+|---|---|---|
+| `pl_eval` | `!error` | `get_status()` |
+| `pl_query` | `!error` | `get_status()` — whether a first solution was found |
+| `pl_redo` | another solution exists | destroys the query itself on false |
+| `pl_done` | released | only on a query `pl_redo` has not exhausted |
+
+Answers can be inspected rather than printed. A `pl_term` is a view onto
+part of the current answer, owned by the query and valid until the next
+`pl_redo()` or `pl_done()`:
+
+| Call | |
+|---|---|
+| `pl_num_bindings/pl_binding_name/pl_binding_value` | enumerate the goal's variables |
+| `pl_binding(q, "X")` | the value bound to a named variable, or NULL if unbound |
+| `pl_term_type` | `PL_TYPE_VAR`, `_INTEGER`, `_FLOAT`, `_ATOM`, `_STRING`, `_COMPOUND` |
+| `pl_atom_text`, `pl_atom_len` | an atom or string |
+| `pl_get_int64`, `pl_get_float` | false if it does not fit — integers are unbounded |
+| `pl_term_text` | canonical text of any term, caller frees — this is how a bignum is read |
+| `pl_functor`, `pl_arity`, `pl_arg` | walking a compound |
+
+`pl_query` prints each answer the way the toplevel does, which an
+embedder reading them itself will not want: `set_dump_vars(pl, 0)` turns
+that off. It is on by default, so existing hosts are unaffected.
+
+`samples/embed.c` is a worked example and a smoke test: it links exactly
+the way an embedder would, and `make misc` runs it.
+
+
+Python interface (Janus)			##EXPERIMENTAL##
+========================
+
+`library(janus)` presents the Janus interface that SWI-Prolog and XSB
+have agreed on. It is **not** in a default build and a stock `make`
+references Python in no form at all — no header, no library, no embedded
+module. Build it explicitly:
+
+	make janus
+
+libpython is then found by `dlopen` at run time, so nothing about the
+build depends on Python being installed. Set `PROLOG_PYTHON_LIB` to
+override the search.
+
+	:- use_module(library(janus)).
+
+	?- py_call(math:factorial(30), X).
+	   X = 265252859812191058636308480000000
+
+	?- py_func(builtins, sorted([3,1,2], reverse = @true), X).
+	   X = [3,2,1]
+
+	?- forall(py_iter(builtins:range(4), X), (write(X), nl)).
+
+Values are translated both ways: integers (unbounded, both sides),
+floats, atoms as `str`, lists, `-/N` compounds as tuples, `{k:v}` as
+dicts, `py_set/1` as sets, rationals as `fractions.Fraction`, and
+`@true`/`@false`/`@none`. Anything else becomes an opaque handle
+released with `py_free/1`.
+
+Implemented: `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_iter/2,3`,
+`py_setattr/3`, `py_free/1`, `py_is_object/1`, `py_add_lib_dir/1,2`,
+`py_lib_dirs/1`, `keys/2`, `key/2`, `values/3`, `items/2`, plus the XSB
+spellings `add_py_lib_dir/1`, `obj_dir/2`, `obj_dict/2`, `value/3`,
+`janus_python_version/1`, `py_next/2`, and `py_version/0`, `py_type/2`,
+`py_pp/1`.
+
+A zero-argument method call is written `f()` in both reference systems.
+ISO has no such term, so it is off by default and enabled per file:
+
+	:- set_prolog_flag(empty_args, true).
+
+	?- py_call(builtins:dict(), X).
+	   X = {}
+
+With the flag set, `f()` reads as the ordinary compound `'()'(f)` and
+writes back as `f()`. Without it, write `'()'(f)` directly.
+
+`make janus-test` runs the acceptance suite. See `docs/janus-design.md`.
+
 
 Compile to standalone
 =====================

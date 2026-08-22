@@ -16,10 +16,8 @@
 //              Use get_status() for success/failure and get_error() for
 //              errors. This works correctly.
 //
-//   pl_query() returns !error too, but get_status() is not meaningful
-//              after it: it reads false even for a goal that succeeded.
-//              Count solutions by driving pl_redo() instead. See the two
-//              known gaps at the bottom of this file.
+//   pl_query() returns !error too. get_status() after it says whether the
+//              FIRST solution was found; drive pl_redo() for the rest.
 //
 //   pl_redo()  returns true while another solution exists, and destroys
 //              the query itself when it returns false. Only call pl_done()
@@ -66,10 +64,13 @@ static bool succeeds(prolog *pl, const char *goal)
 	return get_status(pl) && !get_error(pl);
 }
 
-// Solutions of a non-deterministic goal, by exhausting pl_redo. Note the
-// caveat: a goal with no solutions is indistinguishable from one with a
-// single solution through the public API today, so this counts from 1
-// whenever pl_query reports no error.
+// Solutions of a non-deterministic goal, by exhausting pl_redo.
+//
+// get_status() after pl_query says whether the FIRST solution was found,
+// so a goal with no solutions counts 0 and one with a solution counts 1.
+// That distinction did not exist until the status was also set on the
+// non-deterministic path, where execute() returns early because there
+// may be more solutions to come.
 
 static int solutions(prolog *pl, const char *goal, int limit)
 {
@@ -77,6 +78,9 @@ static int solutions(prolog *pl, const char *goal, int limit)
 
 	if (!pl_query(pl, goal, &q, 0))
 		return -1;						// an error, not a failure
+
+	if (!get_status(pl))
+		return 0;						// failed, nothing to redo
 
 	int n = 1;
 
@@ -161,31 +165,89 @@ int main(void)
 		}
 	}
 
-	// --- gaps worth knowing about before building on this ---
+	// --- two defects that used to live here, now checks ---
 
 	{
-		// 1. pl_query() calls parser_destroy() before returning, so a
-		// string literal in the goal is freed while the query still
-		// refers to it. The first solution is fine; later ones read
-		// freed memory. Goals without string literals are unaffected.
+		// A string literal in a backtracked goal used to be freed by
+		// pl_query before the query finished with it: the first solution
+		// was fine and later ones read freed memory. The parser now goes
+		// with the query instead of being destroyed underneath it.
 
 		int n = solutions(pl, "likes(_, _), format(\"~w\", [x])", 100);
-		note("gap: string literal in a backtracked goal",
-			n == 4 ? "4 solutions - looks fixed"
-			       : "fewer than 4 solutions, or an error: the goal's"
-			         " string was freed by pl_query");
+		check("string literal survives backtracking", n == 4);
 	}
 
 	{
-		// 2. get_status() is not meaningful after pl_query, so a goal
-		// with no solutions cannot be told from one with a single
-		// solution. Both look the same from outside.
+		// A goal with no solutions is now distinguishable from one with
+		// a single solution, which it was not while get_status() stayed
+		// false after any non-deterministic success.
 
 		int none = solutions(pl, "likes(zoe, _)", 100);
 		int one  = solutions(pl, "likes(john, mary)", 100);
-		note("gap: no-solution vs one-solution after pl_query",
-			none == one ? "indistinguishable, both report 1"
-			            : "distinguishable - looks fixed");
+		int many = solutions(pl, "likes(john, _)", 100);
+		check("no solutions counts 0", none == 0);
+		check("one solution counts 1", one == 1);
+		check("two solutions count 2", many == 2);
+	}
+
+	// --- inspecting an answer, rather than watching it be printed ---
+
+	{
+		pl_sub_query *q = NULL;
+		pl_query(pl, "X = foo(1, 2.5, bar, [a], \"txt\"), Y is 2^70, Z = _", &q, 0);
+		check("query for inspection", get_status(pl));
+
+		pl_term *x = pl_binding(q, "X");
+		check("pl_binding finds X", x != NULL);
+		check("X is a compound", x && pl_term_type(x) == PL_TYPE_COMPOUND);
+		check("functor is foo", x && !strcmp(pl_functor(x), "foo"));
+		check("arity is 5", x && pl_arity(x) == 5);
+
+		int64_t i = 0;
+		double d = 0;
+		check("arg 0 is the integer 1",
+			x && pl_get_int64(pl_arg(x, 0), &i) && i == 1);
+		check("arg 1 is the float 2.5",
+			x && pl_get_float(pl_arg(x, 1), &d) && d == 2.5);
+		check("arg 2 is the atom bar",
+			x && !strcmp(pl_atom_text(pl_arg(x, 2)), "bar"));
+		check("arg 3 is a compound (a list)",
+			x && pl_term_type(pl_arg(x, 3)) == PL_TYPE_COMPOUND);
+		check("arg 5 is out of range", x && pl_arg(x, 5) == NULL);
+
+		// A bignum does not fit an int64 and says so rather than
+		// truncating; its text is how it is read.
+		pl_term *y = pl_binding(q, "Y");
+		check("Y is an integer", y && pl_term_type(y) == PL_TYPE_INTEGER);
+		check("Y does not fit an int64", y && !pl_get_int64(y, &i));
+
+		char *txt = y ? pl_term_text(y) : NULL;
+		check("Y reads as text",
+			txt && !strcmp(txt, "1180591620717411303424"));
+		free(txt);
+
+		// An unbound variable has no value at all
+		check("Z is unbound", pl_binding(q, "Z") == NULL);
+		check("an unknown name is not found", pl_binding(q, "Nope") == NULL);
+
+		// pl_num_bindings counts every variable the parser saw, the
+		// anonymous _ included, so enumerate by name rather than
+		// assuming a count.
+		unsigned n = pl_num_bindings(q);
+		bool sawX = false, sawY = false, sawZ = false;
+
+		for (unsigned k = 0; k < n; k++) {
+			const char *nm = pl_binding_name(q, k);
+			if (!nm) continue;
+			if (!strcmp(nm, "X")) sawX = true;
+			if (!strcmp(nm, "Y")) sawY = true;
+			if (!strcmp(nm, "Z")) sawZ = true;
+		}
+
+		check("bindings enumerate by name", sawX && sawY && sawZ);
+		check("names past the end are NULL", pl_binding_name(q, n) == NULL);
+
+		pl_done(q);
 	}
 
 	pl_destroy(pl);

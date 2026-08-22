@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stddef.h>
 
 typedef struct prolog_ prolog;
 // Opaque. An empty struct is a GNU extension and not valid ISO C, which
@@ -25,6 +26,41 @@ bool pl_did_yield(pl_sub_query *q);
 bool pl_redo(pl_sub_query *q);
 bool pl_done(pl_sub_query *q);	// only call if redo still active
 
+// --- Inspecting an answer -------------------------------------------
+//
+// A pl_term is a view onto part of the current answer. It is owned by
+// the query and stays valid until the next pl_redo() or pl_done() on
+// that query - copy anything you need to keep. Text returned by
+// pl_atom_text/pl_functor points into the engine and has the same
+// lifetime; pl_term_text returns a malloc'd string the caller frees.
+
+typedef struct pl_term_ pl_term;
+
+#define PL_TYPE_VAR      0
+#define PL_TYPE_INTEGER  1
+#define PL_TYPE_FLOAT    2
+#define PL_TYPE_ATOM     3
+#define PL_TYPE_STRING   4
+#define PL_TYPE_COMPOUND 5
+
+int         pl_term_type(pl_term*);
+const char *pl_atom_text(pl_term*);			// atom or string, NUL-terminated
+size_t      pl_atom_len(pl_term*);			// bytes, for embedded NULs
+bool        pl_get_int64(pl_term*, int64_t*);	// false if it does not fit
+bool        pl_get_float(pl_term*, double*);
+char       *pl_term_text(pl_term*);			// canonical text, caller frees
+											// (this is how a bignum is read)
+const char *pl_functor(pl_term*);
+unsigned    pl_arity(pl_term*);
+pl_term    *pl_arg(pl_term*, unsigned n);	// 0-based, NULL if out of range
+
+// --- Reaching the bindings of the current answer ---------------------
+
+unsigned    pl_num_bindings(pl_sub_query*);
+const char *pl_binding_name(pl_sub_query*, unsigned i);
+pl_term    *pl_binding_value(pl_sub_query*, unsigned i);
+pl_term    *pl_binding(pl_sub_query*, const char *name);
+
 int get_halt_code(prolog*);
 bool get_error(prolog*);
 bool get_halt(prolog*);
@@ -35,6 +71,13 @@ bool did_dump_vars(prolog*);
 void set_trace(prolog*);
 void set_autofail(prolog*);
 void set_quiet(prolog*);
+
+// pl_query prints each answer the way the toplevel does. An embedder
+// reading answers with the pl_term calls above almost certainly does not
+// want that as well: set_dump_vars(pl, 0) turns it off. On by default,
+// so existing hosts are unaffected.
+
+void set_dump_vars(prolog*, int onoff);
 void set_opt(prolog*, int onoff);
 void set_limit(prolog*, int onoff);
 
