@@ -137,6 +137,7 @@ py_sig('PySet_New', [ptr],              ptr, new).
 py_sig('PySet_Add', [ptr, ptr],         sint32, none).
 
 % Python -> Prolog
+py_sig('PyObject_Str', [ptr],              ptr, new).
 py_sig('PyObject_Type', [ptr],              ptr, new).
 py_sig('PyObject_IsInstance', [ptr, ptr],         sint32, none).
 py_sig('PyObject_IsTrue', [ptr],              sint32, none).
@@ -171,6 +172,20 @@ py_sig('PyEval_RestoreThread', [ptr],            void, none).
 py_steals('PyList_SetItem',  3).
 py_steals('PyTuple_SetItem', 3).
 
+% Entry points that may not exist. CPython 3.12 replaced the
+% PyErr_Fetch triple with PyErr_GetRaisedException; the old one is still
+% exported in 3.14 but soft-deprecated, and the new one is absent before
+% 3.12. Rather than guess from Py_GetVersion, each is registered if the
+% symbol resolves and remembered if it did - '$register_predicate'/4
+% simply fails when dlsym misses, which is exactly the test needed.
+
+py_sig_opt('PyErr_GetRaisedException', [], ptr, new).           % 3.12+
+py_sig_opt('PyErr_Fetch', [-ptr, -ptr, -ptr], void, none).      % <= 3.11
+py_sig_opt('PyType_GetName', [ptr], ptr, new).                  % 3.11+
+py_sig_opt('PyObject_Repr', [ptr], ptr, new).
+
+:- dynamic(py_have_/1).
+
 % A registered foreign predicate is reachable only from an unqualified
 % call inside the module that registered it: '$register_predicate'/4 puts
 % it on the prolog instance rather than in the module's own table, and
@@ -186,7 +201,12 @@ py_steals('PyTuple_SetItem', 3).
 
 :- (   py_open(H, Lib)
    ->  assertz(py_lib_(Lib)),
-       forall(py_sig(N, A, R, _), '$register_predicate'(H, N, A, R))
+       forall(py_sig(N, A, R, _), '$register_predicate'(H, N, A, R)),
+       forall(py_sig_opt(N, A, R, _),
+              (   catch('$register_predicate'(H, N, A, R), _, fail)
+              ->  assertz(py_have_(N))
+              ;   true
+              ))
    ;   throw(error(existence_error(foreign_library, libpython),
                    'library(janus)':py_open/2))
    ).
@@ -364,9 +384,127 @@ py_learn_types :-
 py_check(Obj) :-
 	Obj =:= 0,
 	!,
-	'PyErr_Clear',
-	throw(error(system_error(python_call_failed), janus)).
+	py_raise.
 py_check(_).
+
+%   py_raise is det.
+%
+%   Turn the pending Python exception into a Prolog one and throw it.
+%   Always throws: a NULL with no exception set is a bug in the shim
+%   rather than in the program, and saying so is more use than failing.
+
+py_raise :-
+	(   py_error_(Type, Message)
+	->  throw(error(python_error(Type, Message), janus))
+	;   throw(error(system_error(python_call_failed), janus))
+	).
+
+%   py_error_(-Type, -Message) is semidet.
+%
+%   Type is the exception class name as an atom, Message its str(). The
+%   pending exception is consumed either way.
+%
+%   SWI's second argument is the exception OBJECT. An object out of an
+%   error path is a handle the catcher has to remember to py_free/1,
+%   which is a poor bargain on the one code path nobody tests, so this
+%   translates it instead. The functor and arity match SWI so a catch of
+%   python_error(Type, _) is portable; only the second argument differs.
+
+%   py_error_api(-Api) is det.
+%
+%   Which of the two exception APIs is in use: raised_exception for
+%   CPython 3.12 and later, fetch for the triple that preceded it, none
+%   if neither symbol resolved. py_use_error_api_/1 overrides the choice,
+%   which is how the older path gets exercised on a newer interpreter -
+%   and the only way to test it without an older Python to hand.
+
+:- dynamic(py_error_api_/1).
+
+py_error_api(Api) :-
+	(   py_error_api_(Forced)
+	->  Api = Forced
+	;   py_have_('PyErr_GetRaisedException')
+	->  Api = raised_exception
+	;   py_have_('PyErr_Fetch')
+	->  Api = fetch
+	;   Api = none
+	).
+
+py_use_error_api_(default) :-
+	!,
+	retractall(py_error_api_(_)).
+py_use_error_api_(Api) :-
+	must_be(oneof([raised_exception, fetch]), Api),
+	retractall(py_error_api_(_)),
+	assertz(py_error_api_(Api)).
+
+py_error_(Type, Message) :-
+	py_error_api(raised_exception),
+	!,
+	'PyErr_GetRaisedException'(Exc),
+	Exc =\= 0,
+	setup_call_cleanup(true, py_exception_parts(Exc, Type, Message), 'Py_DecRef'(Exc)).
+py_error_(Type, Message) :-
+	py_error_api(fetch),
+	!,
+	% The pre-3.12 triple. Not normalised: without normalisation the
+	% value may be the raw argument rather than an instance, so the type
+	% object is the reliable source for the name and the value is only
+	% used for the message when it is present.
+	'PyErr_Fetch'(TypeObj, ValueObj, TB),
+	TypeObj =\= 0,
+	setup_call_cleanup(true,
+		(   py_type_name(TypeObj, Type),
+		    (   ValueObj =\= 0
+		    ->  py_str_of(ValueObj, Message)
+		    ;   Message = ''
+		    )
+		),
+		(   'Py_DecRef'(TypeObj),
+		    (   ValueObj =\= 0 -> 'Py_DecRef'(ValueObj) ;   true   ),
+		    (   TB =\= 0 -> 'Py_DecRef'(TB) ;   true   )
+		)).
+
+py_exception_parts(Exc, Type, Message) :-
+	'PyObject_Type'(Exc, T),
+	setup_call_cleanup(true, py_type_name(T, Type), 'Py_DecRef'(T)),
+	py_str_of(Exc, Message).
+
+% PyType_GetName arrived in 3.11. Without it the name comes from repr of
+% the type object, which reads <class 'ValueError'> - trimmed here so the
+% error term carries the same atom on every version.
+
+py_type_name(TypeObj, Name) :-
+	py_have_('PyType_GetName'),
+	!,
+	'PyType_GetName'(TypeObj, NameObj),
+	setup_call_cleanup(true, py_utf8_of(NameObj, Name), 'Py_DecRef'(NameObj)).
+py_type_name(TypeObj, Name) :-
+	'PyObject_Repr'(TypeObj, R),
+	setup_call_cleanup(true, py_utf8_of(R, Repr), 'Py_DecRef'(R)),
+	(   sub_atom(Repr, B, _, _, ''''),
+	    Start is B + 1,
+	    sub_atom(Repr, Start, _, 1, Inner),
+	    sub_atom(Inner, _, 1, 0, '''')
+	->  sub_atom(Inner, 0, _, 1, Name)
+	;   Name = Repr
+	).
+
+py_str_of(Obj, Text) :-
+	'PyObject_Str'(Obj, S),
+	(   S =:= 0
+	->  'PyErr_Clear',
+	    Text = ''
+	;   setup_call_cleanup(true, py_utf8_of(S, Text), 'Py_DecRef'(S))
+	).
+
+py_utf8_of(Obj, Text) :-
+	'PyUnicode_AsUTF8'(Obj, Raw),
+	(   Raw == []
+	->  'PyErr_Clear',
+	    Text = ''
+	;   Text = Raw
+	).
 
 py_isa(Obj, Name) :-
 	py_type_(Name, Type),

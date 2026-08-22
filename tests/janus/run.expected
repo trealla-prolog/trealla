@@ -88,7 +88,7 @@ type_error(list,no_such_option)  options not a list
 
 errors
 existence_error(python_module,no_such_module_xyz)  no such module               
-system_error(python_call_failed)  no such attribute            
+python_error('AttributeError','module \'math\' has no attribute \'no_such_attr\'')  no such attribute            
 instantiation_error  unbound call                 
 
 the GIL: four threads into CPython at once
@@ -158,7 +158,37 @@ the declared reference discipline
   every ccstr return is borrowed   ok
   nothing else claims a reference  ok
   every steals names a real entry  ok
-  44 entry points declared
+  45 entry points declared
+
+=== phase 5: errors ===
+Python exceptions become Prolog exceptions
+  divide by zero               ZeroDivisionError: division by zero
+  bad int literal              ValueError: invalid literal for int() with base 10: 'notanumber'
+  missing attribute            AttributeError: module 'math' has no attribute 'no_such_attr'
+  missing dict key             KeyError: 'missing'
+  wrong argument type          TypeError: must be real number, not str
+  too many arguments           TypeError: math.sqrt() takes exactly one argument (2 given)
+  raised from Python code      RuntimeError: deliberate
+
+Prolog faults stay on this side
+instantiation_error  unbound goal                 
+instantiation_error  unbound argument             
+type_error(python_term,foo(bar))  untranslatable argument      
+domain_error(py_option,nope(x))  bad option                   
+type_error(list,nope)  options not a list           
+domain_error(py_constant,maybe)  bad @ constant               
+type_error(py_object,hello)  py_free of a non-object      
+existence_error(python_module,no_such_module_qq)  unknown module               
+
+the interpreter is still usable afterwards
+  a call after an error        ok
+  no error left pending        ok
+  errors in a loop             ok
+
+the pre-3.12 fetch path gives the same answer
+  via PyErr_Fetch              ValueError: invalid literal for int() with base 10: 'notanumber'
+  api in use                   raised_exception
+  back to GetRaisedException   ValueError
 
 === phase 0: startup and shutdown ===
 found libpython

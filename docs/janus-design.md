@@ -7,7 +7,8 @@ done**, and **phase 2 with them**, on branch `janus` — `library/janus.pl`, the
 is `py_call/2,3`, `py_func/3,4`, `py_dot/3,4`, `py_setattr/3`, keyword arguments,
 the `Options` argument, and the GIL; **phase 3** is `py_iter/2,3`, the dict
 accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
-`py_is_object/1`. Phases 5 onwards are still design only.
+`py_is_object/1`; **phase 5** is errors. Phases 5a onwards are still design
+only.
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -1116,9 +1117,38 @@ it is specified rather than invented.
 
 This is also where §8's "the C-API is stable across 3.x" is thinnest: 3.12
 replaced `PyErr_Fetch`/`PyErr_NormalizeException` with
-`PyErr_GetRaisedException`. The older pair is still exported, but this phase
-should confirm that against the oldest and newest interpreters it claims to
-support instead of assuming it.
+`PyErr_GetRaisedException`.
+
+**Done, and the version skew is handled by asking rather than guessing.** Both
+symbols are looked up at load and remembered if they resolve —
+`'$register_predicate'/4` simply fails when `dlsym` misses, which is exactly the
+test needed, so no version string is parsed anywhere. `py_error_api/1` reports
+which is in use and `py_use_error_api_/1` overrides it, which is how the pre-3.12
+path gets exercised on a 3.14 interpreter: both produce the identical error term
+for the same fault. **[checked]** `PyType_GetName` (3.11+) is treated the same
+way, falling back to trimming the type's `repr`.
+
+The term is `error(python_error(Type, Message), janus)`, with both arguments
+atoms:
+
+```prolog
+?- py_call(math:sqrt(hello), X).
+   error(python_error('TypeError', 'must be real number, not str'), janus)
+```
+
+The functor and arity match SWI so that `catch(..., error(python_error(T,_),_), ...)`
+is portable, but the second argument deliberately differs: SWI hands back the
+exception *object*, and an object arriving on an error path is a handle the
+catcher must remember to `py_free/1` — a poor bargain on the one code path
+nobody tests. XSB does not offer a portable term here at all; its
+`janus_python_error()` goes through `xsb_library_error_vargs`.
+
+Verified: seven exception classes arrive with their real type and message; the
+Prolog-side faults all stay Prolog errors raised before the call
+(`instantiation_error`, `type_error(python_term, _)`, `domain_error(py_option, _)`
+and the rest); the interpreter is fully usable afterwards with nothing left
+pending; and 9,000 raised-and-caught errors move CPython's allocated block count
+by 1. **[checked]**
 *Needs 2.*
 
 **Phase 5a — the compatibility surface.**
@@ -1186,7 +1216,8 @@ is a crash rather than a race that will be forgiven. Cheap in phase 2, where the
 call wrapper is written; expensive as a later sweep, which is why phase 4 no
 longer owns it.
 
-**Python version skew, in two separate places.** The *library name and location*
+**Python version skew, in two separate places.** *(Both are now handled; kept
+here because the reasoning is what matters, not the outcome.)* The *library name and location*
 vary by platform and installation; phase 0 owns that, and it must not leak into
 the marshalling code. The *C-API* is stable across 3.x for most of what we use,
 but not all of it, and both exceptions are recent: 3.11 introduced the
