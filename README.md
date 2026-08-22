@@ -2254,6 +2254,12 @@ That produces `janus_trealla.so`, which links `libtrealla.a`:
 	for answer in janus.query("member(X, [a,b,c])"):
 	    print(answer["X"])               # a b c
 
+	# values go in as bindings, not as text spliced into the goal
+	janus.query_once("Y is X*2", {"X": 21})          # {'X': 21, 'Y': 42, ...}
+
+	# apply appends the output as the last argument
+	list(janus.apply("user", "between", 1, 6))       # [1, 2, 3, 4, 5, 6]
+
 	with janus.query("between(1, 1000000, X)") as q:
 	    first = next(iter(q))["X"]       # closing releases the query
 
@@ -2264,6 +2270,10 @@ dicts, `py_set/1` as sets, `@true`/`@false`/`@none`, and anything with no
 Python counterpart as its canonical text. A goal that will not parse
 raises `SyntaxError`, one that throws raises `RuntimeError`, and a goal
 that merely fails is `{'truth': False}`.
+
+`inputs` takes the same types in the other direction, including integers
+past CPython's 4300-digit limit on decimal conversion — those cross as
+hex, in both directions.
 
 `make janus-py-test` runs its acceptance suite.
 

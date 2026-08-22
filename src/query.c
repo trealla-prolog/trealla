@@ -2656,7 +2656,8 @@ void query_destroy(query *q)
 		q->top = NULL;
 	}
 
-	free(q->terms);					// the embedding API's term arena
+	release_pl_terms(q);			// the embedding API's term handles
+	free(q->terms);
 
 	q->pl->q_cnt--;
 	TPL_free(q);

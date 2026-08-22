@@ -50,6 +50,11 @@ bool        pl_get_int64(pl_term*, int64_t*);	// false if it does not fit
 bool        pl_get_float(pl_term*, double*);
 char       *pl_term_text(pl_term*);			// canonical text, caller frees
 											// (this is how a bignum is read)
+char       *pl_int_text(pl_term*, int radix);	// an integer in base 2..36,
+											// caller frees; NULL if not an
+											// integer. Base 16 is how a host
+											// with a limit on decimal parsing
+											// reads an unbounded integer.
 const char *pl_functor(pl_term*);
 unsigned    pl_arity(pl_term*);
 pl_term    *pl_arg(pl_term*, unsigned n);	// 0-based, NULL if out of range

@@ -778,7 +778,7 @@ struct query_ {
 	prolog *pl;
 	parser *top, *p;
 	bool owns_top;						// destroy top with the query
-	struct pl_term_ *terms;				// arena for the embedding API
+	struct pl_term_ **terms;			// arena for the embedding API
 	unsigned terms_used, terms_cap;
 	slot *slots;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;

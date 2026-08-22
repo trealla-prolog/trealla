@@ -192,7 +192,7 @@ bool pl_redo(pl_sub_query *subq)
 		return false;
 
 	query *q = (query*)subq;
-	q->terms_used = 0;					// the previous answer's views die here
+	release_pl_terms(q);				// the previous answer's views die here
 
 	if (query_redo(q))
 		return true;
@@ -210,6 +210,13 @@ bool pl_redo(pl_sub_query *subq)
 // pl_redo, which is what makes "valid until the next redo" true rather
 // than merely advisory.
 
+// Each handle is allocated on its own and only the INDEX of pointers
+// grows. Handing out interior pointers into one growable block looks
+// tidier and is wrong: realloc moves it, and every handle the caller is
+// still holding dangles. That only bites once the block outgrows its
+// first capacity, so it survives every shallow term and crashes on a
+// nested one - which is exactly how it was found.
+
 static pl_term *new_pl_term(query *q, cell *c, pl_ctx c_ctx)
 {
 	if (!c)
@@ -217,17 +224,30 @@ static pl_term *new_pl_term(query *q, cell *c, pl_ctx c_ctx)
 
 	if (q->terms_used == q->terms_cap) {
 		unsigned cap = q->terms_cap ? q->terms_cap * 2 : 16;
-		struct pl_term_ *tmp = realloc(q->terms, cap * sizeof(struct pl_term_));
+		struct pl_term_ **tmp = realloc(q->terms, cap * sizeof(*tmp));
 		if (!tmp) return NULL;
 		q->terms = tmp;
 		q->terms_cap = cap;
 	}
 
-	pl_term *t = &q->terms[q->terms_used++];
+	pl_term *t = malloc(sizeof(struct pl_term_));
+
+	if (!t)
+		return NULL;
+
 	t->q = q;
 	t->c = c;
 	t->ctx = c_ctx;
+	q->terms[q->terms_used++] = t;
 	return t;
+}
+
+void release_pl_terms(query *q)
+{
+	for (unsigned i = 0; i < q->terms_used; i++)
+		free(q->terms[i]);
+
+	q->terms_used = 0;
 }
 
 int pl_term_type(pl_term *t)
@@ -288,6 +308,65 @@ char *pl_term_text(pl_term *t)
 		return NULL;
 
 	return print_term_to_strbuf(t->q, t->c, t->ctx, 1);
+}
+
+// Radix matters more than it looks. CPython refuses to parse a decimal
+// integer over sys.get_int_max_str_digits() - 4300 by default - so a host
+// reading an unbounded Prolog integer through decimal text hits a wall
+// that base 16 does not have. The same asymmetry the Prolog side of Janus
+// has to route around going the other way.
+
+char *pl_int_text(pl_term *t, int radix)
+{
+	if (!t || !is_integer(t->c) || (radix < 2) || (radix > 36))
+		return NULL;
+
+	if (is_smallint(t->c)) {
+		char buf[80];
+		int64_t v = get_smallint(t->c), n = v;
+		bool neg = v < 0;
+		int i = 0;
+
+		if (!n)
+			buf[i++] = '0';
+
+		while (n) {
+			int d = (int)(neg ? -(n % radix) : (n % radix));
+			buf[i++] = (char)(d < 10 ? '0' + d : 'a' + d - 10);
+			n /= radix;
+		}
+
+		if (neg)
+			buf[i++] = '-';
+
+		char *out = malloc(i + 1);
+
+		if (!out)
+			return NULL;
+
+		for (int j = 0; j < i; j++)
+			out[j] = buf[i - 1 - j];
+
+		out[i] = '\0';
+		return out;
+	}
+
+	mp_result len = mp_int_string_len(&t->c->val_bigint->ival, radix);
+
+	if (len <= 0)
+		return NULL;
+
+	char *out = malloc(len);
+
+	if (!out)
+		return NULL;
+
+	if (mp_int_to_string(&t->c->val_bigint->ival, radix, out, len) != MP_OK) {
+		free(out);
+		return NULL;
+	}
+
+	return out;
 }
 
 const char *pl_functor(pl_term *t)

@@ -10,8 +10,7 @@ accessors, and `sys.path`; **phase 4** is reference counting, `py_free/1` and
 `py_is_object/1`; **phase 5** is errors; **phase 5a** is the compatibility
 surface. **Phase 6 is part done**: both `pl_query` defects are fixed and the
 term-inspection API is in `src/trealla.h`, and the extension module is built by
-`make janus-py`. What remains is the construction side — passing Python values
-*in* as arguments — and phase 7 (conformance).
+`make janus-py`. **Phase 6 is done**; phase 7 (conformance) remains.
 
 §2a covers the one place the interface could not be spelled here, and how that
 was resolved: the `empty_args` flag.
@@ -1234,8 +1233,37 @@ parse failure produces no query at all, and that absence is the signal. It raise
 `SyntaxError`; a goal that throws raises `RuntimeError`; a goal that fails is
 `{'truth': False}`.
 
-Still to come: `apply/3`, and the construction side, so a Python value can be
-passed in as an argument instead of being formatted into the goal text.
+`apply(module, pred, *args)` calls `Module:Pred(Args..., Out)` and yields each
+`Out`, which is the shape both reference systems give it.
+
+**The construction side went in as text after all, and the reasoning is worth
+recording** because this document asked for the opposite. Binding built terms
+into the query's frame needs a heap that does not exist until the query is
+created, and the query is created by the same call that runs it — so it would
+mean splitting `run()` into a parse phase and an execute phase. Against that:
+every type in the §3 table has an exact readable form, so text loses nothing.
+Values are converted to canonical Prolog and bound by a prefixed unification.
+
+Two hazards, both found by the tests rather than by reasoning:
+
+- **An integer over 4300 digits cannot be read *in* either.** §3 covers the
+  outbound side; CPython refuses to *parse* a long decimal just as it refuses to
+  print one, so `PyLong_FromString` on the engine's decimal text raises. Hence
+  `pl_int_text(t, 16)` in the C API: an integer in any base 2-36, which is how a
+  host with a decimal limit reads an unbounded integer.
+- **`Key:Value` glues into `:-` when the value starts with a minus.**
+  `{'a': -5}` becomes `a:-5`, which reads as the clause neck `:-(a, 5)`, and
+  `{'a': (1,[2])}` becomes `a:-(1,[2])` the same way. Not a syntax error —
+  silently the wrong term. The value is parenthesised. This is the fragility of
+  building terms as text arriving exactly where it was predicted, and the reason
+  the frame-binding API stays the better answer if an opaque object ever has to
+  be passed.
+
+A third defect the same tests found was in the phase-6 C API rather than in this
+module: `new_pl_term` handed out interior pointers into one `realloc`'d block, so
+every handle a caller still held dangled once the block grew. Shallow terms
+always fit the first allocation; it took a nested one to crash. Handles are
+allocated singly now and only the index of pointers grows.
 *All the C lives here.*
 
 **Phase 7 — conformance.**
