@@ -1,0 +1,13 @@
+fifo_order: ok
+selective_receive_preserves_order: ok
+peek_does_not_consume: ok
+peek_empty_fails: ok
+timeout_expires: ok
+handshake: ok
+send_before_receive: ok
+join_status_true: ok
+join_status_fail: ok
+join_status_throw: ok
+join_status_exit: ok
+mutex_is_recursive: ok
+mutex_trylock_succeeds_for_holder: ok
