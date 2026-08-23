@@ -639,19 +639,6 @@ int create_vars(query *q, unsigned cnt)
 	return var_num;
 }
 
-// Taking a reader's handle on a dynamic predicate.
-//
-// Under the module lock, and that is the whole point. The refcount is
-// atomic, so the count itself is safe - but a count alone cannot close
-// the window that crashed concurrent threads: one thread drops the last
-// handle and heads into the purge below, a second takes a fresh handle
-// and starts walking the index, and the purge frees the skiplist nodes
-// out from under it. Both sides have to serialise against each other,
-// not merely count.
-//
-// Only dynamic predicates pay for it - a static call takes no handle
-// and so needs no lock.
-
 static void enter_predicate(query *q, predicate *pr)
 {
 	frame *f = GET_FRAME(q->st.cur_ctx);
@@ -668,15 +655,6 @@ static void enter_predicate(query *q, predicate *pr)
 	}
 }
 
-// Leaving a predicate and dropping the goal's OWN alternatives
-// choicepoint is always these two, in this order. It was six
-// hand-written call sites; made one call so there is nothing left to
-// get wrong when the ordering constraint changes.
-//
-// NOT for the cut/prune paths that drop somebody ELSE'S choicepoint:
-// they pass ch->st.pr, and q->st.iter there belongs to a different and
-// still-live goal.
-
 void leave_predicate_and_drop(query *q, predicate *pr, bool is_final)
 {
 	leave_predicate(q, pr, is_final);
@@ -688,18 +666,10 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	if (!pr)
 		return;
 
-	// Drop our handle but do not free: run_state is snapshotted into
-	// every choice after find_key(), and those copies alias the same
-	// prefetch. drop_choice() frees when the owning slot goes; next_key()
-	// frees on exhaustion (clearing any alias first).
 	q->st.iter = NULL;
 
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
-
-	// Held from the decrement through to the end of the purge, so a
-	// reader cannot take a handle in between and start walking an index
-	// this is about to free from. See enter_predicate().
 
 	const bool mt = pr->m->pl->is_multithreaded;
 
@@ -726,11 +696,6 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
-
-		// Through index_remove_clause() rather than by hand: two
-		// copies of the same withdrawal drift apart the moment a
-		// third index or a side list is added, and this one is the
-		// copy that gets forgotten.
 
 		if (pr->cnt)
 			index_remove_clause(pr, r);
@@ -769,22 +734,6 @@ static void query_purge_dirty_list(query *q)
 {
 	unsigned cnt = 0;
 	rule *r;
-
-	// Withdraw index entries before releasing anything. This was the one
-	// free path that dropped no entries at all - leave_predicate() only
-	// calls sl_rem() while pr->cnt is non-zero, and clauses reach here by
-	// other routes besides. An entry left pointing into a freed clause
-	// turns the next descent into a use-after-free.
-	//
-	// Two passes, because sl_rem() compares against keys borrowed from
-	// the other clauses on this same list.
-	//
-	// Under the same lock as every other index mutation. This is a third
-	// route into index_remove_clause() - the others being assert/retract
-	// and the purge in leave_predicate() - and it runs at query teardown,
-	// which for a thread means at join. Without the lock a thread being
-	// joined tore entries out of an index another thread was descending.
-
 	const bool mt = q->pl->is_multithreaded;
 
 	if (mt)
@@ -825,31 +774,6 @@ static void trim_trail(query *q, bool reused)
 		if (tr->val_ctx != q->st.cur_ctx)
 			break;
 
-		// After reuse_frame() these entries MUST go: it already
-		// unshared the old slot contents and moved the new frame's
-		// cells in by plain copy, so the reference now in the slot
-		// belongs to that transfer. Undoing against it would unshare
-		// somebody else's reference (double free).
-		//
-		// After push_frame() the frame is still live and its bindings
-		// still own what they hold. Dropping the entry there means
-		// nothing ever unshares a MANAGED cell unless the frame later
-		// gets recovered by trim_frame() - which only fires when the
-		// frame is topmost, has no_recov clear and no choices resume
-		// into it. When it does not fire, the blob leaks.
-
-		// Retaining an entry is only safe if the frame it names can
-		// never be recycled underneath it: trim_frame() lowers
-		// q->st.sp, a later frame reuses those slot indices, and a
-		// stale entry would then unshare a binding it does not own
-		// (double free). That is what trim_trail() is really for.
-		//
-		// A frame with no_recov set is exactly the case that cannot be
-		// recycled - set_var() marks it when a binding escapes to
-		// another frame - so its entries can be kept, and they must
-		// be: nothing else will ever unshare a MANAGED cell sitting in
-		// a frame that trim_frame() will never touch.
-
 		if (!reused) {
 			const frame *f = GET_FRAME(tr->val_ctx);
 
@@ -880,10 +804,6 @@ static void trim_frame(query *q, const frame *f)
 
 bool add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
 {
-	// Must not bind without a trail entry: a silent failure here leaves
-	// the variable set while undo_me() cannot clear it. That resurfaces
-	// after catch/3 clears oom as uninstantiation_error(N) on
-	// $fail_on_retry/1 (and similar), because the CP index stays bound.
 	if (!check_trail(q))
 		return false;
 
@@ -1007,25 +927,6 @@ static void reuse_frame(query *q, unsigned num_vars)
 	trim_heap(q);
 }
 
-// Does any choicepoint still need this frame?
-//
-// Generations do not order frames, so ch->gen > f->chgen was wrong in
-// both directions: a choicepoint pushed by an earlier goal of the same
-// clause carries gen == f->chgen and was invisible, while an ancestor's
-// choicepoint can carry gen == f->chgen while having nothing to do with
-// this frame.
-//
-// The frames answer it directly. ch->st.fp is the frame count when the
-// choicepoint was pushed, so ch->st.fp >= q->st.fp means this frame was
-// already live and a retry restores into it; anything pushed earlier
-// belongs to an ancestor, and retrying that throws this frame away
-// whole.
-//
-// skip counts the choicepoints commit_frame() drops itself: the
-// in-progress clause choice, plus the call/N barrier when is_last_call()
-// found one - reuse_frame() performs that bookkeeping directly, which is
-// what keeps p(N) :- M is N-1, call(p, M) tail recursive.
-
 static bool commit_any_choices(const query *q, unsigned skip)
 {
 	if (q->st.cp <= skip)
@@ -1034,22 +935,6 @@ static bool commit_any_choices(const query *q, unsigned skip)
 	const choice *ch = GET_CHOICE(q->st.cp - 1 - skip);
 	return ch->st.fp >= q->st.fp;
 }
-
-// Is the goal about to be called really the last thing this frame has
-// to do? LCO (see reuse_frame) throws away the rest of the current
-// instruction stream along with the frame, so it is only sound when
-// there is nothing left in that stream.
-//
-// FLAG_INTERNED_RECURSIVE_CALL is not enough on its own: it is set at
-// clause-compile time on any cell that *ends* at the clause end, which
-// includes a goal that is merely the argument of a trailing control
-// construct - \+ G, once(G), ignore(G), (C -> G) and friends. Those
-// constructs run that very cell as a goal, but with a continuation of
-// their own planted after it (a cut, a fail, a then-branch, a barrier
-// drop), either inlined by compile_term() or built on the heap by
-// prepare_call(). Reusing the frame there silently discards that
-// continuation - e.g. \+ G would lose its `!, $drop_barrier, fail'
-// and so succeed for a provable G.
 
 static bool is_last_call(const query *q, bool *has_barrier)
 {
@@ -1075,26 +960,8 @@ static bool is_last_call(const query *q, bool *has_barrier)
 	if (!is_end(c))
 		return false;
 
-	// The clause's own end cell means nothing is left to do. The end
-	// cell of a heap continuation instead carries a return address and
-	// the frame state to restore along with it, which is work - bar the
-	// call/N case above, where reuse_frame() has always taken over.
-
 	return barrier || !c->ret_instr;
 }
-
-// head_has_vars is q->has_vars as left by the head unification THIS call
-// is committing to, and is passed rather than read here.
-//
-// q->has_vars is scratch owned by unify(): it is cleared on entry and
-// set only for a goal-side variable at depth > 1, so it describes the
-// most recent unification - not the goal, and not necessarily this one.
-// Reading it inside commit_frame() was correct only because the single
-// call site happens to sit immediately after the unify(). Anything
-// unifying in between - another clause attempt, a clone - would silently
-// change the answer, and a wrong answer here is not a lost
-// optimisation: is_det makes commit_frame() drop the goal's
-// alternatives choicepoint.
 
 static void commit_frame(query *q, bool head_has_vars)
 {
@@ -1106,13 +973,6 @@ static void commit_frame(query *q, bool head_has_vars)
 	f->m = q->st.m;
 
 	rule *save_dbe = q->st.dbe;
-	// A unique clause head does not make the goal deterministic if some
-	// OTHER clause carries a variable in an indexed argument: such a
-	// clause unifies with anything, so it is still a live alternative.
-	// Logtalk's logtalk_library_path/2 is exactly this shape - a packs
-	// RULE with a var first argument sitting among 500 ground facts -
-	// and claiming determinism there dropped the alternatives
-	// choicepoint before the walk could reach the matching fact.
 
 	bool is_det = !head_has_vars && cl->is_unique
 		&& !q->st.pr->is_var_in_head && !q->st.pr->is_var_in_first_arg
@@ -1182,12 +1042,6 @@ static void commit_frame(query *q, bool head_has_vars)
 	if (!q->st.instr) q->st.instr = cl->cells + (cl->cidx-1);
 	q->st.iter = NULL;
 }
-
-// The three kinds of undo item, disposed of in one place. This dispatch
-// existed in two copies that had already drifted apart once - the
-// UNDO_RULE case was added to one and not the other, so a retracted
-// ground clause was freed as a cell block without clear_clause() and its
-// managed cells were never unshared. Now there is one copy.
 
 static void undo_list_drain(list *l)
 {
@@ -1293,10 +1147,6 @@ void drop_choice(query *q)
 	pl_idx cp = q->st.cp - 1;
 	choice *ch = GET_CHOICE(cp);
 
-	// Free the multi-hit prefetch when the choice it was built for goes.
-	// Cuts and last-match commits drop that choice without exhausting the
-	// iterator; without this those prefetches are abandoned.
-
 	release_prefetch(q, ch, cp);
 
 	list *undo;
@@ -1323,9 +1173,6 @@ bool push_choice(query *q)
 	ch->skip = 0;
 	ch->st = q->st;
 	q->st.cp++;
-
-	// Keep a record of the frame state, we need to restore
-	// it on retry. On cut we commit to it.
 
 	list_init(&ch->undo);
 	ch->dbgen = f->dbgen;
@@ -1574,10 +1421,6 @@ static void setup_key(query *q)
 static void next_key(query *q)
 {
 	if (q->st.iter_single) {
-		// A single-hit lookup has no iterator and must not fall through
-		// to the chain walk - the next clause in the chain is not a
-		// candidate, it just happens to be adjacent.
-
 		q->st.iter_single = false;
 		q->st.dbe = NULL;
 		return;
@@ -1590,14 +1433,6 @@ static void next_key(query *q)
 
 	if (!sl_next(q->st.iter, (void*)&q->st.dbe)) {
 		q->st.dbe = NULL;
-
-		// Drop the handle but do NOT free: release_prefetch() frees when
-		// the owning choice goes, and that covers this. Measured with a
-		// made/freed counter across the whole suite plus a cut-heavy and
-		// an exhaustion-heavy workload - 4000 prefetches, made == freed,
-		// nothing leaked. Freeing here as well was the second owner, and
-		// needed the alias-clearing dance below it to stay safe.
-
 		q->st.iter = NULL;
 	}
 }
@@ -1708,24 +1543,8 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	return true;
 }
 
-// --index-check: verify an indexed lookup against the walk it replaced.
-//
-// The index is allowed to be WIDER than the linear scan - an
-// approximation must widen, never narrow - so this asserts the candidate
-// set is a SUPERSET of the clauses the linear walk would have offered,
-// and says nothing about extras. A narrowing is a wrong-answer bug; a
-// widening is only wasted unification.
-
 int g_index_check = 0;
 unsigned long g_index_check_lookups = 0, g_index_check_bad = 0;
-
-// The candidate set is snapshotted during the index walk rather than
-// read back off the prefetch skiplist. Reading it back is not possible:
-// the prefetch is an is_tmp_list, and sl_done() DESTROYS one of those
-// rather than recycling the iterator - so merely iterating it to count
-// entries freed the list the live query was about to use. The first
-// version of this check did exactly that and reported all 1639 entries
-// of a 1639-entry set as missing, which is how it was caught.
 
 static bool in_candidates(const rule **got, unsigned num_got, const rule *c)
 {
@@ -1740,35 +1559,17 @@ static bool in_candidates(const rule **got, unsigned num_got, const rule *c)
 static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 	const rule **got, unsigned num_got, int idx_arg)
 {
-	// The goal's own generation, NOT GET_CURR_FRAME()->dbgen. find_key()
-	// runs before check_frame(), so the current frame is still the
-	// CALLER'S and its dbgen predates every clause asserted since the
-	// caller was entered. enter_predicate() stamps q->pl->dbgen onto the
-	// frame immediately after this, and that is the view the matching
-	// loop will use. Getting this wrong is silent: can_view() rejects
-	// every clause, the walk finds no candidates to compare against and
-	// the check passes everything. It did, until a deliberately
-	// mis-filed clause failed to raise it.
-
 	const uint64_t dbgen = q->pl->dbgen;
 	unsigned missing = 0;
 
 	g_index_check_lookups++;
 
 	for (const rule *c = pr->head; c; c = c->next) {
-		// Same visibility test the matching loop uses, or this reports
-		// clauses the goal was never entitled to see.
-
 		if (!can_view(q, dbgen, c))
 			continue;
 
 		cell *ch = get_head(((rule*)c)->cl.cells);
 		cell *ck = ch;
-
-		// Each index is keyed on its recorded argument, so each has to be
-		// checked against the key it was actually built on. The clause
-		// HEAD is still what gets printed - an arg on its own says
-		// little about which clause went missing.
 
 		if (idx_arg >= 0 && ch->arity)
 			ck = get_nth_arg(ch, idx_arg);
@@ -1790,13 +1591,6 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 		fprintf(stderr, "***   MISSING db_id=%llu  ",
 			(unsigned long long)c->db_id);
 		DUMP_TERM("", ch, q->st.cur_ctx, 1);
-
-		// Is the clause reachable by its OWN key? That separates a
-		// descent fault from an insertion fault: if the index cannot
-		// find it when handed that clause's exact key, the entry is not
-		// where the comparator would put it - mis-filed on insert, or
-		// lost on a removal. If it IS reachable, the ordering is fine
-		// and the query descent went astray.
 
 		sliter *probe = sl_find_key(idx_arg < 0 ? pr->idx0 : idx_arg ? pr->idx2 : pr->idx1, ck);
 		const rule *probe_r;
@@ -1826,11 +1620,6 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 		fprintf(stderr, "***   predicate has %u clauses, head=%s idx1=%s idx2(arg%u)=%s\n",
 			(unsigned)pr->cnt, pr->idx0 ? "yes" : "no", pr->idx1 ? "yes" : "no", pr->idx2_arg + 1,
 			pr->idx2 ? "yes" : "no");
-
-		// Carry on rather than abort: one run should surface every
-		// mismatch in a suite, not just the first. The count at exit is
-		// what makes a clean sweep meaningful - zero mismatches over
-		// zero verified lookups says nothing at all.
 
 		g_index_check_bad++;
 	}
@@ -1879,25 +1668,12 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	cell *goal = key;
 	int idx_arg = 0;
 
-	// A full-head lookup is exact and much more selective when every
-	// clause head is ground. Variable-headed clauses stay out of idx0,
-	// because a var-equals-anything comparator is not a skiplist order.
 	if (pr->idx0 && !pr->is_var_in_head && is_ground(key)) {
 		idx = pr->idx0;
 		idx_arg = -1;
 		INDEX_PROFILE_MODE(ip, idx0);
 	} else if (pr->idx2 && (pr->idx2_arg == 1) && !pr->is_var_in_idx2_arg
 			&& is_interned(&pr->key) && !strcmp(C_STR(q, &pr->key), "$predicate_property")) {
-		// $predicate_property/3 is populated as
-		// $predicate_property(predicate, Name(_, ...), Property).
-		// Arg1 consequently has only the two category values (predicate and
-		// function), while Arg2 identifies the actual predicate.  Treating
-		// this internal catalogue like an ordinary first-arg-indexed relation
-		// turns every predicate lookup into a walk of the whole catalogue.
-		// idx2 is already maintained precisely for this argument and supports
-		// the variable arguments in Name(_, ...) through index_cmpkey's
-		// wildcard handling.
-
 		cell *arg2 = get_nth_arg(key, pr->idx2_arg);
 
 		if (!is_var(arg2)) {
@@ -1915,9 +1691,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 			INDEX_PROFILE_MODE(ip, idx1);
 		}
 	} else if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
-		// idx2 is a floating later-argument index. If Arg1 is unusable,
-		// use it when the selected argument in this goal is ground.
-
 		if (!pr->idx2 || pr->is_var_in_idx2_arg) {
 			INDEX_PROFILE_MODE(ip, linear);
 			INDEX_PROFILE_CANDIDATES(ip, pr->cnt);
@@ -1962,14 +1735,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	// then we can use it with no problems. If more than one then
 	// results must be returned in database order, so prefetch all
 	// the results and return them sorted as an iterator...
-
-	// Hold the first hit back rather than materialising unconditionally.
-	// Most index lookups match exactly one clause - every retract in a
-	// key-per-clause table does - and for those there is nothing to sort
-	// and nothing to own. Building a temporary skiplist for a single
-	// entry cost an allocation per call and, because the iterator is
-	// snapshotted into every choicepoint and so cannot safely be freed
-	// on a cut, it leaked: 4.7MB over 14000 retracts, measured.
 
 	skiplist *tmp_idx = NULL;
 	const rule *first = NULL;
@@ -2030,11 +1795,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	}
 
 	q->st.iter = iter;
-
-	// The goal's alternatives choicepoint has not been raised yet -
-	// find_key() runs first - so it will land on the slot q->st.cp is
-	// pointing at now. That choice owns the prefetch.
-
 	q->st.iter_owner = q->st.cp;
 	return true;
 }
@@ -2332,14 +2092,9 @@ bool match_head(query *q)
 		q->st.dbe->attempted++;
 
 		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.fp)) {
-			// throw_error() returns true when a handler was armed (via
-			// did_throw). Must not commit_frame — that would overwrite the
-			// recover goal. find_exception_handler already unwound to the
-			// catcher.
 			if (q->did_throw)
 				return true;
 
-			// Take it now, while it still belongs to the unify above.
 			const bool head_has_vars = q->has_vars;
 
 			if (q->error)
@@ -2480,8 +2235,6 @@ bool start(query *q)
 				continue;
 			}
 
-			// throw_error armed a recover goal (noskip). Do not treat
-			// status as ordinary success/failure of save_cell.
 			if (q->did_throw) {
 				proceed(q);
 				goto MORE;
@@ -2539,8 +2292,6 @@ bool start(query *q)
 				continue;
 			}
 
-			// Exception handler armed during head unify — skip hooks;
-			// recover goal is already in st.instr (noskip).
 			if (q->did_throw) {
 				proceed(q);
 				goto MORE;
@@ -2563,12 +2314,6 @@ bool start(query *q)
 			if (q->top && !q->run_init && any_outstanding_choices(q)) {
 				if (!check_redo(q))
 					break;
-
-				// A solution HAS been found; this return only means
-				// there may be more. Without this the status stays
-				// false for every non-deterministic success, so an
-				// embedder cannot tell a goal that failed from one
-				// that succeeded with choicepoints left.
 
 				q->status = true;
 				return true;
@@ -2654,12 +2399,6 @@ void query_destroy(query *q)
 
 	sched_destroy(q);
 
-	// Choicepoints still live at teardown hold undo items of their own.
-	// Draining q->undo alone left them behind, so a query that halted -
-	// or simply succeeded - with choicepoints outstanding leaked
-	// whatever they were holding. Deepest first, the order backtracking
-	// would have taken.
-
 	for (pl_idx i = q->st.cp; i > 0; i--)
 		undo_list_drain(&GET_CHOICE(i - 1)->undo);
 
@@ -2689,10 +2428,6 @@ void query_destroy(query *q)
 	TPL_free(q->tabs);
 	TPL_free(q->unify_seen);
 	release_oom_reserve(q);
-
-	// Set by run() for a query handed back to an embedder: the goal's
-	// cells live in that parser's clause, so it could not be destroyed
-	// until now.
 
 	if (q->owns_top) {
 		parser_destroy(q->top);
