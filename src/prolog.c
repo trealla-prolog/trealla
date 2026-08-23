@@ -3,12 +3,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
 #endif
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <sys/resource.h>
+#endif
+
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <sys/sysctl.h>
 #endif
 
 #include "library.h"
@@ -55,7 +61,8 @@ char *g_tpl_lib = NULL;
 int g_ac = 0, g_avc = 1, g_argvc = 0;
 char **g_av = NULL, **g_argv = NULL, *g_argv0 = NULL;
 unsigned g_max_depth = 6000;			// default recursion limit (Linux)
-unsigned g_cpu_count = 4;				// FIXME: query system
+unsigned g_cpu_count = 1;				// real value probed by g_init()
+unsigned g_max_os_threads = 0;			// ditto; 0 means "none known"
 
 bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned arity)
 {
@@ -827,6 +834,80 @@ void load_builtins(prolog *pl)
 	}
 }
 
+// How many logical CPUs we can actually run on, which is not the same
+// question as how many the box has: _SC_NPROCESSORS_ONLN follows CPUs
+// being taken offline, where _SC_NPROCESSORS_CONF would not.
+//
+// Every path that cannot answer falls back to 1 rather than to a guess.
+// Too high oversubscribes whatever sizes itself off this; 1 is merely
+// conservative. Testing _SC_NPROCESSORS_ONLN with defined() rather than
+// per-platform ifdefs means a host that lacks it - wasi has no threads
+// at all - degrades to that fallback instead of failing to build.
+
+static unsigned detect_cpu_count(void)
+{
+#if defined(_WIN32)
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+	return si.dwNumberOfProcessors > 0 ? (unsigned)si.dwNumberOfProcessors : 1;
+#elif defined(_SC_NPROCESSORS_ONLN)
+	long n = sysconf(_SC_NPROCESSORS_ONLN);
+	return n > 0 ? (unsigned)n : 1;
+#else
+	return 1;
+#endif
+}
+
+// How many POSIX threads the O/S will let this process have, which is a
+// different question again from how many CPUs there are (detect_cpu_count)
+// and from how many thread slots we ourselves have (MAX_ACTUAL_THREADS).
+//
+// Returns 0 for "nothing here knows", which the caller reports as our own
+// cap - true enough, since then nothing below it constrains you.
+//
+// sysctlbyname() resolves names at runtime, so a name this kernel does not
+// have just fails and we fall through to the next. That is what lets one
+// list cover several BSDs without a per-platform ifdef for each, and means
+// a wrong guess degrades to the fallback rather than breaking the build.
+
+static unsigned detect_max_os_threads(void)
+{
+#if defined(_WIN32) || defined(__wasi__)
+	return 0;					// no fixed per-process limit to report
+#else
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+	static const char *s_names[] = {
+		"kern.num_taskthreads",					// macOS, per-task
+		"kern.threads.max_threads_per_proc",	// FreeBSD, per-process
+		"kern.maxlwp",							// NetBSD, system-wide
+		"kern.maxthread",						// OpenBSD, system-wide
+		NULL
+	};
+
+	for (const char **name = s_names; *name; name++) {
+		int val = 0;
+		size_t len = sizeof(val);
+
+		if (!sysctlbyname(*name, &val, &len, NULL, 0) && (val > 0))
+			return (unsigned)val;
+	}
+#endif
+
+#if defined(RLIMIT_NPROC)
+	// Linux counts threads against NPROC, so there this is the real
+	// ceiling. On the BSDs it counts processes and is the wrong number
+	// entirely - hence it goes after the sysctls, never before.
+	struct rlimit rlp;
+
+	if (!getrlimit(RLIMIT_NPROC, &rlp) && rlp.rlim_cur
+		&& (rlp.rlim_cur != RLIM_INFINITY))
+		return rlp.rlim_cur > UINT_MAX ? UINT_MAX : (unsigned)rlp.rlim_cur;
+#endif
+
+	return 0;
+#endif
+}
+
 static bool g_init(prolog *pl)
 {
 	bool error = false;
@@ -937,6 +1018,9 @@ static bool g_init(prolog *pl)
 	getrlimit(RLIMIT_STACK, &rlp);
 	g_max_depth = rlp.rlim_cur / 1024;
 #endif
+
+	g_cpu_count = detect_cpu_count();
+	g_max_os_threads = detect_max_os_threads();
 
 	return error;
 }

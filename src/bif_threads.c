@@ -407,25 +407,6 @@ static bool bif_thread_send_message_2(query *q)
 	return true;
 }
 
-static bool bif_pl_send_2(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,any);
-	int n = get_thread(q, p1);
-
-	if (n < 0) {
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
-	}
-
-	if (!do_send_message(q, n, p2, p2_ctx, false))
-		return false;
-
-	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-	return true;
-}
-
 thread *get_self(prolog *pl)
 {
 	pthread_t tid = pthread_self();
@@ -635,111 +616,6 @@ static void do_unlock_all(prolog *pl)
 		t->locked_by = -1;
 		t->num_locks = 0;
 	}
-}
-
-static void *start_routine_thread(thread *t)
-{
-	prolog *pl = pl_create();
-	ENSURE(pl);
-	t->id = pthread_self();
-	pl->my_chan = t->chan;
-	pl_consult(pl, t->filename);
-	t->is_active = false;
-	t->is_finished = false;
-	t->q = NULL;
-    return 0;
-}
-
-static bool bif_pl_thread_3(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,atom);
-	GET_NEXT_ARG(p3,list_or_nil);
-	char *filename = DUP_STRING(q, p2);
-	struct stat st = {0};
-
-	if (stat(filename, &st)) {
-		TPL_free(filename);
-		return throw_error(q, p2, p2_ctx, "existence_error", "file");
-	}
-
-	int n = new_thread(q->pl);
-
-	if (n < 0) {
-		TPL_free(filename);	// FIX: free filename on error
-		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
-	}
-
-	thread *t = &q->pl->threads[n];
-	PROLOG_LIST_HANDLER(p3);
-
-	while (is_list(p3)) {
-		cell *h = PROLOG_LIST_HEAD(p3);
-		cell *c = deref(q, h, p3_ctx);
-		pl_ctx c_ctx = q->latest_ctx;
-
-		if (is_var(c)) {
-			TPL_free(filename);	// FIX: free filename on error
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-		}
-
-		cell *name = c + 1;
-		name = deref(q, name, c_ctx);
-
-		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
-			if (is_var(name)) {
-				t->is_active = false;
-				TPL_free(filename);	// FIX: free filename on error
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
-			}
-
-			if (!is_atom(name)) {
-				t->is_active = false;	// FIX: was true, leaving a zombie active slot
-				TPL_free(filename);	// FIX: free filename on error
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-			}
-
-			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
-				t->is_active = false;
-				TPL_free(filename);	// FIX: free filename on error
-				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
-			}
-
-			t->alias = DUP_STRING(q, name);
-			sl_app(q->pl->alias, t->alias, t);
-		} else {
-			t->is_active = false;
-			TPL_free(filename);	// FIX: free filename on error
-			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-		}
-
-		p3 = PROLOG_LIST_TAIL(p3);
-		p3 = deref(q, p3, p3_ctx);
-		p3_ctx = q->latest_ctx;
-
-		if (is_var(p3)) {
-			t->is_active = false;
-			TPL_free(filename);	// FIX: free filename on error
-			return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-		}
-	}
-
-	t->filename = filename;
-
-	pthread_attr_t sa;
-	pthread_attr_init(&sa);
-	pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
-
-	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t) != 0) {
-		t->is_active = false;
-		TPL_free((void*)t->filename); t->filename = NULL;	// FIX: free filename on error (cast: field is const char*)
-		return throw_error(q, p2, p2_ctx, "system_error", "pthread_create");
-	}
-
-	cell tmp;
-	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_THREAD;
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
 static void *start_routine_thread_create(thread *t)
@@ -2206,124 +2082,6 @@ static bool bif_mutex_property_2(query *q)
 	return do_mutex_property_wild(q);
 }
 
-static bool bif_pl_thread_pin_cpu_2(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,integer);
-	int n = get_thread(q, p1);
-
-	if (n < 0) {
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
-	}
-
-	thread *t = &q->pl->threads[n];
-
-	if (t->is_queue_only || t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "pin_cpu,not_thread");
-
-	// Do something here
-	return true;
-}
-
-static bool bif_pl_thread_set_priority_2(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,integer);
-	int n = get_thread(q, p1);
-
-	if (n < 0) {
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
-	}
-
-	thread *t = &q->pl->threads[n];
-
-	if (t->is_queue_only || t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "set_priority,not_thread");
-
-	// Do something here
-	return true;
-}
-
-static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ctx, bool is_peek)
-{
-	thread *t = &q->pl->threads[q->pl->my_chan];
-
-	while (!q->halt && !q->abort) {
-		acquire_lock(&t->guard);
-
-		if (list_count(&t->queue))
-			break;
-
-		release_lock(&t->guard);
-
-		if (list_count(&t->signals)) {
-			do_signal(t->q, t);
-			start(t->q);
-			continue;
-		}
-
-		if (is_peek)
-			return false;
-
-		do {
-			suspend_thread(t, 10);
-		}
-		 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
-	}
-
-	if (q->halt || q->abort)
-		return false;
-
-	msg *m;
-
-	if (is_peek)
-		m = list_front(&t->queue);
-	else
-		m = list_pop_front(&t->queue);
-
-	CHECKED(push_choice(q));
-	const frame *f = GET_CURR_FRAME();
-	cell *tmp = import_term(q, m->c, q->st.cur_ctx);
-	CHECKED(tmp, release_lock(&t->guard));
-	release_lock(&t->guard);
-	q->cur_chan = m->from_chan;
-
-	if (!is_peek) {
-		unshare_cells(m->c, m->c->num_cells);
-		TPL_free(m);
-	}
-
-	drop_choice(q);
-	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
-}
-
-static bool bif_pl_recv_2(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,integer_or_var);
-	GET_NEXT_ARG(p2,any);
-	int from_chan = 0;
-
-	if (is_integer(p1)) {
-		from_chan = get_thread(q, p1);
-
-		if (from_chan < 0)
-			return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
-	}
-
-	if (!do_recv_message(q, from_chan, p2, p2_ctx, false))
-		return false;
-
-	cell tmp;
-	make_int(&tmp, q->cur_chan);
-	tmp.flags |= FLAG_INT_THREAD;
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
-}
-
 void thread_cancel_all(prolog *pl)
 {
 	msleep(10);
@@ -2378,14 +2136,6 @@ builtins g_threads_bifs[] =
 
 	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
 	{"is_thread", 1, bif_is_thread_1, "+term", false, false, BLAH},
-
-	// Other non-standard...
-
-	{"thread", 3, bif_pl_thread_3, "--thread,+atom,+list", false, false, BLAH},
-	{"pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
-	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
-	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
-	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
 #endif
 

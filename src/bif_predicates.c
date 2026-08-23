@@ -2572,9 +2572,9 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_int(&tmp, MAX_ACTUAL_THREADS);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-	} else if (!CMP_STRING_TO_CSTR(q, p1, "hardware_threads")) {
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "os_threads")) {
 		cell tmp;
-		make_int(&tmp, 4);
+		make_int(&tmp, g_max_os_threads ? g_max_os_threads : MAX_ACTUAL_THREADS);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 #else
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
@@ -2767,11 +2767,6 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 	if (!is_atom(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-	if (!CMP_STRING_TO_CSTR(q, p1, "cpu_count") && is_integer(p2)) {
-		g_cpu_count = get_smallint(p2);
-		return true;
-	}
-
 	if (has_vars(q, p2, p2_ctx))
 		return throw_error(q, p2, p2_ctx, "instantiation_error", "var");
 
@@ -2926,6 +2921,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 		}
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "bounded")
 		|| !CMP_STRING_TO_CSTR(q, p1, "max_arity")
+		|| !CMP_STRING_TO_CSTR(q, p1, "cpu_count")
 		|| !CMP_STRING_TO_CSTR(q, p1, "max_integer")
 		|| !CMP_STRING_TO_CSTR(q, p1, "min_integer")
 		|| !CMP_STRING_TO_CSTR(q, p1, "version")
@@ -2937,7 +2933,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 		|| !CMP_STRING_TO_CSTR(q, p1, "rationals")
 		|| !CMP_STRING_TO_CSTR(q, p1, "threads")
 #if USE_THREADS
-		|| !CMP_STRING_TO_CSTR(q, p1, "hardware_threads")
+		|| !CMP_STRING_TO_CSTR(q, p1, "os_threads")
 		|| !CMP_STRING_TO_CSTR(q, p1, "max_threads")
 #endif
 		|| !CMP_STRING_TO_CSTR(q, p1, "verbose")
@@ -6846,7 +6842,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "rationals", HAS_RATIONALS?"true":"false");
 #if USE_THREADS
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "hardware_threads", 4);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "os_threads", g_max_os_threads ? g_max_os_threads : MAX_ACTUAL_THREADS);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_threads", MAX_ACTUAL_THREADS);
 #else
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");

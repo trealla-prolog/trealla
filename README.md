@@ -998,11 +998,6 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 | `mutex_trylock/1` | `mutex_trylock(+mutex)` |  |
 | `mutex_unlock/1` | `mutex_unlock(+mutex)` |  |
 | `mutex_unlock_all/0` | `mutex_unlock_all` |  |
-| `pl_msg_recv/2` | `pl_msg_recv(-thread,?term)` |  |
-| `pl_msg_send/2` | `pl_msg_send(+thread,+term)` |  |
-| `pl_thread_pin_cpu/2` | `pl_thread_pin_cpu(+thread,+integer)` |  |
-| `pl_thread_set_priority/2` | `pl_thread_set_priority(+thread,+integer)` |  |
-| `thread/3` | `thread(--thread,+atom,+list)` |  |
 | `thread_cancel/1` | `thread_cancel(+thread)` |  |
 | `thread_create/3` | `thread_create(:callable,--thread,+list)` |  |
 | `thread_detach/1` | `thread_detach(+thread)` |  |
