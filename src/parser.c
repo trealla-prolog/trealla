@@ -1372,6 +1372,13 @@ static bool directive_term(parser *p, cell *c)
 		return directive_term(p, rhs);
 	}
 
+	// run_init lives on the module, and a load whose file has no module
+	// directive of its own shares one with whatever consulted it, so
+	// the module flag alone cannot say whose goals are pending. The
+	// parser flag says this load has some of its own; include/1 and
+	// ensure_loaded/1 hand theirs up, since they load with init false
+	// and leave their goals for the load still going on to run.
+
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
 		p->m->run_init = true;
 		p->saw_initialization = true;
@@ -1498,6 +1505,7 @@ static bool directive_term(parser *p, cell *c)
 		set_parent(p->m, p->m->actual_filename, p->m->filename);
 		TPL_free(filename);
 		p->line_num = save_line_nbr;
+		p->saw_initialization |= p->m->run_init;
 		return true;
 	}
 
@@ -1519,6 +1527,7 @@ static bool directive_term(parser *p, cell *c)
 
 		TPL_free(filename);
 		p->line_num = save_line_nbr;
+		p->saw_initialization |= p->m->run_init;
 		return true;
 	}
 
