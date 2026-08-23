@@ -1963,50 +1963,6 @@ For example...
 	?-
 	```
 
-Prolog instances
-================
-
-Start independent (no shared state) Prolog instances as dedicated
-pre-emptive threads and communicate via message queues. Each thread
-has it's own message queue associated with it. Note: the database
-is *not* shared.
-
-	pl_thread/3				# pl_thread(-thread,+filename,+options)
-	pl_thread/2				# pl_thread(-thread,+filename)
-
-Where 'options' can be (currently just) *alias(+atom)*.
-
-	pl_msg_send/2			# pl_msg_send(+thread,+term)
-	pl_msg_recv/2			# pl_msg_recv(-thread,-term)
-
-
-For example...
-
-```console
-	$ cat samples/thread_calc.pl
-	:- initialization(main).
-
-	% At the moment we only do sqrt here...
-
-	main :-
-		write('Calculator running...'), nl,
-		repeat,
-			pl_msg_recv(Tid, Term),
-			Term = sqrt(X, Y),
-			Y is sqrt(X),
-			pl_msg_send(Tid, Term),
-			fail.
-
-	$ tpl
-	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
-	Calculator running...
-	?- Term = sqrt(2, V),
-		pl_msg_send(calc, Term),
-		pl_msg_recv(_, Term).
-	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
-	?-
-```
-
 Concurrent Tasks						##EXPERIMENTAL##
 ================
 
