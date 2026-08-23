@@ -39,17 +39,14 @@ static void msleep(int ms)
 // SIGALRM behind an expiring alarm both cut poll() and nanosleep() short
 // with EINTR, so neither waits this out.
 //
-// Where there are no signals there is nothing to cut it short.
-// interrupt_pending() polls has_expired_alarm() instead, and only gets
-// the chance once per pass round the scheduler - so on those platforms
-// this is also the worst case for how late a timeout can fire, and has
-// to stay small enough not to be noticed.
+// Timeouts are polled rather than signalled, so nothing cuts this sleep
+// short on their behalf. That used to force the cap down to 5ms, which
+// made every idle scheduler wake two hundred times a second just in
+// case. sched_wait() now asks next_alarm_delay() and sleeps exactly
+// until the nearest deadline instead, so the cap is back to bounding
+// interrupt latency and nothing else.
 
-#ifdef USE_POLLED_ALARMS
-#define SCHED_MAX_SLEEP_MS 5
-#else
 #define SCHED_MAX_SLEEP_MS 250
-#endif
 
 // A task parked on a descriptor also carries a deadline, so that a
 // wakeup we somehow miss costs latency rather than a hang.
@@ -385,7 +382,7 @@ static void sched_expire_timers(scheduler *s, uint64_t now)
 // whichever is sooner, the cap only bounding how long an interrupt can
 // go unnoticed. Without it this is a check that returns immediately.
 
-static void sched_wait(scheduler *s, uint64_t now, bool block)
+static void sched_wait(query *q, scheduler *s, uint64_t now, bool block)
 {
 	uint64_t deadline = s->timers_used ? s->timers[0]->tmo_msecs + 1 : 0;
 	unsigned n = 0;
@@ -426,6 +423,15 @@ static void sched_wait(scheduler *s, uint64_t now, bool block)
 
 	if (!deadline)
 		tmo = SCHED_MAX_SLEEP_MS;
+
+	// A pending call_with_time_limit/2 is a deadline too. Without this
+	// the sleep would run past it and the timeout would fire late by
+	// however much of the cap was left.
+
+	unsigned alarm_ms = 0;
+
+	if (next_alarm_delay(q, &alarm_ms) && ((int)alarm_ms < tmo))
+		tmo = (int)alarm_ms;
 
 	if (!block)
 		tmo = 0;
@@ -482,7 +488,7 @@ static void sched_run(query *q)
 			if (!s->timers_used && !s->io_head)
 				break;					// nothing left to wake us
 
-			sched_wait(s, now, true);
+			sched_wait(q, s, now, true);
 			continue;
 		}
 
@@ -494,7 +500,7 @@ static void sched_run(query *q)
 
 		if (s->io_head && (now > s->last_poll)) {
 			s->last_poll = now;
-			sched_wait(s, now, false);
+			sched_wait(q, s, now, false);
 		}
 
 		task->tmo_msecs = 0;

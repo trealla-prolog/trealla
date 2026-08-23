@@ -455,204 +455,6 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
-#ifndef USE_POLLED_ALARMS
-static void s_sigfn(int s)
-{
-	(void)s;
-
-	// Async-signal context: only touch the thread struct, which outlives
-	// individual queries. NEVER dereference t->q here: the query may already
-	// have been freed by the time a late SIGALRM is delivered.
-	for (int i = 0; i < g_tpl_count; i++) {
-		prolog *pl = g_prologs[i];
-		thread *t = get_self(pl);
-
-		if (t) {
-			t->timedout = 1;
-			break;
-		}
-	}
-}
-
-#if USE_THREADS
-typedef struct  {
-	timer_t my_timer;
-	pthread_t thread_id;
-	bool via_setitimer;			// timer_create() failed; see below
-} timer_entry;
-
-static void timer_callback(union sigval sv)
-{
-	timer_entry *e = sv.sival_ptr;
-	pthread_kill(e->thread_id, SIGALRM);
-	timer_delete(e->my_timer);
-	memset(e, 0, sizeof(timer_entry));
-}
-
-static bool bif_sys_alarm_2(query *q)
-{
-	GET_FIRST_ARG(p1,number);
-	GET_NEXT_ARG(p2,integer_or_var);
-	int time_ms = 0;
-
-	if (is_bigint(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
-
-	g_tpl_interrupt = 0;
-
-	// Clear any stale timeout flag on this thread when arming/cancelling.
-	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
-	self->timedout = 0;
-
-	if (is_float(p1))
-		time_ms = get_float(p1) * 1000;
-	else
-		time_ms = get_smallint(p1);
-
-	if (time_ms < 0)
-		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
-
-	if (time_ms == 0) {
-		// Cancelling needs the handle the arming call returned. An
-		// unbound variable here was dereferenced as a pointer and
-		// passed to timer_delete()/free() - an immediate core dump.
-
-		if (!is_integer(p2))
-			return throw_error(q, p2, p2_ctx, "instantiation_error", "timer");
-
-		timer_entry *e = get_voidptr(p2);
-
-		// Cancel whichever was armed. timer_callback() zeroes the entry
-		// once a POSIX timer has fired and deleted itself, which is what
-		// a cleared thread_id means; a setitimer one has no callback to
-		// zero it, so its flag still stands.
-
-		if (e->via_setitimer) {
-			struct itimerval tv = {0};
-			setitimer(ITIMER_REAL, &tv, NULL);
-		} else if (e->thread_id)
-			timer_delete(e->my_timer);
-
-		TPL_free(e);
-		return true;
-	}
-
-	struct sigaction sa = {0};
-    sa.sa_handler = s_sigfn;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
-    sigaction(SIGALRM, &sa, NULL);
-
-	timer_entry *e = TPL_malloc(sizeof(timer_entry));	// FIX: match TPL_free on the cancel path
-
-	struct sigevent sevp = {0};
-#if defined(__linux__)
-	// Deliver SIGALRM straight to THIS thread via the kernel. No callback
-	// thread ever touches 'e', so there is no free-vs-use race on it.
-	sevp.sigev_notify = SIGEV_THREAD_ID;
-	sevp.sigev_signo = SIGALRM;
-	sevp._sigev_un._tid = syscall(SYS_gettid);   // no portable macro on this glibc
-#else
-	// Portable fallback (e.g. a macOS timer emulation must ensure the
-	// callback never accesses 'e' after the arming thread frees it).
-	sevp.sigev_notify = SIGEV_THREAD;
-	sevp.sigev_notify_function = timer_callback;
-	sevp.sigev_value.sival_ptr = e;
-#endif
-
-	// Not every system has a per-thread POSIX timer to give, and
-	// leaving a failed timer_create() unchecked armed nothing at all -
-	// a timer_settime() on an uninitialised handle, no SIGALRM ever,
-	// and call_with_time_limit/2 silently without a limit. The hosts
-	// known to have no usable one take USE_POLLED_ALARMS instead and
-	// never reach here; this is for a host that surprises us.
-	//
-	// The process-wide interval timer is the fallback, which is what
-	// the threadless build below uses throughout. There is only one of
-	// it per process and it cannot pick out the thread that armed it,
-	// so where this path is taken two threads arming a limit at once
-	// clobber each other - tests/misc/timeout.pl is that case, and it
-	// hangs if this branch is forced on. Better than a limit that never
-	// fires, but a system that needs both this and threaded timeouts
-	// wants the polled deadlines the Windows/WASI/OpenBSD build below
-	// keeps per thread. None of it arises where timer_create() works.
-
-	timer_t my_timer = {0};
-	e->thread_id = pthread_self();
-	e->via_setitimer = timer_create(CLOCK_REALTIME, &sevp, &my_timer) == -1;
-
-	if (e->via_setitimer) {
-		struct itimerval tv = {0};
-		tv.it_value.tv_sec = time_ms / 1000;
-		tv.it_value.tv_usec = (time_ms % 1000) * 1000;
-		setitimer(ITIMER_REAL, &tv, NULL);
-	} else {
-		e->my_timer = my_timer;
-
-		struct itimerspec value = {0};
-		value.it_value.tv_sec = time_ms / 1000;
-		value.it_value.tv_nsec = (time_ms % 1000) * 1000000;   // ms -> ns
-		value.it_interval.tv_sec = 0;
-		value.it_interval.tv_nsec = 0;
-		timer_settime(my_timer, 0, &value, NULL);
-	}
-
-	cell tmp;
-	make_ptr(&tmp, e);
-	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-}
-#else
-// Threadless builds (NOTHREADS=1, including old hosts that lack a usable
-// NPTL timer story) still need '$alarm'/2 for call_with_time_limit/2 and
-// for Quads' nonterminating-query guard (issue #1093). setitimer is
-// process-wide and enough when there is only one query thread.
-static bool bif_sys_alarm_2(query *q)
-{
-	GET_FIRST_ARG(p1,number);
-	GET_NEXT_ARG(p2,integer_or_var);
-	int time_ms = 0;
-
-	if (is_bigint(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
-
-	g_tpl_interrupt = 0;
-	q->pl->main_thread->timedout = 0;
-
-	if (is_float(p1))
-		time_ms = get_float(p1) * 1000;
-	else
-		time_ms = get_smallint(p1);
-
-	if (time_ms < 0)
-		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
-
-	if (time_ms == 0) {
-		if (!is_integer(p2))
-			return throw_error(q, p2, p2_ctx, "instantiation_error", "timer");
-
-		struct itimerval tv = {0};
-		setitimer(ITIMER_REAL, &tv, NULL);
-		return true;
-	}
-
-	struct sigaction sa = {0};
-	sa.sa_handler = s_sigfn;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
-	sigaction(SIGALRM, &sa, NULL);
-
-	struct itimerval tv = {0};
-	tv.it_value.tv_sec = time_ms / 1000;
-	tv.it_value.tv_usec = (time_ms % 1000) * 1000;
-	setitimer(ITIMER_REAL, &tv, NULL);
-
-	// Opaque cancel token; the NOTHREADS cancel path only needs it bound.
-	cell tmp;
-	make_int(&tmp, 1);
-	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-}
-#endif
-#else
 
 // Hosts with no usable POSIX per-thread timer - see USE_POLLED_ALARMS.
 // Polling a monotonic deadline from the normal interrupt checks preserves
@@ -664,6 +466,37 @@ struct alarm_entry_ {
 	uint64_t deadline;
 	bool fired;
 };
+
+// How long until the earliest alarm this thread is waiting on, so the
+// scheduler can sleep exactly that long instead of waking on a timer of
+// its own to go and look. False when nothing is pending.
+
+bool next_alarm_delay(query *q, unsigned *ms)
+{
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
+
+	if (!self->alarms)
+		return false;
+
+	uint64_t now = monotonic_time_in_usec(), best = 0;
+	bool found = false;
+
+	for (alarm_entry *e = self->alarms; e; e = e->next) {
+		if (e->fired)
+			continue;
+
+		if (!found || (e->deadline < best)) {
+			best = e->deadline;
+			found = true;
+		}
+	}
+
+	if (!found)
+		return false;
+
+	*ms = best <= now ? 0 : (unsigned)((best - now + 999) / 1000);
+	return true;
+}
 
 bool has_expired_alarm(query *q)
 {
@@ -727,7 +560,6 @@ static bool bif_sys_alarm_2(query *q)
 	make_ptr(&tmp, e);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 }
-#endif
 
 static bool bif_busy_1(query *q)
 {

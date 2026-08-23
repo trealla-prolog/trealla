@@ -194,10 +194,45 @@ where a thread queue is addressed by id.
   under tasks and drops an O(2048) scan from the mutex path. The
   pthread-scanning version survives for one caller only: the SIGALRM
   handler in `bif_os.c`, which runs with no query to ask.
-- **Signals are an open problem for the switch.** That handler asks
-  `pthread_self()`, which in a pool is the worker, and a signal handler
-  cannot safely ask which task it was running. `call_with_time_limit`
-  style timeouts need rethinking before threads become tasks.
+- **Signals — resolved, and the machinery is gone.** The SIGALRM handler
+  asked `pthread_self()`, which under a pool is the worker rather than
+  the thread object that armed the timer, and a signal handler cannot
+  safely ask which task it was running.
+
+  The answer was already half-built. `USE_POLLED_ALARMS` existed as the
+  fallback for hosts with no usable per-thread timer (Windows, WASI,
+  OpenBSD, NetBSD) and keys its deadline to the *thread object* - which
+  is exactly the identity that survives pooling. It is now the only
+  path: the handler, the `timer_create` shim, the `setitimer` fallback
+  and the `pthread_kill` are all deleted, along with `get_self()`, whose
+  only caller the handler was. Four platform variants collapse to one.
+
+  A dedicated orchestrator thread doing `sigwait()` would also have
+  worked, and would have lifted the async-signal-safety constraint that
+  forced the intrusive list. It is not needed: with no signal there is
+  nothing to route.
+
+  **The cost, and how it was paid.** Polling only gets a chance once per
+  pass round the scheduler, which is why `SCHED_MAX_SLEEP_MS` was 5 on
+  those platforms - an idle scheduler waking two hundred times a second
+  in case a timeout was due. `sched_wait()` now asks
+  `next_alarm_delay()` and sleeps until the nearest deadline instead, so
+  the cap is back to 250ms and bounds interrupt latency only. Measured:
+  a 500ms limit fires at 501ms with the scheduler idle, 505ms in a plain
+  `sleep/1` (its 10ms slice). Nested timers behave as before - the inner
+  limit fires and the outer survives.
+
+  **One thing this does not cover.** A blocking read in a non-task query
+  had SIGALRM to break it with `EINTR`; polling cannot. That limitation
+  already shipped on the four polled platforms and now applies
+  everywhere, and it shrinks to nothing once threads are tasks and I/O
+  parks on the scheduler.
+
+  Fallout: `thread_initialize()` and the table are now unconditional,
+  because `q->pl->main_thread` is dereferenced by `interrupt_pending()`
+  whether or not the build has threads. As `threads[0]` in a fixed array
+  it existed for free; allocated, it has to be made. The threadless
+  (WASI) build was where that showed up.
 - thread identity becomes id + mailbox + task, with no pthread in it
 
 **Access to the table is now funnelled — done.** Every one of the ~50

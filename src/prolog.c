@@ -1047,9 +1047,9 @@ void pl_destroy(prolog *pl)
 #if USE_THREADS
 	if (pl->q_cnt)
 		thread_cancel_all(pl);
+#endif
 
 	thread_deinitialize(pl);
-#endif
 
 	if (pl->logfp)
 		fclose(pl->logfp);
@@ -1183,9 +1183,12 @@ prolog *pl_create()
 
 	init_lock(&pl->guard);
 
-#if USE_THREADS
+	// Unconditional: the thread table holds the main thread, and
+	// q->pl->main_thread is dereferenced by interrupt_pending() whether
+	// or not this build has threads. It used to be threads[0] in a fixed
+	// array, so it existed for free; now it has to be made.
+
 	thread_initialize(pl);
-#endif
 
 	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);

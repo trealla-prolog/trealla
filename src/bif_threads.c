@@ -62,7 +62,6 @@ void release_lock(lock *l) {}
 
 #endif
 
-#if USE_THREADS
 #define is_threaded(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct msg_ {
@@ -345,16 +344,20 @@ static int new_thread(prolog *pl)
 	int n = (int)pl->next_thread_id++;
 
 	if (!t->is_init) {
+#if USE_THREADS
 		pthread_cond_init(&t->cond, NULL);
 		pthread_mutex_init(&t->mutex, NULL);
+#endif
 		init_lock(&t->guard);
 		t->is_init = true;
 		t->pl = pl;
 	}
 
-	t->guard.tid = n;
 	t->chan = n;
+#if USE_THREADS
+	t->guard.tid = n;
 	t->id = pthread_self();
+#endif
 	t->is_detached = false;
 	t->is_queue_only = false;
 	t->is_mutex_only = false;
@@ -421,6 +424,8 @@ void thread_deinitialize(prolog *pl)
 			retire_thread(pl, t);
 	}
 }
+
+#if USE_THREADS
 
 // Release a thread/mutex/queue slot whose option list failed to parse.
 //
@@ -631,27 +636,6 @@ static bool bif_thread_send_message_2(query *q)
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
-}
-
-// Which pthread is executing, found by scanning. Only for the SIGALRM
-// handler in bif_os.c, which runs with no query to ask - everywhere
-// else wants get_self_query() above. Note this cannot survive threads
-// becoming tasks: in a pool pthread_self() is the *worker*, and a
-// signal handler cannot safely ask which task it was running.
-
-thread *get_self(prolog *pl)
-{
-	pthread_t tid = pthread_self();
-
-	for_each_thread(pl, t) {
-		if (t->is_queue_only || t->is_mutex_only)
-			continue;
-
-		if (t->id == tid)
-			return t;
-	}
-
-	return NULL;
 }
 
 // How long a parked task waits before looking again. It sits on the
@@ -892,11 +876,11 @@ static bool bif_thread_peek_message_2(query *q)
 
 // Which thread is running this query.
 //
-// Not the same question as get_self() below, which asks which *pthread*
-// is executing and is only answerable from a signal handler. A query
-// already carries its thread, and everywhere outside a signal handler
-// that is both cheaper - no scan of the whole table - and the answer
-// that stays correct once a thread is a task rather than a pthread.
+// There used to be a second one asking which *pthread* is executing,
+// by scanning. Its only caller was the SIGALRM handler, which had no
+// query to ask; timeouts are polled off the thread object now, so the
+// scan is gone and with it the last thing that could not answer this
+// question once a thread becomes a task rather than a pthread.
 //
 // The same q->thread_ptr-or-threads[0] idiom is used in query.h,
 // toplevel.c, bif_os.c and bif_tabling.c; this just names it.
@@ -2382,19 +2366,3 @@ builtins g_threads_bifs[] =
 	{0}
 };
 
-#if !USE_THREADS
-
-// get_self() is defined inside the USE_THREADS block above, but
-// bif_os.c's SIGALRM handler calls it unconditionally. Without this
-// the threadless build - which is the WASI/WASM configuration - fails
-// to link at -O0; -O3 only papered over it by dropping the unused
-// handler before the reference reached the linker.
-//
-// With no threads there is exactly one, and it is threads[0].
-
-thread *get_self(prolog *pl)
-{
-	return pl ? main_thread(pl) : NULL;
-}
-
-#endif

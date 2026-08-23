@@ -72,9 +72,8 @@ void call_attrs(query *q, cell *attrs);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
-#ifdef USE_POLLED_ALARMS
 bool has_expired_alarm(query *q);
-#endif
+bool next_alarm_delay(query *q, unsigned *ms);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 void check_pressure(query *q);
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_ctx p1_ctx, unsigned extras);
@@ -227,10 +226,8 @@ inline static bool interrupt_pending(query *q)
 {
 	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 
-#ifdef USE_POLLED_ALARMS
 	if (!self->timedout && self->alarms && has_expired_alarm(q))
 		self->timedout = 1;
-#endif
 
 	return g_tpl_interrupt || self->timedout;
 }

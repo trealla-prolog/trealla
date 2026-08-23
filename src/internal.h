@@ -699,17 +699,16 @@ struct stream_ {
 	bool is_alias:1;
 };
 
-// Some hosts have no POSIX per-thread timer to arm. Windows and WASI
-// have no such API at all; on OpenBSD and NetBSD timer_create() is
-// there but a limit armed through it never fires - NetBSD's SIGEV_THREAD
-// notification never arrives, so call_with_time_limit/2 was silently no
-// limit at all and a nonterminating goal ran until the test runner
-// killed it. Those hosts poll a monotonic deadline from the normal
-// interrupt checks instead; see has_expired_alarm().
-
-#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__) || defined(__NetBSD__)
-#define USE_POLLED_ALARMS 1
-#endif
+// Timeouts are a polled monotonic deadline kept per thread object, not
+// a signal - see has_expired_alarm(). This used to be the fallback for
+// hosts with no usable POSIX per-thread timer (Windows and WASI have no
+// such API; on OpenBSD and NetBSD timer_create() is there but a limit
+// armed through it never fires), and is now the only path.
+//
+// It is also the only design that survives a thread becoming a task: a
+// SIGALRM handler can only ask which *pthread* it is on, which under a
+// worker pool is the worker rather than the thread object that armed
+// the timer. The deadline is keyed to the object throughout.
 
 typedef struct alarm_entry_ alarm_entry;
 typedef struct thread_ thread;
@@ -737,9 +736,7 @@ struct thread_ {
 
 	void *tabling_state;
 
-#ifdef USE_POLLED_ALARMS
-	alarm_entry *alarms;					// polled timers for hosts without POSIX per-thread timers
-#endif
+	alarm_entry *alarms;					// polled timers, see has_expired_alarm()
 
 	// Intrusive links. live_* chain every live entry in increasing chan
 	// order, which is what lets the table be walked without allocating

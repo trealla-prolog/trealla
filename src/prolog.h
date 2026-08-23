@@ -69,7 +69,6 @@ extern builtins g_uri_bifs[];
 extern prolog *g_prologs[];
 extern pl_atomic int g_tpl_count;
 
-extern thread *get_self(prolog *pl);
 extern thread *find_thread_by_id(prolog *pl, int chan);
 extern void threads_destroy(prolog *pl);
 extern thread *get_self_query(const query *q);
