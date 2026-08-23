@@ -425,12 +425,74 @@ thread *get_self(prolog *pl)
 	return NULL;
 }
 
+// How long a parked task waits before looking again. It sits on the
+// scheduler's timer heap rather than spinning, so the cost of a short
+// interval is one pass round the scheduler - low enough that message
+// latency stays invisible. A wait-list that a send could wake directly
+// would remove the polling altogether, but that needs a scheduler which
+// can be woken from another thread, which is phase 3.
+
+#define MSG_TASK_POLL_MS 5
+
+enum msg_wait {
+	MSG_WAIT_AGAIN,						// waited in place, look again
+	MSG_WAIT_EXPIRED,					// deadline passed
+	MSG_WAIT_YIELDED					// task parked; unwind to the scheduler
+};
+
+// One wait, for whoever is asking.
+//
+// A task must not sit on the condvar. It would hold the only worker and
+// every sibling task with it - which is exactly what a blocking receive
+// inside a task used to do. It parks on the timer heap instead and the
+// scheduler runs everyone else until it comes round again. A real
+// thread has nothing else to hold up, so it still sleeps on the condvar
+// and a send wakes it immediately.
+
+static enum msg_wait do_wait_message(query *q, thread *t, uint64_t deadline)
+{
+	uint64_t now = wall_time_in_usec() / 1000;
+
+	if (deadline && (now >= deadline))
+		return MSG_WAIT_EXPIRED;
+
+	uint64_t left = deadline ? deadline - now : 0;
+
+	if (q->is_task) {
+		uint64_t nap = MSG_TASK_POLL_MS;
+
+		if (deadline && (nap > left))
+			nap = left;
+
+		return do_yield(q, nap < 1 ? 1 : (int)nap) ? MSG_WAIT_AGAIN : MSG_WAIT_YIELDED;
+	}
+
+	uint64_t nap = 100;
+
+	if (deadline && (nap > left))
+		nap = left;
+
+	suspend_thread(t, nap < 1 ? 1 : (int)nap);
+	return MSG_WAIT_AGAIN;
+}
+
 static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
 {
 	GET_FIRST_ARG(pq,queue);
 	thread *t = &q->pl->threads[chan];
-	pl_int started_ms = wall_time_in_usec() / 1000;
-	pl_int tmo_ms = timeout * 1000;
+
+	// The deadline is absolute and lives on the query, because a task
+	// that parks in here is retried from the top of the builtin: a
+	// deadline recomputed on re-entry would reset the clock every time
+	// and never expire. q->retry is what distinguishes a resumption
+	// from a fresh call.
+
+	if (!q->retry) {
+		pl_int tmo_ms = timeout * 1000;
+		q->msg_deadline = (tmo_ms >= 0) ? (wall_time_in_usec() / 1000) + tmo_ms : 0;
+	}
+
+	const uint64_t deadline = q->msg_deadline;
 
 	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
@@ -448,17 +510,8 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			if (is_peek)
 				return false;
 
-			do {
-				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
-
-				if ((tmo_ms >= 0) && (elapsed_ms >= tmo_ms)) {
-					return false;
-				}
-
-				suspend_thread(t, tmo_ms > 0 ? tmo_ms : 100);
-			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort
-				&& !(q->thread_ptr ? q->thread_ptr->timedout : q->pl->threads[0].timedout));
+			if (do_wait_message(q, t, deadline) != MSG_WAIT_AGAIN)
+				return false;
 
 			continue;
 		}
@@ -502,32 +555,13 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 		// Nothing in the queue unified. Everything already there has
 		// been tried, so walking it again changes nothing until a new
 		// message arrives - and this is the only point at which a *non
-		// empty* queue can honour a deadline. Without it a receive that
-		// matched nothing spun here forever: the timeout is checked
-		// only in the branch taken when the queue is empty, which a
-		// non-empty queue never reaches. It did not even sleep.
-		//
-		// Nap for what is left of the deadline rather than the whole of
-		// it, capped so the blocking form (tmo_ms < 0) still comes back
-		// round to notice halt and abort. A send broadcasts the condvar
-		// either way, so an arriving message wakes us early.
+		// empty* queue can honour its deadline. Before both waits went
+		// through one place, the timeout was checked only in the branch
+		// an empty queue takes, which a non-empty queue never reaches,
+		// and a receive that matched nothing spun here forever.
 
-		pl_int elapsed_ms = (wall_time_in_usec() / 1000) - started_ms;
-
-		if ((tmo_ms >= 0) && (elapsed_ms >= tmo_ms))
+		if (do_wait_message(q, t, deadline) != MSG_WAIT_AGAIN)
 			return false;
-
-		int nap_ms = 100;
-
-		if (tmo_ms >= 0) {
-			pl_int remaining_ms = tmo_ms - elapsed_ms;
-			nap_ms = remaining_ms < 100 ? (int)remaining_ms : 100;
-
-			if (nap_ms < 1)
-				nap_ms = 1;
-		}
-
-		suspend_thread(t, nap_ms);
 	}
 
 	return false;

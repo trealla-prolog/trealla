@@ -1021,7 +1021,6 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 
 | Predicate | Template | |
 |---|---|---|
-| `await/0` | `await` |  |
 | `call_task/1` | `call_task(:callable)` |  |
 | `call_task/2` | `call_task(:callable,?term)` |  |
 | `call_task/3` | `call_task(:callable,?term,?term)` |  |
@@ -1032,8 +1031,6 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 | `call_task/8` | `call_task(:callable,?term,?term,?term,?term,?term,?term,?term)` |  |
 | `end_wait/0` | `end_wait` |  |
 | `fork/0` | `fork` |  |
-| `recv/1` | `recv(?term)` |  |
-| `send/1` | `send(+term)` |  |
 | `wait/0` | `wait` |  |
 | `yield/0` | `yield` |  |
 

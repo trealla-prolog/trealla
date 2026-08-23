@@ -110,9 +110,42 @@ has no parent to drive it, so none of this can schedule one.
 Still strictly single-threaded and one worker: nothing runs in
 parallel, and the queues are untouched by any other thread.
 
-### Phase 1 — make blocking primitives suspend
+### Phase 1 — make blocking primitives suspend — partly done
 
-The bulk of the work, and the part that decides whether v2 is possible.
+**Done: a receive inside a task no longer holds the scheduler.** Both
+wait points in `do_match_message()` - the empty queue and the
+no-match walk - now go through one `do_wait_message()`, which parks a
+task on the timer heap instead of putting it on the condvar. Siblings
+run meanwhile. A real thread still sleeps on the condvar, which is right
+for it: it has nothing else to hold up.
+
+Unifying the two waits also removed the duplication that caused the
+timeout bug fixed just before this - there is now one place a deadline
+is checked, not one place that checks and one that forgot to.
+
+The deadline had to move onto the query (`q->msg_deadline`). A parked
+task is retried from the top of the builtin, so a deadline recomputed on
+re-entry would reset the clock and never expire; `q->retry` distinguishes
+a resumption from a fresh call.
+
+**Done: `send/1`, `recv/1` and `await/0` are gone**, along with the
+signal machinery in `sched_run()` that existed only to serve `await/0`,
+and `q->yield_now` whose only job was stopping a plain `yield/0` being
+mistaken for a message. `library(concurrent)` keeps its whole public
+API, ported onto the shared database, with `future_any/2`'s early exit
+carried by `end_wait/0`.
+
+**Not done: the wait-list.** A parked task currently polls at
+`MSG_TASK_POLL_MS` (5ms) rather than being woken directly by the send.
+That is correct and cheap - it is on the timer heap, not spinning - but
+it is not the design. Waking a parked task directly needs a scheduler
+that another thread can wake, which is phase 3's problem; until then
+polling is the honest placeholder.
+
+**Not done: `thread_join/2` and mutex acquisition** still block. They
+matter once threads are tasks, which is phase 2.
+
+The rest of this section is the original plan, for what remains.
 
 `thread_get_message/2` blocks in a C loop on a condvar —
 `suspend_thread()` at `src/bif_threads.c:457`, inside

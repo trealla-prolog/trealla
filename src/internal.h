@@ -837,6 +837,7 @@ struct query_ {
 	query *sched_next;					// link in the ready FIFO or the io list
 	unsigned heap_idx;					// our slot in the timer heap
 	int wait_fd;						// descriptor we parked on, if waiting_io
+	uint64_t msg_deadline;				// absolute ms for a receive we parked in
 	short wait_events;					// ... and what we are waiting for
 	uint8_t sched_where;				// which of the three we are queued on
 
@@ -860,7 +861,7 @@ struct query_ {
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned name_idx;		// next free generated-name number, see get_slot_name()
 	unsigned varno, tab0_varno, cur_engine, cur_chan, my_chan;
-	unsigned s_cnt, retries, popp, rand_seed;
+	unsigned s_cnt, retries, rand_seed;
 	int autofail_n;
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_ctx clone_root_ctx;				// context of clone_root, which alone does not identify a term
@@ -925,7 +926,6 @@ struct query_ {
 	bool double_quotes:1;
 	bool end_wait:1;
 	bool waiting_io:1;
-	bool yield_now:1;
 	bool did_unhandled_exception:1;
 	bool access_private:1;
 	bool in_retract:1;

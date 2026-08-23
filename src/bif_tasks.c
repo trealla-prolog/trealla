@@ -102,10 +102,9 @@ bool do_yield_then(query *q, bool status)
 // it asks for no deadline at all and the scheduler puts the task back on
 // the ready queue as it stands.
 //
-// It needs a mark of its own rather than just a zero deadline, because
-// "yielded, no deadline" is exactly how sched_run() recognises the
-// signal send/1 raises - which is the thing await/0 is waiting for. A
-// plain yield must not look like a message.
+// That zero deadline is the whole trick: sched_park() only reaches the
+// timer heap for a deadline still in the future, so a zero goes
+// straight back on the ready queue.
 
 bool do_yield_now(query *q)
 {
@@ -118,7 +117,6 @@ bool do_yield_now(query *q)
 
 	q->yield_at = 0;
 	q->yielded = true;
-	q->yield_now = true;
 	q->tmo_msecs = 0;
 	CHECKED(push_choice(q));
 	return false;
@@ -164,20 +162,6 @@ bool do_yield_on_stream(query *q, stream *str, bool is_write)
 #endif
 
 	return do_yield(q, 1);
-}
-
-static cell *pop_queue(query *q)
-{
-	if (!q->qp[0])
-		return NULL;
-
-	cell *c = q->queue[0] + q->popp;
-	q->popp += c->num_cells;
-
-	if (q->popp == q->qp[0])
-		q->popp = q->qp[0] = 0;
-
-	return c;
 }
 
 // The scheduler holds every task in exactly one of three places: the
@@ -479,18 +463,14 @@ static void sched_wait(scheduler *s, uint64_t now, bool block)
 #endif
 }
 
-enum sched_mode {
-	SCHED_DRAIN,						// run until no tasks are left
-	SCHED_STEP							// run until one task signals
-};
+// Run until the caller's own subtree is done. There used to be a second
+// mode that stopped as soon as one task "signalled" - yielded without
+// asking for a deadline - which is how await/0 heard about send/1. All
+// three went together, so what is left is the drain.
 
-// A task "signals" by yielding without asking for a timeout, which is
-// what send/1 does - and that is precisely what await/0 waits to hear.
-
-static bool sched_run(query *q, enum sched_mode mode)
+static void sched_run(query *q)
 {
 	scheduler *s = q->pl->sched;
-	bool signalled = false;
 
 	while (q->num_subtasks && !q->end_wait) {
 		CHECK_INTERRUPT();
@@ -519,7 +499,6 @@ static bool sched_run(query *q, enum sched_mode mode)
 
 		task->tmo_msecs = 0;
 		task->waiting_io = false;
-		task->yield_now = false;
 
 		if (!task->yielded || !task->st.instr || task->error) {
 			pop_task(task->parent, task);
@@ -528,19 +507,10 @@ static bool sched_run(query *q, enum sched_mode mode)
 		}
 
 		start(task);
-		bool signal = task->yielded && !task->tmo_msecs && !task->yield_now;
 		sched_park(s, task, now);
-
-		if (signal) {
-			signalled = true;
-
-			if (mode == SCHED_STEP)
-				break;
-		}
 	}
 
 	q->end_wait = false;
-	return signalled;
 }
 
 // A task counts against everyone above it, not just its spawner, so
@@ -610,21 +580,9 @@ static bool bif_end_wait_0(query *q)
 static bool bif_wait_0(query *q)
 {
 	if (q->pl->sched)
-		sched_run(q, SCHED_DRAIN);
+		sched_run(q);
 
 	q->end_wait = false;
-	return true;
-}
-
-static bool bif_await_0(query *q)
-{
-	if (q->pl->sched)
-		sched_run(q, SCHED_STEP);
-
-	if (!q->num_subtasks)
-		return false;
-
-	CHECKED(push_choice(q));
 	return true;
 }
 
@@ -763,42 +721,6 @@ static bool bif_sys_set_future_1(query *q)
 	return true;
 }
 
-static bool bif_send_1(query *q)
-{
-	GET_FIRST_ARG(p1,nonvar);
-	query *dstq = q->parent && !q->parent->done ? q->parent : q;
-	CHECKED(init_tmp_heap(q));
-	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
-	CHECKED(c);
-
-	for (pl_idx i = 0; i < c->num_cells; i++) {
-		cell *c2 = c + i;
-		share_cell(c2);
-	}
-
-	CHECKED(alloc_queuen(dstq, 0, c));
-	q->yielded = true;
-	return true;
-}
-
-static bool bif_recv_1(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-
-	while (true) {
-		CHECK_INTERRUPT();
-		cell *c = pop_queue(q);
-		if (!c) break;
-
-		if (unify(q, p1, p1_ctx, c, q->st.cur_ctx))
-			return true;
-
-		CHECKED(alloc_queuen(q, 0, c));
-	}
-
-	return false;
-}
-
 builtins g_tasks_bifs[] =
 {
 	{"call_task", 1, bif_call_task_n, ":callable", false, false, BLAH},
@@ -812,11 +734,8 @@ builtins g_tasks_bifs[] =
 
 	{"end_wait", 0, bif_end_wait_0, NULL, false, false, BLAH},
 	{"wait", 0, bif_wait_0, NULL, false, false, BLAH},
-	{"await", 0, bif_await_0, NULL, false, false, BLAH},
 	{"yield", 0, bif_yield_0, NULL, false, false, BLAH},
 	{"fork", 0, bif_fork_0, NULL, false, false, BLAH},
-	{"send", 1, bif_send_1, "+term", false, false, BLAH},
-	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
 
 	{"$cancel_future", 1, bif_sys_cancel_future_1, "+integer", false, false, BLAH},
 	{"$set_future", 1, bif_sys_set_future_1, "+integer", false, false, BLAH},

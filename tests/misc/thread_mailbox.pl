@@ -215,6 +215,47 @@ queue_property_enumerates_queues :-
 	;	Leaked = no_mutex
 	),
 	report(queue_property_enumerates_queues, Found-Leaked, queues_found-no_mutex).
+% A receive inside a *task* must not hold the scheduler.
+%
+% This is the GUSTTO phase 1 property. A task waiting on a queue parks
+% on the timer heap and its siblings run meanwhile; before phase 1 it
+% sat on the condvar inside do_match_message and every sibling waited
+% out the full timeout with it. The blocker is spawned first, so under
+% the old behaviour the siblings could only appear after it finished.
+%
+% Timing is not asserted - only the order, which is what changed.
+
+:- dynamic(ran/1).
+
+blocker(Q) :- assertz(ran(blocked)),
+	( thread_get_message(Q,_,[timeout(0.3)]) -> true ; true ),
+	assertz(ran(woke)).
+
+runner(N) :- assertz(ran(sib(N))).
+
+task_receive_yields_to_siblings :-
+	retractall(ran(_)),
+	message_queue_create(Q),
+	call_task(blocker, Q),
+	call_task(runner, 1),
+	call_task(runner, 2),
+	wait,
+	findall(X, ran(X), L),
+	report(task_receive_yields_to_siblings, L, [blocked,sib(1),sib(2),woke]).
+
+% ... and a parked task still receives, rather than only timing out.
+
+waiter(Q) :- ( thread_get_message(Q,M,[timeout(2)]) -> assertz(ran(got(M))) ; assertz(ran(timed_out)) ).
+poster(Q) :- sleep(0.05), thread_send_message(Q, delivered).
+
+parked_task_still_receives :-
+	retractall(ran(_)),
+	message_queue_create(Q),
+	call_task(waiter, Q),
+	call_task(poster, Q),
+	wait,
+	findall(X, ran(X), L),
+	report(parked_task_still_receives, L, [got(delivered)]).
 
 main :-
 	fifo_order,
@@ -232,4 +273,6 @@ main :-
 	unaliased_mutex_properties,
 	unaliased_thread_properties,
 	aliased_queue_properties,
-	queue_property_enumerates_queues.
+	queue_property_enumerates_queues,
+	task_receive_yields_to_siblings,
+	parked_task_still_receives.
