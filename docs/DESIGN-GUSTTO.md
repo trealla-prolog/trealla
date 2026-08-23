@@ -261,12 +261,21 @@ id gets `existence_error` rather than reaching a stranger; both suites at
 baseline, and clean under `-fsanitize=address` including a churn of 300
 queues, 300 mutexes and 200 threads created and destroyed.
 
-**One flag needs a decision.** `max_threads` reported `MAX_ACTUAL_THREADS`
-(2048), which is now a lie - we impose no limit. It reports the O/S
-ceiling instead, which makes it identical to `os_threads`. That is
-honest but duplicative, and the same objection that retired
-`hardware_threads` applies: two names, one number. Either `max_threads`
-goes, or it stays as the SWI-compatible spelling and `os_threads` goes.
+**`max_threads` is gone.** It reported `MAX_ACTUAL_THREADS` (2048),
+which became a lie the moment the cap did. Reporting the O/S ceiling
+instead would have made it identical to `os_threads` - two names for one
+number, the same objection that retired `hardware_threads`. So it was
+removed rather than redefined: querying or setting it is now
+`domain_error(prolog_flag, max_threads)`, like any flag that does not
+exist. Nothing in the tree or in Logtalk referenced it.
+
+What is left says one true thing each:
+
+| Flag | Means |
+|---|---|
+| `cpu_count` | logical CPUs, so how much parallelism there is |
+| `os_threads` | POSIX threads the O/S will give this process |
+| `threads` | whether this build has them at all |
 
 **The original plan, for reference.** `thread threads[MAX_THREADS]`
 (`src/internal.h:1034`) is a 2048-entry inline array in the `prolog`
