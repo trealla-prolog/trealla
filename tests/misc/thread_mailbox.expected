@@ -1,5 +1,6 @@
 fifo_order: ok
 selective_receive_preserves_order: ok
+no_match_leaves_queue_intact: ok
 peek_does_not_consume: ok
 peek_empty_fails: ok
 timeout_expires: ok

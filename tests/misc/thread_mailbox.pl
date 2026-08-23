@@ -58,17 +58,16 @@ selective_receive_preserves_order :-
 	qdrain(Q, L),
 	report(selective_receive_preserves_order, L, [1,2,4]).
 
-% A message that matches nothing stays put rather than being consumed.
+% A message that matches nothing stays put rather than being consumed,
+% and the receive still honours its deadline.
 %
-% DISABLED - this hangs. thread_get_message/3 consults its deadline only
-% in the branch it takes when the queue is *empty* (the suspend_thread()
-% loop in do_match_message). With messages present but none matching,
-% the walk falls out of the inner loop, returns to the top of the outer
-% one, finds the queue still non-empty and walks it again - never
-% reaching the timeout check. It is a hot spin, not even a sleep.
-%
-% Re-enable once that is fixed; the expectation below is what it should
-% report.
+% This hung until the deadline check was added to the no-match path.
+% thread_get_message/3 consulted its timeout only in the branch taken
+% when the queue is *empty*, so with messages present but none matching
+% the walk fell out of the inner loop, returned to the top of the outer
+% one, found the queue still non-empty and walked it again forever -
+% spinning, not even sleeping. Intermittent by nature: it needed the
+% queue to be non-empty at the moment of the receive.
 
 no_match_leaves_queue_intact :-
 	message_queue_create(Q),
@@ -164,6 +163,7 @@ mutex_trylock_succeeds_for_holder :-
 main :-
 	fifo_order,
 	selective_receive_preserves_order,
+	no_match_leaves_queue_intact,
 	peek_does_not_consume,
 	peek_empty_fails,
 	timeout_expires,

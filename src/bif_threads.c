@@ -498,6 +498,36 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 
 		if (is_peek)
 			break;
+
+		// Nothing in the queue unified. Everything already there has
+		// been tried, so walking it again changes nothing until a new
+		// message arrives - and this is the only point at which a *non
+		// empty* queue can honour a deadline. Without it a receive that
+		// matched nothing spun here forever: the timeout is checked
+		// only in the branch taken when the queue is empty, which a
+		// non-empty queue never reaches. It did not even sleep.
+		//
+		// Nap for what is left of the deadline rather than the whole of
+		// it, capped so the blocking form (tmo_ms < 0) still comes back
+		// round to notice halt and abort. A send broadcasts the condvar
+		// either way, so an arriving message wakes us early.
+
+		pl_int elapsed_ms = (wall_time_in_usec() / 1000) - started_ms;
+
+		if ((tmo_ms >= 0) && (elapsed_ms >= tmo_ms))
+			return false;
+
+		int nap_ms = 100;
+
+		if (tmo_ms >= 0) {
+			pl_int remaining_ms = tmo_ms - elapsed_ms;
+			nap_ms = remaining_ms < 100 ? (int)remaining_ms : 100;
+
+			if (nap_ms < 1)
+				nap_ms = 1;
+		}
+
+		suspend_thread(t, nap_ms);
 	}
 
 	return false;
