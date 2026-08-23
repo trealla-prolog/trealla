@@ -160,6 +160,62 @@ mutex_trylock_succeeds_for_holder :-
 	mutex_unlock(M),
 	report(mutex_trylock_succeeds_for_holder, R, acquired).
 
+% Properties of an object created without an alias.
+%
+% All three property predicates used to build an alias/1 term out of a
+% null pointer, so make_cstring() ran strlen(NULL) and the process
+% segfaulted. An object with no alias simply has no alias property; the
+% others must still enumerate, which is the part a naive fix breaks.
+
+unaliased_queue_properties :-
+	message_queue_create(Q),
+	findall(P, message_queue_property(Q,P), L),
+	report(unaliased_queue_properties, L, [size(0)]).
+
+unaliased_mutex_properties :-
+	mutex_create(M),
+	findall(P, mutex_property(M,P), L),
+	report(unaliased_mutex_properties, L, [status(unlocked)]).
+
+unaliased_thread_properties :-
+	message_queue_create(Q),
+	thread_create(thread_get_message(Q,_), T, []),
+	findall(P, thread_property(T,P), L),
+	thread_send_message(Q, go),
+	thread_join(T, _),
+	report(unaliased_thread_properties, L, [detached(false),status(running)]).
+
+% An alias, where there is one, still shows up alongside the rest.
+
+aliased_queue_properties :-
+	message_queue_create(Q, [alias(a_queue)]),
+	findall(P, message_queue_property(Q,P), L),
+	report(aliased_queue_properties, L, [alias(a_queue),size(0)]).
+
+% message_queue_property/2 with the property bound enumerated the
+% *mutexes*: it filtered on is_mutex_only where its sibling with both
+% arguments unbound filtered on is_queue_only. It threw an
+% existence_error as soon as a mutex existed.
+
+% Written against whatever else this file has left alive, so it asks
+% the two questions that matter rather than for an exact list: the new
+% queues are found, and the mutex is not.
+
+queue_property_enumerates_queues :-
+	message_queue_create(Q1),
+	message_queue_create(Q2),
+	mutex_create(M),
+	findall(X, message_queue_property(X,size(_)), L),
+	(	memberchk(Q1, L), memberchk(Q2, L)
+	->	Found = queues_found
+	;	Found = queues_missing
+	),
+	(	memberchk(M, L)
+	->	Leaked = mutex_leaked_in
+	;	Leaked = no_mutex
+	),
+	report(queue_property_enumerates_queues, Found-Leaked, queues_found-no_mutex).
+
 main :-
 	fifo_order,
 	selective_receive_preserves_order,
@@ -171,4 +227,9 @@ main :-
 	send_before_receive,
 	join_status,
 	mutex_is_recursive,
-	mutex_trylock_succeeds_for_holder.
+	mutex_trylock_succeeds_for_holder,
+	unaliased_queue_properties,
+	unaliased_mutex_properties,
+	unaliased_thread_properties,
+	aliased_queue_properties,
+	queue_property_enumerates_queues.

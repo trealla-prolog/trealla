@@ -1212,6 +1212,9 @@ static bool do_thread_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
+		if (!t->alias)		// created without one: the property does not hold
+			return false;
+
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
@@ -1316,6 +1319,14 @@ static bool do_thread_property_pin_id(query *q)
 		i = ++q->st.v2;
 	else
 		q->st.v2 = 0;
+
+	// An object created without an alias has no alias property at all,
+	// rather than one carrying a null string - which is what
+	// make_cstring() crashed on. Skip that slot, keeping v2 in step so
+	// the next retry moves on instead of repeating this property.
+
+	if ((i == 0) && !t->alias)
+		q->st.v2 = i = 1;
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
@@ -1595,6 +1606,9 @@ static bool do_message_queue_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
+		if (!t->alias)		// created without one: the property does not hold
+			return false;
+
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
@@ -1636,7 +1650,7 @@ static bool do_message_queue_property_pin_property(query *q)
 
 		thread *t = &q->pl->threads[i];
 
-		if (!t->is_active || !t->is_mutex_only)
+		if (!t->is_active || !t->is_queue_only)
 			continue;
 
 		break;
@@ -1650,7 +1664,7 @@ static bool do_message_queue_property_pin_property(query *q)
 
 		thread *t = &q->pl->threads[i];
 
-		if (!t->is_active || !t->is_mutex_only)
+		if (!t->is_active || !t->is_queue_only)
 			continue;
 
 		break;
@@ -1684,6 +1698,14 @@ static bool do_message_queue_property_pin_id(query *q)
 		i = ++q->st.v2;
 	else
 		q->st.v2 = 0;
+
+	// An object created without an alias has no alias property at all,
+	// rather than one carrying a null string - which is what
+	// make_cstring() crashed on. Skip that slot, keeping v2 in step so
+	// the next retry moves on instead of repeating this property.
+
+	if ((i == 0) && !t->alias)
+		q->st.v2 = i = 1;
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
@@ -1945,6 +1967,9 @@ static bool do_mutex_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
+		if (!t->alias)		// created without one: the property does not hold
+			return false;
+
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
@@ -2039,6 +2064,14 @@ static bool do_mutex_property_pin_id(query *q)
 		i = ++q->st.v2;
 	else
 		q->st.v2 = 0;
+
+	// An object created without an alias has no alias property at all,
+	// rather than one carrying a null string - which is what
+	// make_cstring() crashed on. Skip that slot, keeping v2 in step so
+	// the next retry moves on instead of repeating this property.
+
+	if ((i == 0) && !t->alias)
+		q->st.v2 = i = 1;
 
 	if (i == 0) {
 		CHECKED(push_choice(q));

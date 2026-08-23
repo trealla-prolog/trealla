@@ -12,3 +12,8 @@ join_status_throw: ok
 join_status_exit: ok
 mutex_is_recursive: ok
 mutex_trylock_succeeds_for_holder: ok
+unaliased_queue_properties: ok
+unaliased_mutex_properties: ok
+unaliased_thread_properties: ok
+aliased_queue_properties: ok
+queue_property_enumerates_queues: ok
