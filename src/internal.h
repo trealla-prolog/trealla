@@ -757,6 +757,12 @@ struct thread_ {
 
 	scheduler *sched;
 
+	// Tasks parked on this queue waiting for a message. A send walks
+	// these and promotes them, which is what makes a receive wake on
+	// delivery rather than on its next poll.
+
+	query *msg_waiters;
+
 	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
 	pl_atomic bool is_active;
@@ -859,6 +865,8 @@ struct query_ {
 	unsigned heap_idx;					// our slot in the timer heap
 	int wait_fd;						// descriptor we parked on, if waiting_io
 	uint64_t msg_deadline;				// absolute ms for a receive we parked in
+	query *wait_next;					// link in a queue's msg_waiters
+	thread *waiting_on;					// ... and which queue that is
 	short wait_events;					// ... and what we are waiting for
 	uint8_t sched_where;				// which of the three we are queued on
 

@@ -30,6 +30,8 @@ static void msleep(int ms)
 #if !defined(_WIN32) && !defined(__wasi__)
 #define USE_POLL 1
 #include <poll.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 // Longest we sleep in one go.
@@ -182,8 +184,40 @@ struct scheduler_ {
 	struct pollfd *pfds;				// scratch for one poll() call
 	query **pfd_owners;					// ... and who each entry belongs to
 	unsigned pfds_size;
+
+	// Self-pipe, so a thread that is not the owner can cut short a
+	// sleep it is in - having just promoted one of its parked tasks.
+	// The read end sits in every poll() set.
+
+	int wake_fd[2];						// [0] read, [1] write; -1 if unavailable
+	pl_atomic bool wake_pending;		// a byte is already in flight
 #endif
+
+	// Only the owning thread ever runs the scheduler, so the pollfd
+	// scratch above stays single-writer. What other threads do is
+	// *promote*: move one of these queues' tasks to ready when a message
+	// it was parked on arrives. This guards exactly that - the ready
+	// list, the timer heap, the io list, and the sched_where/heap_idx
+	// each task carries saying which one it is on.
+	//
+	// Never held across start() or poll(). The first would serialise
+	// what the pool exists to parallelise; the second would block.
+
+	lock guard;
+	bool guard_init;
 };
+
+static void sched_lock(scheduler *s)
+{
+	if (s->guard_init)
+		acquire_lock(&s->guard);
+}
+
+static void sched_unlock(scheduler *s)
+{
+	if (s->guard_init)
+		release_lock(&s->guard);
+}
 
 static void pop_task(query *q, query *task);
 
@@ -204,10 +238,46 @@ static scheduler *sched_get(query *q)
 {
 	thread *t = get_self_query(q);
 
-	if (!t->sched)
+	if (!t->sched) {
 		t->sched = TPL_calloc(1, sizeof(scheduler));
 
+		if (t->sched) {
+			init_lock(&t->sched->guard);
+			t->sched->guard_init = true;
+#if USE_POLL
+			scheduler *s = t->sched;
+
+			if (pipe(s->wake_fd) == 0) {
+				fcntl(s->wake_fd[0], F_SETFL, fcntl(s->wake_fd[0], F_GETFL, 0) | O_NONBLOCK);
+				fcntl(s->wake_fd[1], F_SETFL, fcntl(s->wake_fd[1], F_GETFL, 0) | O_NONBLOCK);
+			} else
+				s->wake_fd[0] = s->wake_fd[1] = -1;
+#endif
+		}
+	}
+
 	return t->sched;
+}
+
+// Cut short a sleep the owning thread is in. Safe from any thread, and
+// cheap when it is not sleeping: one byte, at most one in flight.
+
+void sched_wake(thread *t)
+{
+#if USE_POLL
+	scheduler *s = t->sched;
+
+	if (!s || (s->wake_fd[1] < 0) || s->wake_pending)
+		return;
+
+	s->wake_pending = true;
+	const char c = 1;
+
+	if (write(s->wake_fd[1], &c, 1) != 1)
+		s->wake_pending = false;
+#else
+	(void)t;
+#endif
 }
 
 void sched_destroy(thread *t)
@@ -219,7 +289,14 @@ void sched_destroy(thread *t)
 #if USE_POLL
 	TPL_free(t->sched->pfds);
 	TPL_free(t->sched->pfd_owners);
+
+	if (t->sched->wake_fd[0] >= 0) close(t->sched->wake_fd[0]);
+	if (t->sched->wake_fd[1] >= 0) close(t->sched->wake_fd[1]);
 #endif
+
+	if (t->sched->guard_init)
+		deinit_lock(&t->sched->guard);
+
 	TPL_free(t->sched);
 	t->sched = NULL;
 }
@@ -353,6 +430,31 @@ static void sched_unlink(scheduler *s, query *task)
 	task->sched_next = NULL;
 }
 
+// Move a task that was parked waiting for a message onto its own
+// scheduler's ready queue, and wake the thread that owns it. Called
+// from whichever thread did the send, which is why the scheduler needs
+// a lock at all.
+
+void sched_promote(query *task)
+{
+	thread *owner = task->thread_ptr ? task->thread_ptr : task->pl->main_thread;
+	scheduler *s = owner->sched;
+
+	if (!s)
+		return;
+
+	sched_lock(s);
+
+	if (task->sched_where != SCHED_READY) {
+		sched_unlink(s, task);
+		task->tmo_msecs = 0;
+		sched_ready_push(s, task);
+	}
+
+	sched_unlock(s);
+	sched_wake(owner);
+}
+
 // Where a task goes after it has had its turn. A task that errored is
 // put straight back on the ready queue so it gets reaped next pass,
 // rather than sitting out whatever it asked to wait for.
@@ -391,10 +493,39 @@ static void sched_expire_timers(scheduler *s, uint64_t now)
 
 static void sched_wait(query *q, scheduler *s, uint64_t now, bool block)
 {
-	uint64_t deadline = s->timers_used ? s->timers[0]->tmo_msecs + 1 : 0;
 	unsigned n = 0;
+	sched_lock(s);
+	uint64_t deadline = s->timers_used ? s->timers[0]->tmo_msecs + 1 : 0;
 
 #if USE_POLL
+	// Slot 0 is always the wake pipe, so any sleep below can be ended by
+	// another thread that has just promoted one of our tasks.
+
+	unsigned wake_slot = (unsigned)-1;
+
+	if (s->wake_fd[0] >= 0) {
+		if (!s->pfds_size) {
+			struct pollfd *pfds = TPL_realloc(s->pfds, 8 * sizeof(struct pollfd));
+			query **owners = pfds ? TPL_realloc(s->pfd_owners, 8 * sizeof(query*)) : NULL;
+
+			if (owners) {
+				s->pfds = pfds;
+				s->pfd_owners = owners;
+				s->pfds_size = 8;
+			} else if (pfds)
+				s->pfds = pfds;
+		}
+
+		if (s->pfds_size) {
+			wake_slot = n;
+			s->pfds[n].fd = s->wake_fd[0];
+			s->pfds[n].events = POLLIN;
+			s->pfds[n].revents = 0;
+			s->pfd_owners[n] = NULL;
+			n++;
+		}
+	}
+
 	for (query *task = s->io_head; task; task = task->sched_next) {
 		if (n == s->pfds_size) {
 			unsigned size = s->pfds_size ? s->pfds_size * 2 : 8;
@@ -421,6 +552,8 @@ static void sched_wait(query *q, scheduler *s, uint64_t now, bool block)
 			deadline = task->tmo_msecs + 1;
 	}
 #endif
+
+	sched_unlock(s);
 
 	// Clamp before narrowing: a long enough sleep/1 would otherwise
 	// overflow the int and could turn into poll()'s "block forever".
@@ -453,26 +586,46 @@ static void sched_wait(query *q, scheduler *s, uint64_t now, bool block)
 #if USE_POLL
 	int ready = poll(s->pfds, n, tmo);
 	now = wall_time_in_usec() / 1000;
+	sched_lock(s);
 
-	// Walk the io list in lockstep with the descriptors we just built
-	// from it, promoting anything that woke or whose backstop expired.
+	// Drain the wake pipe if that is what ended the sleep. It carries no
+	// information beyond "look again", so the bytes are discarded.
 
-	query **pprev = &s->io_head;
-	unsigned i = 0;
+	if ((wake_slot != (unsigned)-1) && (ready > 0) && s->pfds[wake_slot].revents) {
+		char buf[64];
 
-	while (*pprev) {
-		query *task = *pprev;
-		bool woken = (ready > 0) && (i < n) && s->pfds[i].revents;
-		i++;
+		while (read(s->wake_fd[0], buf, sizeof(buf)) > 0)
+			;
 
-		if (!woken && task->tmo_msecs && (task->tmo_msecs >= now)) {
-			pprev = &task->sched_next;
+		s->wake_pending = false;
+	}
+
+	// Promote by owner rather than by walking the io list in lockstep
+	// with the descriptors. The lock was released across poll(), so
+	// another thread may have promoted one of these already - a lockstep
+	// walk assumes the list is exactly as it was when the set was built,
+	// and would put the wrong task on the wrong descriptor if it is not.
+	// sched_where says whether an entry is still parked on io at all.
+
+	for (unsigned i = 0; i < n; i++) {
+		query *task = s->pfd_owners[i];
+
+		if (!task)					// the wake pipe owns no task
 			continue;
-		}
 
-		*pprev = task->sched_next;
+		bool woken = (ready > 0) && s->pfds[i].revents;
+
+		if (!woken && task->tmo_msecs && (task->tmo_msecs >= now))
+			continue;
+
+		if (task->sched_where != SCHED_IO)
+			continue;
+
+		sched_unlink(s, task);
 		sched_ready_push(s, task);
 	}
+
+	sched_unlock(s);
 #endif
 }
 
@@ -488,27 +641,35 @@ static void sched_run(query *q)
 	while (q->num_subtasks && !q->end_wait) {
 		CHECK_INTERRUPT();
 		uint64_t now = wall_time_in_usec() / 1000;
+
+		sched_lock(s);
 		sched_expire_timers(s, now);
 		query *task = sched_ready_pop(s);
+		bool idle = !task && !s->timers_used && !s->io_head;
+
+		// A yield goes straight back on the ready queue, so a task that
+		// yields in a loop would keep this queue occupied and we would
+		// never reach the blocking wait below - leaving anyone parked on
+		// a descriptor unheard. Look at them anyway, without blocking,
+		// and at most once a millisecond so this stays off the hot path.
+
+		bool peek_io = task && s->io_head && (now > s->last_poll);
+
+		if (peek_io)
+			s->last_poll = now;
+
+		sched_unlock(s);
 
 		if (!task) {
-			if (!s->timers_used && !s->io_head)
+			if (idle)
 				break;					// nothing left to wake us
 
 			sched_wait(q, s, now, true);
 			continue;
 		}
 
-		// A yield goes straight back on the ready queue, so a task that
-		// yields in a loop would keep this queue occupied and we would
-		// never reach the blocking wait above - leaving anyone parked on
-		// a descriptor unheard. Look at them anyway, without blocking,
-		// and at most once a millisecond so this stays off the hot path.
-
-		if (s->io_head && (now > s->last_poll)) {
-			s->last_poll = now;
+		if (peek_io)
 			sched_wait(q, s, now, false);
-		}
 
 		task->tmo_msecs = 0;
 		task->waiting_io = false;
@@ -519,8 +680,14 @@ static void sched_run(query *q)
 			continue;
 		}
 
+		// Deliberately outside the lock: this runs arbitrary Prolog and
+		// can re-enter the scheduler.
+
 		start(task);
+
+		sched_lock(s);
 		sched_park(s, task, now);
+		sched_unlock(s);
 	}
 
 	q->end_wait = false;
@@ -550,7 +717,9 @@ static bool push_task(query *q, query *task)
 
 	q->tasks = task;
 	count_subtask(q, 1);
+	sched_lock(s);
 	sched_ready_push(s, task);
+	sched_unlock(s);
 	return true;
 }
 
@@ -580,8 +749,12 @@ void sched_release(query *q)
 	if (!s)
 		return;
 
+	sched_lock(s);
+
 	for (query *task = q->tasks; task; task = task->next)
 		sched_unlink(s, task);
+
+	sched_unlock(s);
 }
 
 static bool bif_end_wait_0(query *q)
@@ -720,8 +893,14 @@ static bool bif_sys_cancel_future_1(query *q)
 			scheduler *s = get_self_query(q)->sched;
 
 			if (s && (task->sched_where != SCHED_READY)) {
-				sched_unlink(s, task);
-				sched_ready_push(s, task);
+				sched_lock(s);
+
+				if (task->sched_where != SCHED_READY) {
+					sched_unlink(s, task);
+					sched_ready_push(s, task);
+				}
+
+				sched_unlock(s);
 			}
 
 			break;

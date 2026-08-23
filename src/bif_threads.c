@@ -122,9 +122,26 @@ thread *find_thread_by_id(prolog *pl, int chan)
 	return (thread*)v;
 }
 
+
 static thread *main_thread(prolog *pl)
 {
 	return pl->main_thread;
+}
+
+// Which thread is running this query.
+//
+// There used to be a second one asking which *pthread* is executing,
+// by scanning. Its only caller was the SIGALRM handler, which had no
+// query to ask; timeouts are polled off the thread object now, so the
+// scan is gone and with it the last thing that could not answer this
+// question once a thread becomes a task rather than a pthread.
+//
+// The same q->thread_ptr-or-threads[0] idiom is used in query.h,
+// toplevel.c, bif_os.c and bif_tabling.c; this just names it.
+
+thread *get_self_query(const query *q)
+{
+	return q->thread_ptr ? q->thread_ptr : main_thread(q->pl);
 }
 
 // The live list is kept in increasing chan order and ids are handed out
@@ -589,6 +606,8 @@ static unsigned queue_size(prolog *pl, unsigned chan)
 	return cnt;
 }
 
+static void wake_msg_waiters(thread *t);
+
 static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
 {
 	thread *t = find_thread_by_id(pl, chan);
@@ -604,6 +623,7 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 		list_push_back(&t->queue, m);
 	}
 
+	wake_msg_waiters(t);
 	release_lock(&t->guard);
 	return true;
 }
@@ -664,6 +684,58 @@ enum msg_wait {
 // thread has nothing else to hold up, so it still sleeps on the condvar
 // and a send wakes it immediately.
 
+// Put a task on the queue's waiter list while it is parked, so a send
+// can find it. Both ends run under t->guard, the same lock the message
+// list itself uses, so a message cannot slip in between a task deciding
+// to park and becoming visible to the sender.
+
+static void add_msg_waiter(thread *t, query *q)
+{
+	if (q->waiting_on)
+		return;
+
+	acquire_lock(&t->guard);
+	q->waiting_on = t;
+	q->wait_next = t->msg_waiters;
+	t->msg_waiters = q;
+	release_lock(&t->guard);
+}
+
+static void del_msg_waiter(query *q)
+{
+	thread *t = q->waiting_on;
+
+	if (!t)
+		return;
+
+	acquire_lock(&t->guard);
+
+	for (query **pp = &t->msg_waiters; *pp; pp = &(*pp)->wait_next) {
+		if (*pp == q) {
+			*pp = q->wait_next;
+			break;
+		}
+	}
+
+	q->wait_next = NULL;
+	q->waiting_on = NULL;
+	release_lock(&t->guard);
+}
+
+// Everyone parked on this queue, promoted. Called with t->guard held by
+// the sender, right after the message goes on the list.
+
+static void wake_msg_waiters(thread *t)
+{
+	while (t->msg_waiters) {
+		query *q = t->msg_waiters;
+		t->msg_waiters = q->wait_next;
+		q->wait_next = NULL;
+		q->waiting_on = NULL;
+		sched_promote(q);
+	}
+}
+
 static enum msg_wait do_wait_message(query *q, thread *t, uint64_t deadline)
 {
 	uint64_t now = wall_time_in_usec() / 1000;
@@ -679,6 +751,11 @@ static enum msg_wait do_wait_message(query *q, thread *t, uint64_t deadline)
 		if (deadline && (nap > left))
 			nap = left;
 
+		// On the waiter list before parking, so a send that lands in the
+		// gap promotes us rather than being missed. The nap is only a
+		// backstop now - delivery wakes us directly.
+
+		add_msg_waiter(t, q);
 		return do_yield(q, nap < 1 ? 1 : (int)nap) ? MSG_WAIT_AGAIN : MSG_WAIT_YIELDED;
 	}
 
@@ -691,7 +768,7 @@ static enum msg_wait do_wait_message(query *q, thread *t, uint64_t deadline)
 	return MSG_WAIT_AGAIN;
 }
 
-static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
+static bool do_match_message_(query *q, unsigned chan, bool is_peek, double timeout)
 {
 	GET_FIRST_ARG(pq,queue);
 	thread *t = find_thread_by_id(q->pl, chan);
@@ -780,6 +857,20 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 	}
 
 	return false;
+}
+
+// A task stays on the queue's waiter list only while it is parked. On
+// any other way out - matched, timed out, gave up - it has to come off,
+// or the next send would promote a query that has long since moved on.
+
+static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
+{
+	bool ok = do_match_message_(q, chan, is_peek, timeout);
+
+	if (!q->yielded)
+		del_msg_waiter(q);
+
+	return ok;
 }
 
 static bool bif_thread_get_message_2(query *q)
@@ -876,21 +967,6 @@ static bool bif_thread_peek_message_2(query *q)
 	return ok;
 }
 
-// Which thread is running this query.
-//
-// There used to be a second one asking which *pthread* is executing,
-// by scanning. Its only caller was the SIGALRM handler, which had no
-// query to ask; timeouts are polled off the thread object now, so the
-// scan is gone and with it the last thing that could not answer this
-// question once a thread becomes a task rather than a pthread.
-//
-// The same q->thread_ptr-or-threads[0] idiom is used in query.h,
-// toplevel.c, bif_os.c and bif_tabling.c; this just names it.
-
-thread *get_self_query(const query *q)
-{
-	return q->thread_ptr ? q->thread_ptr : main_thread(q->pl);
-}
 
 static void do_unlock_all(thread *me)
 {

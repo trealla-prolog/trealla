@@ -156,12 +156,16 @@ mistaken for a message. `library(concurrent)` keeps its whole public
 API, ported onto the shared database, with `future_any/2`'s early exit
 carried by `end_wait/0`.
 
-**Not done: the wait-list.** A parked task currently polls at
-`MSG_TASK_POLL_MS` (5ms) rather than being woken directly by the send.
-That is correct and cheap - it is on the timer heap, not spinning - but
-it is not the design. Waking a parked task directly needs a scheduler
-that another thread can wake, which is phase 3's problem; until then
-polling is the honest placeholder.
+**Done in phase 3: the wait-list.** A parked task is now woken by the
+send rather than by its next poll. A queue carries `msg_waiters`, the
+tasks parked on it; `queue_to_chan()` promotes them under the same
+`t->guard` the message list uses, so a message cannot slip in between a
+task deciding to park and becoming visible to the sender.
+`MSG_TASK_POLL_MS` remains as a backstop, so correctness does not
+depend on the wakeup arriving.
+
+Measured, a real thread sending to a parked task: **1240-4630us before,
+87-149us after.**
 
 **Not done: `thread_join/2` and mutex acquisition** still block. They
 matter once threads are tasks, which is phase 2.
@@ -404,6 +408,39 @@ should already run, and how it behaves is the most informative thing we
 can learn before building phase 3. A compute-bound thread will starve
 its worker at this point, because preemption does not land until phase
 3 — that is expected, not a bug to chase.
+
+### Phase 3 — the worker pool — option B done
+
+Ownership was the question, and it came down to one thing: *is
+cross-thread queue mutation ever needed?* If yes, a lock is required
+whichever way the queues are owned, and ownership stops buying safety -
+it only buys locality. The wait-list needs it, so:
+
+- **the scheduler has a lock.** It guards the ready list, the timer
+  heap, the io list, and the `sched_where`/`heap_idx` each task carries
+  saying which one it is on. Never held across `start()` - that would
+  serialise what the pool exists to parallelise - nor across `poll()`.
+- **only the owning thread runs the scheduler.** Other threads only
+  ever *promote*. That keeps the pollfd scratch single-writer, which is
+  why it needs no locking of its own.
+- **promotion after `poll()` goes by owner, not by lockstep.** The old
+  loop walked the io list in step with the descriptor array and assumed
+  neither had changed. With the lock released across `poll()` that no
+  longer holds, so it uses the task pointer already saved per slot in
+  `pfd_owners` and checks `sched_where` to see whether the task is
+  still parked on io at all.
+- **a self-pipe** sits in slot 0 of every poll set, so a thread that has
+  just promoted a task can cut short the sleep of the thread that owns
+  it.
+
+Threads are still pthreads. What this buys is the wait-list and a
+locking discipline that a pool can be built on; what it does not buy is
+workers. Option C - one set of queues, N workers, thread objects as
+tasks - is mostly merging the queues and deciding who *is* a worker:
+dedicated threads, or a query that calls `wait/0` becoming one until its
+own subtree is done. The latter needs no threads at all in the
+single-threaded case, and `num_subtasks` already gives the exit
+condition.
 
 ### Phase 3 — the worker pool
 
