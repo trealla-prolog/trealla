@@ -185,12 +185,19 @@ where a thread queue is addressed by id.
 
 - `thread.q` becomes the task
 - `thread_create/3` creates a task, not a pthread
-- **`get_self()` breaks and must be rewritten.** It finds the current
-  thread by scanning for `t->id == pthread_self()`
-  (`src/bif_threads.c:410`). Under a pool `pthread_self()` is the
-  *worker*, not the thread object, so identity has to come from "what is
-  this worker running". Eight call sites depend on it, including mutex
-  ownership and `do_unlock_all`.
+- **`get_self()` — done.** It found the current thread by scanning for
+  `t->id == pthread_self()`, which cannot survive threads becoming
+  tasks: in a pool `pthread_self()` is the *worker*. Split in two. The
+  six normal call sites now use `get_self_query(q)`, reading
+  `q->thread_ptr` — the same idiom already used in `query.h`,
+  `toplevel.c`, `bif_os.c` and `bif_tabling.c` — which is both correct
+  under tasks and drops an O(2048) scan from the mutex path. The
+  pthread-scanning version survives for one caller only: the SIGALRM
+  handler in `bif_os.c`, which runs with no query to ask.
+- **Signals are an open problem for the switch.** That handler asks
+  `pthread_self()`, which in a pool is the worker, and a signal handler
+  cannot safely ask which task it was running. `call_with_time_limit`
+  style timeouts need rethinking before threads become tasks.
 - thread identity becomes id + mailbox + task, with no pthread in it
 
 **Drop the fixed table here too.** `thread threads[MAX_THREADS]`
@@ -216,18 +223,50 @@ keyed lookup goes the other way, O(1) array index to O(log n), and that
 is the smaller effect by some distance.
 
 So the real cost is the ~40 `threads[n]` index sites to convert, and
-two things that need care:
+two things that need care.
 
-- **lifetime.** A `thread *` into a fixed array is stable forever. Once
-  entries are allocated, a pointer can dangle — so either refcount them,
-  or never free until `pl_destroy()`, or leave tombstones. This is the
-  part most likely to bite later, and it should be decided before the
-  first entry is malloc'd rather than after.
-- `&pl->threads[0]` is used as an implicit "main thread" in `bif_os.c`
-  (`:504`, `:619`, `:670`, `:688`). That needs to become an explicit
-  object rather than an index that happens to be zero.
+**Lifetime — settled.** The worry was that a `thread *` into a fixed
+array is stable forever, so malloc'd entries could dangle. The exposure
+is real and wide: seventeen places in `bif_threads.c` hold one across a
+lock release or a wait, including `do_match_message()` — which now parks
+a task there — and `thread_join()` across `pthread_join()`.
 
-**Stop here and look.** Threads on tasks, single worker, no pool: it
+But the array is *already recycled*. `new_thread()` hands out slots by
+`pl->thr_cnt++ % MAX_THREADS`, so a stale pointer can already be looking
+at a different, live thread. That reframes it: a free list of retired
+structs has **exactly the same hazard profile as today**, and needs no
+refcounting, no tombstones and no epoch scheme.
+
+So:
+
+- thread structs come from a free list and go back to it when a thread
+  retires; nothing is freed before `pl_destroy()`. Memory is bounded by
+  *peak concurrent* threads rather than total ever created, which is
+  what makes this better than simply never freeing.
+- ids become monotonic and live *in* the struct rather than being the
+  slot index. Memory is reused, ids are not — so the bug where a message
+  in flight names an id since handed to a different thread goes away.
+  That is the one of the two that actually bites.
+
+Net: better than today on every axis, with no new class of hazard. The
+stale-pointer risk that remains is precisely the one already shipped,
+and worth fixing on its own rather than inside this.
+
+**The implicit main thread.** `&pl->threads[0]` means "the main thread"
+in `bif_os.c` (`:504`, `:619`, `:670`, `:688`), `toplevel.c`,
+`bif_tabling.c` and `query.h`. It has to become an explicit object
+rather than an index that happens to be zero.
+
+**Sequencing — phase 2 prepares, it does not switch.** Threads stay
+pthreads until phase 3, so true concurrency is never lost in between.
+The reason is phase 0: `wait/0` now waits for the caller's whole
+subtree, which leaves nothing good for a thread-task to be owned by. Own
+it and every `wait/0` blocks on it and `query_destroy()` kills it; disown
+it and nothing drives it, so a detached thread nobody blocks on would
+never run. Workers pulling from the queues is what resolves that, and
+workers are phase 3.
+
+**When the switch does happen:** threads on tasks, single worker, no pool: it
 should already run, and how it behaves is the most informative thing we
 can learn before building phase 3. A compute-bound thread will starve
 its worker at this point, because preemption does not land until phase

@@ -408,6 +408,12 @@ static bool bif_thread_send_message_2(query *q)
 	return true;
 }
 
+// Which pthread is executing, found by scanning. Only for the SIGALRM
+// handler in bif_os.c, which runs with no query to ask - everywhere
+// else wants get_self_query() above. Note this cannot survive threads
+// becoming tasks: in a pool pthread_self() is the *worker*, and a
+// signal handler cannot safely ask which task it was running.
+
 thread *get_self(prolog *pl)
 {
 	pthread_t tid = pthread_self();
@@ -661,12 +667,25 @@ static bool bif_thread_peek_message_2(query *q)
 	return ok;
 }
 
-static void do_unlock_all(prolog *pl)
-{
-	thread *me = get_self(pl);
+// Which thread is running this query.
+//
+// Not the same question as get_self() below, which asks which *pthread*
+// is executing and is only answerable from a signal handler. A query
+// already carries its thread, and everywhere outside a signal handler
+// that is both cheaper - no scan of the whole table - and the answer
+// that stays correct once a thread is a task rather than a pthread.
+//
+// The same q->thread_ptr-or-threads[0] idiom is used in query.h,
+// toplevel.c, bif_os.c and bif_tabling.c; this just names it.
 
-	if (!me)	// FIX: get_self() may return NULL; don't deref me->chan
-		return;
+thread *get_self_query(const query *q)
+{
+	return q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+}
+
+static void do_unlock_all(thread *me)
+{
+	prolog *pl = me->pl;
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
@@ -719,7 +738,7 @@ static void *start_routine_thread_create(thread *t)
 		t->at_exit_goal = NULL;
 	}
 
-	do_unlock_all(t->pl);
+	do_unlock_all(t);
 
 	// Tables are per-thread, so they die with the thread. Freed here
 	// rather than only at pl_destroy() so a long-lived process that
@@ -1166,7 +1185,7 @@ static bool bif_thread_self_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,var);
-	thread *t = get_self(q->pl);
+	thread *t = get_self_query(q);
 
 	if (!t) {
 		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
@@ -1218,7 +1237,7 @@ static bool bif_thread_exit_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,nonvar);
-	thread *t = get_self(q->pl);
+	thread *t = get_self_query(q);
 
 	if (!t)	// FIX: guard NULL self (cf. thread_self/1)
 		return false;
@@ -1924,7 +1943,7 @@ static bool bif_mutex_trylock_1(query *q)
 	if (!try_lock(&t->guard))
 		return false;
 
-	thread *me = get_self(q->pl);
+	thread *me = get_self_query(q);
 
 	if (!me) {	// FIX: guard NULL self
 		release_lock(&t->guard);
@@ -1948,7 +1967,7 @@ static bool bif_mutex_lock_1(query *q)
 	}
 
 	thread *t = &q->pl->threads[n];
-	thread *me = get_self(q->pl);
+	thread *me = get_self_query(q);
 
 	if (!me)	// FIX: guard NULL self
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
@@ -1972,7 +1991,7 @@ static bool bif_mutex_unlock_1(query *q)
 	}
 
 	thread *t = &q->pl->threads[n];
-	thread *me = get_self(q->pl);
+	thread *me = get_self_query(q);
 
 	if (!me)	// FIX: guard NULL self
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
@@ -1991,7 +2010,7 @@ static bool bif_mutex_unlock_1(query *q)
 static bool bif_mutex_unlock_all_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	do_unlock_all(q->pl);
+	do_unlock_all(get_self_query(q));
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
