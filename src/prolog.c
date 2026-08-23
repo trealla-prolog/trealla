@@ -1058,6 +1058,10 @@ void pl_destroy(prolog *pl)
 
 	tabling_destroy(pl);
 
+	// After tabling_destroy(), which sweeps every thread's tables.
+
+	threads_destroy(pl);
+
 	module_destroy(pl->system_m);
 	module_destroy(pl->user_m);
 	sl_destroy(pl->biftab);
@@ -1131,6 +1135,7 @@ prolog *pl_create()
 
 	if (!g_tpl_count++)
 		g_init(pl);
+
 
 	if (!g_tpl_lib) {
 #ifdef DEFAULT_LIBRARY_PATH

@@ -218,14 +218,14 @@ builtins *get_fn_ptr(void *fn);
 
 inline static bool throw_timeout(query *q)
 {
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 	self->timedout = 0;
 	return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 }
 
 inline static bool interrupt_pending(query *q)
 {
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 
 #ifdef USE_POLLED_ALARMS
 	if (!self->timedout && self->alarms && has_expired_alarm(q))

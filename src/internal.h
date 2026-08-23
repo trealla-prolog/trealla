@@ -76,6 +76,11 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_IGNORES (1024*8)
 #define MAX_TABS 64000
 #define MAX_STREAMS 1024
+// No longer a cap: threads, message queues and mutexes are allocated
+// individually and chained off the prolog instance (see bif_threads.c),
+// so the only ceiling is what the O/S will give us. Kept as the initial
+// hint for anything that still wants a number.
+
 #define MAX_THREADS 2048
 #define MAX_ACTUAL_THREADS MAX_THREADS
 #define MAX_STREAM_BUFLEN 1024
@@ -736,6 +741,14 @@ struct thread_ {
 	alarm_entry *alarms;					// polled timers for hosts without POSIX per-thread timers
 #endif
 
+	// Intrusive links. live_* chain every live entry in increasing chan
+	// order, which is what lets the table be walked without allocating
+	// or locking - the SIGALRM handler does exactly that, and a skiplist
+	// iterator would do both. free_next chains retired structs awaiting
+	// reuse; a struct is on one list or the other, never both.
+
+	thread *live_next, *live_prev, *free_next;
+
 	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
 	pl_atomic bool is_active;
@@ -1040,7 +1053,16 @@ struct module_ {
 struct prolog_ {
 	scheduler *sched;					// every task, whoever spawned it
 	stream streams[MAX_STREAMS];
-	thread threads[MAX_THREADS];
+	// Threads, message queues and mutexes. The skiplist answers "which
+	// entry has this id" in O(log n); the intrusive list answers "walk
+	// them all" without allocating. Structs come from free_head and go
+	// back to it when retired, so memory is bounded by peak concurrent
+	// entries rather than by how many have ever existed - and ids, being
+	// monotonic, are never reused even though the memory is.
+
+	skiplist *threads;
+	thread *live_head, *live_tail, *free_head, *free_tail, *main_thread;
+	unsigned next_thread_id;
 	module *modmap[MAX_MODULES];
 	struct { pl_idx tab1[MAX_TABS], tab2[MAX_TABS]; };
 	list modules;

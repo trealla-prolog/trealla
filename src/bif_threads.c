@@ -110,25 +110,34 @@ static int get_named_thread(prolog *pl, const char *name, size_t len)
 // after N" stays meaningful even when threads come and go in between -
 // which a raw index into a table that had been reshuffled would not.
 
-static thread *find_thread_by_id(prolog *pl, int chan)
+thread *find_thread_by_id(prolog *pl, int chan)
 {
-	if ((chan < 0) || (chan >= MAX_THREADS))
+	const void *v = NULL;
+
+	if ((chan < 0) || !pl->threads)
 		return NULL;
 
-	return &pl->threads[chan];
+	if (!sl_get(pl->threads, (const void*)(uintptr_t)chan, &v))
+		return NULL;
+
+	return (thread*)v;
 }
 
 static thread *main_thread(prolog *pl)
 {
-	return &pl->threads[0];
+	return pl->main_thread;
 }
+
+// The live list is kept in increasing chan order and ids are handed out
+// increasing, so "the next one after N" is a walk from the head. That is
+// what the property predicates want when they resume from a saved id,
+// and it stays meaningful across entries coming and going in a way that
+// an index into the table never would.
 
 static thread *next_thread_after(prolog *pl, int chan)
 {
-	for (int i = chan + 1; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (t->is_active)
+	for (thread *t = pl->live_head; t; t = t->live_next) {
+		if (t->chan > chan)
 			return t;
 	}
 
@@ -137,11 +146,15 @@ static thread *next_thread_after(prolog *pl, int chan)
 
 static thread *first_thread(prolog *pl)
 {
-	return next_thread_after(pl, -1);
+	return pl->live_head;
 }
 
+// Walks the intrusive list rather than the skiplist on purpose: this
+// runs in the SIGALRM handler, where sl_first() would take a lock and
+// allocate an iterator, and neither is async-signal-safe.
+
 #define for_each_thread(pl, t) \
-	for (thread *t = first_thread(pl); t; t = next_thread_after(pl, t->chan))
+	for (thread *t = (pl)->live_head; t; t = t->live_next)
 
 // Threads, message queues and mutexes all live in the same table and are
 // told apart by two flags. The property predicates each enumerate one
@@ -191,55 +204,206 @@ static int get_thread(query *q, cell *p1)
 	return n;
 }
 
+// Put an entry on the live list. Ids only ever increase, so the new one
+// always belongs at the tail and the list stays sorted for free.
+
+static void link_live(prolog *pl, thread *t)
+{
+	t->live_next = NULL;
+	t->live_prev = pl->live_tail;
+
+	if (pl->live_tail)
+		pl->live_tail->live_next = t;
+	else
+		pl->live_head = t;
+
+	pl->live_tail = t;
+}
+
+static void unlink_live(prolog *pl, thread *t)
+{
+	if (t->live_prev)
+		t->live_prev->live_next = t->live_next;
+	else
+		pl->live_head = t->live_next;
+
+	if (t->live_next)
+		t->live_next->live_prev = t->live_prev;
+	else
+		pl->live_tail = t->live_prev;
+
+	t->live_next = t->live_prev = NULL;
+}
+
+// Hand a retired entry back. The struct is not freed - it goes on the
+// free list for the next new_thread() - so a stale `thread *` sees a
+// recycled struct rather than freed memory, which is exactly what the
+// fixed table did when it reissued a slot. What does *not* come back is
+// the id: those keep counting up, so a message naming an id that has
+// since been retired fails to find it instead of reaching a stranger.
+
+static void retire_thread(prolog *pl, thread *t)
+{
+	// Same lock new_thread() takes, and in the same order relative to
+	// t->guard: several callers retire while holding that, and nothing
+	// anywhere takes pl->guard before it.
+
+	prolog_lock(pl);
+
+	if (!t->is_active) {
+		prolog_unlock(pl);
+		return;
+	}
+
+	if (t->alias) {
+		sl_del(pl->alias, t->alias);
+		TPL_free(t->alias);
+		t->alias = NULL;
+	}
+
+	// The id stays in the map, pointing at the now-inactive struct, and
+	// is dropped only when the struct is handed out again. get_thread()
+	// rejects it either way because it tests is_active - but anything
+	// that only wants to know what kind of object an id named, printing
+	// most of all, still gets a straight answer for a stale handle.
+
+	unlink_live(pl, t);
+	t->is_active = false;
+
+	// Appended, not pushed: taking the oldest retired struct first means
+	// a stale handle stays readable for as long as possible, which is
+	// what the fixed table gave for free by cycling round its slots.
+
+	t->free_next = NULL;
+
+	if (pl->free_tail)
+		pl->free_tail->free_next = t;
+	else
+		pl->free_head = t;
+
+	pl->free_tail = t;
+	prolog_unlock(pl);
+}
+
+// The main thread is an entry like any other, made first so it gets id
+// 0 - which is what every "q->thread_ptr or the main thread" fallback in
+// query.h, toplevel.c, bif_os.c and bif_tabling.c resolves to. It used
+// to be threads[0] by construction; now it is explicit.
+
+static int new_thread(prolog *pl);
+
+// Free every struct, live or retired. Nothing is freed before this, so
+// this is the only place they go away.
+
+void threads_destroy(prolog *pl)
+{
+	for (thread *t = pl->live_head, *next; t; t = next) {
+		next = t->live_next;
+		TPL_free(t);
+	}
+
+	for (thread *t = pl->free_head, *next; t; t = next) {
+		next = t->free_next;
+		TPL_free(t);
+	}
+
+	pl->live_head = pl->live_tail = NULL;
+	pl->free_head = pl->free_tail = pl->main_thread = NULL;
+
+	if (pl->threads) {
+		sl_destroy(pl->threads);
+		pl->threads = NULL;
+	}
+}
+
 static int new_thread(prolog *pl)
 {
 	prolog_lock(pl);
+	thread *t = pl->free_head;
 
-	for (int i = 0; i < MAX_THREADS; i++) {
-		unsigned n = pl->thr_cnt++ % MAX_THREADS;
-		thread *t = find_thread_by_id(pl, n);
+	if (t) {
+		pl->free_head = t->free_next;
 
-		if (!t->is_active) {
+		if (!pl->free_head)
+			pl->free_tail = NULL;
 
-			if (!t->is_init) {
-				pthread_cond_init(&t->cond, NULL);
-				pthread_mutex_init(&t->mutex, NULL);
-				init_lock(&t->guard);
-				t->guard.tid = n;
-				t->is_init = true;
-				t->pl = pl;
-				t->chan = n;
-			}
+		t->free_next = NULL;
 
-			t->id = pthread_self();
-			t->is_detached = false;
-			t->is_queue_only = false;
-			t->is_mutex_only = false;
-			t->is_finished = false;
-			t->is_exception = false;
-			t->is_failed = false;
-			t->locked_by = -1;
-			t->num_locks = 0;
-			t->at_exit_goal = NULL;
-			t->goal = NULL;
-			t->ball = NULL;
-			t->alias = NULL;
-			t->q = NULL;
-			t->is_active = true;
+		// Reusing the struct is the point at which its old id stops
+		// meaning anything, so that is when the key goes.
+
+		sl_del(pl->threads, (const void*)(uintptr_t)t->chan);
+	} else {
+		t = TPL_calloc(1, sizeof(thread));
+
+		if (!t) {
 			prolog_unlock(pl);
-			return n;
+			return -1;
 		}
 	}
 
+	int n = (int)pl->next_thread_id++;
+
+	if (!t->is_init) {
+		pthread_cond_init(&t->cond, NULL);
+		pthread_mutex_init(&t->mutex, NULL);
+		init_lock(&t->guard);
+		t->is_init = true;
+		t->pl = pl;
+	}
+
+	t->guard.tid = n;
+	t->chan = n;
+	t->id = pthread_self();
+	t->is_detached = false;
+	t->is_queue_only = false;
+	t->is_mutex_only = false;
+	t->is_finished = false;
+	t->is_exception = false;
+	t->is_failed = false;
+	t->locked_by = -1;
+	t->num_locks = 0;
+	t->at_exit_goal = NULL;
+	t->goal = NULL;
+	t->ball = NULL;
+	t->alias = NULL;
+	t->q = NULL;
+	t->is_active = true;
+
+	if (!sl_set(pl->threads, (const void*)(uintptr_t)n, t)) {
+		t->is_active = false;
+		t->free_next = NULL;
+
+		if (pl->free_tail)
+			pl->free_tail->free_next = t;
+		else
+			pl->free_head = t;
+
+		pl->free_tail = t;
+		prolog_unlock(pl);
+		return -1;
+	}
+
+	link_live(pl, t);
 	prolog_unlock(pl);
-	return -1;
+	return n;
 }
+
+// The table has to exist before anything can be looked up in it, and
+// the main thread is the first entry made - which is what gives it id 0,
+// the value every "q->thread_ptr or the main thread" fallback in
+// query.h, toplevel.c, bif_os.c and bif_tabling.c used to reach as
+// threads[0]. It is pl->main_thread now rather than an array slot.
 
 void thread_initialize(prolog *pl)
 {
+	pl->threads = sl_create(NULL, NULL, NULL);
+	ENSURE(pl->threads);
 	int n = new_thread(pl);
 	ENSURE(n == 0);
 	thread *t = find_thread_by_id(pl, n);
+	ENSURE(t);
+	pl->main_thread = t;
 	t->alias = strdup("main");
 	sl_app(pl->alias, t->alias, t);
 	t->is_detached = true;
@@ -247,14 +411,14 @@ void thread_initialize(prolog *pl)
 
 void thread_deinitialize(prolog *pl)
 {
-	for_each_thread(pl, t) {
-		if (!t->is_init)
-			continue;
+	// Not for_each_thread(): retiring unlinks the entry we are standing
+	// on, so the successor has to be taken first.
 
-		sl_del(pl->alias, t->alias);
-		TPL_free(t->alias);
-		t->alias = NULL;
-		t->is_active = false;
+	for (thread *t = pl->live_head, *next; t; t = next) {
+		next = t->live_next;
+
+		if (t->is_init)
+			retire_thread(pl, t);
 	}
 }
 
@@ -272,13 +436,7 @@ void thread_deinitialize(prolog *pl)
 
 static void unwind_thread(prolog *pl, thread *t)
 {
-	if (t->alias) {
-		sl_del(pl->alias, t->alias);
-		TPL_free(t->alias);
-		t->alias = NULL;
-	}
-
-	t->is_active = false;
+	retire_thread(pl, t);
 }
 
 static bool is_thread_or_alias(query *q, cell *c)
@@ -835,7 +993,7 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
-	t->is_active = false;
+	retire_thread(t->pl, t);
 	release_lock(&t->guard);
     return 0;
 }
@@ -992,7 +1150,7 @@ static bool bif_thread_create_3(query *q)
 	q->pl->is_multithreaded = true;
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
-		t->is_active = false;
+		retire_thread(q->pl, t);
 		// FIX: release shared cell refs before freeing (goal/at_exit_goal hold dup'd cells)
 		if (t->goal) { unshare_cells(t->goal, t->goal->num_cells); TPL_free(t->goal); t->goal = NULL; }
 		if (t->at_exit_goal) { unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells); TPL_free(t->at_exit_goal); t->at_exit_goal = NULL; }
@@ -1093,7 +1251,7 @@ static bool bif_thread_join_2(query *q)
 		t->at_exit_goal = NULL;
 	}
 
-	t->is_active = false;
+	retire_thread(q->pl, t);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
@@ -1179,7 +1337,7 @@ static void do_cancel(thread *t)
 	query_destroy(t->q);
 	t->q = NULL;
 	//t->id = 0;
-	t->is_active = false;
+	retire_thread(t->pl, t);
 	release_lock(&t->guard);
 
 #if defined(__ANDROID__)
@@ -1662,10 +1820,7 @@ static bool bif_message_queue_destroy_1(query *q)
 		TPL_free(m);
 	}
 
-	sl_del(q->pl->alias, t->alias);
-	TPL_free(t->alias);
-	t->alias = NULL;
-	t->is_active = false;
+	retire_thread(q->pl, t);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
@@ -1893,10 +2048,7 @@ static bool bif_mutex_destroy_1(query *q)
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
 
-	sl_del(q->pl->alias, t->alias);
-	TPL_free(t->alias);
-	t->alias = NULL;
-	t->is_active = false;
+	retire_thread(q->pl, t);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }

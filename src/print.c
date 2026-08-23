@@ -1780,9 +1780,14 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 
 	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_THREAD)) {
 		int n = get_smallint(c);
-		thread *t = &q->pl->threads[n];
+		thread *t = find_thread_by_id(q->pl, n);
 
-		if (t->is_queue_only) {
+		// A retired id has no entry any more. It still prints, as a
+		// thread - there is nothing left to say which kind it was.
+
+		if (!t) {
+			SB_sprintf(q->sb, "'$thread'(%d)", (int)get_smallint(c));
+		} else if (t->is_queue_only) {
 			SB_sprintf(q->sb, "'$queue'(%d)", (int)get_smallint(c));
 		} else if (t->is_mutex_only) {
 			SB_sprintf(q->sb, "'$mutex'(%d)", (int)get_smallint(c));

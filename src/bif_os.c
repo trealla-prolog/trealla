@@ -501,7 +501,7 @@ static bool bif_sys_alarm_2(query *q)
 	g_tpl_interrupt = 0;
 
 	// Clear any stale timeout flag on this thread when arming/cancelling.
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 	self->timedout = 0;
 
 	if (is_float(p1))
@@ -616,7 +616,7 @@ static bool bif_sys_alarm_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
 	g_tpl_interrupt = 0;
-	q->pl->threads[0].timedout = 0;
+	q->pl->main_thread->timedout = 0;
 
 	if (is_float(p1))
 		time_ms = get_float(p1) * 1000;
@@ -667,7 +667,7 @@ struct alarm_entry_ {
 
 bool has_expired_alarm(query *q)
 {
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 	uint64_t now = monotonic_time_in_usec();
 
 	for (alarm_entry *e = self->alarms; e; e = e->next) {
@@ -685,7 +685,7 @@ static bool bif_sys_alarm_2(query *q)
 	GET_FIRST_ARG(p1,number);
 	GET_NEXT_ARG(p2,integer_or_var);
 	int time_ms = 0;
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");

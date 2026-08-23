@@ -2569,8 +2569,10 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		make_atom(&tmp, g_true_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_threads")) {
+		// We impose no limit of our own any more, so the ceiling is
+		// whatever the O/S will hand out.
 		cell tmp;
-		make_int(&tmp, MAX_ACTUAL_THREADS);
+		make_int(&tmp, g_max_os_threads ? g_max_os_threads : MAX_ACTUAL_THREADS);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "os_threads")) {
 		cell tmp;
@@ -6843,7 +6845,7 @@ static void load_flags(query *q)
 #if USE_THREADS
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "os_threads", g_max_os_threads ? g_max_os_threads : MAX_ACTUAL_THREADS);
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_threads", MAX_ACTUAL_THREADS);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_threads", g_max_os_threads ? g_max_os_threads : MAX_ACTUAL_THREADS);
 #else
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
 #endif

@@ -224,7 +224,51 @@ rather than being oversights:
   "every struct ever allocated" rather than "every live thread". Under a
   free list that is the map plus the free list, and belongs next to them.
 
-**Drop the fixed table.** `thread threads[MAX_THREADS]`
+**The fixed table is gone — done.** `thread threads[MAX_THREADS]` is
+replaced by, on the `prolog` instance:
+
+- a skiplist keyed by id, for O(log n) lookup. Keys are the raw integer:
+  the default comparator already compares pointers as integers, so no
+  custom compare was needed, and id 0 (a NULL key) works.
+- an intrusive doubly-linked list of live entries, kept in increasing id
+  order. This exists because iteration must not allocate or lock: the
+  SIGALRM handler walks the table, and `sl_first()` does both.
+- a FIFO free list of retired structs, and a monotonic id counter.
+
+`new_thread()` takes the oldest retired struct or mallocs one;
+`retire_thread()` unlinks it and appends it to the free list. Nothing is
+freed before `threads_destroy()` at instance teardown.
+
+Two details that only showed up in the doing:
+
+- **The id key is dropped at reuse, not at retirement.** Retire and
+  delete immediately, and a stale handle stops knowing what kind of
+  object it named - `write/1` on a destroyed queue printed
+  `'$thread'(1)` instead of `'$queue'(1)`. Keeping the key until the
+  struct is handed out again preserves that, and `get_thread()` still
+  rejects the id because it tests `is_active`. The free list is FIFO for
+  the same reason: taking the oldest struct first keeps a stale handle
+  readable for as long as possible, which the fixed table gave for free
+  by cycling through its slots.
+- **`thread_initialize()` already existed** and asserts the main thread
+  gets id 0. Adding a second initialiser silently stole that id and the
+  assert fired; the table creation belongs in the one that was already
+  there.
+
+Verified: 5000 message queues (was capped at 2048); ids monotonic across
+destroy/create so a retired id is never reissued; a message to a retired
+id gets `existence_error` rather than reaching a stranger; both suites at
+baseline, and clean under `-fsanitize=address` including a churn of 300
+queues, 300 mutexes and 200 threads created and destroyed.
+
+**One flag needs a decision.** `max_threads` reported `MAX_ACTUAL_THREADS`
+(2048), which is now a lie - we impose no limit. It reports the O/S
+ceiling instead, which makes it identical to `os_threads`. That is
+honest but duplicative, and the same objection that retired
+`hardware_threads` applies: two names, one number. Either `max_threads`
+goes, or it stays as the SWI-compatible spelling and `os_threads` goes.
+
+**The original plan, for reference.** `thread threads[MAX_THREADS]`
 (`src/internal.h:1034`) is a 2048-entry inline array in the `prolog`
 struct, and a thread's channel *is* its array index — that index is what
 gets boxed into the Prolog term with `FLAG_INT_THREAD`. Replacing it
