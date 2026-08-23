@@ -148,6 +148,7 @@ static int new_thread(prolog *pl)
 			t->is_mutex_only = false;
 			t->is_finished = false;
 			t->is_exception = false;
+			t->is_failed = false;
 			t->locked_by = -1;
 			t->num_locks = 0;
 			t->at_exit_goal = NULL;
@@ -635,6 +636,18 @@ static void *start_routine_thread_create(thread *t)
 
 	t->is_exception = t->q->did_unhandled_exception;
 
+	// A goal that simply failed is not an exception and leaves no exit
+	// code, so without this join/2 could not tell it from success.
+	//
+	// It cannot be read from execute(), which returns true however the
+	// query ended, nor from q->status, which the '$halt' appended to
+	// every thread goal short-circuits. But that appended '$halt' is
+	// itself the signal: it is only ever reached by a goal that
+	// succeeded, so a query that stopped without halting either failed
+	// or threw.
+
+	t->is_failed = !t->q->halt && !t->is_exception;
+
 	if (t->at_exit_goal) {
 		execute(t->q, t->at_exit_goal, t->at_exit_goal_num_vars);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
@@ -859,7 +872,22 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_joinable");
 	}
 
-	if (t->exit_code) {
+	// Status, in the same vocabulary thread_property(_, status(S)) uses:
+	// exception/1 for an uncaught ball, exited/1 for thread_exit/1,
+	// otherwise the plain true or false the goal ended with. Both
+	// allocators below can move the heap, so the arguments are always
+	// re-fetched after allocating and never before.
+
+	if (t->is_exception && t->ball) {
+		const frame *f = GET_CURR_FRAME();
+		cell *tmp = alloc_heap(q, 1+t->ball->num_cells);
+		CHECKED(tmp);
+		make_instr(tmp, new_atom(q->pl, "exception"), NULL, 1, t->ball->num_cells);
+		dup_cells(tmp+1, t->ball, t->ball->num_cells);
+		GET_FIRST_ARG(p1,nonvar);
+		GET_NEXT_ARG(p2,any);
+		unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
+	} else if (t->exit_code) {
 		const frame *f = GET_CURR_FRAME();
 		cell *tmp = import_term(q, t->exit_code, q->st.cur_ctx);
 		CHECKED(tmp);
@@ -873,7 +901,7 @@ static bool bif_thread_join_2(query *q)
 		GET_FIRST_ARG(p1,nonvar);
 		GET_NEXT_ARG(p2,any);
 		cell tmp;
-		make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
+		make_atom(&tmp, t->is_failed ? g_false_s : g_true_s);
 		unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	}
 

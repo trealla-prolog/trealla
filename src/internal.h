@@ -737,6 +737,7 @@ struct thread_ {
 	bool is_finished:1;
 	bool is_detached:1;
 	bool is_exception:1;
+	bool is_failed:1;
 	bool is_queue_only:1;
 	bool is_mutex_only:1;
 };
