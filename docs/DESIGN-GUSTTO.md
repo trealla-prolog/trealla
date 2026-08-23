@@ -81,6 +81,15 @@ a scheduler nothing would ever drain. It now runs. Two cases in
 with what they used to report. Nothing else moved: nesting order, spawn
 FIFO, and the two-phase `end_wait/0` behaviour are unchanged.
 
+A consequence worth naming: a long-running task spawned and abandoned
+deep in a call now keeps a top-level `wait/0` alive until it finishes,
+where before it would have been discarded and the wait would have
+returned. **That is intended.** wait/0 means wait, and a task nobody
+waited for is still work that was asked for - quietly dropping it was
+the surprising behaviour, not this. Anyone who wants a task they do not
+intend to wait for should say so explicitly rather than rely on a gap
+in the chain to bin it.
+
 Verified with the full suite under `-fsanitize=address` as well as
 optimised - the unlink-before-destroy path is where a dangling task
 would show up, and it is clean. `library(concurrent)` is unaffected,
