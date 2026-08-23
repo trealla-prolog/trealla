@@ -60,8 +60,10 @@ comes second, not last.
 The single enabling change. It turned out **not** to be a pure refactor,
 in exactly one place, and that place was a bug:
 
-- the scheduler is now one per `prolog`, reached through `sched_get()`,
-  and freed by `pl_destroy()` rather than `query_destroy()`
+- the scheduler is now one per **thread object**, reached through
+  `sched_get()`, and freed with that thread rather than by
+  `query_destroy()`. It was per `prolog` at first, which was wrong - see
+  the correction below.
 - ownership is tracked separately: a task still sits on its spawner's
   `q->tasks` registry, and every query above it counts it in a new
   `q->num_subtasks`. The scheduler answers *what can run*, the registry
@@ -107,8 +109,27 @@ has no parent to drive it, so none of this can schedule one.
 - audit `end_wait/0` and `q->end_wait` against the new ownership — the
   flag currently belongs to whoever called `wait/0`
 
-Still strictly single-threaded and one worker: nothing runs in
-parallel, and the queues are untouched by any other thread.
+**Correction, found in phase 3.** The paragraph above used to say the
+queues were untouched by any other thread. That was wrong. Any real
+thread whose query spawns a task and calls `wait/0` drives a scheduler,
+and with one per `prolog` that meant several threads driving the same
+queues with nothing serialising them. Two threads each draining forty
+tasks of their own crashed six runs in ten - SIGSEGV, SIGBUS and
+SIGABRT. Clean before phase 0, so phase 0 introduced it.
+
+The fix is not a lock. Holding one across `start(task)` would serialise
+exactly what the pool exists to parallelise, and releasing it around
+`poll()` breaks the lockstep walk of the io list. The error was going
+straight to per-instance when what "not owned by a query" actually
+required was per **thread object** - which outlives any one query, and
+only ever has one thread in it, so there is nothing to serialise.
+
+Tasks inherit `thread_ptr` from whoever spawned them, so a task of a
+thread's query lands on that thread's queues rather than the main
+thread's. `tests/misc/thread_mailbox.pl` has the case that crashed.
+
+Still one worker per thread object: tasks do not run in parallel with
+each other.
 
 ### Phase 1 — make blocking primitives suspend — partly done
 

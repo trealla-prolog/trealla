@@ -257,6 +257,34 @@ parked_task_still_receives :-
 	findall(X, ran(X), L),
 	report(parked_task_still_receives, L, [got(delivered)]).
 
+% Two real threads each spawning tasks and draining them.
+%
+% Tasks are scheduled per thread object. GUSTTO phase 0 moved the
+% scheduler off the query - correctly, since one that dies with its
+% spawner cannot outlive it - but put it on the prolog instance, which
+% went a step too far: two threads each calling wait/0 then drove one
+% set of queues with nothing serialising them, and this crashed six runs
+% in ten with SIGSEGV, SIGBUS or SIGABRT. A thread object owns its run
+% queue now, so there is nothing shared to corrupt.
+%
+% The assertion is weak on purpose - what matters is that it completes
+% at all, and does so every time rather than most times.
+
+spawner(Tag) :-
+	forall(between(1,40,I), call_task(noop, Tag-I)),
+	wait.
+
+noop(_).
+
+concurrent_task_drain :-
+	thread_create(spawner(a), T1, []),
+	thread_create(spawner(b), T2, []),
+	forall(between(1,40,I), call_task(noop, main-I)),
+	wait,
+	thread_join(T1, S1),
+	thread_join(T2, S2),
+	report(concurrent_task_drain, S1-S2, true-true).
+
 main :-
 	fifo_order,
 	selective_receive_preserves_order,
@@ -275,4 +303,5 @@ main :-
 	aliased_queue_properties,
 	queue_property_enumerates_queues,
 	task_receive_yields_to_siblings,
-	parked_task_still_receives.
+	parked_task_still_receives,
+	concurrent_task_drain.

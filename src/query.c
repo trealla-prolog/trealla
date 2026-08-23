@@ -2540,6 +2540,7 @@ query *query_create_subquery(query *q, cell *instr)
 	query *subq = query_create_(q->st.m, false);
 	if (!subq) return NULL;
 	subq->parent = q;
+	subq->thread_ptr = q->thread_ptr;
 	subq->st.fp = 1;
 	subq->top = q->top;
 
@@ -2577,6 +2578,11 @@ query *query_create_task_rebased(query *q, cell *instr, unsigned num_vars)
 	query *subq = query_create_(q->st.m, false);
 	if (!subq) return NULL;
 	subq->parent = q;
+
+	// Inherit the thread: a task belongs to the run queue of whichever
+	// thread object spawned it, not to the main thread's.
+
+	subq->thread_ptr = q->thread_ptr;
 	subq->st.fp = 1;
 	subq->top = q->top;
 	subq->is_task = true;

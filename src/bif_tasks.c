@@ -195,26 +195,33 @@ static void pop_task(query *q, query *task);
 // what lets wait/0 mean "until my own work is done" while the queues
 // themselves are shared.
 
+// Which scheduler a query's tasks belong to: the one on its thread
+// object. Tasks inherit thread_ptr from whoever spawned them, so a task
+// of a thread's query lands on that thread's queues rather than the
+// main thread's.
+
 static scheduler *sched_get(query *q)
 {
-	if (!q->pl->sched)
-		q->pl->sched = TPL_calloc(1, sizeof(scheduler));
+	thread *t = get_self_query(q);
 
-	return q->pl->sched;
+	if (!t->sched)
+		t->sched = TPL_calloc(1, sizeof(scheduler));
+
+	return t->sched;
 }
 
-void sched_destroy(prolog *pl)
+void sched_destroy(thread *t)
 {
-	if (!pl->sched)
+	if (!t->sched)
 		return;
 
-	TPL_free(pl->sched->timers);
+	TPL_free(t->sched->timers);
 #if USE_POLL
-	TPL_free(pl->sched->pfds);
-	TPL_free(pl->sched->pfd_owners);
+	TPL_free(t->sched->pfds);
+	TPL_free(t->sched->pfd_owners);
 #endif
-	TPL_free(pl->sched);
-	pl->sched = NULL;
+	TPL_free(t->sched);
+	t->sched = NULL;
 }
 
 static void heap_swap(scheduler *s, unsigned a, unsigned b)
@@ -476,7 +483,7 @@ static void sched_wait(query *q, scheduler *s, uint64_t now, bool block)
 
 static void sched_run(query *q)
 {
-	scheduler *s = q->pl->sched;
+	scheduler *s = get_self_query(q)->sched;
 
 	while (q->num_subtasks && !q->end_wait) {
 		CHECK_INTERRUPT();
@@ -568,11 +575,13 @@ static void pop_task(query *q, query *task)
 
 void sched_release(query *q)
 {
-	if (!q->pl->sched)
+	scheduler *s = get_self_query(q)->sched;
+
+	if (!s)
 		return;
 
 	for (query *task = q->tasks; task; task = task->next)
-		sched_unlink(q->pl->sched, task);
+		sched_unlink(s, task);
 }
 
 static bool bif_end_wait_0(query *q)
@@ -585,7 +594,7 @@ static bool bif_end_wait_0(query *q)
 
 static bool bif_wait_0(query *q)
 {
-	if (q->pl->sched)
+	if (get_self_query(q)->sched)
 		sched_run(q);
 
 	q->end_wait = false;
@@ -708,9 +717,11 @@ static bool bif_sys_cancel_future_1(query *q)
 			// lands on the next pass rather than whenever its
 			// descriptor or deadline happens to come up.
 
-			if (q->pl->sched && (task->sched_where != SCHED_READY)) {
-				sched_unlink(q->pl->sched, task);
-				sched_ready_push(q->pl->sched, task);
+			scheduler *s = get_self_query(q)->sched;
+
+			if (s && (task->sched_where != SCHED_READY)) {
+				sched_unlink(s, task);
+				sched_ready_push(s, task);
 			}
 
 			break;

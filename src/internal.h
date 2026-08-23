@@ -746,6 +746,17 @@ struct thread_ {
 
 	thread *live_next, *live_prev, *free_next;
 
+	// Tasks are scheduled per thread object, not per query and not per
+	// instance. Per query was phase 0's problem: a scheduler that died
+	// with whoever spawned into it. Per instance was phase 0's fix and
+	// went too far - two real threads each draining their own tasks
+	// then drove one set of queues with no lock, which crashed six runs
+	// in ten. A thread object is the thing that actually owns a run
+	// queue: it outlives any one query, and only ever has one thread in
+	// it.
+
+	scheduler *sched;
+
 	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
 	pl_atomic bool is_active;
@@ -1048,7 +1059,6 @@ struct module_ {
 };
 
 struct prolog_ {
-	scheduler *sched;					// every task, whoever spawned it
 	stream streams[MAX_STREAMS];
 	// Threads, message queues and mutexes. The skiplist answers "which
 	// entry has this id" in O(log n); the intrusive list answers "walk

@@ -298,11 +298,13 @@ void threads_destroy(prolog *pl)
 {
 	for (thread *t = pl->live_head, *next; t; t = next) {
 		next = t->live_next;
+		sched_destroy(t);
 		TPL_free(t);
 	}
 
 	for (thread *t = pl->free_head, *next; t; t = next) {
 		next = t->free_next;
+		sched_destroy(t);
 		TPL_free(t);
 	}
 
