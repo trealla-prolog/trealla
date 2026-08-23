@@ -869,18 +869,31 @@ static unsigned detect_cpu_count(void)
 // have just fails and we fall through to the next. That is what lets one
 // list cover several BSDs without a per-platform ifdef for each, and means
 // a wrong guess degrades to the fallback rather than breaking the build.
+//
+// OpenBSD is the exception: it has no sysctlbyname() at all, only the
+// numeric-MIB sysctl(), so there a name that resolves at runtime is not
+// on offer and the one MIB we want has to be named at compile time.
 
 static unsigned detect_max_os_threads(void)
 {
 #if defined(_WIN32) || defined(__wasi__)
 	return 0;					// no fixed per-process limit to report
 #else
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__OpenBSD__)
+	{
+		static const int s_mib[] = { CTL_KERN, KERN_MAXTHREAD };	// system-wide
+		int val = 0;
+		size_t len = sizeof(val);
+
+		if (!sysctl(s_mib, sizeof(s_mib) / sizeof(s_mib[0]), &val, &len, NULL, 0)
+			&& (val > 0))
+			return (unsigned)val;
+	}
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
 	static const char *s_names[] = {
 		"kern.num_taskthreads",					// macOS, per-task
 		"kern.threads.max_threads_per_proc",	// FreeBSD, per-process
 		"kern.maxlwp",							// NetBSD, system-wide
-		"kern.maxthread",						// OpenBSD, system-wide
 		NULL
 	};
 
