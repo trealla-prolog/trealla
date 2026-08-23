@@ -10,8 +10,26 @@
 #if (__STDC_VERSION__ >= 201112L) && USE_THREADS
 #include <stdatomic.h>
 #define sl_atomic _Atomic
+
+// Publishing a new node into a list another thread may be descending.
+// Its key and val have to be visible before the forward pointer that
+// reveals it, which on a weak memory model is not otherwise guaranteed:
+// the store linking the node in can land before the stores that filled
+// it, and a reader then compares against an uninitialised key.
+//
+// Only the writer needs a fence. A reader reaches key and val *through*
+// the forward pointer it loaded, and that address dependency orders the
+// loads on every architecture Trealla targets.
+//
+// This does not make the list lock-free. Concurrent sl_rem() still has
+// to be excluded by the caller - the database does that with
+// prolog_lock(). It closes the narrower window where insertion alone
+// races with a descent, which nothing excluded.
+
+#define sl_publish_barrier() atomic_thread_fence(memory_order_release)
 #else
 #define sl_atomic volatile
+#define sl_publish_barrier() ((void)0)
 #endif
 
 #include "skiplist.h"
@@ -246,6 +264,10 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 	q->key = (void *)key;
 	q->val = (void*)val;
 
+	// Before any forward pointer reveals q.
+
+	sl_publish_barrier();
+
 	for (; k >= 0; k--) {
 		p = update[k];
 		q->forward[k] = p->forward[k];
@@ -283,6 +305,10 @@ bool sl_app(skiplist *l, const void *key, const void *val)
 	if (!q) return false;
 	q->key = (void *)key;
 	q->val = (void*)val;
+
+	// Before any forward pointer reveals q.
+
+	sl_publish_barrier();
 
 	for (; k >= 0; k--) {
 		p = update[k];

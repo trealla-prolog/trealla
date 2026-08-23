@@ -65,12 +65,9 @@ inline static builtins *get_builtin_term(module *m, cell *c, bool *found, bool *
 	return get_builtin(m->pl, C_STR(m, c), C_STRLEN(m, c), c->arity, found, evaluable);
 }
 
-inline static void module_lock(module *m)
-{
-	acquire_lock(&m->guard);
-}
-
-inline static void module_unlock(module *m)
-{
-	release_lock(&m->guard);
-}
+// There is deliberately no module_lock() here any more. The database -
+// predicate lists, dirty lists and the index skiplists - is guarded
+// instance-wide by prolog_lock(), because assert/retract already took
+// that one and the purge paths taking a *different* lock meant the two
+// never excluded each other. Anything needing to serialise against
+// database mutation wants prolog_lock(), not a per-module lock.

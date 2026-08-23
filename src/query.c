@@ -639,14 +639,33 @@ int create_vars(query *q, unsigned cnt)
 	return var_num;
 }
 
+// Taking a reader's handle on a dynamic predicate.
+//
+// Under the module lock, and that is the whole point. The refcount is
+// atomic, so the count itself is safe - but a count alone cannot close
+// the window that crashed concurrent threads: one thread drops the last
+// handle and heads into the purge below, a second takes a fresh handle
+// and starts walking the index, and the purge frees the skiplist nodes
+// out from under it. Both sides have to serialise against each other,
+// not merely count.
+//
+// Only dynamic predicates pay for it - a static call takes no handle
+// and so needs no lock.
+
 static void enter_predicate(query *q, predicate *pr)
 {
 	frame *f = GET_FRAME(q->st.cur_ctx);
 	f->dbgen = q->pl->dbgen;
 	q->st.pr = pr;
 
-	if (pr->is_dynamic)
-		pr->refcnt++;
+	if (pr->is_dynamic) {
+		if (pr->m->pl->is_multithreaded) {
+			prolog_lock(pr->m->pl);
+			pr->refcnt++;
+			prolog_unlock(pr->m->pl);
+		} else
+			pr->refcnt++;
+	}
 }
 
 // Leaving a predicate and dropping the goal's OWN alternatives
@@ -678,21 +697,30 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
 
-	if (--pr->refcnt != 0)
-		return;
+	// Held from the decrement through to the end of the purge, so a
+	// reader cannot take a handle in between and start walking an index
+	// this is about to free from. See enter_predicate().
 
-	if (!list_count(&pr->dirty))
-		return;
+	const bool mt = pr->m->pl->is_multithreaded;
 
-	if (pr->is_abolished)
+	if (mt)
+		prolog_lock(pr->m->pl);
+
+	if (--pr->refcnt != 0) {
+		if (mt) prolog_unlock(pr->m->pl);
 		return;
+	}
+
+	if (!list_count(&pr->dirty) || pr->is_abolished) {
+		if (mt) prolog_unlock(pr->m->pl);
+		return;
+	}
 
 	// Predicate is no longer being used
 
 	//printf("*** leave %u, %s/%u, in_retractall=%d, is_final=%d, retry=%d\n",
 	//	(unsigned)list_count(&pr->dirty), C_STR(q, &pr->key), pr->key.arity, q->in_retractall, is_final, q->retry);
 
-	module_lock(pr->m);
 	rule *r;
 	const frame *f = GET_CURR_FRAME();
 
@@ -733,7 +761,8 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 		recheck_var_in_indexed_args(pr);
 	}
 
-	module_unlock(pr->m);
+	if (mt)
+		prolog_unlock(pr->m->pl);
 }
 
 static void query_purge_dirty_list(query *q)
@@ -749,6 +778,17 @@ static void query_purge_dirty_list(query *q)
 	//
 	// Two passes, because sl_rem() compares against keys borrowed from
 	// the other clauses on this same list.
+	//
+	// Under the same lock as every other index mutation. This is a third
+	// route into index_remove_clause() - the others being assert/retract
+	// and the purge in leave_predicate() - and it runs at query teardown,
+	// which for a thread means at join. Without the lock a thread being
+	// joined tore entries out of an index another thread was descending.
+
+	const bool mt = q->pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(q->pl);
 
 	for (r = list_front(&q->dirty); r; r = list_next(r))
 		index_remove_clause(r->owner, r);
@@ -758,6 +798,9 @@ static void query_purge_dirty_list(query *q)
 		TPL_free(r);
 		cnt++;
 	}
+
+	if (mt)
+		prolog_unlock(q->pl);
 
 	if (cnt && 0)
 		printf("*** query_purge_dirty_list %u\n", cnt);

@@ -1005,7 +1005,6 @@ struct module_ {
 	const char *filename, *name, *actual_filename;
 	skiplist *index, *ops, *defops, *keyval;
 	loaded_file *loaded_files;
-	lock guard;
 	list predicates;
 	prolog_flags flags;
 	unsigned id, idx_used, arity;
@@ -1043,6 +1042,15 @@ struct prolog_ {
 	lock guard;
 	uint64_t s_last, s_cnt, seed, thr_cnt;
 	pl_refcnt q_cnt, dbgen;
+
+	// Set once, when the first thread is created, and never cleared.
+	// The database locking in enter_predicate()/leave_predicate() is
+	// only needed against another thread, and costs about 7% on dynamic
+	// calls - so a program that never creates one does not pay it.
+	// Conservative by construction: it is set before the new thread is
+	// started, so it is already true by the time anything can race.
+
+	pl_atomic bool is_multithreaded;
 	unsigned next_mod_id, def_max_depth, my_chan;
 	unsigned current_input, current_output, current_error, goal_expansions;
 	int8_t halt_code, opt, limit;

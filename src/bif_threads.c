@@ -863,6 +863,21 @@ static bool bif_thread_create_3(query *q)
 		t->is_detached = true;
 	}
 
+	// Turn on the database locking in enter_predicate()/leave_predicate()
+	// now, not earlier. It has to be set before the thread exists, since
+	// the thread starts touching the database immediately - and
+	// pthread_create() is the synchronisation point that publishes it to
+	// the new thread. But setting it any sooner meant a thread_create/3
+	// that failed while parsing options or allocating a slot left the
+	// locking on for a process that never got a second thread, which is
+	// the ~7% on dynamic calls the flag exists to avoid.
+	//
+	// Not cleared if pthread_create() itself fails: another thread may
+	// already be running, and clearing it then would switch the locking
+	// off underneath it.
+
+	q->pl->is_multithreaded = true;
+
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
 		t->is_active = false;
 		// FIX: release shared cell refs before freeing (goal/at_exit_goal hold dup'd cells)
