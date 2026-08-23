@@ -2389,13 +2389,23 @@ void query_destroy(query *q)
 		TPL_free(q->queue[i]);
 	}
 
+	// Unlink first, destroy second: the queues are shared now, so a
+	// task still sitting in one would be left dangling by the free
+	// below. query_destroy() recurses, and each level unlinks its own.
+
+	sched_release(q);
+
 	while (q->tasks) {
 		query *task = q->tasks->next;
 		query_destroy(q->tasks);
 		q->tasks = task;
 	}
 
-	sched_destroy(q);
+	// Choicepoints still live at teardown hold undo items of their own.
+	// Draining q->undo alone left them behind, so a query that halted -
+	// or simply succeeded - with choicepoints outstanding leaked
+	// whatever they were holding. Deepest first, the order backtracking
+	// would have taken.
 
 	for (pl_idx i = q->st.cp; i > 0; i--)
 		undo_list_drain(&GET_CHOICE(i - 1)->undo);

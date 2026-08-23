@@ -55,9 +55,36 @@ SWI-shaped surface. That is what phase 2 re-implements, not replaces.
 Ordered so that each one is independently testable and the risky part
 comes second, not last.
 
-### Phase 0 — hoist the scheduler from `query` to `prolog`
+### Phase 0 — hoist the scheduler from `query` to `prolog` — done
 
-The single enabling change, and the only one that is pure refactor.
+The single enabling change. It turned out **not** to be a pure refactor,
+in exactly one place, and that place was a bug:
+
+- the scheduler is now one per `prolog`, reached through `sched_get()`,
+  and freed by `pl_destroy()` rather than `query_destroy()`
+- ownership is tracked separately: a task still sits on its spawner's
+  `q->tasks` registry, and every query above it counts it in a new
+  `q->num_subtasks`. The scheduler answers *what can run*, the registry
+  answers *whose is it*. That split is what lets `wait/0` still mean
+  "until my own work is done" over shared queues.
+- `wait/0` therefore returns when the caller's whole **subtree** is
+  done, at any depth, rather than when its direct children are
+- `query_destroy()` now calls `sched_release()` to unlink its tasks
+  before tearing them down. With a per-query scheduler this was free -
+  the queues died with the query - but they outlive any one query now,
+  and anything left in them would dangle.
+
+**The semantic change:** a task that spawned another and did not wait
+used to have that child silently discarded, because the child went into
+a scheduler nothing would ever drain. It now runs. Two cases in
+`tests/sundry/task_ownership.pl` changed to say so, and both are marked
+with what they used to report. Nothing else moved: nesting order, spawn
+FIFO, and the two-phase `end_wait/0` behaviour are unchanged.
+
+Verified with the full suite under `-fsanitize=address` as well as
+optimised - the unlink-before-destroy path is where a dangling task
+would show up, and it is clean. `library(concurrent)` is unaffected,
+`future_any/2` early exit included.
 
 Today `scheduler *sched` lives on `query` (`src/internal.h:827`),
 allocated lazily by `push_task()`, and only turns over when a parent
@@ -71,11 +98,8 @@ has no parent to drive it, so none of this can schedule one.
 - audit `end_wait/0` and `q->end_wait` against the new ownership — the
   flag currently belongs to whoever called `wait/0`
 
-Still strictly single-threaded, one worker, no semantic change. If the
-task tests pass unchanged afterwards, the refactor is right.
-
-**Do not start phase 1 until this is green.** Everything downstream
-assumes a scheduler that is not owned by a query.
+Still strictly single-threaded and one worker: nothing runs in
+parallel, and the queues are untouched by any other thread.
 
 ### Phase 1 — make blocking primitives suspend
 
@@ -95,11 +119,25 @@ serves both. Which is also why v1's "actors as a capstone" was the wrong
 shape: the mailbox is not the reward for finishing, it is the mechanism
 that makes the rest work.
 
-While in here, `send/1` and `recv/1` get re-pointed at the same mailbox
-and gain addressing. They can only reach `q->parent` today, which is the
-one property that has to change. `recv/1`'s pop / try-unify /
-re-queue-on-mismatch loop is already Erlang selective receive and should
-survive as a design.
+**`send/1`, `recv/1` and `await/0` go rather than move.** Two reasons,
+and the second is the stronger:
+
+- `library(concurrent)` can work around them. That has been tried:
+  porting `future/3` and `await/2` onto the shared database keeps the
+  whole public API, and `future_any/2` keeps its early exit because
+  `end_wait/0` releases a `wait/0` with tasks still queued. All four
+  cases in `samples/test_concurrent.pl` behaved as before.
+- `recv/1` is the *worse* of the two selective receives we have. Given a
+  queue of 1,2,3,4 and a receive of 3, `recv/1` leaves `[4,1,2]` — the
+  skipped messages rotate to the back — where
+  `thread_get_message/2` leaves `[1,2,4]`, scanning without disturbing
+  the queue. The thread mailbox is already Erlang-correct; `recv/1`'s
+  rotation is not a design worth preserving.
+
+So the thread mailbox becomes *the* mailbox, and phase 4's actor
+addressing is added to it rather than to a second mechanism. What
+`send/1` had that it lacks is only reach: it can address `q->parent`,
+where a thread queue is addressed by id.
 
 ### Phase 2 — thread objects hold tasks
 

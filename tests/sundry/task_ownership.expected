@@ -1,7 +1,7 @@
-orphan_dropped: ok
+spawner_need_not_wait: ok
 owner_waits_child_runs: ok
 nesting_is_recursive: ok
-missing_wait_severs_subtree: ok
+gap_in_chain_does_not_sever: ok
 spawn_order_is_fifo: ok
 end_wait_releases_first_wait: ok
 end_wait_releases_second_wait: ok

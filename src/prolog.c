@@ -1042,6 +1042,8 @@ void pl_destroy(prolog *pl)
 {
 	if (!pl) return;
 
+	sched_destroy(pl);
+
 #if USE_THREADS
 	if (pl->q_cnt)
 		thread_cancel_all(pl);

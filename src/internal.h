@@ -827,14 +827,15 @@ struct query_ {
 	choice *choice_next;
 	frame **frame_pages;
 	slot *save_e;
-	query *tasks;
+	query *tasks;						// tasks we spawned, our registry of them
+	unsigned num_subtasks;				// ... and how many live below us, any depth
 
-	// Task scheduling, see bif_tasks.c. The first group is only used by
-	// a query that has spawned tasks, the second only by a task itself.
+	// Task scheduling, see bif_tasks.c. The scheduler itself now hangs
+	// off the prolog instance rather than off whoever spawned a task -
+	// the fields here are what a task needs to sit in its queues.
 
-	scheduler *sched;					// allocated lazily by push_task()
 	query *sched_next;					// link in the ready FIFO or the io list
-	unsigned heap_idx;					// our slot in the parent's timer heap
+	unsigned heap_idx;					// our slot in the timer heap
 	int wait_fd;						// descriptor we parked on, if waiting_io
 	short wait_events;					// ... and what we are waiting for
 	uint8_t sched_where;				// which of the three we are queued on
@@ -1037,6 +1038,7 @@ struct module_ {
 };
 
 struct prolog_ {
+	scheduler *sched;					// every task, whoever spawned it
 	stream streams[MAX_STREAMS];
 	thread threads[MAX_THREADS];
 	module *modmap[MAX_MODULES];

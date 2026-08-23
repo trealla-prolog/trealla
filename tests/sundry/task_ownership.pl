@@ -10,12 +10,18 @@
 %
 % The rules, as they stand:
 %
-%   - a task is a subquery, and its scheduler belongs to whoever spawned
-%     it. Tasks therefore nest: a task that spawns a task owns it.
-%   - a child only runs if its owner calls wait/0. A task that spawns
-%     and does not wait has its children discarded when it finishes.
-%   - wait/0 drains only what the caller owns, so a nested task is
-%     invisible to the top until its owner waits for it.
+%   - a task is a subquery, and it belongs to whoever spawned it. Tasks
+%     therefore nest: a task that spawns a task owns it.
+%   - the scheduler itself is shared, one per prolog instance. Ownership
+%     decides when a wait/0 may return, not what is allowed to run.
+%   - wait/0 returns when the caller's whole subtree is done, at any
+%     depth - so a task spawned anywhere below will run, whether or not
+%     the task that spawned it waited for it.
+%
+% That last rule changed in GUSTTO phase 0. Before the scheduler was
+% hoisted out of the query, each spawner had a scheduler of its own and
+% a task that spawned without waiting had its children thrown away when
+% it finished. Two tests below are marked with what they used to say.
 %
 % Observation is through a dynamic predicate rather than send/1, for two
 % reasons: tasks share the database with their parent, so it works at
@@ -41,19 +47,22 @@ report(Name, Got, Expect) :-
 	;	format("~w: FAILED got ~q wanted ~q~n", [Name,Got,Expect])
 	).
 
-% A task that spawns a task and never waits: the child is discarded.
-% The parent's own work still happens, so this is not the whole task
-% failing - only the orphan is silently lost.
+% A task may spawn a task and not wait for it. The child still runs,
+% because the wait/0 at the top covers the whole subtree.
+%
+% Before phase 0 this reported [neglectful] alone: the child went into a
+% scheduler belonging to `neglectful` that nothing ever drained, and was
+% discarded when that task finished.
 
 orphan :- note(orphan).
 neglectful :- call_task(orphan), note(neglectful).
 
-orphan_dropped :-
+spawner_need_not_wait :-
 	reset,
 	call_task(neglectful),
 	wait,
 	ran_list(L),
-	report(orphan_dropped, L, [neglectful]).
+	report(spawner_need_not_wait, L, [neglectful,orphan]).
 
 % The same task, but waiting: now the child runs, and it runs before
 % the owner continues past its wait/0.
@@ -82,18 +91,22 @@ nesting_is_recursive :-
 	ran_list(L),
 	report(nesting_is_recursive, L, [deep3,deep2,deep1]).
 
-% One missing wait/0 anywhere in the chain severs everything below it,
-% not just the next level down.
+% A gap in the chain of wait/0 calls does not sever what is below it.
+% sever2 spawns deep3 without waiting, but sever1's wait/0 covers its
+% whole subtree, so deep3 runs - and runs before sever1 resumes.
+%
+% Before phase 0 this reported [sever2,sever1]: deep3 was discarded
+% along with the scheduler sever2 owned.
 
 sever2 :- call_task(deep3), note(sever2).
 sever1 :- call_task(sever2), wait, note(sever1).
 
-missing_wait_severs_subtree :-
+gap_in_chain_does_not_sever :-
 	reset,
 	call_task(sever1),
 	wait,
 	ran_list(L),
-	report(missing_wait_severs_subtree, L, [sever2,sever1]).
+	report(gap_in_chain_does_not_sever, L, [sever2,deep3,sever1]).
 
 % Tasks run in the order they were spawned, and to completion: wait/0
 % drains rather than interleaving at every opportunity.
@@ -146,10 +159,10 @@ wait_with_no_tasks :-
 	report(wait_with_no_tasks, R, ok).
 
 main :-
-	orphan_dropped,
+	spawner_need_not_wait,
 	owner_waits_child_runs,
 	nesting_is_recursive,
-	missing_wait_severs_subtree,
+	gap_in_chain_does_not_sever,
 	spawn_order_is_fifo,
 	end_wait_releases_once,
 	end_wait_without_wait,

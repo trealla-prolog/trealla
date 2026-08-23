@@ -206,26 +206,34 @@ struct scheduler_ {
 
 static void pop_task(query *q, query *task);
 
+// There is one scheduler per prolog instance, not one per query that
+// happened to spawn something. Ownership is tracked separately: a task
+// stays on its spawner's q->tasks registry, and every query on the
+// chain above it counts it in num_subtasks. So the scheduler answers
+// "what can run", and the registry answers "whose is it" - which is
+// what lets wait/0 mean "until my own work is done" while the queues
+// themselves are shared.
+
 static scheduler *sched_get(query *q)
 {
-	if (!q->sched)
-		q->sched = TPL_calloc(1, sizeof(scheduler));
+	if (!q->pl->sched)
+		q->pl->sched = TPL_calloc(1, sizeof(scheduler));
 
-	return q->sched;
+	return q->pl->sched;
 }
 
-void sched_destroy(query *q)
+void sched_destroy(prolog *pl)
 {
-	if (!q->sched)
+	if (!pl->sched)
 		return;
 
-	TPL_free(q->sched->timers);
+	TPL_free(pl->sched->timers);
 #if USE_POLL
-	TPL_free(q->sched->pfds);
-	TPL_free(q->sched->pfd_owners);
+	TPL_free(pl->sched->pfds);
+	TPL_free(pl->sched->pfd_owners);
 #endif
-	TPL_free(q->sched);
-	q->sched = NULL;
+	TPL_free(pl->sched);
+	pl->sched = NULL;
 }
 
 static void heap_swap(scheduler *s, unsigned a, unsigned b)
@@ -481,10 +489,10 @@ enum sched_mode {
 
 static bool sched_run(query *q, enum sched_mode mode)
 {
-	scheduler *s = q->sched;
+	scheduler *s = q->pl->sched;
 	bool signalled = false;
 
-	while (q->tasks && !q->end_wait) {
+	while (q->num_subtasks && !q->end_wait) {
 		CHECK_INTERRUPT();
 		uint64_t now = wall_time_in_usec() / 1000;
 		sched_expire_timers(s, now);
@@ -514,7 +522,7 @@ static bool sched_run(query *q, enum sched_mode mode)
 		task->yield_now = false;
 
 		if (!task->yielded || !task->st.instr || task->error) {
-			pop_task(q, task);
+			pop_task(task->parent, task);
 			query_destroy(task);
 			continue;
 		}
@@ -535,6 +543,16 @@ static bool sched_run(query *q, enum sched_mode mode)
 	return signalled;
 }
 
+// A task counts against everyone above it, not just its spawner, so
+// that a wait/0 high up knows there is still work underneath it even
+// when its own direct children have all finished.
+
+static void count_subtask(query *q, int delta)
+{
+	for (; q; q = q->parent)
+		q->num_subtasks += delta;
+}
+
 static bool push_task(query *q, query *task)
 {
 	scheduler *s = sched_get(q);
@@ -548,6 +566,7 @@ static bool push_task(query *q, query *task)
 		q->tasks->prev = task;
 
 	q->tasks = task;
+	count_subtask(q, 1);
 	sched_ready_push(s, task);
 	return true;
 }
@@ -562,6 +581,22 @@ static void pop_task(query *q, query *task)
 
 	if (task == q->tasks)
 		q->tasks = task->next;
+
+	count_subtask(q, -1);
+}
+
+// Take a query's tasks off the shared queues before it is torn down.
+// With a scheduler of its own this was free - the whole thing was
+// freed with the query - but the queues outlive any one query now, so
+// anything still sitting in them has to be unlinked or it dangles.
+
+void sched_release(query *q)
+{
+	if (!q->pl->sched)
+		return;
+
+	for (query *task = q->tasks; task; task = task->next)
+		sched_unlink(q->pl->sched, task);
 }
 
 static bool bif_end_wait_0(query *q)
@@ -574,7 +609,7 @@ static bool bif_end_wait_0(query *q)
 
 static bool bif_wait_0(query *q)
 {
-	if (q->sched)
+	if (q->pl->sched)
 		sched_run(q, SCHED_DRAIN);
 
 	q->end_wait = false;
@@ -583,10 +618,10 @@ static bool bif_wait_0(query *q)
 
 static bool bif_await_0(query *q)
 {
-	if (q->sched)
+	if (q->pl->sched)
 		sched_run(q, SCHED_STEP);
 
-	if (!q->tasks)
+	if (!q->num_subtasks)
 		return false;
 
 	CHECKED(push_choice(q));
@@ -709,9 +744,9 @@ static bool bif_sys_cancel_future_1(query *q)
 			// lands on the next pass rather than whenever its
 			// descriptor or deadline happens to come up.
 
-			if (q->sched && (task->sched_where != SCHED_READY)) {
-				sched_unlink(q->sched, task);
-				sched_ready_push(q->sched, task);
+			if (q->pl->sched && (task->sched_where != SCHED_READY)) {
+				sched_unlink(q->pl->sched, task);
+				sched_ready_push(q->pl->sched, task);
 			}
 
 			break;
