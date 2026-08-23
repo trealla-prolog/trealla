@@ -97,6 +97,73 @@ static int get_named_thread(prolog *pl, const char *name, size_t len)
 	return -1;
 }
 
+// Reaching the thread table.
+//
+// Everything that looks one up or walks the table goes through these,
+// so the storage underneath can be changed without touching the fifty
+// call sites that use it. Over an array they are trivial; the point is
+// that they are the only things that know it is an array.
+//
+// next_thread_after() takes an id rather than a position because the
+// property predicates resume across backtracking from a saved id
+// (q->st.v1). Ids are handed out in increasing order, so "the next one
+// after N" stays meaningful even when threads come and go in between -
+// which a raw index into a table that had been reshuffled would not.
+
+static thread *find_thread_by_id(prolog *pl, int chan)
+{
+	if ((chan < 0) || (chan >= MAX_THREADS))
+		return NULL;
+
+	return &pl->threads[chan];
+}
+
+static thread *main_thread(prolog *pl)
+{
+	return &pl->threads[0];
+}
+
+static thread *next_thread_after(prolog *pl, int chan)
+{
+	for (int i = chan + 1; i < MAX_THREADS; i++) {
+		thread *t = &pl->threads[i];
+
+		if (t->is_active)
+			return t;
+	}
+
+	return NULL;
+}
+
+static thread *first_thread(prolog *pl)
+{
+	return next_thread_after(pl, -1);
+}
+
+#define for_each_thread(pl, t) \
+	for (thread *t = first_thread(pl); t; t = next_thread_after(pl, t->chan))
+
+// Threads, message queues and mutexes all live in the same table and are
+// told apart by two flags. The property predicates each enumerate one
+// kind, resuming from a saved id across backtracking, so they all want
+// the same thing: the next entry of this kind after that id.
+
+enum thread_kind { TK_THREAD, TK_QUEUE, TK_MUTEX };
+
+static thread *next_of_kind(prolog *pl, int chan, enum thread_kind kind)
+{
+	for (thread *t = next_thread_after(pl, chan); t; t = next_thread_after(pl, t->chan)) {
+		bool want = kind == TK_QUEUE ? t->is_queue_only
+			: kind == TK_MUTEX ? t->is_mutex_only
+			: !t->is_queue_only && !t->is_mutex_only;
+
+		if (want)
+			return t;
+	}
+
+	return NULL;
+}
+
 static int get_thread(query *q, cell *p1)
 {
 	if (is_atom(p1)) {
@@ -116,7 +183,9 @@ static int get_thread(query *q, cell *p1)
 
 	int n = get_smallint(p1);
 
-	if (!q->pl->threads[n].is_active)
+	thread *t = find_thread_by_id(q->pl, n);
+
+	if (!t || !t->is_active)
 		return -1;
 
 	return n;
@@ -128,7 +197,7 @@ static int new_thread(prolog *pl)
 
 	for (int i = 0; i < MAX_THREADS; i++) {
 		unsigned n = pl->thr_cnt++ % MAX_THREADS;
-		thread *t = &pl->threads[n];
+		thread *t = find_thread_by_id(pl, n);
 
 		if (!t->is_active) {
 
@@ -170,7 +239,7 @@ void thread_initialize(prolog *pl)
 {
 	int n = new_thread(pl);
 	ENSURE(n == 0);
-	thread *t = &pl->threads[n];
+	thread *t = find_thread_by_id(pl, n);
 	t->alias = strdup("main");
 	sl_app(pl->alias, t->alias, t);
 	t->is_detached = true;
@@ -178,10 +247,8 @@ void thread_initialize(prolog *pl)
 
 void thread_deinitialize(prolog *pl)
 {
-	for (int i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!t->is_init || !t->is_active)
+	for_each_thread(pl, t) {
+		if (!t->is_init)
 			continue;
 
 		sl_del(pl->alias, t->alias);
@@ -226,7 +293,7 @@ static bool is_thread_or_alias(query *q, cell *c)
 	if (n < 0)
 		return throw_error(q, c, c_ctx, "existence_error", "thread_or_alias");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_active || t->is_mutex_only || t->is_queue_only)
 		return throw_error(q, c, c_ctx, "existence_error", "thread_or_alias");
@@ -246,7 +313,7 @@ static bool is_mutex_or_alias(query *q, cell *c)
 	if (n < 0)
 		return throw_error(q, c, c_ctx, "existence_error", "mutex_or_alias");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_active || t->is_queue_only)
 		return throw_error(q, c, c_ctx, "existence_error", "mutex_or_alias");
@@ -266,7 +333,7 @@ static bool is_queue_or_alias(query *q, cell *c)
 	if (n < 0)
 		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_active || t->is_mutex_only)
 		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
@@ -297,7 +364,7 @@ static bool check_thread_or_alias(query *q, cell *c)
 	if (n < 0)
 		return false;
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	return !t->is_mutex_only && !t->is_queue_only;
 }
 
@@ -311,7 +378,7 @@ static bool check_mutex_or_alias(query *q, cell *c)
 	if (n < 0)
 		return false;
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	return t->is_mutex_only;
 }
 
@@ -325,7 +392,7 @@ static bool check_queue_or_alias(query *q, cell *c)
 	if (n < 0)
 		return false;
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	return t->is_queue_only;
 }
 
@@ -352,14 +419,14 @@ static void resume_thread(thread *t)
 
 static unsigned queue_size(prolog *pl, unsigned chan)
 {
-	thread *t = &pl->threads[chan];
+	thread *t = find_thread_by_id(pl, chan);
 	unsigned cnt = list_count(&t->queue);
 	return cnt;
 }
 
 static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
 {
-	thread *t = &pl->threads[chan];
+	thread *t = find_thread_by_id(pl, chan);
 	msg *m = TPL_malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
 	if (!m) return false;
 	m->from_chan = from_chan;
@@ -378,7 +445,7 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 
 static bool do_send_message(query *q, unsigned chan, cell *c, pl_ctx c_ctx, bool is_signal)
 {
-	thread *t = &q->pl->threads[chan];
+	thread *t = find_thread_by_id(q->pl, chan);
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 	CHECKED(tmp);
@@ -418,10 +485,8 @@ thread *get_self(prolog *pl)
 {
 	pthread_t tid = pthread_self();
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!t->is_active || t->is_queue_only || t->is_mutex_only)
+	for_each_thread(pl, t) {
+		if (t->is_queue_only || t->is_mutex_only)
 			continue;
 
 		if (t->id == tid)
@@ -485,7 +550,7 @@ static enum msg_wait do_wait_message(query *q, thread *t, uint64_t deadline)
 static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
 {
 	GET_FIRST_ARG(pq,queue);
-	thread *t = &q->pl->threads[chan];
+	thread *t = find_thread_by_id(q->pl, chan);
 
 	// The deadline is absolute and lives on the query, because a task
 	// that parks in here is retried from the top of the builtin: a
@@ -680,19 +745,14 @@ static bool bif_thread_peek_message_2(query *q)
 
 thread *get_self_query(const query *q)
 {
-	return q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	return q->thread_ptr ? q->thread_ptr : main_thread(q->pl);
 }
 
 static void do_unlock_all(thread *me)
 {
 	prolog *pl = me->pl;
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!t->is_active)
-			continue;
-
+	for_each_thread(pl, t) {
 		if (t->locked_by != me->chan)
 			continue;
 
@@ -859,7 +919,7 @@ static bool bif_thread_create_3(query *q)
 	if (n < 0)
 		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (alias) {
 		t->alias = DUP_STRING(q, alias);
@@ -958,7 +1018,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
@@ -1076,7 +1136,7 @@ static bool bif_thread_signal_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
@@ -1143,7 +1203,7 @@ static bool bif_thread_cancel_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
@@ -1167,7 +1227,7 @@ static bool bif_thread_detach_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
@@ -1271,7 +1331,7 @@ static bool do_thread_property_pin_both(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (p2->arity != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "thread_property");
@@ -1328,38 +1388,16 @@ static bool do_thread_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,nonvar);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
+	thread *t = next_of_kind(q->pl, i, TK_THREAD);
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	if (!t)
+		return true;
 
-		thread *t = &q->pl->threads[i];
+	q->st.v1 = t->chan;
 
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_THREAD))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1380,7 +1418,7 @@ static bool do_thread_property_pin_id(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	unsigned i = 0;
 
 	if (q->retry)
@@ -1441,40 +1479,19 @@ static bool do_thread_property_wild(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
-	else
+	if (!q->retry)
 		q->st.v2 = -1;
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	thread *t = next_of_kind(q->pl, i, TK_THREAD);
 
-		thread *t = &q->pl->threads[i];
+	if (!t)
+		return true;
 
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
+	q->st.v1 = t->chan;
 
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_THREAD))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1599,7 +1616,7 @@ static bool bif_message_queue_create_2(query *q)
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	t->is_queue_only = true;
 
 	// Commit. Nothing below can fail in a way that needs unwinding.
@@ -1632,7 +1649,7 @@ static bool bif_message_queue_destroy_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_queue_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_queue");
@@ -1665,7 +1682,7 @@ static bool do_message_queue_property_pin_both(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (p2->arity != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "queue_property");
@@ -1707,38 +1724,16 @@ static bool do_message_queue_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,nonvar);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
+	thread *t = next_of_kind(q->pl, i, TK_QUEUE);
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	if (!t)
+		return true;
 
-		thread *t = &q->pl->threads[i];
+	q->st.v1 = t->chan;
 
-		if (!t->is_active || !t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_QUEUE))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1759,7 +1754,7 @@ static bool do_message_queue_property_pin_id(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	unsigned i = 0;
 
 	if (q->retry)
@@ -1799,40 +1794,19 @@ static bool do_message_queue_property_wild(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
-	else
+	if (!q->retry)
 		q->st.v2 = -1;
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	thread *t = next_of_kind(q->pl, i, TK_QUEUE);
 
-		thread *t = &q->pl->threads[i];
+	if (!t)
+		return true;
 
-		if (!t->is_active || !t->is_queue_only)
-			continue;
+	q->st.v1 = t->chan;
 
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_QUEUE))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1881,7 +1855,7 @@ static bool bif_mutex_create_2(query *q)
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	t->is_mutex_only = true;
 
 	// Commit. Nothing below can fail in a way that needs unwinding.
@@ -1914,7 +1888,7 @@ static bool bif_mutex_destroy_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
@@ -1938,7 +1912,7 @@ static bool bif_mutex_trylock_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!try_lock(&t->guard))
 		return false;
@@ -1966,7 +1940,7 @@ static bool bif_mutex_lock_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	thread *me = get_self_query(q);
 
 	if (!me)	// FIX: guard NULL self
@@ -1990,7 +1964,7 @@ static bool bif_mutex_unlock_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	thread *me = get_self_query(q);
 
 	if (!me)	// FIX: guard NULL self
@@ -2026,7 +2000,7 @@ static bool do_mutex_property_pin_both(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (p2->arity != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
@@ -2073,38 +2047,16 @@ static bool do_mutex_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,nonvar);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
+	thread *t = next_of_kind(q->pl, i, TK_MUTEX);
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	if (!t)
+		return true;
 
-		thread *t = &q->pl->threads[i];
+	q->st.v1 = t->chan;
 
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
-
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_MUTEX))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -2125,7 +2077,7 @@ static bool do_mutex_property_pin_id(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	unsigned i = 0;
 
 	if (q->retry)
@@ -2177,40 +2129,19 @@ static bool do_mutex_property_wild(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
-	else
+	if (!q->retry)
 		q->st.v2 = -1;
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	thread *t = next_of_kind(q->pl, i, TK_MUTEX);
 
-		thread *t = &q->pl->threads[i];
+	if (!t)
+		return true;
 
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
+	q->st.v1 = t->chan;
 
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_MUTEX))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -2245,10 +2176,8 @@ void thread_cancel_all(prolog *pl)
 {
 	msleep(10);
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!is_threaded(t) || !t->is_active || t->is_detached)
+	for_each_thread(pl, t) {
+		if (!is_threaded(t) || t->is_detached)
 			continue;
 
 		do_cancel(t);
@@ -2313,7 +2242,7 @@ builtins g_threads_bifs[] =
 
 thread *get_self(prolog *pl)
 {
-	return pl ? &pl->threads[0] : NULL;
+	return pl ? main_thread(pl) : NULL;
 }
 
 #endif

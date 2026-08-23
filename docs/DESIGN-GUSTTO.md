@@ -200,7 +200,31 @@ where a thread queue is addressed by id.
   style timeouts need rethinking before threads become tasks.
 - thread identity becomes id + mailbox + task, with no pthread in it
 
-**Drop the fixed table here too.** `thread threads[MAX_THREADS]`
+**Access to the table is now funnelled — done.** Every one of the ~50
+places that looked a thread up or walked the table goes through four
+functions in `bif_threads.c`: `find_thread_by_id()`, `main_thread()`,
+`next_thread_after()` and `next_of_kind()`, plus a `for_each_thread()`
+macro over the first two. Nothing else knows it is an array. `MAX_THREADS`
+went from ~26 references in that file to four, two of which are inside
+the accessors.
+
+The awkward case was the six property predicates, which enumerate one
+kind of object and resume across backtracking from an id saved in
+`q->st.v1`. They now ask `next_of_kind(pl, id, TK_THREAD|TK_QUEUE|TK_MUTEX)`,
+which is the same question and stays meaningful when the storage is no
+longer indexable. That also collapsed six copies of a twenty-line
+double-scan into four lines each.
+
+**Two places still know the storage**, and both genuinely change with it
+rather than being oversights:
+
+- `new_thread()` — the allocator, which becomes malloc plus insert
+- `tabling_destroy()` in `bif_tabling.c`, which deliberately sweeps
+  *every* slot including inactive ones and the main thread, so it wants
+  "every struct ever allocated" rather than "every live thread". Under a
+  free list that is the map plus the free list, and belongs next to them.
+
+**Drop the fixed table.** `thread threads[MAX_THREADS]`
 (`src/internal.h:1034`) is a 2048-entry inline array in the `prolog`
 struct, and a thread's channel *is* its array index — that index is what
 gets boxed into the Prolog term with `FLAG_INT_THREAD`. Replacing it
