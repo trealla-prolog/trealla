@@ -645,14 +645,8 @@ static void enter_predicate(query *q, predicate *pr)
 	f->dbgen = q->pl->dbgen;
 	q->st.pr = pr;
 
-	if (pr->is_dynamic) {
-		if (pr->m->pl->is_multithreaded) {
-			prolog_lock(pr->m->pl);
-			pr->refcnt++;
-			prolog_unlock(pr->m->pl);
-		} else
-			pr->refcnt++;
-	}
+	if (pr->is_dynamic)
+		pr->refcnt++;
 }
 
 void leave_predicate_and_drop(query *q, predicate *pr, bool is_final)
