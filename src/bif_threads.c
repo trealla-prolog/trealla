@@ -111,15 +111,30 @@ static int get_named_thread(prolog *pl, const char *name, size_t len)
 
 thread *find_thread_by_id(prolog *pl, int chan)
 {
-	const void *v = NULL;
-
 	if ((chan < 0) || !pl->threads)
 		return NULL;
 
-	if (!sl_get(pl->threads, (const void*)(uintptr_t)chan, &v))
-		return NULL;
+	// sl_get()/sl_set()/sl_del() do their own linked-list splicing with
+	// no locking of their own - only the skiplist's iterator functions
+	// take its guard. new_thread() mutates pl->threads (sl_del + sl_set)
+	// under prolog_lock() when it recycles a struct; this lookup used to
+	// run with no lock at all, so a concurrent sl_del() could free the
+	// node this is mid-traversal through. Traced from an intermittent
+	// heap-use-after-free under concurrent thread churn - see
+	// samples/skynet.pl.
 
-	return (thread*)v;
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	const void *v = NULL;
+	bool found = sl_get(pl->threads, (const void*)(uintptr_t)chan, &v);
+
+	if (mt)
+		prolog_unlock(pl);
+
+	return found ? (thread*)v : NULL;
 }
 
 
@@ -602,15 +617,25 @@ static void resume_thread(thread *t)
 static unsigned queue_size(prolog *pl, unsigned chan)
 {
 	thread *t = find_thread_by_id(pl, chan);
-	unsigned cnt = list_count(&t->queue);
-	return cnt;
+
+	if (!t)
+		return 0;
+
+	return list_count(&t->queue);
 }
 
 static void wake_msg_waiters(thread *t);
 
-static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
+// Takes an already-resolved thread rather than looking one up itself.
+// It used to re-resolve chan with its own find_thread_by_id() call,
+// which gave do_send_message() two independent lookups for one id - and
+// between them, the thread the id named could retire and its struct get
+// handed to a completely different thread_create/3. The stale pointer
+// from the first lookup would then be used by resume_thread() to signal
+// someone else's condvar. One lookup, used immediately, closes that.
+
+static bool queue_to_chan(thread *t, const cell *c, unsigned from_chan, bool is_signal)
 {
-	thread *t = find_thread_by_id(pl, chan);
 	msg *m = TPL_malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
 	if (!m) return false;
 	m->from_chan = from_chan;
@@ -631,11 +656,20 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 static bool do_send_message(query *q, unsigned chan, cell *c, pl_ctx c_ctx, bool is_signal)
 {
 	thread *t = find_thread_by_id(q->pl, chan);
+
+	// find_thread_by_id() can return NULL - the id may already have
+	// been retired and reused for something else by the time this
+	// runs. Fail rather than dereference it: this was crashing under
+	// concurrent thread churn (samples/skynet.pl).
+
+	if (!t)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "existence_error", "thread_object");
+
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 	CHECKED(tmp);
 	rebase_term(q, tmp, 0, false);
-	CHECKED(queue_to_chan(q->pl, chan, tmp, q->my_chan, is_signal));
+	CHECKED(queue_to_chan(t, tmp, q->my_chan, is_signal));
 	resume_thread(t);
 	return true;
 }
@@ -1055,8 +1089,16 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
-	retire_thread(t->pl, t);
+	// Unlock before retiring: retire_thread() puts t on the free list,
+	// and t->guard is a mutex embedded in t. A concurrent new_thread()
+	// reusing t writes t->guard.tid without reinitialising the mutex
+	// (is_init stays true), so retiring while still holding this lock
+	// let a second thread mutate a locked mutex, and let this release
+	// unlock a mutex that by then belonged to whoever grabbed t next.
+	// Traced from an intermittent SIGSEGV/SIGBUS under concurrent
+	// thread churn - see samples/skynet.pl.
 	release_lock(&t->guard);
+	retire_thread(t->pl, t);
     return 0;
 }
 
@@ -1212,15 +1254,21 @@ static bool bif_thread_create_3(query *q)
 	q->pl->is_multithreaded = true;
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
-		retire_thread(q->pl, t);
-		// FIX: release shared cell refs before freeing (goal/at_exit_goal hold dup'd cells)
+		// retire_thread() puts t on the free list, where a *different*
+		// thread's new_thread() can pop and start reusing it the moment
+		// the lock inside is released. Everything that still touches t
+		// - freeing goal/at_exit_goal, destroying t->q, dropping the
+		// alias - has to happen BEFORE that, not after: this used to
+		// retire first, then kept writing into fields a concurrent
+		// thread_create/3 could already own. Only bit under load
+		// (pthread_create has to actually fail) and only with a second
+		// thread racing to grab the slot, which is why it looked like a
+		// skynet-scale crash rather than a use-after-free.
 		if (t->goal) { unshare_cells(t->goal, t->goal->num_cells); TPL_free(t->goal); t->goal = NULL; }
 		if (t->at_exit_goal) { unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells); TPL_free(t->at_exit_goal); t->at_exit_goal = NULL; }
 		query_destroy(t->q);
 		t->q = NULL;
-		sl_del(q->pl->alias, t->alias);
-		TPL_free(t->alias);
-		t->alias = NULL;
+		retire_thread(q->pl, t);
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
@@ -1313,8 +1361,9 @@ static bool bif_thread_join_2(query *q)
 		t->at_exit_goal = NULL;
 	}
 
-	retire_thread(q->pl, t);
+	// Unlock before retiring - see the note in start_routine_thread_create().
 	release_lock(&t->guard);
+	retire_thread(q->pl, t);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
@@ -1399,8 +1448,12 @@ static void do_cancel(thread *t)
 	query_destroy(t->q);
 	t->q = NULL;
 	//t->id = 0;
-	retire_thread(t->pl, t);
+
+	// Unlock before retiring - see the note in start_routine_thread_create().
+	// pthread_cancel/kill below use the local id captured at entry, not
+	// t, so they are unaffected by t being reused as soon as it unlocks.
 	release_lock(&t->guard);
+	retire_thread(t->pl, t);
 
 #if defined(__ANDROID__)
 	pthread_kill(id, 0);
@@ -1882,8 +1935,9 @@ static bool bif_message_queue_destroy_1(query *q)
 		TPL_free(m);
 	}
 
-	retire_thread(q->pl, t);
+	// Unlock before retiring - see the note in start_routine_thread_create().
 	release_lock(&t->guard);
+	retire_thread(q->pl, t);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
