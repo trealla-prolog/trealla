@@ -537,9 +537,15 @@ Two details worth keeping:
   concurrency fix; before it, this library would have been a reliable
   way to crash the system.
 
-Supervision is deliberately not included. It is a restart loop over
-`exit/2` and belongs to whoever wants a particular policy, not in the
-library.
+A minimal supervisor comes with it: `supervisor_start/2,3` and
+`supervisor_stop/1`, one_for_one only, with a restart budget -
+`max_restarts(N)` within `period(Seconds)`, default 5 in 5. The budget
+is the part worth providing rather than leaving to callers: without it
+a child that dies on start spins forever. Exhausting it stops the
+supervisor and its remaining children.
+
+The other OTP policies are not included, and want a real use case
+before they are.
 
 
 ## Before any of it: tests
