@@ -409,7 +409,40 @@ can learn before building phase 3. A compute-bound thread will starve
 its worker at this point, because preemption does not land until phase
 3 — that is expected, not a bug to chase.
 
-### Phase 3 — the worker pool — option B done
+### Phase 3 — the worker pool — stopping at option B
+
+**Option B is where this stops for now.** The queues stay per thread
+object with a lock. Option C - one shared set of queues, N workers,
+thread objects as tasks - is deferred, not rejected.
+
+**The precondition for C:** database mutation must stop needing an
+instance-wide lock. Every assert/retract takes `prolog_lock` - that is
+how the concurrency crash was fixed - so N workers doing database work
+all contend on one lock. C would buy parallelism and hand it straight
+back, which for Prolog, where the database is the program, is most of
+the workload. Lifting that means epoch or QSBR-style reclamation, which
+is a larger job than C itself. Doing C first ships the complexity and
+none of the benefit.
+
+**What would settle it:** the fraction of a representative db-heavy
+program's time spent inside `prolog_lock`. Small, and the objection
+collapses. Large, and C cannot pay off until the lock goes. Worth
+measuring before committing either way.
+
+**What B already banked:** blocking receives park instead of stalling
+siblings, a send wakes a parked task in ~90us rather than ~5ms, the
+fixed 2048-entry thread table is gone, and timeouts key off the thread
+object rather than which pthread caught a signal. C's marginal gain
+over that is parallel execution - gated as above - plus having one
+mechanism instead of two.
+
+**What C still has to pay for regardless:** streams are per-instance
+and unguarded, and making a whole term-write atomic means touching ~52
+sites in a 6,800-line file; a compute-bound task starves a worker
+without preemption; FFI and file I/O deadlock the pool without a growth
+valve.
+
+
 
 Ownership was the question, and it came down to one thing: *is
 cross-thread queue mutation ever needed?* If yes, a lock is required
