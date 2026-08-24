@@ -42,9 +42,31 @@ actor_spawn(Goal, Pid, Opts) :-
 	->	TOpts = [alias(A), detached(true), at_exit('$actor_died')]
 	;	TOpts = [detached(true), at_exit('$actor_died')]
 	),
-	thread_create('$actor_body'(Goal), Pid, TOpts),
+	( memberchk(retries(N), Opts) -> true ; N = 10 ),
+	'$actor_try_spawn'(N, Goal, Pid, TOpts),
 	( memberchk(link(true), Opts) -> actor_link(Pid) ; true ),
 	actor_send(Pid, '$actor_go').
+
+% Thread exhaustion is usually transient - something exits and frees a
+% slot - so a few tries with a short wait ride it out. Bounded on
+% purpose: retrying forever turns a clear failure into a hang, because
+% the actors that would free a slot may themselves be blocked waiting
+% for a spawn to succeed.
+%
+% Keep the count low. Retrying harder measurably increases the rate of
+% an intermittent crash in the thread-creation failure path, so more
+% attempts is worse until that is fixed.
+
+'$actor_try_spawn'(N, Goal, Pid, TOpts) :-
+	catch(thread_create('$actor_body'(Goal), Pid, TOpts), E, true),
+	(	var(E)
+	->	true
+	;	N > 0
+	->	sleep(0.01),
+		N1 is N - 1,
+		'$actor_try_spawn'(N1, Goal, Pid, TOpts)
+	;	throw(E)
+	).
 
 :- meta_predicate(actor_spawn(0,-)).
 :- meta_predicate(actor_spawn(0,-,+)).
