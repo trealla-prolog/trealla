@@ -205,6 +205,7 @@ LIBOBJECTS +=  \
 	library/atts.o \
 	library/builtins.o \
 	library/charsio.o \
+	library/actors.o \
 	library/concurrent.o \
 	library/clpb.o \
 	library/clpz.o \
