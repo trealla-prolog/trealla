@@ -3,7 +3,7 @@
 %     tpl samples/skynet_tasks.pl -g "run(1000000,10),halt"
 %
 % Same benchmark as samples/skynet_threads.pl, ported to
-% library(task_actors) instead of library(thread_actors). Every actor
+% library(actors/tasks) instead of library(actors/threads). Every actor
 % is a task rather than a real OS thread, which is the whole point:
 % skynet_threads.pl calls pthread_create/3 once per actor, and at
 % size=1000000 that is ~1.11M real threads - the OS thread ceiling,
@@ -18,7 +18,7 @@
 % before the base case and the tree never terminates.
 %
 % task_actor_recv/1 spins on yield/0 rather than truly blocking (recv/1
-% never blocked - see library(task_actors)'s header), so every actor
+% never blocked - see library(actors/tasks)'s header), so every actor
 % waiting on its children is burning some CPU polling rather than
 % parked. Measure before assuming that costs more than the OS-thread
 % version's context-switch overhead did.
@@ -62,7 +62,7 @@
 % for a fair comparison.
 
 :- use_module(library(lists)).
-:- use_module(library(task_actors)).
+:- use_module(library(actors/tasks)).
 
 skynet(Parent, Num, 1, _) :-
 	!,

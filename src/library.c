@@ -59,10 +59,10 @@ extern unsigned char library_curl_pl[];
 extern unsigned int library_curl_pl_len;
 extern unsigned char library_gsl_pl[];
 extern unsigned int library_gsl_pl_len;
-extern unsigned char library_thread_actors_pl[];
-extern unsigned int library_thread_actors_pl_len;
-extern unsigned char library_task_actors_pl[];
-extern unsigned int library_task_actors_pl_len;
+extern unsigned char library_actors_threads_pl[];
+extern unsigned int library_actors_threads_pl_len;
+extern unsigned char library_actors_tasks_pl[];
+extern unsigned int library_actors_tasks_pl_len;
 extern unsigned char library_concurrent_pl[];
 extern unsigned int library_concurrent_pl_len;
 extern unsigned char library_gensym_pl[];
@@ -118,8 +118,8 @@ library g_libs[] = {
 	 {"atts", library_atts_pl, &library_atts_pl_len},
 	 {"builtins", library_builtins_pl, &library_builtins_pl_len},
 	 {"charsio", library_charsio_pl, &library_charsio_pl_len},
-	 {"thread_actors", library_thread_actors_pl, &library_thread_actors_pl_len},
-	 {"task_actors", library_task_actors_pl, &library_task_actors_pl_len},
+	 {"threads", library_actors_threads_pl, &library_actors_threads_pl_len},
+	 {"tasks", library_actors_tasks_pl, &library_actors_tasks_pl_len},
 	 {"concurrent", library_concurrent_pl, &library_concurrent_pl_len},
 	 {"clpb", library_clpb_pl, &library_clpb_pl_len},
 	 {"clpz", library_clpz_pl, &library_clpz_pl_len},

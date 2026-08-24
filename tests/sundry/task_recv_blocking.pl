@@ -1,5 +1,5 @@
 % recv/2 - the blocking counterpart to recv/1, added to close the gap
-% library(task_actors)'s task_actor_recv/1,2 used to paper over with a
+% library(actors/tasks)'s task_actor_recv/1,2 used to paper over with a
 % yield/0 busy-loop. Parks the task via do_yield() rather than
 % spinning - see the comment on it in src/bif_tasks.c for the mechanism
 % (the same do_wait_message() pattern thread_get_message/3's blocking

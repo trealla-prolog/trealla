@@ -49,7 +49,7 @@
 % but costs two assertz per spawn on a shared dynamic predicate, and
 % those serialise on the database lock: measured 5.7x slower.
 
-:- use_module(library(thread_actors)).
+:- use_module(library(actors/threads)).
 
 skynet(Parent, Num, 1, _) :-
 	!,

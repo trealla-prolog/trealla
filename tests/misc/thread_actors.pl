@@ -5,7 +5,7 @@
 % Pids are not printed - they are thread ids and depend on what else the
 % run has created.
 
-:- use_module(library(thread_actors)).
+:- use_module(library(actors/threads)).
 
 :- initialization(main).
 

@@ -1,9 +1,9 @@
-% library(task_actors): actors on tasks rather than threads. See its
-% header for why it exists alongside library(thread_actors) rather
+% library(actors/tasks): actors on tasks rather than threads. See its
+% header for why it exists alongside library(actors/threads) rather
 % than replacing it, and docs/DESIGN-GUSTTO.md phase 5.
 %
 % Two things this file cannot cover single-threaded, both noted in
-% library/task_actors.pl itself:
+% library/actors/tasks.pl itself:
 %
 %   - a task-based supervisor only makes progress while its owning
 %     thread drives the scheduler, unlike a thread-based one, which
@@ -17,7 +17,7 @@
 %     task_messaging.pl and task_cancel.pl.
 
 :- initialization(main).
-:- use_module(library(task_actors)).
+:- use_module(library(actors/tasks)).
 
 report(Name, Got, Expect) :-
 	(	Got == Expect
@@ -82,7 +82,7 @@ recv_timeout_option :-
 % it up to the budget and then stops itself - the one supervisor
 % scenario testable without a dedicated host thread, since the
 % supervisor's own task terminates on its own once the budget is
-% blown (see library/task_actors.pl's supervisor comment).
+% blown (see library/actors/tasks.pl's supervisor comment).
 
 :- dynamic(run_count/1).
 

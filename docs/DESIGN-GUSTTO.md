@@ -520,7 +520,7 @@ wants was already there once phases 1 and 3 had landed:
 - `thread_self/1` inside an at_exit goal returns the dying thread, so a
   death notice can say who died without knowing its own id in advance
 
-So `library(thread_actors)` is ~60 lines of Prolog: `actor_spawn/2,3`,
+So `library(actors/threads)` is ~60 lines of Prolog: `actor_spawn/2,3`,
 `actor_send/2`, `actor_recv/1,2`, `actor_link/1`, `actor_unlink/1`. A
 linked actor's death arrives as `exit(Pid, Reason)` where Reason is
 `true`, `false` or `exception(E)`.
@@ -549,7 +549,7 @@ before they are.
 
 ### Phase 5 — task-addressable send/recv — done
 
-`library(thread_actors)` scales actors to however many OS threads the
+`library(actors/threads)` scales actors to however many OS threads the
 platform tolerates, not further - the original motivation for tasks in
 the first place. Closing that gap needs tasks to be addressable and
 messageable the way threads already are, without becoming threads
@@ -592,14 +592,14 @@ themselves.
   cross-thread sends) to a single receiving task, 20/20 clean under the
   optimized build and 5/5 clean under ASan.
 
-**Both actor styles stay.** Threads-as-actors (`library(thread_actors)`,
+**Both actor styles stay.** Threads-as-actors (`library(actors/threads)`,
 renamed from `library(actors)` for the symmetry) and task-actors
-(`library(task_actors)`, below) are complementary, not a replacement of
+(`library(actors/tasks)`, below) are complementary, not a replacement of
 one by the other: threads give real parallelism and OS-level isolation
 at a ceiling of a few thousand; tasks give cooperative concurrency that
 scales to skynet-sized actor counts on a handful of threads.
 
-**`task_create/2`** closes the one gap that stopped `library(task_actors)`
+**`task_create/2`** closes the one gap that stopped `library(actors/tasks)`
 being a near-verbatim port: `call_task/N` never told the spawner the new
 task's qid, only the task itself could learn it (by calling
 `task_self/1`), and only once it had actually run. `thread_create/2`
@@ -610,11 +610,11 @@ handed back before the task has executed a single instruction, and
 registered eagerly (unlike `task_self/1`'s lazy registration) so `Qid`
 is usable with `send/2` immediately.
 
-That also sidesteps the atomicity problem `library(thread_actors)`
+That also sidesteps the atomicity problem `library(actors/threads)`
 solves with a `'$actor_go'` handshake: tasks on one OS thread run
 cooperatively, so a freshly `task_create/2`'d child provably has not run
 a single instruction by the time `task_create/2` returns - nothing has
-yielded yet. `library(task_actors)` installs a link straight after
+yielded yet. `library(actors/tasks)` installs a link straight after
 spawning, no handshake message required.
 
 **`recv/2`** closed the blocking-receive gap. `recv/1` still does not
@@ -639,12 +639,12 @@ appeared to succeed instantly against a mailbox that was never checked
 at all. Fixed the same way `do_match_message_()` handles it: a dual
 path, `do_yield()` when `q->is_task`, a plain C-level sleep-and-rescan
 loop (blocking the real OS thread directly, same as
-`suspend_thread()`'s role there) otherwise. `library(task_actors)`'s
+`suspend_thread()`'s role there) otherwise. `library(actors/tasks)`'s
 `task_actor_recv/1,2` are now thin wrappers over `recv/2` - the
 `yield/0`-spin they used before is gone, verified at 8 real OS threads
 × 500 actors each using the blocking path, 10/10 clean.
 
-**`task_cancel/1`** closed the last gap - `library(task_actors)` now
+**`task_cancel/1`** closed the last gap - `library(actors/tasks)` now
 has a supervisor too. The interesting part was doing it safely across
 threads. `query`'s per-instruction flags (`error`, `yielded`,
 `no_recov`, ...) are `bool:1` bitfields packed into a handful of
@@ -665,13 +665,13 @@ it lands at the next scheduling checkpoint, not mid-instruction, same
 as `thread_cancel/1`'s own delivery is asynchronous in practice despite
 being backed by real preemption.
 
-The supervisor port surfaced one thing not obvious from `library(thread_actors)`'s
+The supervisor port surfaced one thing not obvious from `library(actors/threads)`'s
 version: a thread-based supervisor runs in the background just by
 existing, being a real preemptively-scheduled thread; a task-based one
 only makes progress while its owning thread drives the scheduler, so
 calling `task_supervisor_start/2,3` from a thread that then goes on to
 do other things leaves it starved. Documented in
-`library/task_actors.pl` with the fix - host it on a thread of its
+`library/actors/tasks.pl` with the fix - host it on a thread of its
 own (`thread_create` wrapping `task_supervisor_start` + `wait`) - since
 this generalises to any long-running task tree, not just supervisors.
 

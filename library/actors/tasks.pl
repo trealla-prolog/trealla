@@ -1,4 +1,4 @@
-:- module(task_actors, [
+:- module(tasks, [
 	task_actor_spawn/2,
 	task_actor_spawn/3,
 	task_actor_self/1,
@@ -12,7 +12,7 @@
 	task_supervisor_stop/1
 	]).
 
-% Actors on tasks rather than threads - same shape as library(thread_actors),
+% Actors on tasks rather than threads - same shape as library(actors/threads),
 % different backend, so skynet-sized actor counts stay off the OS
 % thread ceiling. Pid is a qid (task_self/1, task_create/2), not a
 % thread id: the two libraries' Pids are not interchangeable, and
@@ -83,7 +83,7 @@ task_actor_unlink(Pid) :-
 :- help(task_actor_link(+integer), [iso(false)]).
 :- help(task_actor_unlink(+integer), [iso(false)]).
 
-% A minimal supervisor, straight port of library(thread_actors)'s:
+% A minimal supervisor, straight port of library(actors/threads)'s:
 % one_for_one, link to each child, restart the one that dies, with a
 % restart budget - max_restarts(N) within period(Seconds), default 5
 % in 5 - so a child that dies immediately on start spins forever
