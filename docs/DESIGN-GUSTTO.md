@@ -508,12 +508,38 @@ condition.
   from `cpu_count` — the right width depends on how I/O-bound the load
   is. `cpu_count` and `os_threads` are informational.
 
-### Phase 4 — actors
+### Phase 4 — actors — done, as a library
 
-Mostly falls out of phase 1. What is left is addressing by name, links
-and supervision. Each task is already a query with its own heap, so
-actors are isolated by construction, and `send/1` already copies terms
-rather than sharing them (`clone_term_to_tmp` + `share_cell`).
+It turned out to need no engine work at all. Everything an actor layer
+wants was already there once phases 1 and 3 had landed:
+
+- a thread *is* a mailbox, with order-preserving selective receive
+- `thread_create/3`'s `alias(A)` gives addressing by name
+- `at_exit(Goal)` fires on all three ways a goal can end - success,
+  failure and exception - and can send messages
+- `thread_self/1` inside an at_exit goal returns the dying thread, so a
+  death notice can say who died without knowing its own id in advance
+
+So `library(actors)` is ~60 lines of Prolog: `actor_spawn/2,3`,
+`actor_send/2`, `actor_recv/1,2`, `actor_link/1`, `actor_unlink/1`. A
+linked actor's death arrives as `exit(Pid, Reason)` where Reason is
+`true`, `false` or `exception(E)`.
+
+Two details worth keeping:
+
+- **spawn and link have to be atomic.** A short-lived actor can die
+  before the caller installs the link, and the notice is then lost. The
+  body waits for a `'$actor_go'` message before running, so the link is
+  in place before the actor can do anything - selective receive makes
+  that safe regardless of what else is queued.
+- **the link registry is a shared dynamic predicate**, written from
+  several threads at once. That only works because of the database
+  concurrency fix; before it, this library would have been a reliable
+  way to crash the system.
+
+Supervision is deliberately not included. It is a restart loop over
+`exit/2` and belongs to whoever wants a particular policy, not in the
+library.
 
 
 ## Before any of it: tests
