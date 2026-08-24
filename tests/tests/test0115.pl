@@ -11,6 +11,10 @@
 % crashed 100% of the time before the fix (heap-use-after-free at
 % query.c:1333 in resume_frame, under -fsanitize=address).
 
+% Needs a threaded build - a no-threads build (e.g. WASM) has nothing
+% for this shape to reproduce with, so it's skipped there rather than
+% failing on a missing thread_create/1 et al.
+
 :- initialization(main).
 
 worker(Target, N) :-
@@ -25,6 +29,10 @@ collector(N, Me) :-
 	).
 
 main :-
+	( current_prolog_flag(threads, true) -> run ; true ),
+	writeln(ok).
+
+run :-
 	thread_self(Me),
 	NThreads = 2,
 	PerThread = 200,
@@ -34,5 +42,4 @@ main :-
 	), Ids),
 	Total is NThreads * PerThread,
 	collector(Total, Me),
-	forall(member(Id, Ids), thread_join(Id, _)),
-	writeln(ok).
+	forall(member(Id, Ids), thread_join(Id, _)).
