@@ -24,12 +24,12 @@
 % installs a link; a short-lived task cannot outrun code that has not
 % yielded yet.
 %
-% recv/1 does not block (it never did, even before GUSTTO), so
-% task_actor_recv/1,2 spin on yield/0 until something arrives or a
-% timeout elapses. That is real CPU spent polling, not truly parked -
-% fine for an actor that's mostly busy, questionable for one that's
-% mostly waiting. A blocking recv is future work, not a promise this
-% file makes.
+% recv/1 does not block (it never did, even before GUSTTO) and still
+% does not - task_actor_recv/1,2 use recv/2 instead, which parks the
+% task (do_yield(), the same mechanism thread_get_message/3's blocking
+% form uses) rather than spinning. No CPU spent polling: a task
+% waiting on a message costs nothing until send/2 wakes it, or its
+% timeout elapses.
 
 :- use_module(library(lists)).
 
@@ -40,26 +40,9 @@ task_actor_self(Pid) :- task_self(Pid).
 
 task_actor_send(Pid, Msg) :- send(Pid, Msg).
 
-task_actor_recv(Msg) :-
-	repeat,
-	( recv(Msg) -> ! ; yield, fail ).
+task_actor_recv(Msg) :- recv(Msg, []).
 
-task_actor_recv(Msg, Opts) :-
-	( memberchk(timeout(T), Opts) ->
-		get_time(Start),
-		'$task_actor_recv_until'(Msg, Start, T)
-	;	task_actor_recv(Msg)
-	).
-
-'$task_actor_recv_until'(Msg, Start, T) :-
-	( recv(Msg) -> true
-	;	get_time(Now),
-		Elapsed is Now - Start,
-		( Elapsed >= T -> fail
-		;	yield,
-			'$task_actor_recv_until'(Msg, Start, T)
-		)
-	).
+task_actor_recv(Msg, Opts) :- recv(Msg, Opts).
 
 task_actor_spawn(Goal, Pid) :- task_actor_spawn(Goal, Pid, []).
 

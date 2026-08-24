@@ -617,32 +617,68 @@ a single instruction by the time `task_create/2` returns - nothing has
 yielded yet. `library(task_actors)` installs a link straight after
 spawning, no handshake message required.
 
-What it does not have: a blocking receive (`recv/1` never blocked, task
-or no task - `task_actor_recv/1,2` spin on `yield/0` until something
-arrives or a timeout elapses, which is real CPU spent polling) and no
-`task_cancel/1` (no `thread_cancel/1` equivalent exists for a
-cooperative task, so `library(task_actors)` ships without a supervisor -
-one_for_one restart needs to be able to kill a misbehaving child, and
-there is currently no way to). Both are open, not attempted.
+**`recv/2`** closed the blocking-receive gap. `recv/1` still does not
+block - never has, does not now - but `recv(Msg, [timeout(Seconds)])`
+does, with no timeout meaning block indefinitely. It parks rather than
+polls: `do_yield()` (`bif_tasks.c`), the same mechanism
+`thread_get_message/3`'s blocking form already used for a task, via
+`do_wait_message()`. That existing function turned out to be the right
+template down to a subtlety easy to miss - the deadline has to live on
+the query (`q->msg_deadline`), not a local, because a parked task is
+retried from the top of the builtin on its next entry, and a deadline
+recomputed there resets the clock every time; `q->retry` - already
+true on that re-entry - is what a fresh call cannot fake.
 
-**Found, not fixed - pre-existing, unrelated to this phase:** stress
+The one place the template did not transfer directly: `do_yield()` is
+a correct no-op (`true`, immediately) for any query where
+`q->is_task` is false - which includes a plain top-level directive and
+a thread's own root query, both valid `recv/2` callers, not just
+tasks. Missing that produced a real bug on the first pass: a non-task
+caller's `do_yield()` silently no-opped, so `recv(nope, [timeout(0.2)])`
+appeared to succeed instantly against a mailbox that was never checked
+at all. Fixed the same way `do_match_message_()` handles it: a dual
+path, `do_yield()` when `q->is_task`, a plain C-level sleep-and-rescan
+loop (blocking the real OS thread directly, same as
+`suspend_thread()`'s role there) otherwise. `library(task_actors)`'s
+`task_actor_recv/1,2` are now thin wrappers over `recv/2` - the
+`yield/0`-spin they used before is gone, verified at 8 real OS threads
+× 500 actors each using the blocking path, 10/10 clean.
+
+**`task_cancel/1`** is the one gap left open: no `thread_cancel/1`
+equivalent exists for a cooperative task, so `library(task_actors)`
+still ships without a supervisor - one_for_one restart needs to be
+able to kill a misbehaving child, and there is currently no way to.
+Not attempted.
+
+**Found and fixed - pre-existing, unrelated to this phase:** stress
 testing send/2+recv/1 turned up a heap-use-after-free
-(`resume_frame`/`retry_choice`/`trim_heap`, `query.c`) that reproduces
+(`resume_frame`/`retry_choice`/`trim_heap`, `query.c`) that reproduced
 under real thread concurrency whenever a selective-receive builtin
 (`push_choice`/`import_term`/`unify`/`retry_choice`-or-`drop_choice`)
-is used as the condition of `( Cond -> Then ; Else )`. Confirmed
-independent of this work: it reproduces identically with the
-pre-existing `thread_get_message/3` in the same shape, with none of
-the new send/recv code involved. Two real threads sending, one
-receiving via `( thread_get_message(Me, Msg, [timeout(T)]) -> ... ; ... )`
-is enough - 100% reproducible in a handful of runs. Rewriting the
-receive loop to avoid `->` (two clauses + cut instead) avoids it
-entirely, which is what the stress tests above use. Root cause not
-found - likely `do_if_then_else`'s barrier/heap-protection accounting
-(`bif_control.c`) not correctly protecting the `prepare_call`-allocated
-continuation across a choice point pushed and dropped from inside its
-own condition, but that's a guess, not a diagnosis. Worth its own
-investigation; out of scope here.
+was used as the condition of `( Cond -> Then ; Else )`. Confirmed
+independent of this work at the time: it reproduced identically with
+the pre-existing `thread_get_message/3` in the same shape, with none
+of the new send/recv code involved - two real threads sending, one
+receiving via `( thread_get_message(Me, Msg, [timeout(T)]) -> ... ; ... )`,
+100% reproducible in a handful of runs. Confirmed to need genuine OS
+thread parallelism, not just interleaving: the identical shape run as
+cooperative `call_task/1` tasks on one OS thread, across a spread of
+concurrency levels and volumes well beyond what triggered the
+threaded version, never reproduced it.
+
+Root cause: `do_if_then_else()`/`do_soft_if_then_else()`
+(`bif_control.c`) built their barrier-protected continuation without
+marking the calling frame `no_recov`, unlike every other caller that
+sets up a barrier this way (`push_succeed_on_retry_with_barrier`, for
+one). Without it, `resume_frame()`'s tail-call heap-reclaim fast path
+(`query.c`, gated on `q->pl->opt`) could decide - under just the right
+concurrent timing - that the frame's heap could be reclaimed while the
+continuation still needed it. Fixed on `main` (commit "An if-then-else
+use-after-free fix") by setting `f->no_recov = true` before building
+the continuation, in both functions, and ported here by
+cherry-pick. Regression test: `tests/tests/test0115.pl`, the same
+shape that crashed 100% of the time pre-fix, now passing reliably (20
++/20 runs at increased scale under both the optimized build and ASan).
 
 
 ## Before any of it: tests

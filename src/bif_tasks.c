@@ -1229,11 +1229,140 @@ static bool bif_recv_1(query *q)
 	return false;
 }
 
+// Backstop nap for recv/2's park, mirroring MSG_TASK_POLL_MS
+// (bif_threads.c): send/2 already promotes this task on every send
+// (sched_promote() is a correct no-op if we are not actually parked
+// yet, per its own comment), so this is not the wakeup path in the
+// ordinary case - it only bounds how long a missed promote (this task
+// not yet parked at the moment a concurrent send() calls it) costs.
+
+#define TASK_RECV_POLL_MS 5
+
+// Blocking counterpart to recv/1, with the same in-place selective
+// scan. Opts takes timeout(Seconds) (int or float); with no timeout,
+// blocks indefinitely. See do_match_message_()'s do_wait_message() in
+// bif_threads.c for the dual-path pattern this mirrors, and why it has
+// to be dual: do_yield() only parks a *task* (it is a correct no-op -
+// an immediate `true` - for anything else, per its own q->is_task
+// guard), but recv/2 can just as well be called from a plain top-level
+// directive or a thread's own root query, which are not tasks. Get
+// this wrong and a non-task caller's do_yield() silently no-ops,
+// making the surrounding recv/2 vacuously "succeed" without binding or
+// checking anything at all - caught by a test where a message that was
+// never sent appeared to have been received instantly.
+//
+// So: q->is_task parks via do_yield() and returns to the scheduler,
+// same as recv/1's plain wait would if it had one; otherwise this
+// blocks the real OS thread directly, sleeping and rescanning in a
+// plain C loop, the same as do_wait_message()'s non-task branch calls
+// suspend_thread() instead of parking. The deadline still has to live
+// on the query (q->msg_deadline), not a local, because a parked task
+// is retried from the top of this function on its next entry, and a
+// deadline recomputed there would reset the clock every time; q->retry
+// - already true on that re-entry - is what stops that.
+
+static bool bif_recv_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,list_or_nil);
+	PROLOG_LIST_HANDLER(p2);
+	cell *p2_orig = p2;
+	pl_ctx p2_orig_ctx = p2_ctx;
+	double timeout = -1.0;
+
+	while (is_iso_list(p2)) {
+		cell *h = PROLOG_LIST_HEAD(p2);
+		h = deref(q, h, p2_ctx);
+		pl_ctx h_ctx = q->latest_ctx;
+
+		if (!is_interned(h) || !is_compound(h))
+			return throw_error(q, h, h_ctx, "domain_error", "read_option");
+
+		if (!CMP_STRING_TO_CSTR(q, h, "timeout")) {
+			cell *c1 = deref(q, FIRST_ARG(h), h_ctx);
+
+			if (!is_number(c1))
+				return throw_error(q, c1, h_ctx, "type_error", "read_option");
+
+			timeout = is_float(c1) ? get_float(c1) : get_smallint(c1);
+		} else
+			return throw_error(q, h, h_ctx, "domain_error", "read_option");
+
+		p2 = PROLOG_LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_orig_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	if (is_var(p2))
+		return throw_error(q, p2_orig, p2_orig_ctx, "instantiation_error", "get_option");
+
+	if (!is_nil(p2))
+		return throw_error(q, p2_orig, p2_orig_ctx, "type_error", "list");
+
+	if (!q->retry) {
+		pl_int tmo_ms = timeout >= 0 ? (pl_int)(timeout * 1000) : -1;
+		q->msg_deadline = (tmo_ms >= 0) ? (wall_time_in_usec() / 1000) + tmo_ms : 0;
+	}
+
+	const uint64_t deadline = q->msg_deadline;
+
+	while (!q->halt && !q->abort) {
+		scheduler *s = sched_get(q);
+		if (s) sched_lock(s);
+
+		task_msg *m = list_front(&q->mailbox);
+		const frame *f = GET_CURR_FRAME();
+
+		while (m) {
+			CHECKED(push_choice(q), if (s) sched_unlock(s));
+			cell *tmp = import_term(q, m->c, q->st.cur_ctx);
+			CHECKED(tmp, if (s) sched_unlock(s));
+
+			if (unify(q, p1, p1_ctx, tmp, q->st.cur_ctx)) {
+				q->cur_task_qid = m->from_qid;
+				list_remove(&q->mailbox, m);
+				if (s) sched_unlock(s);
+				unshare_cells(m->c, m->c->num_cells);
+				TPL_free(m);
+				drop_choice(q);
+				return true;
+			}
+
+			retry_choice(q);
+			m = list_next(m);
+		}
+
+		if (s) sched_unlock(s);
+
+		uint64_t now = wall_time_in_usec() / 1000;
+
+		if (deadline && (now >= deadline))
+			return false;
+
+		uint64_t left = deadline ? deadline - now : 0;
+		uint64_t nap = TASK_RECV_POLL_MS;
+
+		if (deadline && (nap > left))
+			nap = left;
+
+		if (nap < 1)
+			nap = 1;
+
+		if (q->is_task)
+			return do_yield(q, (int)nap);
+
+		msleep((int)nap);
+	}
+
+	return false;
+}
+
 builtins g_tasks_bifs[] =
 {
 	{"task_self", 1, bif_task_self_1, "-integer", false, false, BLAH},
 	{"send", 2, bif_send_2, "+integer,+term", false, false, BLAH},
 	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
+	{"recv", 2, bif_recv_2, "?term,+list", false, false, BLAH},
 	{"task_create", 2, bif_task_create_2, ":callable,-integer", false, false, BLAH},
 
 	{"call_task", 1, bif_call_task_n, ":callable", false, false, BLAH},
