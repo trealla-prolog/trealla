@@ -1,11 +1,11 @@
-% library(actors): links and death notices on top of threads.
+% library(thread_actors): links and death notices on top of threads.
 %
 % Needs real threads, so tests/misc rather than tests/sundry.
 %
 % Pids are not printed - they are thread ids and depend on what else the
 % run has created.
 
-:- use_module(library(actors)).
+:- use_module(library(thread_actors)).
 
 :- initialization(main).
 

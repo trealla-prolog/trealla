@@ -205,7 +205,8 @@ LIBOBJECTS +=  \
 	library/atts.o \
 	library/builtins.o \
 	library/charsio.o \
-	library/actors.o \
+	library/thread_actors.o \
+	library/task_actors.o \
 	library/concurrent.o \
 	library/clpb.o \
 	library/clpz.o \

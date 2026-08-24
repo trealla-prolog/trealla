@@ -1,6 +1,6 @@
 % Skynet - https://github.com/atemerev/skynet
 %
-%     tpl samples/skynet.pl -g "run(1000000,10),halt"
+%     tpl samples/skynet_threads.pl -g "run(1000000,10),halt"
 %
 % Each actor spawns Div children covering a slice of the range, sums what
 % they report, and reports the total to its parent; a leaf reports its own
@@ -49,7 +49,7 @@
 % but costs two assertz per spawn on a shared dynamic predicate, and
 % those serialise on the database lock: measured 5.7x slower.
 
-:- use_module(library(actors)).
+:- use_module(library(thread_actors)).
 
 skynet(Parent, Num, 1, _) :-
 	!,

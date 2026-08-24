@@ -959,6 +959,92 @@ static bool bif_call_task_n(query *q)
 	return true;
 }
 
+// call_task/N with the new task's address handed back immediately,
+// mirroring thread_create/2 - unlike task_self/1's lazy registration,
+// this registers eagerly, before the task has run a single instruction,
+// because the whole point is a caller holding Qid and being able to
+// send/2 to it right away. No variadic call_task(Goal,A1,...,Qid) form:
+// Qid is always the second and only other argument, and a caller
+// wanting extra goal arguments just builds the compound itself, e.g.
+// task_create(worker(A,B,C), Qid).
+
+static bool bif_task_create_2(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,var);
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+		cell *cm = p1 + 1;
+		cm = deref(q, cm, p1_ctx);
+
+		if (!is_atom(cm) && !is_var(cm))
+			return throw_error(q, cm, p1_ctx, "type_error", "callable");
+
+		if (!is_var(cm)) {
+			module *m = find_module(q->pl, C_STR(q, cm));
+			if (m) q->st.m = m;
+		}
+
+		p1 += 2;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+
+		if (!is_callable(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "callable");
+	}
+
+	CHECKED(init_tmp_heap(q));
+	CHECKED(append_to_tmp(q, p1, p1_ctx));
+
+	cell *tmp2 = get_tmp_heap(q, 0);
+	tmp2->num_cells = tmp_heap_used(q);
+	tmp2->arity = p1->arity;
+
+	if (is_cstring(tmp2)) {
+		share_cell(tmp2);
+		convert_to_literal(q->st.m, tmp2);
+	}
+
+	tmp2->match = NULL;
+	bool status;
+
+	if (!call_check(q, tmp2, &status, true))
+		return status;
+
+	// See bif_call_task_n just above for why this stages through a
+	// malloc'd copy rather than cloning tmp2 directly.
+
+	pl_idx num_cells = tmp2->num_cells;
+	cell *staged = TPL_malloc(num_cells * sizeof(cell));
+	CHECKED(staged);
+	copy_cells(staged, tmp2, num_cells);
+
+	if (!init_tmp_heap(q)) {
+		TPL_free(staged);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+	}
+
+	cell *goal = clone_term_to_tmp(q, staged, q->st.cur_ctx);
+	TPL_free(staged);
+	CHECKED(goal);
+
+	cell *tmp = prepare_call(q, CALL_SKIP, goal, q->st.cur_ctx, 0);
+	CHECKED(tmp);
+	unsigned num_vars = rebase_term(q, tmp, 0, false);
+	query *task = query_create_task_rebased(q, tmp, num_vars);
+	CHECKED(task);
+	task->yielded = task->spawned = true;
+	CHECKED(push_task(q, task));
+
+	if (!register_task(task))
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+
+	task->is_registered = true;
+	cell tmp_qid;
+	make_int(&tmp_qid, (pl_int)task->qid);
+	return unify(q, p2, p2_ctx, &tmp_qid, q->st.cur_ctx);
+}
+
 static bool bif_fork_0(query *q)
 {
 	cell *instr = q->st.instr + q->st.instr->num_cells;
@@ -1148,6 +1234,7 @@ builtins g_tasks_bifs[] =
 	{"task_self", 1, bif_task_self_1, "-integer", false, false, BLAH},
 	{"send", 2, bif_send_2, "+integer,+term", false, false, BLAH},
 	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
+	{"task_create", 2, bif_task_create_2, ":callable,-integer", false, false, BLAH},
 
 	{"call_task", 1, bif_call_task_n, ":callable", false, false, BLAH},
 	{"call_task", 2, bif_call_task_n, ":callable,?term", false, false, BLAH},

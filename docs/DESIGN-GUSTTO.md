@@ -520,7 +520,7 @@ wants was already there once phases 1 and 3 had landed:
 - `thread_self/1` inside an at_exit goal returns the dying thread, so a
   death notice can say who died without knowing its own id in advance
 
-So `library(actors)` is ~60 lines of Prolog: `actor_spawn/2,3`,
+So `library(thread_actors)` is ~60 lines of Prolog: `actor_spawn/2,3`,
 `actor_send/2`, `actor_recv/1,2`, `actor_link/1`, `actor_unlink/1`. A
 linked actor's death arrives as `exit(Pid, Reason)` where Reason is
 `true`, `false` or `exception(E)`.
@@ -549,7 +549,7 @@ before they are.
 
 ### Phase 5 — task-addressable send/recv — done
 
-`library(actors)` scales actors to however many OS threads the
+`library(thread_actors)` scales actors to however many OS threads the
 platform tolerates, not further - the original motivation for tasks in
 the first place. Closing that gap needs tasks to be addressable and
 messageable the way threads already are, without becoming threads
@@ -592,13 +592,38 @@ themselves.
   cross-thread sends) to a single receiving task, 20/20 clean under the
   optimized build and 5/5 clean under ASan.
 
-**Both actor styles stay.** Threads-as-actors (`library(actors)`) and
-this task-addressing layer are complementary, not a replacement of one
-by the other: threads give real parallelism and OS-level isolation at a
-ceiling of a few thousand; tasks give cooperative concurrency that
-scales to skynet-sized actor counts on a handful of threads. An actor
-library built on `call_task`/`task_self`/`send`/`recv` instead of
-`thread_create` is the natural next step, not yet attempted.
+**Both actor styles stay.** Threads-as-actors (`library(thread_actors)`,
+renamed from `library(actors)` for the symmetry) and task-actors
+(`library(task_actors)`, below) are complementary, not a replacement of
+one by the other: threads give real parallelism and OS-level isolation
+at a ceiling of a few thousand; tasks give cooperative concurrency that
+scales to skynet-sized actor counts on a handful of threads.
+
+**`task_create/2`** closes the one gap that stopped `library(task_actors)`
+being a near-verbatim port: `call_task/N` never told the spawner the new
+task's qid, only the task itself could learn it (by calling
+`task_self/1`), and only once it had actually run. `thread_create/2`
+does not have that problem - a thread id is handed out by the creator,
+not self-reported - so `task_create(Goal, Qid)` does the same: the qid
+is `query_create_task_rebased()`'s already-assigned `->qid`, read and
+handed back before the task has executed a single instruction, and
+registered eagerly (unlike `task_self/1`'s lazy registration) so `Qid`
+is usable with `send/2` immediately.
+
+That also sidesteps the atomicity problem `library(thread_actors)`
+solves with a `'$actor_go'` handshake: tasks on one OS thread run
+cooperatively, so a freshly `task_create/2`'d child provably has not run
+a single instruction by the time `task_create/2` returns - nothing has
+yielded yet. `library(task_actors)` installs a link straight after
+spawning, no handshake message required.
+
+What it does not have: a blocking receive (`recv/1` never blocked, task
+or no task - `task_actor_recv/1,2` spin on `yield/0` until something
+arrives or a timeout elapses, which is real CPU spent polling) and no
+`task_cancel/1` (no `thread_cancel/1` equivalent exists for a
+cooperative task, so `library(task_actors)` ships without a supervisor -
+one_for_one restart needs to be able to kill a misbehaving child, and
+there is currently no way to). Both are open, not attempted.
 
 **Found, not fixed - pre-existing, unrelated to this phase:** stress
 testing send/2+recv/1 turned up a heap-use-after-free
