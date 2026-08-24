@@ -37,6 +37,10 @@ void sched_destroy(thread *t);
 void sched_wake(thread *t);
 void sched_promote(query *task);
 void sched_release(query *q);
+bool register_task(query *q);
+void unregister_task(query *q);
+query *find_task_by_qid(prolog *pl, uint64_t qid);
+void drain_mailbox(query *q);
 
 bool check_slot(query *q, unsigned cnt);
 bool check_trail(query *q);

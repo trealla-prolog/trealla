@@ -890,6 +890,18 @@ struct query_ {
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned name_idx;		// next free generated-name number, see get_slot_name()
 	unsigned varno, tab0_varno, cur_engine, cur_chan, my_chan;
+
+	// A task's own mailbox: list of task_msg nodes (bif_tasks.c),
+	// scanned in place by recv/1 so a skipped message keeps its
+	// position rather than rotating to the back. Guarded by the
+	// owning thread's scheduler->guard, since send/2 can enqueue into
+	// this from any thread. cur_task_qid is the sender of the last
+	// message recv/1 matched - stored for a reply-to, not yet exposed
+	// to Prolog. Separate from cur_chan (a thread chan, unsigned):
+	// qid is process-wide and uint64_t, would truncate if shared.
+
+	list mailbox;
+	uint64_t cur_task_qid;
 	unsigned s_cnt, retries, rand_seed;
 	int autofail_n;
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
@@ -935,6 +947,7 @@ struct query_ {
 	bool yielded:1;
 	bool is_task:1;
 	bool is_thread:1;
+	bool is_registered:1;			// lazily added to pl->tasks - see bif_task_self_1
 	bool json:1;
 	bool nl:1;
 	bool fullstop:1;
@@ -1078,6 +1091,20 @@ struct prolog_ {
 	skiplist *threads;
 	thread *live_head, *live_tail, *free_head, *free_tail, *main_thread;
 	unsigned next_thread_id;
+
+	// qid -> query* for addressing any query by id (send/2, recv/1).
+	// Lazily created, unlike pl->threads: most programs never touch
+	// send/recv, and this only needs to exist for those that do.
+	// Entries are added lazily too, by task_self/1 (bif_tasks.c) rather
+	// than at query construction - the only way anything ever learns a
+	// qid is that query calling task_self/1 and telling someone, so a
+	// query that never does is unreachable and not worth a skiplist
+	// entry. No need to distinguish a task, a thread's root query, or a
+	// plain directive's query by type here: the countless transient
+	// queries that never call task_self/1 (format's ~@, with_output_to,
+	// engines, goal expansion) simply never register themselves.
+
+	skiplist *tasks;
 	module *modmap[MAX_MODULES];
 	struct { pl_idx tab1[MAX_TABS], tab2[MAX_TABS]; };
 	list modules;

@@ -234,9 +234,22 @@ static void pop_task(query *q, query *task);
 // of a thread's query lands on that thread's queues rather than the
 // main thread's.
 
+// Originally only ever called by a thread lazily creating its own
+// scheduler (push_task(), below - single-writer, no race possible).
+// send/2 broke that invariant: it needs the *target's* scheduler from
+// whatever thread happens to be sending, which may be the first thing
+// to touch that target's scheduler at all. Gated on is_multithreaded
+// like register_task()'s registry lock, so the plain single-thread
+// case (the overwhelming majority of programs) never pays for a lock
+// it can't ever contend.
+
 static scheduler *sched_get(query *q)
 {
 	thread *t = get_self_query(q);
+	const bool mt = q->pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(q->pl);
 
 	if (!t->sched) {
 		t->sched = TPL_calloc(1, sizeof(scheduler));
@@ -256,7 +269,12 @@ static scheduler *sched_get(query *q)
 		}
 	}
 
-	return t->sched;
+	scheduler *s = t->sched;
+
+	if (mt)
+		prolog_unlock(q->pl);
+
+	return s;
 }
 
 // Cut short a sleep the owning thread is in. Safe from any thread, and
@@ -636,7 +654,7 @@ static void sched_wait(query *q, scheduler *s, uint64_t now, bool block)
 
 static void sched_run(query *q)
 {
-	scheduler *s = get_self_query(q)->sched;
+	scheduler *s = sched_get(q);
 
 	while (q->num_subtasks && !q->end_wait) {
 		CHECK_INTERRUPT();
@@ -744,7 +762,7 @@ static void pop_task(query *q, query *task)
 
 void sched_release(query *q)
 {
-	scheduler *s = get_self_query(q)->sched;
+	scheduler *s = sched_get(q);
 
 	if (!s)
 		return;
@@ -757,6 +775,79 @@ void sched_release(query *q)
 	sched_unlock(s);
 }
 
+// Registry for addressing an arbitrary task by qid, from any thread.
+// Same locking discipline as find_thread_by_id(): gated on
+// is_multithreaded, so a program that never creates a second thread
+// never pays for it, and the lock spans lookup-and-use rather than
+// being dropped before the caller trusts the result - the exact bug
+// class this session found and fixed on the thread side (a resolved
+// pointer going stale between lookup and use once another thread can
+// tear the target down concurrently).
+//
+// qid is a process-wide uint64_t counter, not a small per-instance
+// int like a thread's chan. On a platform where uintptr_t is 32 bits
+// the cast below truncates it - unlike chan, which never gets near
+// that range, qid genuinely can, given a long-running process or a
+// task-heavy benchmark (skynet alone creates 100,000+ in one run).
+// No 32-bit target currently exercises this codepath, but the risk is
+// real enough to be worth this note rather than silence.
+
+bool register_task(query *q)
+{
+	prolog *pl = q->pl;
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	if (!pl->tasks)
+		pl->tasks = sl_create(NULL, NULL, NULL);
+
+	bool ok = pl->tasks && sl_set(pl->tasks, (const void*)(uintptr_t)q->qid, q);
+
+	if (mt)
+		prolog_unlock(pl);
+
+	return ok;
+}
+
+void unregister_task(query *q)
+{
+	prolog *pl = q->pl;
+
+	if (!pl->tasks)
+		return;
+
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	sl_del(pl->tasks, (const void*)(uintptr_t)q->qid);
+
+	if (mt)
+		prolog_unlock(pl);
+}
+
+query *find_task_by_qid(prolog *pl, uint64_t qid)
+{
+	if (!pl->tasks)
+		return NULL;
+
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	const void *v = NULL;
+	bool found = sl_get(pl->tasks, (const void*)(uintptr_t)qid, &v);
+
+	if (mt)
+		prolog_unlock(pl);
+
+	return found ? (query*)v : NULL;
+}
+
 static bool bif_end_wait_0(query *q)
 {
 	if (q->parent)
@@ -767,7 +858,7 @@ static bool bif_end_wait_0(query *q)
 
 static bool bif_wait_0(query *q)
 {
-	if (get_self_query(q)->sched)
+	if (sched_get(q))
 		sched_run(q);
 
 	q->end_wait = false;
@@ -890,7 +981,7 @@ static bool bif_sys_cancel_future_1(query *q)
 			// lands on the next pass rather than whenever its
 			// descriptor or deadline happens to come up.
 
-			scheduler *s = get_self_query(q)->sched;
+			scheduler *s = sched_get(q);
 
 			if (s && (task->sched_where != SCHED_READY)) {
 				sched_lock(s);
@@ -917,8 +1008,147 @@ static bool bif_sys_set_future_1(query *q)
 	return true;
 }
 
+// A task's own mailbox. Minimal on purpose - no from_chan-shaped extra
+// baggage beyond what a reply-to address needs (from_qid), unlike
+// thread.c's msg, which this deliberately does not share: the two
+// mailboxes are locked differently (a task's under its owning thread's
+// scheduler->guard, not a thread's own guard) and qid does not fit
+// where from_chan does (uint64_t vs int).
+
+typedef struct task_msg_ {
+	lnode hdr;						// must be first
+	uint64_t from_qid;
+	cell c[];
+} task_msg;
+
+// A task destroyed with unread mail still owns those cells' references -
+// query_destroy() calls this before it starts unsharing the heap, same
+// as thread teardown draining its own queue.
+
+void drain_mailbox(query *q)
+{
+	task_msg *m;
+
+	while ((m = list_pop_front(&q->mailbox))) {
+		unshare_cells(m->c, m->c->num_cells);
+		TPL_free(m);
+	}
+}
+
+static bool bif_task_self_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+
+	// Registered lazily, here, rather than at query construction: the
+	// only way anyone else ever learns this qid is by this query telling
+	// them (there's no other way to enumerate qids), so a query that
+	// never calls task_self/1 is unreachable and not worth a registry
+	// slot. This covers a plain top-level directive's query exactly the
+	// same as a task's or a thread's - none of them are otherwise
+	// distinguishable from the countless transient queries (format's
+	// ~@, with_output_to, goal/term expansion) that come and go by the
+	// thousand and must never touch the registry.
+
+	if (!q->is_registered) {
+		CHECKED(register_task(q));
+		q->is_registered = true;
+	}
+
+	cell tmp;
+	make_int(&tmp, (pl_int)q->qid);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+}
+
+static bool bif_send_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,nonvar);
+	uint64_t qid = (uint64_t)get_smallint(p1);
+	query *target = find_task_by_qid(q->pl, qid);
+
+	if (!target)
+		return throw_error(q, p1, p1_ctx, "existence_error", "task");
+
+	CHECKED(init_tmp_heap(q));
+	cell *c = clone_term_to_tmp(q, p2, p2_ctx);
+	CHECKED(c);
+
+	for (pl_idx i = 0; i < c->num_cells; i++)
+		share_cell(c + i);
+
+	task_msg *m = TPL_malloc(sizeof(task_msg) + (sizeof(cell)*c->num_cells));
+
+	if (!m) {
+		for (pl_idx i = 0; i < c->num_cells; i++)
+			unshare_cell(c + i);
+
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+	}
+
+	m->from_qid = q->qid;
+	dup_cells(m->c, c, c->num_cells);
+
+	scheduler *s = sched_get(target);
+
+	if (s) sched_lock(s);
+	list_push_back(&target->mailbox, m);
+	if (s) sched_unlock(s);
+
+	// Safe unconditionally, not just when target happens to be parked:
+	// sched_where reads SCHED_READY both while genuinely on the ready
+	// queue and while actively running (sched_ready_pop() does not
+	// change it, only sched_park() does, after start() returns), and
+	// promoting either case is a correct no-op. No separate waiter
+	// list needed - unlike a thread's mailbox, which several tasks
+	// could be parked on at once, a task's own mailbox has at most one
+	// possible waiter: itself.
+
+	sched_promote(target);
+	return true;
+}
+
+static bool bif_recv_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+
+	// Under our own scheduler's lock: another thread's send/2 can be
+	// pushing into this mailbox concurrently right now.
+
+	scheduler *s = sched_get(q);
+	if (s) sched_lock(s);
+
+	task_msg *m = list_front(&q->mailbox);
+	const frame *f = GET_CURR_FRAME();
+
+	while (m) {
+		CHECKED(push_choice(q), if (s) sched_unlock(s));
+		cell *tmp = import_term(q, m->c, q->st.cur_ctx);
+		CHECKED(tmp, if (s) sched_unlock(s));
+
+		if (unify(q, p1, p1_ctx, tmp, q->st.cur_ctx)) {
+			q->cur_task_qid = m->from_qid;
+			list_remove(&q->mailbox, m);
+			if (s) sched_unlock(s);
+			unshare_cells(m->c, m->c->num_cells);
+			TPL_free(m);
+			drop_choice(q);
+			return true;
+		}
+
+		retry_choice(q);
+		m = list_next(m);
+	}
+
+	if (s) sched_unlock(s);
+	return false;
+}
+
 builtins g_tasks_bifs[] =
 {
+	{"task_self", 1, bif_task_self_1, "-integer", false, false, BLAH},
+	{"send", 2, bif_send_2, "+integer,+term", false, false, BLAH},
+	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
+
 	{"call_task", 1, bif_call_task_n, ":callable", false, false, BLAH},
 	{"call_task", 2, bif_call_task_n, ":callable,?term", false, false, BLAH},
 	{"call_task", 3, bif_call_task_n, ":callable,?term,?term", false, false, BLAH},

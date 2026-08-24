@@ -2362,6 +2362,16 @@ void query_destroy(query *q)
 
 	q->done = true;
 
+	// Off the registry before anything else, so a lookup from another
+	// thread can never resolve to a query that is mid-teardown. Safe to
+	// call unconditionally: unregister_task()/drain_mailbox() are no-ops
+	// for a qid that was never registered (transient sub-queries, most
+	// queries in a single-threaded program), and cheap ones - not worth
+	// gating behind is_task when the callee already gates on pl->tasks.
+
+	unregister_task(q);
+	drain_mailbox(q);
+
 	for (page *a = q->heap_pages; a;) {
 		cell *c = a->cells;
 
@@ -2465,14 +2475,14 @@ static query *query_create_(module *m, bool is_toplevel)
 	q->p = parser_create(m);
 	q->p->q = q;
 
-	if (!g_query_id) {
-		m->pl->main_thread->q = q;
-		
-	}
-
+	const bool is_main_root = !g_query_id;
 	q->qid = g_query_id++;
 	q->pl = m->pl;
 	q->pl->q_cnt++;
+
+	if (is_main_root)
+		m->pl->main_thread->q = q;
+
 	q->st.m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;

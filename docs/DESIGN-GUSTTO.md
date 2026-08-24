@@ -547,6 +547,78 @@ supervisor and its remaining children.
 The other OTP policies are not included, and want a real use case
 before they are.
 
+### Phase 5 — task-addressable send/recv — done
+
+`library(actors)` scales actors to however many OS threads the
+platform tolerates, not further - the original motivation for tasks in
+the first place. Closing that gap needs tasks to be addressable and
+messageable the way threads already are, without becoming threads
+themselves.
+
+- **`q->qid`** (already existed, process-wide, assigned to every query)
+  is the address. `task_self/1` returns it.
+- **`pl->tasks`** is a lazily-created `qid -> query*` skiplist,
+  populated lazily too: an entry is added the first time a query calls
+  `task_self/1`, not at construction. The only way anything ever learns
+  a qid is that query handing it out itself, so a query that never
+  calls `task_self/1` is unaddressable and rightly never occupies a
+  slot - this is what keeps the flood of transient queries (format's
+  `~@`, `with_output_to`, goal expansion, every plain directive's own
+  query) out of the table without having to special-case them by type.
+  One consequence worth being deliberate about: a plain top-level
+  directive's query, a thread's root query, and a task are all
+  addressable the same way once they call `task_self/1` - send/2 does
+  not care which kind of thing it's talking to.
+- **The mailbox** is a `task_msg`/`lnode` list per query (`q->mailbox`),
+  not the old array-based `send/1`/`recv/1` queue (git history:
+  `c5007a4b`, "Gustto phase 1") - the array rotated a skipped message to
+  the back on selective receive, which is observable and wrong.
+  `list_remove` gives O(1) removal from the middle, so a skipped
+  message keeps its position, matching `thread_get_message`'s existing
+  behaviour.
+- **Locking** reuses the target's owning thread's `scheduler->guard`
+  (`sched_lock`/`sched_unlock`), the same lock `sched_promote` already
+  serialises against. `sched_get()` (previously single-writer only - a
+  thread lazily creating its own scheduler) had to be made safe to call
+  for a *foreign* thread's scheduler, since send/2 is the first thing
+  that ever needs another thread's scheduler to exist before that
+  thread has asked for one itself; gated on `is_multithreaded` like the
+  registry lock, so the single-thread case still pays nothing.
+- **Sender tracking** is internal only: `q->cur_task_qid`, set from the
+  matched message's `from_qid` on a successful `recv/1`. No public
+  `recv/2` yet - deferred until there's a concrete need to expose a
+  reply-to address to Prolog.
+- Verified at 8 real OS threads × 2000 messages each (16,000 concurrent
+  cross-thread sends) to a single receiving task, 20/20 clean under the
+  optimized build and 5/5 clean under ASan.
+
+**Both actor styles stay.** Threads-as-actors (`library(actors)`) and
+this task-addressing layer are complementary, not a replacement of one
+by the other: threads give real parallelism and OS-level isolation at a
+ceiling of a few thousand; tasks give cooperative concurrency that
+scales to skynet-sized actor counts on a handful of threads. An actor
+library built on `call_task`/`task_self`/`send`/`recv` instead of
+`thread_create` is the natural next step, not yet attempted.
+
+**Found, not fixed - pre-existing, unrelated to this phase:** stress
+testing send/2+recv/1 turned up a heap-use-after-free
+(`resume_frame`/`retry_choice`/`trim_heap`, `query.c`) that reproduces
+under real thread concurrency whenever a selective-receive builtin
+(`push_choice`/`import_term`/`unify`/`retry_choice`-or-`drop_choice`)
+is used as the condition of `( Cond -> Then ; Else )`. Confirmed
+independent of this work: it reproduces identically with the
+pre-existing `thread_get_message/3` in the same shape, with none of
+the new send/recv code involved. Two real threads sending, one
+receiving via `( thread_get_message(Me, Msg, [timeout(T)]) -> ... ; ... )`
+is enough - 100% reproducible in a handful of runs. Rewriting the
+receive loop to avoid `->` (two clauses + cut instead) avoids it
+entirely, which is what the stress tests above use. Root cause not
+found - likely `do_if_then_else`'s barrier/heap-protection accounting
+(`bif_control.c`) not correctly protecting the `prepare_call`-allocated
+continuation across a choice point pushed and dropped from inside its
+own condition, but that's a guess, not a diagnosis. Worth its own
+investigation; out of scope here.
+
 
 ## Before any of it: tests
 
