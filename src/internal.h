@@ -902,6 +902,19 @@ struct query_ {
 
 	list mailbox;
 	uint64_t cur_task_qid;
+
+	// task_cancel/1's cross-thread signal. Deliberately not one of the
+	// bool:1 flags below (error, yielded, no_recov, ...): those are
+	// packed into a handful of shared bytes, read-modify-written
+	// together, and only ever safe to touch from the task's own owning
+	// thread while it runs start() on them. A foreign thread calling
+	// task_cancel/1 writes only this one, real, standalone atomic -
+	// sched_run() is what turns a pending request into `error = true`,
+	// from inside the owning thread, at its own dispatch point, which
+	// is what actually cancels the task. See the internal.h bitfield
+	// note above pl->did_dump_vars for the class of bug this avoids.
+
+	pl_atomic bool cancel_requested;
 	unsigned s_cnt, retries, rand_seed;
 	int autofail_n;
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;

@@ -692,6 +692,14 @@ static void sched_run(query *q)
 		task->tmo_msecs = 0;
 		task->waiting_io = false;
 
+		// The one place task_cancel/1's request actually takes effect:
+		// single-threaded here, relative to this task, so folding it
+		// into `error` is safe in a way writing `error` directly from
+		// whatever foreign thread called task_cancel/1 would not be.
+
+		if (task->cancel_requested)
+			task->error = true;
+
 		if (!task->yielded || !task->st.instr || task->error) {
 			pop_task(task->parent, task);
 			query_destroy(task);
@@ -1094,6 +1102,32 @@ static bool bif_sys_set_future_1(query *q)
 	return true;
 }
 
+// Cross-thread task cancellation, addressed by qid instead of the
+// future-id $cancel_future/1 uses (and restricted to the caller's own
+// children, via q->tasks - a qid found through the registry can belong
+// to any thread). Only cancel_requested gets written here; see its
+// comment in internal.h and the check in sched_run() for why the
+// `error = true` that actually stops the task has to happen on the
+// task's own owning thread, not this one. sched_promote() is the same
+// unconditionally-safe call send/2 already makes - a no-op if the task
+// is already ready or running, which just means the cancellation is
+// picked up next time it parks rather than instantly: there is no
+// preemption for a cooperative task, only the next checkpoint.
+
+static bool bif_task_cancel_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	uint64_t qid = (uint64_t)get_smallint(p1);
+	query *target = find_task_by_qid(q->pl, qid);
+
+	if (!target || !target->is_task)
+		return throw_error(q, p1, p1_ctx, "existence_error", "task");
+
+	target->cancel_requested = true;
+	sched_promote(target);
+	return true;
+}
+
 // A task's own mailbox. Minimal on purpose - no from_chan-shaped extra
 // baggage beyond what a reply-to address needs (from_qid), unlike
 // thread.c's msg, which this deliberately does not share: the two
@@ -1364,6 +1398,7 @@ builtins g_tasks_bifs[] =
 	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
 	{"recv", 2, bif_recv_2, "?term,+list", false, false, BLAH},
 	{"task_create", 2, bif_task_create_2, ":callable,-integer", false, false, BLAH},
+	{"task_cancel", 1, bif_task_cancel_1, "+integer", false, false, BLAH},
 
 	{"call_task", 1, bif_call_task_n, ":callable", false, false, BLAH},
 	{"call_task", 2, bif_call_task_n, ":callable,?term", false, false, BLAH},

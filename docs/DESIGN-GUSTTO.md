@@ -644,11 +644,36 @@ loop (blocking the real OS thread directly, same as
 `yield/0`-spin they used before is gone, verified at 8 real OS threads
 × 500 actors each using the blocking path, 10/10 clean.
 
-**`task_cancel/1`** is the one gap left open: no `thread_cancel/1`
-equivalent exists for a cooperative task, so `library(task_actors)`
-still ships without a supervisor - one_for_one restart needs to be
-able to kill a misbehaving child, and there is currently no way to.
-Not attempted.
+**`task_cancel/1`** closed the last gap - `library(task_actors)` now
+has a supervisor too. The interesting part was doing it safely across
+threads. `query`'s per-instruction flags (`error`, `yielded`,
+`no_recov`, ...) are `bool:1` bitfields packed into a handful of
+shared bytes, read-modify-written together - the same class of race
+the `prolog`-level flags had (above), except these are mutated on
+essentially every instruction `start()` executes, not just
+occasionally. Writing `target->error = true` from a foreign thread,
+the obvious way to cancel something, would have reintroduced exactly
+that bug, worse. Fixed by never touching the bitfields from outside:
+`task_cancel/1` sets one new, real, standalone `pl_atomic bool
+cancel_requested` and calls the already-cross-thread-safe
+`sched_promote()`; `sched_run()`'s own dispatch loop is what turns a
+pending request into `error = true`, from inside the task's own owning
+thread, right before deciding whether to run it - the one place doing
+so is actually safe. Consequence worth being explicit about:
+cancellation is cooperative, same as everything else about a task -
+it lands at the next scheduling checkpoint, not mid-instruction, same
+as `thread_cancel/1`'s own delivery is asynchronous in practice despite
+being backed by real preemption.
+
+The supervisor port surfaced one thing not obvious from `library(thread_actors)`'s
+version: a thread-based supervisor runs in the background just by
+existing, being a real preemptively-scheduled thread; a task-based one
+only makes progress while its owning thread drives the scheduler, so
+calling `task_supervisor_start/2,3` from a thread that then goes on to
+do other things leaves it starved. Documented in
+`library/task_actors.pl` with the fix - host it on a thread of its
+own (`thread_create` wrapping `task_supervisor_start` + `wait`) - since
+this generalises to any long-running task tree, not just supervisors.
 
 **Found and fixed - pre-existing, unrelated to this phase:** stress
 testing send/2+recv/1 turned up a heap-use-after-free
