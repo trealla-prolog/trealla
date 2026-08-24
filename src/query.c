@@ -665,13 +665,9 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
 
-	// The lock has to span the decrement, not just the purge below.
-	// Shrinking it so the atomic decrement and the two checks run
-	// unlocked - tempting, since leave_predicate() is hot and only one
-	// thread can take the count to zero - lets another thread into the
-	// gap between reaching zero and reclaiming, and a thread then runs
-	// a clause whose memory has gone. tests/misc/db_purge_window.pl
-	// catches exactly that, 20 times in 20.
+	// Must span the decrement, not just the purge: shrinking it lets a
+	// thread run a clause that has been reclaimed. See
+	// tests/misc/db_purge_window.pl.
 
 	const bool mt = pr->m->pl->is_multithreaded;
 

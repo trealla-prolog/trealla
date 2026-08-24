@@ -2225,6 +2225,8 @@ rule *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 		pr->head->prev = r;
 
 	r->next = pr->head;
+
+	pl_publish_barrier();		// before r is reachable
 	pr->head = r;
 
 	if (!pr->tail)
@@ -2262,10 +2264,13 @@ rule *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 	}
 	 while (!check_not_multifile(m, pr, r));
 
+	r->prev = pr->tail;
+
+	pl_publish_barrier();		// before r is reachable
+
 	if (pr->tail)
 		pr->tail->next = r;
 
-	r->prev = pr->tail;
 	pr->tail = r;
 
 	if (!pr->head)

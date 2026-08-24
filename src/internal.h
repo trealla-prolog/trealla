@@ -34,8 +34,15 @@ typedef uint32_t pl_ctx;
 #if (__STDC_VERSION__ >= 201112L) && USE_THREADS
 #include <stdatomic.h>
 #define pl_atomic _Atomic
+
+// Make a new structure visible before the pointer that reveals it.
+// Writer-side only: the reader's address dependency orders its own
+// loads. skiplist.c has its own copy, not including this header.
+
+#define pl_publish_barrier() atomic_thread_fence(memory_order_release)
 #else
 #define pl_atomic volatile
+#define pl_publish_barrier() ((void)0)
 #endif
 
 typedef pl_atomic int64_t pl_refcnt;
