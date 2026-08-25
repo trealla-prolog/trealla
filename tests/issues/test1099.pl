@@ -119,6 +119,46 @@
 ?- read(X).
    inputs("1. "), peeks(" "), X = 1, unexpected.
 
+% Stage 3 of #1099: encode notes from UWN's ISO syntax conformity suite
+% (https://www.complang.tuwien.ac.at/ulrich/iso-prolog/conformity_testing)
+% as quads. Row numbers below are that page's own numbering ("s#" in
+% the issue). Trealla passes all six.
+
+% s#1: a conforming reader must peek the character past the end token
+% to confirm it, not merely recognise the '.'.
+
+?- read(G_0), G_0.
+   inputs("writeq('\\n')."), peeks("\n"), outputs("'\\n'"), G_0 = writeq('\n').
+
+% s#2: an unterminated quoted atom is a syntax error, not a wait.
+
+?- catch(read(_), error(E,_), true).
+   inputs("'\n"), E = syntax_error(unterminated_quoted_atom).
+
+% s#3: ')' alone is not a complete term, so the reader asks for more.
+
+?- read(_).
+   inputs(")\n"), waits.
+
+% s#4: '.' alone has no term for it to terminate.
+
+?- catch(read(_), error(E,_), true).
+   inputs(".\n"), E = syntax_error(incomplete_statement).
+
+% s#270/s#271: the one character read/1 peeks past the end token must
+% not skip ahead through a following comment. s#270 has a space before
+% the comment - that space is what's peeked, and the next get_char
+% consumes it, landing on '%'. s#271 has no space: '.' is immediately
+% followed by '%', which is itself an end-token trigger (ISO 6.4.8),
+% and '%' is what get_char then sees - the comment's own text ('a')
+% is left untouched either way.
+
+?- read(G_0), G_0.
+   inputs("get_char(C). "), peeks("%"), G_0 = get_char(' ').
+
+?- read(G_0), G_0.
+   inputs("get_char(C).%"), peeks("a"), G_0 = get_char('%').
+
 % run_quads names the file as it was consulted, so the report would
 % otherwise depend on the path this was invoked with. Keep the base
 % name only.

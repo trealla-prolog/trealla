@@ -139,8 +139,16 @@ described, since the query is run once against one input and a second
 answer would need a second stream. Multi-answer input quads are not
 rejected outright, but they will not pass.
 
-**Stage 3 — the suite.** Encode s#1..s#4 and s#270, s#271 as quads and
-see what they say about Trealla.
+**Stage 3 — the suite. Implemented for s#1..s#4, s#270, s#271.**
+
+Encoded in `tests/issues/test1099.pl`, against the row numbering on
+UWN's [syntax conformity
+page](https://www.complang.tuwien.ac.at/ulrich/iso-prolog/conformity_testing).
+Trealla passes all six: the two syntax errors (s#2, s#4), the wait
+(s#3), and the peek-one-character discipline that s#1 and the s#270/
+s#271 pair each test from a different angle - past an end token, and
+past an end token immediately or non-immediately followed by a
+comment. The rest of that page remains to encode.
 
 ## 5. Dependencies
 

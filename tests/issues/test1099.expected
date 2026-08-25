@@ -28,4 +28,4 @@ quads: FAILED test1099.pl:96
 quads: FAILED test1099.pl:99
    ?- read(X).
    expected: inputs(['1','.','\n']),X=1
-quads: 21 run, 11 passed, 10 failed.
+quads: 27 run, 17 passed, 10 failed.
