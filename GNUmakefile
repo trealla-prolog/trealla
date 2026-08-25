@@ -84,6 +84,7 @@ ifdef WIN
 ISOCLINE = 1
 NOPIC = 1
 CC = x86_64-w64-mingw32-gcc
+LDFLAGS += -lws2_32
 ifndef NOFFI
 endif
 endif
