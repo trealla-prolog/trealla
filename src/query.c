@@ -1025,6 +1025,14 @@ static void commit_frame(query *q, bool head_has_vars)
 		push_frame(q);
 	}
 
+	// Read what we still need out of cl BEFORE giving up the reference.
+	// leave_predicate() may take the refcount to zero and reclaim, and a
+	// concurrent purge can free this very clause the moment it does -
+	// leaving the continuation to be read out of freed memory.
+
+	cell *next_instr = cl->alt ? cl->alt : get_body(cl->cells);
+	if (!next_instr) next_instr = cl->cells + (cl->cidx-1);
+
 	if (last_match) {
 		leave_predicate_and_drop(q, q->st.pr, false);
 		trim_trail(q, reused);
@@ -1036,8 +1044,7 @@ static void commit_frame(query *q, bool head_has_vars)
 		ch->gen = q->chgen;
 	}
 
-	q->st.instr = cl->alt ? cl->alt : get_body(cl->cells);
-	if (!q->st.instr) q->st.instr = cl->cells + (cl->cidx-1);
+	q->st.instr = next_instr;
 	q->st.iter = NULL;
 }
 
@@ -1839,8 +1846,12 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		if (!pr->is_dynamic)
 			return throw_error(q, c, c_ctx, "permission_error", "modify,static_procedure");
 
-		find_key(q, pr, c, c_ctx);
+		// Enter before finding: find_key() reads pr->head and parks a
+		// rule pointer in q->st.dbe, and it is the refcount taken by
+		// enter_predicate() that stops leave_predicate() reclaiming
+		// what it parked.
 		enter_predicate(q, pr);
+		find_key(q, pr, c, c_ctx);
 	} else {
 		next_key(q);
 	}
@@ -1955,8 +1966,12 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **ret_body, enum claus
 				return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 		}
 
-		find_key(q, pr, c, c_ctx);
+		// Enter before finding: find_key() reads pr->head and parks a
+		// rule pointer in q->st.dbe, and it is the refcount taken by
+		// enter_predicate() that stops leave_predicate() reclaiming
+		// what it parked.
 		enter_predicate(q, pr);
+		find_key(q, pr, c, c_ctx);
 	} else {
 		next_key(q);
 	}
@@ -2062,8 +2077,12 @@ bool match_head(query *q)
 			}
 		}
 
-		find_key(q, pr, c, c_ctx);
+		// Enter before finding: find_key() reads pr->head and parks a
+		// rule pointer in q->st.dbe, and it is the refcount taken by
+		// enter_predicate() that stops leave_predicate() reclaiming
+		// what it parked.
 		enter_predicate(q, pr);
+		find_key(q, pr, c, c_ctx);
 	} else
 		next_key(q);
 
