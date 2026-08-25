@@ -1062,6 +1062,7 @@ struct module_ {
 	module *used[MAX_MODULES];
 	module *orig;
 	prolog *pl;
+	lock guard;							// serializes this module's own predicate mutation; see prolog_lock_mod()
 	pi *gex_head, *gex_tail;			// goal expansion ??? (see pi_ above, why not use list?)
 	parser *p;
 	FILE *fp;

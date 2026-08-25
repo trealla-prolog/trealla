@@ -85,4 +85,25 @@ inline static void prolog_unlock(prolog *pl)
 	release_lock(&pl->guard);
 }
 
+// Per-module counterpart, for database mutation only (assert/retract/
+// abolish and their purge paths) - see docs/DESIGN-GUSTTO.md phase 3,
+// "measured". Not a general substitute for prolog_lock(): stdout
+// writes, the thread table, the blackboard and the task registry are
+// not module-scoped and stay on the instance-wide lock. A module
+// created by module_duplicate() (the :- attribute shadow modules)
+// shares its orig's lock, matching find_module()'s own redirect - an
+// alias and its original must never serialize independently.
+
+inline static void prolog_lock_mod(prolog *pl, module *m)
+{
+	if (m->orig) m = m->orig;
+	acquire_lock(&m->guard);
+}
+
+inline static void prolog_unlock_mod(prolog *pl, module *m)
+{
+	if (m->orig) m = m->orig;
+	release_lock(&m->guard);
+}
+
 extern void release_pl_terms(query *q);

@@ -672,15 +672,15 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	const bool mt = pr->m->pl->is_multithreaded;
 
 	if (mt)
-		prolog_lock(pr->m->pl);
+		prolog_lock_mod(pr->m->pl, pr->m);
 
 	if (--pr->refcnt != 0) {
-		if (mt) prolog_unlock(pr->m->pl);
+		if (mt) prolog_unlock_mod(pr->m->pl, pr->m);
 		return;
 	}
 
 	if (!list_count(&pr->dirty) || pr->is_abolished) {
-		if (mt) prolog_unlock(pr->m->pl);
+		if (mt) prolog_unlock_mod(pr->m->pl, pr->m);
 		return;
 	}
 
@@ -725,7 +725,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	}
 
 	if (mt)
-		prolog_unlock(pr->m->pl);
+		prolog_unlock_mod(pr->m->pl, pr->m);
 }
 
 static void query_purge_dirty_list(query *q)
@@ -734,20 +734,21 @@ static void query_purge_dirty_list(query *q)
 	rule *r;
 	const bool mt = q->pl->is_multithreaded;
 
-	if (mt)
-		prolog_lock(q->pl);
+	// q->dirty can mix rules from different predicates/modules, unlike
+	// leave_predicate()'s single pr->m - lock per rule's own owner
+	// rather than once for the whole pass.
 
-	for (r = list_front(&q->dirty); r; r = list_next(r))
+	for (r = list_front(&q->dirty); r; r = list_next(r)) {
+		if (mt) prolog_lock_mod(q->pl, r->owner->m);
 		index_remove_clause(r->owner, r);
+		if (mt) prolog_unlock_mod(q->pl, r->owner->m);
+	}
 
 	while ((r = list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
 		TPL_free(r);
 		cnt++;
 	}
-
-	if (mt)
-		prolog_unlock(q->pl);
 
 	if (cnt && 0)
 		printf("*** query_purge_dirty_list %u\n", cnt);

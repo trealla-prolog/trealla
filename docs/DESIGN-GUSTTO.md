@@ -429,6 +429,87 @@ program's time spent inside `prolog_lock`. Small, and the objection
 collapses. Large, and C cannot pay off until the lock goes. Worth
 measuring before committing either way.
 
+**Measured.** 8 real threads (`thread_create/3` - this is Option B's
+own model, already real parallelism), all `assertz`/`retract` on one
+shared predicate, bounded to one live fact per thread so no call scans
+a growing table: held-time-under-lock rises from 9.3% of wall clock at
+1 thread to 36.0% at 8, and the *per-acquisition* hold time itself
+grows 7.3x (101ns to 740ns) - cache-line bouncing on the mutex and the
+skiplist under contention, not fixed serial work. Throughput peaks at
+2 threads (~1.38M lock ops/sec) and *collapses* past that - 8 threads
+is worse than 1. Large, per the gate above: C should not be built yet.
+
+**But the workload was adversarial on purpose - all contention, one
+predicate, no module diversity - and that turns out to matter a lot.**
+The same benchmark spread across 8 separate modules (one dynamic
+predicate each, one thread each, zero cross-module dependency) still
+serializes fully on `prolog_lock`, since it does not know modules
+exist - measured at 2.80s, barely different from the single-module
+shape. Adding a real per-module lock (hashed module pointer, bucketed
+across ~50 call sites in `bif_database.c`, `leave_predicate()` and
+`query_purge_dirty_list()`) cut that to ~1.05s, a genuine ~2.7x, with
+the single-module case unchanged (3.42s vs 3.62s baseline, within
+noise) - confirming the lock split costs nothing when there is no
+diversity to exploit. One methodology note worth keeping: the first
+pass of that experiment hashed the module pointer with a plain
+shift-and-mod and measured *no* improvement at all - module structs
+turned out to come from an allocator with >=2048-byte alignment, so
+every pointer's low bits were zero and all nine modules hashed into
+the same bucket. Silent zero-signal, not a crash; only caught by
+instrumenting the hash itself to print which bucket each module
+landed in. Fixed with a proper (Fibonacci) hash. Lesson: verify a
+sharding scheme actually shards before trusting a null result from it.
+
+**So the real answer has two parts.** For contention concentrated on
+one predicate - the adversarial case above - nothing short of lifting
+`prolog_lock` entirely (the epoch/QSBR route, still a bigger job than
+C) moves the needle. For contention that is naturally spread across
+modules, a per-module lock is a far cheaper, more surgical win than
+either C or the full reclamation rewrite, and is worth doing on its
+own regardless of whether C ever happens - it already helps Option B,
+today, independent of the worker-pool question.
+
+**Implemented.** `module` got a real `lock guard` field
+(`src/internal.h`), initialized in `module_create()` and torn down in
+`module_destroy()` - not the throwaway pointer-hash bucket table used
+to measure this. `prolog_lock_mod()`/`prolog_unlock_mod()`
+(`src/prolog.h`) replace `prolog_lock()`/`prolog_unlock()` at every
+call site in `bif_database.c` that mutates a predicate
+(assert/asserta/assertz/retract/retractall/abolish - seven call sites,
+each with the target module already in hand as `q->st.m`), plus
+`leave_predicate()` (has it as `pr->m`). A module created by
+`module_duplicate()` (the `:- attribute` shadow modules) redirects to
+its `orig`'s lock inside the helper itself, matching `find_module()`'s
+own redirect - an alias and its original must never serialize
+independently. The one genuine complication was
+`query_purge_dirty_list()`: `q->dirty` accumulates rules from whatever
+predicates a query touched over its lifetime, possibly spanning
+several modules, so it cannot take one lock for the whole pass - it
+locks per rule's own `r->owner->m` instead. All three paths agree on
+the same per-module lock, consistently - `module_lock()`'s original
+removal (`src/module.h:68`) was exactly this going wrong once already:
+assert/retract on one lock, the dirty-list purge on a different one,
+so neither excluded the other. Do not repeat that shape.
+
+Verified clean: `make test`/`make misc` at baseline, 40/40 stress runs
+of `tests/misc/db_concurrency.pl` and `db_purge_window.pl`, and a
+`make debug` (ASan) pass of the same.
+
+**A separate, pre-existing bug surfaced during that ASan pass, unrelated
+to this work.** `retry_choice()` -> `undo_list_drain()` (`src/query.c`)
+frees a retracted rule on backtrack with no lock at all - not
+`prolog_lock`, not `prolog_lock_mod`. It is a distinct fast path:
+`leave_predicate()` defers some retracted rules to a per-query
+choice-point undo list instead of the shared, lock-protected
+`pr->dirty` purge, when `q->pl->opt` is set and the rule has no vars -
+implicitly assuming no other thread could still be reading it, which a
+genuinely shared `:- dynamic` predicate violates. Reproduces on
+unmodified `main` (3/30 runs of `db_purge_window.pl` under ASan) and
+unmodified `gustto` (6/30) alike, so it predates GUSTTO and this
+per-module work; neither is implicated; both were confirmed clean
+against it. Not fixed here - real investigation, own commit, on `main`
+first per the branch workflow.
+
 **What B already banked:** blocking receives park instead of stalling
 siblings, a send wakes a parked task in ~90us rather than ~5ms, the
 fixed 2048-entry thread table is gone, and timeouts key off the thread

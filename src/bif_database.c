@@ -252,9 +252,9 @@ static bool bif_iso_retract_1(query *q)
 	if (!module_context(q, &p1, p1_ctx))
 		return false;
 
-	prolog_lock(q->pl);
+	prolog_lock_mod(q->pl, q->st.m);
 	bool ok = do_retract(q, p1, p1_ctx, DO_RETRACT);
-	prolog_unlock(q->pl);
+	prolog_unlock_mod(q->pl, q->st.m);
 	return ok;
 }
 
@@ -280,13 +280,13 @@ static bool bif_iso_retractall_1(query *q)
 	if (!pr->cnt)
 		return true;
 
-	prolog_lock(q->pl);
+	prolog_lock_mod(q->pl, q->st.m);
 	q->in_retract = true;
 
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
 		if (q->did_throw) {
 			q->in_retract = false;
-			prolog_unlock(q->pl);
+			prolog_unlock_mod(q->pl, q->st.m);
 			return true;
 		}
 
@@ -297,7 +297,7 @@ static bool bif_iso_retractall_1(query *q)
 
 	q->in_retract = false;
 	pr->is_processed = false;
-	prolog_unlock(q->pl);
+	prolog_unlock_mod(q->pl, q->st.m);
 	return true;
 }
 
@@ -387,9 +387,9 @@ static bool bif_iso_abolish_1(query *q)
 	tmp = *p1_name;
 	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
-	prolog_lock(q->pl);
+	prolog_lock_mod(q->pl, q->st.m);
 	bool ok = do_abolish(q, p1, &tmp, true);
-	prolog_unlock(q->pl);
+	prolog_unlock_mod(q->pl, q->st.m);
 	return ok;
 }
 
@@ -435,9 +435,9 @@ static bool bif_iso_asserta_1(query *q)
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
-	prolog_lock(q->pl);
+	prolog_lock_mod(q->pl, q->st.m);
 	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
-	prolog_unlock(q->pl);
+	prolog_unlock_mod(q->pl, q->st.m);
 
 	p->cl->cidx = 0;
 
@@ -500,9 +500,9 @@ static bool do_assertz_1(query *q, bool consulting)
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
-	prolog_lock(q->pl);
+	prolog_lock_mod(q->pl, q->st.m);
 	rule *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, consulting);
-	prolog_unlock(q->pl);
+	prolog_unlock_mod(q->pl, q->st.m);
 
 	p->cl->cidx = 0;
 
@@ -583,9 +583,9 @@ static bool do_asserta_2(query *q)
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
-	prolog_lock(q->pl);
+	prolog_lock_mod(q->pl, q->st.m);
 	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
-	prolog_unlock(q->pl);
+	prolog_unlock_mod(q->pl, q->st.m);
 
 	p->cl->cidx = 0;
 
@@ -684,9 +684,9 @@ static bool do_assertz_2(query *q)
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
-	prolog_lock(q->pl);
+	prolog_lock_mod(q->pl, q->st.m);
 	rule *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
-	prolog_unlock(q->pl);
+	prolog_unlock_mod(q->pl, q->st.m);
 
 	p->cl->cidx = 0;
 
