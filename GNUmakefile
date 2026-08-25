@@ -7,7 +7,10 @@ MANDIR ?= $(PREFIX)/share/man
 EMBED ?= 1
 
 PYTHON ?= python3
-HOST_CC ?= cc
+# Captured eagerly (before WASI/WIN below reassign CC to a cross-compiler)
+# so a plain `make CC=clang` also builds util/bin2c with clang, matching
+# https://github.com/trealla-prolog/trealla/issues/1123
+HOST_CC := $(CC)
 
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"

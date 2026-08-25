@@ -453,6 +453,39 @@
               ATTRIBUTION
               README.md
 
+    tribblix:
+      name: Tribblix 0m41 X64 (experimental)
+      runs-on: ubuntu-latest
+      continue-on-error: true
+      timeout-minutes: 60
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Build and test in Tribblix
+          uses: vmactions/tribblix-vm@v1.0.4
+          with:
+            release: "0m41"
+            arch: x86_64
+            cache-after-prepare: true
+            prepare: |
+              zap refresh
+              zap install-overlay develop
+            run: |
+              git config --global --add safe.directory "$GITHUB_WORKSPACE"
+              gmake CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
+              ./tpl -q -g 'writeln(tribblix_x64_ok),halt'
+              gmake test
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: tpl-Tribblix-X64
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
     riscos:
       name: RISC OS ARM EABI (experimental)
       runs-on: ubuntu-24.04

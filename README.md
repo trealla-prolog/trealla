@@ -5,7 +5,7 @@ A compact, efficient ISO Prolog interpreter. Written in plain old C
 and using a plain old Makefile.
 
 	MIT licensed
-	Runs on Linux, Android, MacOS, FreeBSD, OpenBSD, NetBSD, RISC/OS, Haiku, OpenIndiana & Solaris
+	Runs on Linux, Android, MacOS, FreeBSD, OpenBSD, NetBSD, RISC/OS, Haiku, OpenIndiana, Solaris & Tribblix
 	Integers & Rationals are unbounded
 	Atoms and strings are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
