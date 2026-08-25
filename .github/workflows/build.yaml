@@ -471,9 +471,10 @@
             prepare: |
               zap refresh
               zap install-overlay develop
+              zap install-overlay clang
             run: |
               git config --global --add safe.directory "$GITHUB_WORKSPACE"
-              gmake CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
+              gmake CC=clang HOST_CC=clang ISOCLINE=1 NOFFI=1 NOSSL=1 release
               ./tpl -q -g 'writeln(tribblix_x64_ok),halt'
               gmake test
         - name: Upload artifacts

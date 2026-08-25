@@ -140,10 +140,14 @@ ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread
 # -latomic only works for gcc, and is not shipped with every system gcc.
+# Link the static archive directly (rather than -latomic) so we don't
+# depend on libatomic.so being on the runtime linker's search path -
+# on illumos-family systems (Solaris, OpenIndiana, Tribblix) gcc's own
+# libatomic.so isn't always registered with the system dynamic linker.
 ifeq ($(COMPILER_IS_GCC),gcc)
 GCC_LIBATOMIC := $(shell $(CC) -print-file-name=libatomic.a)
 ifneq ($(wildcard $(GCC_LIBATOMIC)),)
-LDFLAGS += -latomic
+LDFLAGS += $(GCC_LIBATOMIC)
 endif
 endif
 endif
