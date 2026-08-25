@@ -496,19 +496,36 @@ of `tests/misc/db_concurrency.pl` and `db_purge_window.pl`, and a
 `make debug` (ASan) pass of the same.
 
 **A separate, pre-existing bug surfaced during that ASan pass, unrelated
-to this work.** `retry_choice()` -> `undo_list_drain()` (`src/query.c`)
-frees a retracted rule on backtrack with no lock at all - not
-`prolog_lock`, not `prolog_lock_mod`. It is a distinct fast path:
-`leave_predicate()` defers some retracted rules to a per-query
-choice-point undo list instead of the shared, lock-protected
-`pr->dirty` purge, when `q->pl->opt` is set and the rule has no vars -
-implicitly assuming no other thread could still be reading it, which a
-genuinely shared `:- dynamic` predicate violates. Reproduces on
-unmodified `main` (3/30 runs of `db_purge_window.pl` under ASan) and
-unmodified `gustto` (6/30) alike, so it predates GUSTTO and this
-per-module work; neither is implicated; both were confirmed clean
-against it. Not fixed here - real investigation, own commit, on `main`
-first per the branch workflow.
+to this work - found and fixed.** `retry_choice()` -> `undo_list_drain()`
+(`src/query.c`) frees a retracted rule on backtrack, and two readers
+could still be touching it:
+
+- `find_key()` (reads `pr->head`, parks a rule pointer in `q->st.dbe`)
+  ran *before* `enter_predicate()` (the refcount `leave_predicate()`
+  checks before it may reclaim) at all three call sites -
+  `match_head()`, `match_rule()`, `match_clause()`. A purge already
+  committed to running could free what `find_key()` had just handed
+  back, before the increment that was supposed to prevent exactly that
+  had happened.
+- `commit_frame()` called `leave_predicate_and_drop()` - which can take
+  the refcount to zero and trigger that same reclaim - and only *then*
+  read `cl->alt`/`cl->cells`/`cl->cidx` to build the continuation, out
+  of the clause it had just given up its claim on.
+
+The first instinct - wrap `enter_predicate()`'s increment in the same
+lock `leave_predicate()` uses - made it dramatically worse (17/20
+crashes in release, vs ~10% under ASan before), because a lock there
+doesn't protect the read that already happened; it just makes the
+reader wait out the purge that is about to free what it is holding.
+The actual fix is ordering, not locking: enter before finding, and
+read what `commit_frame()` needs before dropping the reference. No new
+lock. Reproduced on unmodified `main` (3/30 runs of
+`db_purge_window.pl` under ASan) and unmodified `gustto` (6/30) alike,
+predating GUSTTO and this per-module work; neither implicated. Fixed
+on `main` (`0bf14578`) and ported to `gustto` (`592dae04`); verified
+0/80 interleaved against baseline's 8/80 on `main`, and 0/60 on
+`gustto` specifically for `db_purge_window.pl` and `db_concurrency.pl`
+each, under ASan.
 
 **What B already banked:** blocking receives park instead of stalling
 siblings, a send wakes a parked task in ~90us rather than ~5ms, the
@@ -579,12 +596,24 @@ condition.
 - **Shared-state locking**, which is where the real bug risk lives:
   - clause resolution reads the db with no reader lock; only writers
     take `pl->guard`. True today for `thread_create/3`, but every task
-    would now be exposed.
+    would now be exposed. **Update:** a reader lock turned out to be
+    the wrong fix for the bug this shape predicted - see the UAF note
+    under phase 3, "Implemented". The actual fault was two unlocked
+    reads racing a purge (`find_key()` before its own `enter_predicate()`,
+    and `commit_frame()` reading a clause after releasing the reference
+    that protected it); adding a lock around the read made the race
+    *more* certain, not less, because it just made the reader wait out
+    the purge it needed to beat. Fixed by ordering, not locking - see
+    `commit 592dae04` ("Fix db bug", ported from `main` `0bf14578`).
+    Whether Option C exposes a
+    *different* unlocked-read shape once there are real concurrent
+    workers instead of occasional real threads is still open.
   - streams are per-`prolog` (`src/internal.h:1033`), so two tasks
     writing stdout interleave mid-term.
-  - `module_lock()` / `module_unlock()` (`src/module.h:68`) are defined
-    and **never called from anywhere**. Either they are the missing
-    reader lock or they should go.
+  - `module_lock()` / `module_unlock()` (`src/module.h:68`) - stale.
+    They no longer exist; removed entirely (see the comment at that
+    line), not merely unused. `prolog_lock_mod()`/`prolog_unlock_mod()`
+    replace what this bullet was asking for, phase 3, "Implemented".
 - pool width is a setting with a sensible default, not a number derived
   from `cpu_count` — the right width depends on how I/O-bound the load
   is. `cpu_count` and `os_threads` are informational.
