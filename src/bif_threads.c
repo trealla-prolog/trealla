@@ -821,6 +821,12 @@ static bool do_match_message_(query *q, unsigned chan, bool is_peek, double time
 	const uint64_t deadline = q->msg_deadline;
 
 	while (!q->halt && !q->abort) {
+		// A surrounding call_with_time_limit/2's '$alarm'/2 only fires at
+		// CHECK_INTERRUPT() points; without this check this loop never
+		// reaches one and blocks forever instead of timing out.
+		if (interrupt_pending(q) && check_interrupt(q))
+			return false;
+
 		acquire_lock(&t->guard);
 
 		if (list_count(&t->signals)) {
@@ -1419,7 +1425,10 @@ static bool bif_thread_signal_2(query *q)
 	return true;
 }
 
-static void do_cancel(thread *t)
+// Drops everything t owns and retires the struct. Only safe once t's OS
+// thread is confirmed to have stopped touching it.
+
+static void retire_cancelled_thread(thread *t)
 {
 	acquire_lock(&t->guard);
 	sl_del(t->pl->alias, t->alias);
@@ -1427,7 +1436,6 @@ static void do_cancel(thread *t)
 	t->alias = NULL;
 	t->is_finished = false;
 	msg *m;
-	pthread_t id = t->id;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->num_cells);
@@ -1450,15 +1458,66 @@ static void do_cancel(thread *t)
 	//t->id = 0;
 
 	// Unlock before retiring - see the note in start_routine_thread_create().
-	// pthread_cancel/kill below use the local id captured at entry, not
-	// t, so they are unaffected by t being reused as soon as it unlocks.
 	release_lock(&t->guard);
 	retire_thread(t->pl, t);
+}
+
+static void do_cancel(thread *t)
+{
+	pthread_t id = t->id;
+	retire_cancelled_thread(t);
 
 #if defined(__ANDROID__)
 	pthread_kill(id, 0);
 #else
 	pthread_cancel(id);
+#endif
+}
+
+// pthread_join() has no timed variant, so it runs on a throwaway helper
+// thread and we poll a flag instead, bounded by deadline.
+
+struct join_ctx_ { pthread_t id; pl_atomic bool done; };
+
+static void *do_join(void *arg)
+{
+	struct join_ctx_ *ctx = arg;
+	pthread_join(ctx->id, NULL);
+	ctx->done = true;
+	return NULL;
+}
+
+// true once id has actually exited; false on timeout (ctx is then
+// deliberately leaked - the caller exits the process next anyway).
+
+static bool cancel_and_join(pthread_t id, uint64_t deadline)
+{
+#if defined(__ANDROID__)
+	pthread_kill(id, 0);
+	return true;
+#else
+	pthread_cancel(id);
+
+	struct join_ctx_ *ctx = TPL_malloc(sizeof(*ctx));
+	*ctx = (struct join_ctx_){ .id = id, .done = false };
+	pthread_t joiner;
+
+	if (pthread_create(&joiner, NULL, do_join, ctx) != 0) {
+		pthread_join(id, NULL);
+		TPL_free(ctx);
+		return true;
+	}
+
+	while (!ctx->done) {
+		if (monotonic_time_in_usec() >= deadline)
+			return false;
+
+		msleep(5);
+	}
+
+	pthread_join(joiner, NULL);
+	TPL_free(ctx);
+	return true;
 #endif
 }
 
@@ -2440,16 +2499,64 @@ static bool bif_mutex_property_2(query *q)
 	return do_mutex_property_wild(q);
 }
 
+// How long shutdown gives a still running detached thread to finish and
+// self-retire (the tail of start_routine_thread_create()) before giving up.
+
+#define DETACHED_SHUTDOWN_WAIT_MS 2000
+
 void thread_cancel_all(prolog *pl)
 {
 	msleep(10);
 
-	for_each_thread(pl, t) {
-		if (!is_threaded(t) || t->is_detached)
-			continue;
+	uint64_t deadline = monotonic_time_in_usec() + ((uint64_t)DETACHED_SHUTDOWN_WAIT_MS * 1000);
 
-		do_cancel(t);
+	// Rescan from scratch each pass: a thread can spawn another (e.g. a
+	// server's accept loop) after a pass has gone by it, and
+	// threads_destroy() frees every struct unconditionally once this
+	// returns. Joinable threads are cancelled and joined here (unlike
+	// do_cancel(), used by the live thread_cancel/1 builtin, which
+	// doesn't need to wait since nothing else frees that struct).
+	// Detached threads can't be joined, so they just get a bounded wait
+	// to self-retire.
+
+	for (;;) {
+		thread *found = NULL;
+		bool detached_pending = false;
+
+		for_each_thread(pl, t) {
+			if (t == pl->main_thread)
+				continue;
+
+			if (is_threaded(t) && !t->is_detached) {
+				found = t;
+				break;
+			}
+
+			if (t->is_detached && t->is_active)
+				detached_pending = true;
+		}
+
+		if (found) {
+			if (!cancel_and_join(found->id, deadline))
+				exit(pl->halt_code);
+
+			retire_cancelled_thread(found);
+			continue;
+		}
+
+		if (!detached_pending)
+			return;
+
+		if (monotonic_time_in_usec() >= deadline)
+			break;
+
+		msleep(5);
 	}
+
+	// Still running past the deadline: blocked with no timeout of its
+	// own. Not safe to free anything under it - terminate now instead.
+
+	exit(pl->halt_code);
 }
 #endif
 

@@ -7,6 +7,7 @@
 #include <time.h>
 
 #include "module.h"
+#include "network.h"
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
@@ -3973,6 +3974,19 @@ inline static bool is_matching_pair(int ch, int next_ch, int lh, int rh)
 	return (ch == lh) && (next_ch == rh);
 }
 
+// Same as getline(), but for a socket-backed parser waits in short,
+// alarm-aware poll() slices first - see tpl_wait_fd_readable().
+
+static ssize_t getline_interruptible(parser *p)
+{
+	if (p->is_socket && p->q && !tpl_wait_fd_readable(p->q, fileno(p->fp))) {
+		errno = EINTR;
+		return -1;
+	}
+
+	return getline(&p->save_line, &p->n_line, p->fp);
+}
+
 char *eat_space(parser *p)
 {
 	if (!*p->srcptr)
@@ -3984,7 +3998,7 @@ char *eat_space(parser *p)
 
 	do {
 		if (!src) {
-			if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+			if (p->no_fp || getline_interruptible(p) == -1) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -4032,7 +4046,7 @@ char *eat_space(parser *p)
 				continue;
 			}
 
-			if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+			if (p->no_fp || getline_interruptible(p) == -1) {
 				if (errno == EINTR) {
 					clearerr(p->fp);
 					p->error = true;
@@ -4072,7 +4086,7 @@ char *eat_space(parser *p)
 				src++;
 
 			if ((!src || !*src) && p->is_comment && p->fp) {
-				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+				if (p->no_fp || getline_interruptible(p) == -1) {
 					if (!p->do_read_term)
 						fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -4357,7 +4371,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			}
 
 			if (p->quote_char && p->fp) {
-				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+				if (p->no_fp || getline_interruptible(p) == -1) {
 					p->srcptr = "";
 
 					if (!p->do_read_term)

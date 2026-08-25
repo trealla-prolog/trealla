@@ -25,3 +25,5 @@ extern bool tpl_host_address(const char *hostname, char *ip, size_t iplen);
 
 extern int get_local_port(int clientSock);
 extern const char *get_local_hostname(char *hostname_buffer, size_t buffer_size);
+
+extern bool tpl_wait_fd_readable(query *q, int fd);

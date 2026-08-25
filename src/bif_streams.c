@@ -1646,9 +1646,15 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		CHECKED(str->p);
 		str->p->flags = q->st.m->flags;
 		str->p->fp = str->fp;
+		str->p->is_socket = str->is_socket && !str->ssl;
 		if (q->top) str->p->no_fp = q->top->no_fp;
 	} else
 		parser_reset(str->p);
+
+	// str->p is reused across calls, possibly by a different query on a
+	// long-lived stream, so refresh this every call rather than only
+	// where the parser is first created.
+	str->p->q = q;
 
 	str->p->do_read_term = true;
 	str->p->one_shot = true;
@@ -1682,7 +1688,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (!src && !str->p->srcptr && str->fp_in) {
-		if (str->p->no_fp || tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1) {
+		bool ready = q->is_task || !str->p->is_socket || tpl_wait_fd_readable(q, fileno(str->fp_in));
+
+		if (!ready || str->p->no_fp || tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1) {
 			if (q->is_task && !feof(str->fp_in) && ferror(str->fp_in)) {
 				clearerr(str->fp_in);
 				return do_yield_on_stream(q, str, false);
@@ -1721,7 +1729,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			if (str->p->srcptr && (*str->p->srcptr == '\n'))
 				str->p->line_num++;
 
-			if (str->fp && (str->p->no_fp || (tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1))) {
+			if (str->fp && (
+				(!q->is_task && str->p->is_socket && !tpl_wait_fd_readable(q, fileno(str->fp_in))) ||
+				str->p->no_fp || (tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1))) {
 				if (q->is_task && !feof(str->fp_in) && ferror(str->fp_in)) {
 					clearerr(str->fp_in);
 					return do_yield_on_stream(q, str, false);

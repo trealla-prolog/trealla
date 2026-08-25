@@ -253,6 +253,39 @@ where a thread queue is addressed by id.
   everywhere, and it shrinks to nothing once threads are tasks and I/O
   parks on the scheduler.
 
+  **Follow-on (2026-08-25): hit in practice, stopgapped, not fixed
+  properly.** Logtalk's `linda` library timeout tests hung on main:
+  `call_with_timeout/3` around a socket `read_term/2` blocked forever in
+  `do_read_term()`/`eat_space()`'s blocking `getline()` - exactly the gap
+  above, not a new bug.
+
+  The real fix - non-task sockets going non-blocking so I/O genuinely
+  parks on the scheduler, what "shrinks to nothing" means above - touches
+  every blocking-read call site in `bif_streams.c` that assumes a read
+  either returns data or blocks, not just `do_read_term`. That's
+  phase-2-and-beyond work, so a stopgap landed instead:
+  `tpl_wait_fd_readable()` (`network.c`) polls the fd in short,
+  alarm-aware slices (capped at `next_alarm_delay()` or 250ms) ahead of
+  the blocking call, and sets `errno = EINTR` on timeout so it slots into
+  the `errno == EINTR` handling the SIGALRM removal above left in place.
+  Wired into `do_read_term()`'s `tpl_getline()` calls and, via a new
+  `parser.is_socket` flag, `eat_space()`/`get_token()`'s raw `getline()`.
+  Sockets stay blocking-mode; no other read call site's behaviour
+  changes.
+
+  **Still open.** This is a second, narrower polling mechanism sitting
+  next to the scheduler's, not a replacement for it. Revisit once phase 2
+  lands and non-task socket I/O can park on the scheduler for real -
+  `tpl_wait_fd_readable()` should retire at that point.
+
+  (Separately: Ctrl-C during that hang used to crash - `pl_destroy()`
+  freeing a thread struct an OS thread was still running inside. A
+  general shutdown race predating this section, not caused by the polled
+  alarm; fixed properly in `bif_threads.c` rather than worked around -
+  `cancel_and_join()` + `retire_cancelled_thread()` confirm an OS thread
+  has actually stopped before its struct is freed, and shutdown rescans
+  the live list each pass instead of taking one snapshot.)
+
   Fallout: `thread_initialize()` and the table are now unconditional,
   because `q->pl->main_thread` is dereferenced by `interrupt_pending()`
   whether or not the build has threads. As `threads[0]` in a fixed array

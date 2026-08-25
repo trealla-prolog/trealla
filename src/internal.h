@@ -1045,6 +1045,7 @@ struct parser_ {
 	bool in_body:1;
 	bool is_number_chars:1;
 	bool double_bar:1;
+	bool is_socket:1;			// fp is a blocking-mode socket; see tpl_wait_fd_readable()
 };
 
 typedef struct loaded_file_ loaded_file;

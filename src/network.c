@@ -53,6 +53,9 @@ static SSL_CTX *g_ctx = NULL;
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#ifndef __wasi__
+#include <poll.h>
+#endif
 #endif
 
 
@@ -583,6 +586,44 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 
     (*lineptr)[pos] = '\0';
     return pos;
+}
+#endif
+
+// Waits for fd in short, alarm-aware poll() slices instead of one
+// uninterruptible blocking read (real SIGALRM used to do this via EINTR
+// - see DESIGN-GUSTTO.md). Sets errno = EINTR and returns false on
+// timeout/interrupt; true means data is ready.
+
+#if !defined(_WIN32) && !defined(__wasi__)
+bool tpl_wait_fd_readable(query *q, int fd)
+{
+	if (fd < 0)
+		return true;
+
+	for (;;) {
+		if (interrupt_pending(q)) {
+			errno = EINTR;
+			return false;
+		}
+
+		unsigned ms;
+		int wait_ms = next_alarm_delay(q, &ms) ? (int)ms : 250;
+
+		if (wait_ms > 250)
+			wait_ms = 250;
+
+		struct pollfd pfd = { .fd = fd, .events = POLLIN };
+		int n = poll(&pfd, 1, wait_ms);
+
+		if (n != 0)
+			return true;	// readable, or poll() itself errored - let the real read report it
+	}
+}
+#else
+bool tpl_wait_fd_readable(query *q, int fd)
+{
+	(void) q; (void) fd;
+	return true;
 }
 #endif
 
