@@ -102,6 +102,7 @@ cell *string_to_chars_list(query *q, cell *p);
 
 int create_vars(query *q, unsigned cnt);
 cell *skip_max_list(query *q, cell *head, pl_ctx *head_ctx, pl_int max, pl_int *skip, cell *tmp);
+cell *term_next(query *q, cell *c, pl_ctx *c_ctx, bool *done);
 bool is_cyclic_term(query *q, cell *p1, pl_ctx p1_ctx);
 bool is_acyclic_term(query *q, cell *p1, pl_ctx p1_ctx);
 bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
