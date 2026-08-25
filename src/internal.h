@@ -846,6 +846,9 @@ struct query_ {
 	void *oom_reserve;					// emergency headroom for constructing a memory error
 	cell *clone_root;					// the term copy_term/2 is copying, for cycles back to it
 	bool cycle_dropped;					// a clone hit a cycle it could not represent and truncated it
+	skiplist *clone_defs;				// close_cycles only: original slot -> tmp offset where its value starts
+	bool close_cycles;					// opt-in (copy_term/2, copy_term_nat/2 only): bind back-edges to
+										// nested cyclic slots instead of leaving them dangling - see clone_defs
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
 	trail_page *trail_pages, *trail_current;

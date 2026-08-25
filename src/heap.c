@@ -179,6 +179,8 @@ static bool cycles_back(const query *q, const cell *c, pl_ctx c_ctx)
 	return q->clone_root && (c == q->clone_root) && (c_ctx == q->clone_root_ctx);
 }
 
+static void record_clone_def(query *q, pl_idx slot_nbr, pl_idx tmp_offset);
+
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
 
@@ -228,9 +230,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			pl_ctx h_ctx = p1_ctx;
 			uint32_t save_vgen = 0;
 			int both = 0;
-			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG iter depth=%u p1tag=%d h_before_tag=%d h_before_var=%u\n", depth, p1->tag, h->tag, is_var(h)?h->var_num:9999);
 			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
-			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   head both=%d h_after_tag=%d h_after_var=%u\n", both, h->tag, is_var(h)?h->var_num:9999);
 			if (both) q->cycle_error = q->cycle_dropped = true;
 
 			if (is_var(p1 + 1) && cycles_back(q, h, h_ctx)) {
@@ -248,21 +248,26 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			pl_ctx t_ctx = p1_ctx;
 
 			if (is_var(t) && (t->var_num == q->dump_var_num) && (t_ctx == q->dump_var_ctx)) {
-				if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail dump_var_num BREAK var=%u p1tag=%d\n", t->var_num, p1->tag);
 				q->cycle_error = true;
 				break;
 			}
 
 			both = 0;
-			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail_before tag=%d var=%u\n", t->tag, is_var(t)?t->var_num:9999);
+			bool t_was_var = is_var(t);
+			unsigned t_var_num = t_was_var ? t->var_num : 0;
+			pl_ctx t_owning_ctx = t_was_var ? (is_ref(t) ? t->val_ctx : t_ctx) : 0;
 			if (deep_copy(t)) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, t, t_ctx, q->vgen);
-			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail_after both=%d tag=%d var=%u\n", both, t->tag, is_var(t)?t->var_num:9999);
+
+			// Slot is about to be flattened in for the first time: remember
+			// where, so a later back-edge to it (issue #1121) has something
+			// to bind to instead of coming out dangling.
+			if (q->close_cycles && t_was_var && !both && is_compound(t))
+				record_clone_def(q, get_ordered_slot_num(q, GET_FRAME(t_owning_ctx), t_var_num), tmp_heap_used(q));
 
 			if (both)
 				q->cycle_error = q->cycle_dropped = true;
 
 			if (is_var(p1) && cycles_back(q, t, t_ctx)) {
-				if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail cycles_back HIT\n");
 				t = p1;
 				t_ctx = p1_ctx;
 				q->cycle_error = true;
@@ -298,16 +303,6 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 
 		if (!q->has_vars)
 			tmp->flags |= FLAG_INTERNED_GROUND;
-
-		if (getenv("DBG_CLONE") && !depth) {
-			fprintf(stderr, "DBG DUMP depth=%u num_cells=%u\n", depth, tmp->num_cells);
-			cell *d = tmp;
-			for (unsigned i = 0; i < tmp->num_cells; i++, d++) {
-				fprintf(stderr, "DBG   [%u] tag=%d is_ref=%d var_num=%u val_ctx=%d num_cells=%u\n",
-					i, d->tag, is_ref(d), is_var(d)?d->var_num:9999,
-					is_ref(d)?(int)d->val_ctx:-1, d->num_cells);
-			}
-		}
 
 		return tmp;
 	}
@@ -438,6 +433,22 @@ cell *append_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 	if (!tmp) return NULL;
 	copy_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
 	return tmp;
+}
+
+// close_cycles only (see internal.h): first-write-wins, so a slot keeps
+// the offset of its own definition rather than some later revisit of it.
+
+static void record_clone_def(query *q, pl_idx slot_nbr, pl_idx tmp_offset)
+{
+	const void *v;
+
+	if (q->clone_defs && sl_get(q->clone_defs, (void*)(size_t)slot_nbr, &v))
+		return;
+
+	if (!q->clone_defs)
+		q->clone_defs = sl_create(NULL, NULL, NULL);
+
+	sl_app(q->clone_defs, (void*)(size_t)slot_nbr, (void*)(size_t)tmp_offset);
 }
 
 static int accum_slot(query *q, size_t slot_nbr, unsigned var_num)
@@ -622,7 +633,10 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 
 	bool ok = copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx);
 
-	if (created) {
+	// close_cycles needs q->vars alive a bit longer, to resolve interior
+	// back-edges once the heap copy exists - see close_clone_cycles().
+
+	if (created && !q->close_cycles) {
 		if (q->vars)
 			sl_destroy(q->vars);
 
@@ -701,6 +715,58 @@ void trim_heap(query *q)
 	}
 }
 
+// Cleans up q->clone_defs/q->vars when a close_cycles copy bails out
+// (e.g. OOM) before close_clone_cycles() gets to run them.
+
+void abandon_clone_cycles(query *q)
+{
+	if (q->clone_defs) {
+		sl_destroy(q->clone_defs);
+		q->clone_defs = NULL;
+	}
+
+	if (q->vars) {
+		sl_destroy(q->vars);
+		q->vars = NULL;
+	}
+}
+
+// close_cycles only: bind each fresh var created for an interior back-edge
+// (record_clone_def) to where its slot's value landed in the heap copy.
+
+static void close_clone_cycles(query *q, cell *tmp2)
+{
+	if (!q->close_cycles)
+		return;
+
+	if (q->clone_defs) {
+		sliter *iter = sl_first(q->clone_defs);
+		void *offset_v;
+
+		while (sl_next(iter, &offset_v)) {
+			pl_idx slot_nbr = (pl_idx)(size_t)sl_key(iter);
+			const void *var_v;
+
+			if (!q->vars || !sl_get(q->vars, (void*)(size_t)slot_nbr, &var_v))
+				continue;
+
+			unsigned var_num = (unsigned)(size_t)var_v;
+			const frame *f = GET_FRAME(q->st.cur_ctx);
+			slot *e = get_slot(q, f, var_num);
+			make_indirect(&e->c, tmp2 + (pl_idx)(size_t)offset_v, q->st.cur_ctx);
+			add_trail(q, q->st.cur_ctx, var_num, NULL);
+		}
+
+		sl_destroy(q->clone_defs);
+		q->clone_defs = NULL;
+	}
+
+	if (q->vars) {
+		sl_destroy(q->vars);
+		q->vars = NULL;
+	}
+}
+
 cell *clone_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (!init_tmp_heap(q))
@@ -725,6 +791,7 @@ cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool
 	cell *tmp2 = alloc_heap(q, tmp->num_cells);
 	if (!tmp2) return NULL;
 	dup_cells(tmp2, tmp, tmp->num_cells);
+	close_clone_cycles(q, tmp2);
 
 	if (!copy_attrs)
 		return tmp2;
@@ -754,6 +821,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 	cell *tmp2 = alloc_heap(q, tmp->num_cells);
 	if (!tmp2) return NULL;
 	dup_cells(tmp2, tmp, tmp->num_cells);
+	close_clone_cycles(q, tmp2);
 
 	if (!copy_attrs)
 		return tmp2;

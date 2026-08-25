@@ -1,0 +1,4 @@
+query2_ok
+query3_ok
+equal_case_still_fails_ok
+noncyclic_ok

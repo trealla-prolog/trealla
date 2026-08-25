@@ -2201,13 +2201,24 @@ static bool do_copy_term(query *q, bool copy_attrs)
 
 	cell *tmp;
 
+	// close_cycles: bind interior cyclic back-edges instead of dropping
+	// them (issue #1121). Restricted to copy_term_nat/2 - with attributes
+	// in play, closing the cycle can recurse back into this same function.
+
+	q->close_cycles = !copy_attrs;
+
 	if (is_var(p1r) && is_var(p2r))
 		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
 	else
 		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
 
+	q->close_cycles = false;
 	q->dump_var_num = -1;
 	q->dump_var_ctx = -1;
+
+	if (!tmp)
+		abandon_clone_cycles(q);
+
 	CHECKED(tmp);
 
 	// Reget as slots may have reallocated if copy_attrs=true...
