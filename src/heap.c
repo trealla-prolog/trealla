@@ -228,7 +228,9 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			pl_ctx h_ctx = p1_ctx;
 			uint32_t save_vgen = 0;
 			int both = 0;
+			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG iter depth=%u p1tag=%d h_before_tag=%d h_before_var=%u\n", depth, p1->tag, h->tag, is_var(h)?h->var_num:9999);
 			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   head both=%d h_after_tag=%d h_after_var=%u\n", both, h->tag, is_var(h)?h->var_num:9999);
 			if (both) q->cycle_error = q->cycle_dropped = true;
 
 			if (is_var(p1 + 1) && cycles_back(q, h, h_ctx)) {
@@ -246,17 +248,21 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 			pl_ctx t_ctx = p1_ctx;
 
 			if (is_var(t) && (t->var_num == q->dump_var_num) && (t_ctx == q->dump_var_ctx)) {
+				if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail dump_var_num BREAK var=%u p1tag=%d\n", t->var_num, p1->tag);
 				q->cycle_error = true;
 				break;
 			}
 
 			both = 0;
+			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail_before tag=%d var=%u\n", t->tag, is_var(t)?t->var_num:9999);
 			if (deep_copy(t)) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, t, t_ctx, q->vgen);
+			if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail_after both=%d tag=%d var=%u\n", both, t->tag, is_var(t)?t->var_num:9999);
 
 			if (both)
 				q->cycle_error = q->cycle_dropped = true;
 
 			if (is_var(p1) && cycles_back(q, t, t_ctx)) {
+				if (getenv("DBG_CLONE")) fprintf(stderr, "DBG   tail cycles_back HIT\n");
 				t = p1;
 				t_ctx = p1_ctx;
 				q->cycle_error = true;
@@ -292,6 +298,16 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 
 		if (!q->has_vars)
 			tmp->flags |= FLAG_INTERNED_GROUND;
+
+		if (getenv("DBG_CLONE") && !depth) {
+			fprintf(stderr, "DBG DUMP depth=%u num_cells=%u\n", depth, tmp->num_cells);
+			cell *d = tmp;
+			for (unsigned i = 0; i < tmp->num_cells; i++, d++) {
+				fprintf(stderr, "DBG   [%u] tag=%d is_ref=%d var_num=%u val_ctx=%d num_cells=%u\n",
+					i, d->tag, is_ref(d), is_var(d)?d->var_num:9999,
+					is_ref(d)?(int)d->val_ctx:-1, d->num_cells);
+			}
+		}
 
 		return tmp;
 	}
