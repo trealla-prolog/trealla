@@ -17,3 +17,6 @@ unaliased_mutex_properties: ok
 unaliased_thread_properties: ok
 aliased_queue_properties: ok
 queue_property_enumerates_queues: ok
+task_receive_yields_to_siblings: ok
+parked_task_still_receives: ok
+concurrent_task_drain: ok

@@ -672,15 +672,15 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	const bool mt = pr->m->pl->is_multithreaded;
 
 	if (mt)
-		prolog_lock(pr->m->pl);
+		prolog_lock_mod(pr->m->pl, pr->m);
 
 	if (--pr->refcnt != 0) {
-		if (mt) prolog_unlock(pr->m->pl);
+		if (mt) prolog_unlock_mod(pr->m->pl, pr->m);
 		return;
 	}
 
 	if (!list_count(&pr->dirty) || pr->is_abolished) {
-		if (mt) prolog_unlock(pr->m->pl);
+		if (mt) prolog_unlock_mod(pr->m->pl, pr->m);
 		return;
 	}
 
@@ -725,7 +725,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	}
 
 	if (mt)
-		prolog_unlock(pr->m->pl);
+		prolog_unlock_mod(pr->m->pl, pr->m);
 }
 
 static void query_purge_dirty_list(query *q)
@@ -734,20 +734,21 @@ static void query_purge_dirty_list(query *q)
 	rule *r;
 	const bool mt = q->pl->is_multithreaded;
 
-	if (mt)
-		prolog_lock(q->pl);
+	// q->dirty can mix rules from different predicates/modules, unlike
+	// leave_predicate()'s single pr->m - lock per rule's own owner
+	// rather than once for the whole pass.
 
-	for (r = list_front(&q->dirty); r; r = list_next(r))
+	for (r = list_front(&q->dirty); r; r = list_next(r)) {
+		if (mt) prolog_lock_mod(q->pl, r->owner->m);
 		index_remove_clause(r->owner, r);
+		if (mt) prolog_unlock_mod(q->pl, r->owner->m);
+	}
 
 	while ((r = list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
 		TPL_free(r);
 		cnt++;
 	}
-
-	if (mt)
-		prolog_unlock(q->pl);
 
 	if (cnt && 0)
 		printf("*** query_purge_dirty_list %u\n", cnt);
@@ -2381,6 +2382,16 @@ void query_destroy(query *q)
 
 	q->done = true;
 
+	// Off the registry before anything else, so a lookup from another
+	// thread can never resolve to a query that is mid-teardown. Safe to
+	// call unconditionally: unregister_task()/drain_mailbox() are no-ops
+	// for a qid that was never registered (transient sub-queries, most
+	// queries in a single-threaded program), and cheap ones - not worth
+	// gating behind is_task when the callee already gates on pl->tasks.
+
+	unregister_task(q);
+	drain_mailbox(q);
+
 	for (page *a = q->heap_pages; a;) {
 		cell *c = a->cells;
 
@@ -2408,13 +2419,23 @@ void query_destroy(query *q)
 		TPL_free(q->queue[i]);
 	}
 
+	// Unlink first, destroy second: the queues are shared now, so a
+	// task still sitting in one would be left dangling by the free
+	// below. query_destroy() recurses, and each level unlinks its own.
+
+	sched_release(q);
+
 	while (q->tasks) {
 		query *task = q->tasks->next;
 		query_destroy(q->tasks);
 		q->tasks = task;
 	}
 
-	sched_destroy(q);
+	// Choicepoints still live at teardown hold undo items of their own.
+	// Draining q->undo alone left them behind, so a query that halted -
+	// or simply succeeded - with choicepoints outstanding leaked
+	// whatever they were holding. Deepest first, the order backtracking
+	// would have taken.
 
 	for (pl_idx i = q->st.cp; i > 0; i--)
 		undo_list_drain(&GET_CHOICE(i - 1)->undo);
@@ -2474,14 +2495,14 @@ static query *query_create_(module *m, bool is_toplevel)
 	q->p = parser_create(m);
 	q->p->q = q;
 
-	if (!g_query_id) {
-		m->pl->threads[0].q = q;
-		m->pl->threads[0].is_active = true;
-	}
-
+	const bool is_main_root = !g_query_id;
 	q->qid = g_query_id++;
 	q->pl = m->pl;
 	q->pl->q_cnt++;
+
+	if (is_main_root)
+		m->pl->main_thread->q = q;
+
 	q->st.m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
@@ -2549,6 +2570,7 @@ query *query_create_subquery(query *q, cell *instr)
 	query *subq = query_create_(q->st.m, false);
 	if (!subq) return NULL;
 	subq->parent = q;
+	subq->thread_ptr = q->thread_ptr;
 	subq->st.fp = 1;
 	subq->top = q->top;
 
@@ -2586,6 +2608,11 @@ query *query_create_task_rebased(query *q, cell *instr, unsigned num_vars)
 	query *subq = query_create_(q->st.m, false);
 	if (!subq) return NULL;
 	subq->parent = q;
+
+	// Inherit the thread: a task belongs to the run queue of whichever
+	// thread object spawned it, not to the main thread's.
+
+	subq->thread_ptr = q->thread_ptr;
 	subq->st.fp = 1;
 	subq->top = q->top;
 	subq->is_task = true;

@@ -1,0 +1,7 @@
+self_is_stable: ok
+self_send_recv: ok
+recv_nonblocking_fails: ok
+selective_receive_in_place: ok
+task_create_qid_matches_self: ok
+eager_registration: ok
+cross_task_round_trip: ok

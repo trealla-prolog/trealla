@@ -76,6 +76,11 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_IGNORES (1024*8)
 #define MAX_TABS 64000
 #define MAX_STREAMS 1024
+// No longer a cap: threads, message queues and mutexes are allocated
+// individually and chained off the prolog instance (see bif_threads.c),
+// so the only ceiling is what the O/S will give us. Kept as the initial
+// hint for anything that still wants a number.
+
 #define MAX_THREADS 2048
 #define MAX_ACTUAL_THREADS MAX_THREADS
 #define MAX_STREAM_BUFLEN 1024
@@ -694,17 +699,16 @@ struct stream_ {
 	bool is_alias:1;
 };
 
-// Some hosts have no POSIX per-thread timer to arm. Windows and WASI
-// have no such API at all; on OpenBSD and NetBSD timer_create() is
-// there but a limit armed through it never fires - NetBSD's SIGEV_THREAD
-// notification never arrives, so call_with_time_limit/2 was silently no
-// limit at all and a nonterminating goal ran until the test runner
-// killed it. Those hosts poll a monotonic deadline from the normal
-// interrupt checks instead; see has_expired_alarm().
-
-#if defined(_WIN32) || defined(__wasi__) || defined(__OpenBSD__) || defined(__NetBSD__)
-#define USE_POLLED_ALARMS 1
-#endif
+// Timeouts are a polled monotonic deadline kept per thread object, not
+// a signal - see has_expired_alarm(). This used to be the fallback for
+// hosts with no usable POSIX per-thread timer (Windows and WASI have no
+// such API; on OpenBSD and NetBSD timer_create() is there but a limit
+// armed through it never fires), and is now the only path.
+//
+// It is also the only design that survives a thread becoming a task: a
+// SIGALRM handler can only ask which *pthread* it is on, which under a
+// worker pool is the worker rather than the thread object that armed
+// the timer. The deadline is keyed to the object throughout.
 
 typedef struct alarm_entry_ alarm_entry;
 typedef struct thread_ thread;
@@ -732,9 +736,32 @@ struct thread_ {
 
 	void *tabling_state;
 
-#ifdef USE_POLLED_ALARMS
-	alarm_entry *alarms;					// polled timers for hosts without POSIX per-thread timers
-#endif
+	alarm_entry *alarms;					// polled timers, see has_expired_alarm()
+
+	// Intrusive links. live_* chain every live entry in increasing chan
+	// order, which is what lets the table be walked without allocating
+	// or locking - the SIGALRM handler does exactly that, and a skiplist
+	// iterator would do both. free_next chains retired structs awaiting
+	// reuse; a struct is on one list or the other, never both.
+
+	thread *live_next, *live_prev, *free_next;
+
+	// Tasks are scheduled per thread object, not per query and not per
+	// instance. Per query was phase 0's problem: a scheduler that died
+	// with whoever spawned into it. Per instance was phase 0's fix and
+	// went too far - two real threads each draining their own tasks
+	// then drove one set of queues with no lock, which crashed six runs
+	// in ten. A thread object is the thing that actually owns a run
+	// queue: it outlives any one query, and only ever has one thread in
+	// it.
+
+	scheduler *sched;
+
+	// Tasks parked on this queue waiting for a message. A send walks
+	// these and promotes them, which is what makes a receive wake on
+	// delivery rather than on its next poll.
+
+	query *msg_waiters;
 
 	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
@@ -827,15 +854,19 @@ struct query_ {
 	choice *choice_next;
 	frame **frame_pages;
 	slot *save_e;
-	query *tasks;
+	query *tasks;						// tasks we spawned, our registry of them
+	unsigned num_subtasks;				// ... and how many live below us, any depth
 
-	// Task scheduling, see bif_tasks.c. The first group is only used by
-	// a query that has spawned tasks, the second only by a task itself.
+	// Task scheduling, see bif_tasks.c. The scheduler itself now hangs
+	// off the prolog instance rather than off whoever spawned a task -
+	// the fields here are what a task needs to sit in its queues.
 
-	scheduler *sched;					// allocated lazily by push_task()
 	query *sched_next;					// link in the ready FIFO or the io list
-	unsigned heap_idx;					// our slot in the parent's timer heap
+	unsigned heap_idx;					// our slot in the timer heap
 	int wait_fd;						// descriptor we parked on, if waiting_io
+	uint64_t msg_deadline;				// absolute ms for a receive we parked in
+	query *wait_next;					// link in a queue's msg_waiters
+	thread *waiting_on;					// ... and which queue that is
 	short wait_events;					// ... and what we are waiting for
 	uint8_t sched_where;				// which of the three we are queued on
 
@@ -859,7 +890,32 @@ struct query_ {
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned name_idx;		// next free generated-name number, see get_slot_name()
 	unsigned varno, tab0_varno, cur_engine, cur_chan, my_chan;
-	unsigned s_cnt, retries, popp, rand_seed;
+
+	// A task's own mailbox: list of task_msg nodes (bif_tasks.c),
+	// scanned in place by recv/1 so a skipped message keeps its
+	// position rather than rotating to the back. Guarded by the
+	// owning thread's scheduler->guard, since send/2 can enqueue into
+	// this from any thread. cur_task_qid is the sender of the last
+	// message recv/1 matched - stored for a reply-to, not yet exposed
+	// to Prolog. Separate from cur_chan (a thread chan, unsigned):
+	// qid is process-wide and uint64_t, would truncate if shared.
+
+	list mailbox;
+	uint64_t cur_task_qid;
+
+	// task_cancel/1's cross-thread signal. Deliberately not one of the
+	// bool:1 flags below (error, yielded, no_recov, ...): those are
+	// packed into a handful of shared bytes, read-modify-written
+	// together, and only ever safe to touch from the task's own owning
+	// thread while it runs start() on them. A foreign thread calling
+	// task_cancel/1 writes only this one, real, standalone atomic -
+	// sched_run() is what turns a pending request into `error = true`,
+	// from inside the owning thread, at its own dispatch point, which
+	// is what actually cancels the task. See the internal.h bitfield
+	// note above pl->did_dump_vars for the class of bug this avoids.
+
+	pl_atomic bool cancel_requested;
+	unsigned s_cnt, retries, rand_seed;
 	int autofail_n;
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_ctx clone_root_ctx;				// context of clone_root, which alone does not identify a term
@@ -904,6 +960,7 @@ struct query_ {
 	bool yielded:1;
 	bool is_task:1;
 	bool is_thread:1;
+	bool is_registered:1;			// lazily added to pl->tasks - see bif_task_self_1
 	bool json:1;
 	bool nl:1;
 	bool fullstop:1;
@@ -924,7 +981,6 @@ struct query_ {
 	bool double_quotes:1;
 	bool end_wait:1;
 	bool waiting_io:1;
-	bool yield_now:1;
 	bool did_unhandled_exception:1;
 	bool access_private:1;
 	bool in_retract:1;
@@ -1006,6 +1062,7 @@ struct module_ {
 	module *used[MAX_MODULES];
 	module *orig;
 	prolog *pl;
+	lock guard;							// serializes this module's own predicate mutation; see prolog_lock_mod()
 	pi *gex_head, *gex_tail;			// goal expansion ??? (see pi_ above, why not use list?)
 	parser *p;
 	FILE *fp;
@@ -1038,7 +1095,30 @@ struct module_ {
 
 struct prolog_ {
 	stream streams[MAX_STREAMS];
-	thread threads[MAX_THREADS];
+	// Threads, message queues and mutexes. The skiplist answers "which
+	// entry has this id" in O(log n); the intrusive list answers "walk
+	// them all" without allocating. Structs come from free_head and go
+	// back to it when retired, so memory is bounded by peak concurrent
+	// entries rather than by how many have ever existed - and ids, being
+	// monotonic, are never reused even though the memory is.
+
+	skiplist *threads;
+	thread *live_head, *live_tail, *free_head, *free_tail, *main_thread;
+	unsigned next_thread_id;
+
+	// qid -> query* for addressing any query by id (send/2, recv/1).
+	// Lazily created, unlike pl->threads: most programs never touch
+	// send/recv, and this only needs to exist for those that do.
+	// Entries are added lazily too, by task_self/1 (bif_tasks.c) rather
+	// than at query construction - the only way anything ever learns a
+	// qid is that query calling task_self/1 and telling someone, so a
+	// query that never does is unreachable and not worth a skiplist
+	// entry. No need to distinguish a task, a thread's root query, or a
+	// plain directive's query by type here: the countless transient
+	// queries that never call task_self/1 (format's ~@, with_output_to,
+	// engines, goal expansion) simply never register themselves.
+
+	skiplist *tasks;
 	module *modmap[MAX_MODULES];
 	struct { pl_idx tab1[MAX_TABS], tab2[MAX_TABS]; };
 	list modules;

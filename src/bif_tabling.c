@@ -650,7 +650,7 @@ typedef struct {
 
 static tbl_state *tbl(query *q)
 {
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 
 	if (!self->tabling_state) {
 		tbl_state *s = TPL_calloc(1, sizeof(tbl_state));
@@ -1418,13 +1418,18 @@ void tabling_destroy_thread(thread *t)
 	t->tabling_state = NULL;
 }
 
-// Instance teardown: sweep every slot, including threads[0] (the main
-// thread) and any that exited without going through the retire path.
+// Instance teardown: sweep every struct, live or retired - the main
+// thread included, and any that exited without going through the retire
+// path. A retired thread keeps its tabling state until its struct is
+// reused, so the free list has to be swept too.
 
 void tabling_destroy(prolog *pl)
 {
-	for (unsigned i = 0; i < MAX_THREADS; i++)
-		tabling_destroy_thread(&pl->threads[i]);
+	for (thread *t = pl->live_head; t; t = t->live_next)
+		tabling_destroy_thread(t);
+
+	for (thread *t = pl->free_head; t; t = t->free_next)
+		tabling_destroy_thread(t);
 }
 
 // abolish_table/1: drop every variant of ONE predicate. Without this the

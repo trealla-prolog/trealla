@@ -2774,6 +2774,7 @@ void module_destroy(module *m)
 	parser_destroy(m->p);
 	clear_loaded(m);
 	list_remove(&m->pl->modules, m);
+	deinit_lock(&m->guard);
 	TPL_free(m);
 }
 
@@ -2797,6 +2798,7 @@ module *module_create(prolog *pl, const char *name)
 	module *m = TPL_calloc(1, sizeof(module));
 	ENSURE(m);
 
+	init_lock(&m->guard);
 	m->pl = pl;
 	m->filename = set_known(m, name);
 	m->name = set_known(m, name);

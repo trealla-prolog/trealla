@@ -205,7 +205,8 @@ LIBOBJECTS +=  \
 	library/atts.o \
 	library/builtins.o \
 	library/charsio.o \
-	library/actors.o \
+	library/actors/threads.o \
+	library/actors/tasks.o \
 	library/concurrent.o \
 	library/clpb.o \
 	library/clpz.o \
@@ -501,7 +502,8 @@ clean:
 	rm -f tpl tpl.aarch64.elf tpl.com.dbg tpl.wasm $(LIBTREALLA) \
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
 		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
-		library/*.o library/*.c *.o samples/*.o samples/*.so \
+		library/*.o library/*.c library/actors/*.o library/actors/*.c library/actors/*.d \
+		*.o samples/*.o samples/*.so \
 		samples/embed samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \

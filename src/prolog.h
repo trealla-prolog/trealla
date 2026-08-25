@@ -69,7 +69,9 @@ extern builtins g_uri_bifs[];
 extern prolog *g_prologs[];
 extern pl_atomic int g_tpl_count;
 
-extern thread *get_self(prolog *pl);
+extern thread *find_thread_by_id(prolog *pl, int chan);
+extern void threads_destroy(prolog *pl);
+extern thread *get_self_query(const query *q);
 
 extern void keyfree(const void *key, const void *val, const void *p);
 
@@ -81,6 +83,27 @@ inline static void prolog_lock(prolog *pl)
 inline static void prolog_unlock(prolog *pl)
 {
 	release_lock(&pl->guard);
+}
+
+// Per-module counterpart, for database mutation only (assert/retract/
+// abolish and their purge paths) - see docs/DESIGN-GUSTTO.md phase 3,
+// "measured". Not a general substitute for prolog_lock(): stdout
+// writes, the thread table, the blackboard and the task registry are
+// not module-scoped and stay on the instance-wide lock. A module
+// created by module_duplicate() (the :- attribute shadow modules)
+// shares its orig's lock, matching find_module()'s own redirect - an
+// alias and its original must never serialize independently.
+
+inline static void prolog_lock_mod(prolog *pl, module *m)
+{
+	if (m->orig) m = m->orig;
+	acquire_lock(&m->guard);
+}
+
+inline static void prolog_unlock_mod(prolog *pl, module *m)
+{
+	if (m->orig) m = m->orig;
+	release_lock(&m->guard);
 }
 
 extern void release_pl_terms(query *q);

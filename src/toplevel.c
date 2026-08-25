@@ -35,7 +35,7 @@ static void show_goals(query *q, int num)
 
 int check_interrupt(query *q)
 {
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 
 	if (self->timedout) {
 		self->timedout = 0;

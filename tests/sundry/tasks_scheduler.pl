@@ -1,28 +1,36 @@
-% Task scheduler: dispatch fairness, timers, and the wait/0 - await/0
-% split. Nothing here touches the network, so it is deterministic.
+% Task scheduler: dispatch fairness and timers. Nothing here touches the
+% network, so it is deterministic.
 %
 % Before the scheduler was rewritten around a ready queue, a timer heap
 % and a descriptor list, wait/0 and await/0 were two copies of one scan
-% over q->tasks. Three properties below are regression guards for what
-% that scan got wrong:
+% over the task list. Two properties below are regression guards for
+% what that scan got wrong:
 %
 %   - dispatch was LIFO, and the scan stopped at the 64th spawned task,
 %     so past 64 tasks the oldest ones starved (fair_order, backlog).
 %   - end_wait/0 was honoured by wait/0 but not await/0, which left the
 %     flag set for the *next* wait/0 to trip over (end_wait_once).
 %
+% Tasks reported over send/1 and were read with recv/1 until GUSTTO
+% phase 1 removed both, along with await/0. They use the shared database
+% now. What went with await/0 is the check that it returned once per
+% signalling task - there are no signals left to count.
+%
 % Anything asserting an interleaving of independent tasks is avoided on
 % purpose - see the note in tests/misc/sockets.pl for what that costs.
 
+
 :- initialization(main).
 
+:- dynamic(result/1).
+
 emit(N) :- write(N), write(' ').
-square(N) :- M is N*N, send(M).
+square(N) :- M is N*N, assertz(result(M)).
 napper(N) :- S is N/20, sleep(S), write(N), write(' ').
 
 drain(Sum) :- drain_(0, Sum).
 drain_(Acc, Sum) :-
-	(	recv(X)
+	(	retract(result(X))
 	->	Acc1 is Acc + X, drain_(Acc1, Sum)
 	;	Sum = Acc
 	).
@@ -43,27 +51,6 @@ backlog :-
 	(	Sum =:= Expect
 	->	format("backlog: ok~n")
 	;	format("backlog: FAILED ~w vs ~w~n", [Sum,Expect])
-	).
-
-% await/0 returns once per task that signalled, and fails once no tasks
-% are left - which is what makes it usable as a loop condition.
-
-step :-
-	forall(between(1,8,N), call_task(square,N)),
-	step_(0, Count, 0, Sum),
-	(	Count =:= 8, Sum =:= 204
-	->	format("step: ok~n")
-	;	format("step: FAILED ~w ~w~n", [Count,Sum])
-	).
-
-step_(C0, C, S0, S) :-
-	(	await
-	->	(	recv(X)
-		->	C1 is C0 + 1, S1 is S0 + X
-		;	C1 = C0, S1 = S0
-		),
-		step_(C1, C, S1, S)
-	;	C = C0, S = S0
 	).
 
 % A task calling end_wait/0 releases the parent from wait/0. The flag
@@ -94,7 +81,6 @@ timers :-
 main :-
 	fair_order,
 	backlog,
-	step,
 	end_wait_once,
 	timers,
 	yields.
@@ -104,20 +90,17 @@ main :-
 % each - do_yield() clamped a zero delay up to 1 - so this loop alone
 % took over half a second.
 %
-% It must still not read as a message. "Yielded with no deadline" is how
-% the scheduler recognises the signal send/1 raises, so a plain yield
-% carries a mark of its own; without it, await/0 below would return for
-% every yield rather than once for the send.
+% With await/0 gone this can no longer count scheduler wakeups, so what
+% is left guards the requeue path itself: 2000 yields must run to
+% completion rather than stalling or starving the task.
 
-yielder(0) :- !, send(done).
+yielder(0) :- !, assertz(result(0)).
 yielder(N) :- yield, N1 is N-1, yielder(N1).
-
-awaits(A, C) :- ( await -> A1 is A+1, awaits(A1, C) ; C = A ).
 
 yields :-
 	call_task(yielder, 2000),
-	awaits(0, C),
-	(	C =:= 1
+	wait,
+	(	retract(result(0))
 	->	format("yields: ok~n")
-	;	format("yields: FAILED await returned ~w times~n", [C])
+	;	format("yields: FAILED yielder did not finish~n")
 	).

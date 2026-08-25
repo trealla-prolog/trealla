@@ -30,6 +30,8 @@ static void msleep(int ms)
 #if !defined(_WIN32) && !defined(__wasi__)
 #define USE_POLL 1
 #include <poll.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 // Longest we sleep in one go.
@@ -39,17 +41,14 @@ static void msleep(int ms)
 // SIGALRM behind an expiring alarm both cut poll() and nanosleep() short
 // with EINTR, so neither waits this out.
 //
-// Where there are no signals there is nothing to cut it short.
-// interrupt_pending() polls has_expired_alarm() instead, and only gets
-// the chance once per pass round the scheduler - so on those platforms
-// this is also the worst case for how late a timeout can fire, and has
-// to stay small enough not to be noticed.
+// Timeouts are polled rather than signalled, so nothing cuts this sleep
+// short on their behalf. That used to force the cap down to 5ms, which
+// made every idle scheduler wake two hundred times a second just in
+// case. sched_wait() now asks next_alarm_delay() and sleeps exactly
+// until the nearest deadline instead, so the cap is back to bounding
+// interrupt latency and nothing else.
 
-#ifdef USE_POLLED_ALARMS
-#define SCHED_MAX_SLEEP_MS 5
-#else
 #define SCHED_MAX_SLEEP_MS 250
-#endif
 
 // A task parked on a descriptor also carries a deadline, so that a
 // wakeup we somehow miss costs latency rather than a hang.
@@ -102,10 +101,9 @@ bool do_yield_then(query *q, bool status)
 // it asks for no deadline at all and the scheduler puts the task back on
 // the ready queue as it stands.
 //
-// It needs a mark of its own rather than just a zero deadline, because
-// "yielded, no deadline" is exactly how sched_run() recognises the
-// signal send/1 raises - which is the thing await/0 is waiting for. A
-// plain yield must not look like a message.
+// That zero deadline is the whole trick: sched_park() only reaches the
+// timer heap for a deadline still in the future, so a zero goes
+// straight back on the ready queue.
 
 bool do_yield_now(query *q)
 {
@@ -118,7 +116,6 @@ bool do_yield_now(query *q)
 
 	q->yield_at = 0;
 	q->yielded = true;
-	q->yield_now = true;
 	q->tmo_msecs = 0;
 	CHECKED(push_choice(q));
 	return false;
@@ -166,20 +163,6 @@ bool do_yield_on_stream(query *q, stream *str, bool is_write)
 	return do_yield(q, 1);
 }
 
-static cell *pop_queue(query *q)
-{
-	if (!q->qp[0])
-		return NULL;
-
-	cell *c = q->queue[0] + q->popp;
-	q->popp += c->num_cells;
-
-	if (q->popp == q->qp[0])
-		q->popp = q->qp[0] = 0;
-
-	return c;
-}
-
 // The scheduler holds every task in exactly one of three places: the
 // ready FIFO (runnable now), the timer heap (waiting on a deadline), or
 // the io list (parked on a descriptor). q->tasks stays the registry of
@@ -201,31 +184,139 @@ struct scheduler_ {
 	struct pollfd *pfds;				// scratch for one poll() call
 	query **pfd_owners;					// ... and who each entry belongs to
 	unsigned pfds_size;
+
+	// Self-pipe, so a thread that is not the owner can cut short a
+	// sleep it is in - having just promoted one of its parked tasks.
+	// The read end sits in every poll() set.
+
+	int wake_fd[2];						// [0] read, [1] write; -1 if unavailable
+	pl_atomic bool wake_pending;		// a byte is already in flight
 #endif
+
+	// Only the owning thread ever runs the scheduler, so the pollfd
+	// scratch above stays single-writer. What other threads do is
+	// *promote*: move one of these queues' tasks to ready when a message
+	// it was parked on arrives. This guards exactly that - the ready
+	// list, the timer heap, the io list, and the sched_where/heap_idx
+	// each task carries saying which one it is on.
+	//
+	// Never held across start() or poll(). The first would serialise
+	// what the pool exists to parallelise; the second would block.
+
+	lock guard;
+	bool guard_init;
 };
+
+static void sched_lock(scheduler *s)
+{
+	if (s->guard_init)
+		acquire_lock(&s->guard);
+}
+
+static void sched_unlock(scheduler *s)
+{
+	if (s->guard_init)
+		release_lock(&s->guard);
+}
 
 static void pop_task(query *q, query *task);
 
+// There is one scheduler per prolog instance, not one per query that
+// happened to spawn something. Ownership is tracked separately: a task
+// stays on its spawner's q->tasks registry, and every query on the
+// chain above it counts it in num_subtasks. So the scheduler answers
+// "what can run", and the registry answers "whose is it" - which is
+// what lets wait/0 mean "until my own work is done" while the queues
+// themselves are shared.
+
+// Which scheduler a query's tasks belong to: the one on its thread
+// object. Tasks inherit thread_ptr from whoever spawned them, so a task
+// of a thread's query lands on that thread's queues rather than the
+// main thread's.
+
+// Originally only ever called by a thread lazily creating its own
+// scheduler (push_task(), below - single-writer, no race possible).
+// send/2 broke that invariant: it needs the *target's* scheduler from
+// whatever thread happens to be sending, which may be the first thing
+// to touch that target's scheduler at all. Gated on is_multithreaded
+// like register_task()'s registry lock, so the plain single-thread
+// case (the overwhelming majority of programs) never pays for a lock
+// it can't ever contend.
+
 static scheduler *sched_get(query *q)
 {
-	if (!q->sched)
-		q->sched = TPL_calloc(1, sizeof(scheduler));
+	thread *t = get_self_query(q);
+	const bool mt = q->pl->is_multithreaded;
 
-	return q->sched;
+	if (mt)
+		prolog_lock(q->pl);
+
+	if (!t->sched) {
+		t->sched = TPL_calloc(1, sizeof(scheduler));
+
+		if (t->sched) {
+			init_lock(&t->sched->guard);
+			t->sched->guard_init = true;
+#if USE_POLL
+			scheduler *s = t->sched;
+
+			if (pipe(s->wake_fd) == 0) {
+				fcntl(s->wake_fd[0], F_SETFL, fcntl(s->wake_fd[0], F_GETFL, 0) | O_NONBLOCK);
+				fcntl(s->wake_fd[1], F_SETFL, fcntl(s->wake_fd[1], F_GETFL, 0) | O_NONBLOCK);
+			} else
+				s->wake_fd[0] = s->wake_fd[1] = -1;
+#endif
+		}
+	}
+
+	scheduler *s = t->sched;
+
+	if (mt)
+		prolog_unlock(q->pl);
+
+	return s;
 }
 
-void sched_destroy(query *q)
+// Cut short a sleep the owning thread is in. Safe from any thread, and
+// cheap when it is not sleeping: one byte, at most one in flight.
+
+void sched_wake(thread *t)
 {
-	if (!q->sched)
+#if USE_POLL
+	scheduler *s = t->sched;
+
+	if (!s || (s->wake_fd[1] < 0) || s->wake_pending)
 		return;
 
-	TPL_free(q->sched->timers);
-#if USE_POLL
-	TPL_free(q->sched->pfds);
-	TPL_free(q->sched->pfd_owners);
+	s->wake_pending = true;
+	const char c = 1;
+
+	if (write(s->wake_fd[1], &c, 1) != 1)
+		s->wake_pending = false;
+#else
+	(void)t;
 #endif
-	TPL_free(q->sched);
-	q->sched = NULL;
+}
+
+void sched_destroy(thread *t)
+{
+	if (!t->sched)
+		return;
+
+	TPL_free(t->sched->timers);
+#if USE_POLL
+	TPL_free(t->sched->pfds);
+	TPL_free(t->sched->pfd_owners);
+
+	if (t->sched->wake_fd[0] >= 0) close(t->sched->wake_fd[0]);
+	if (t->sched->wake_fd[1] >= 0) close(t->sched->wake_fd[1]);
+#endif
+
+	if (t->sched->guard_init)
+		deinit_lock(&t->sched->guard);
+
+	TPL_free(t->sched);
+	t->sched = NULL;
 }
 
 static void heap_swap(scheduler *s, unsigned a, unsigned b)
@@ -357,6 +448,31 @@ static void sched_unlink(scheduler *s, query *task)
 	task->sched_next = NULL;
 }
 
+// Move a task that was parked waiting for a message onto its own
+// scheduler's ready queue, and wake the thread that owns it. Called
+// from whichever thread did the send, which is why the scheduler needs
+// a lock at all.
+
+void sched_promote(query *task)
+{
+	thread *owner = task->thread_ptr ? task->thread_ptr : task->pl->main_thread;
+	scheduler *s = owner->sched;
+
+	if (!s)
+		return;
+
+	sched_lock(s);
+
+	if (task->sched_where != SCHED_READY) {
+		sched_unlink(s, task);
+		task->tmo_msecs = 0;
+		sched_ready_push(s, task);
+	}
+
+	sched_unlock(s);
+	sched_wake(owner);
+}
+
 // Where a task goes after it has had its turn. A task that errored is
 // put straight back on the ready queue so it gets reaped next pass,
 // rather than sitting out whatever it asked to wait for.
@@ -393,12 +509,41 @@ static void sched_expire_timers(scheduler *s, uint64_t now)
 // whichever is sooner, the cap only bounding how long an interrupt can
 // go unnoticed. Without it this is a check that returns immediately.
 
-static void sched_wait(scheduler *s, uint64_t now, bool block)
+static void sched_wait(query *q, scheduler *s, uint64_t now, bool block)
 {
-	uint64_t deadline = s->timers_used ? s->timers[0]->tmo_msecs + 1 : 0;
 	unsigned n = 0;
+	sched_lock(s);
+	uint64_t deadline = s->timers_used ? s->timers[0]->tmo_msecs + 1 : 0;
 
 #if USE_POLL
+	// Slot 0 is always the wake pipe, so any sleep below can be ended by
+	// another thread that has just promoted one of our tasks.
+
+	unsigned wake_slot = (unsigned)-1;
+
+	if (s->wake_fd[0] >= 0) {
+		if (!s->pfds_size) {
+			struct pollfd *pfds = TPL_realloc(s->pfds, 8 * sizeof(struct pollfd));
+			query **owners = pfds ? TPL_realloc(s->pfd_owners, 8 * sizeof(query*)) : NULL;
+
+			if (owners) {
+				s->pfds = pfds;
+				s->pfd_owners = owners;
+				s->pfds_size = 8;
+			} else if (pfds)
+				s->pfds = pfds;
+		}
+
+		if (s->pfds_size) {
+			wake_slot = n;
+			s->pfds[n].fd = s->wake_fd[0];
+			s->pfds[n].events = POLLIN;
+			s->pfds[n].revents = 0;
+			s->pfd_owners[n] = NULL;
+			n++;
+		}
+	}
+
 	for (query *task = s->io_head; task; task = task->sched_next) {
 		if (n == s->pfds_size) {
 			unsigned size = s->pfds_size ? s->pfds_size * 2 : 8;
@@ -426,6 +571,8 @@ static void sched_wait(scheduler *s, uint64_t now, bool block)
 	}
 #endif
 
+	sched_unlock(s);
+
 	// Clamp before narrowing: a long enough sleep/1 would otherwise
 	// overflow the int and could turn into poll()'s "block forever".
 
@@ -434,6 +581,15 @@ static void sched_wait(scheduler *s, uint64_t now, bool block)
 
 	if (!deadline)
 		tmo = SCHED_MAX_SLEEP_MS;
+
+	// A pending call_with_time_limit/2 is a deadline too. Without this
+	// the sleep would run past it and the timeout would fire late by
+	// however much of the cap was left.
+
+	unsigned alarm_ms = 0;
+
+	if (next_alarm_delay(q, &alarm_ms) && ((int)alarm_ms < tmo))
+		tmo = (int)alarm_ms;
 
 	if (!block)
 		tmo = 0;
@@ -448,91 +604,129 @@ static void sched_wait(scheduler *s, uint64_t now, bool block)
 #if USE_POLL
 	int ready = poll(s->pfds, n, tmo);
 	now = wall_time_in_usec() / 1000;
+	sched_lock(s);
 
-	// Walk the io list in lockstep with the descriptors we just built
-	// from it, promoting anything that woke or whose backstop expired.
+	// Drain the wake pipe if that is what ended the sleep. It carries no
+	// information beyond "look again", so the bytes are discarded.
 
-	query **pprev = &s->io_head;
-	unsigned i = 0;
+	if ((wake_slot != (unsigned)-1) && (ready > 0) && s->pfds[wake_slot].revents) {
+		char buf[64];
 
-	while (*pprev) {
-		query *task = *pprev;
-		bool woken = (ready > 0) && (i < n) && s->pfds[i].revents;
-		i++;
+		while (read(s->wake_fd[0], buf, sizeof(buf)) > 0)
+			;
 
-		if (!woken && task->tmo_msecs && (task->tmo_msecs >= now)) {
-			pprev = &task->sched_next;
+		s->wake_pending = false;
+	}
+
+	// Promote by owner rather than by walking the io list in lockstep
+	// with the descriptors. The lock was released across poll(), so
+	// another thread may have promoted one of these already - a lockstep
+	// walk assumes the list is exactly as it was when the set was built,
+	// and would put the wrong task on the wrong descriptor if it is not.
+	// sched_where says whether an entry is still parked on io at all.
+
+	for (unsigned i = 0; i < n; i++) {
+		query *task = s->pfd_owners[i];
+
+		if (!task)					// the wake pipe owns no task
 			continue;
-		}
 
-		*pprev = task->sched_next;
+		bool woken = (ready > 0) && s->pfds[i].revents;
+
+		if (!woken && task->tmo_msecs && (task->tmo_msecs >= now))
+			continue;
+
+		if (task->sched_where != SCHED_IO)
+			continue;
+
+		sched_unlink(s, task);
 		sched_ready_push(s, task);
 	}
+
+	sched_unlock(s);
 #endif
 }
 
-enum sched_mode {
-	SCHED_DRAIN,						// run until no tasks are left
-	SCHED_STEP							// run until one task signals
-};
+// Run until the caller's own subtree is done. There used to be a second
+// mode that stopped as soon as one task "signalled" - yielded without
+// asking for a deadline - which is how await/0 heard about send/1. All
+// three went together, so what is left is the drain.
 
-// A task "signals" by yielding without asking for a timeout, which is
-// what send/1 does - and that is precisely what await/0 waits to hear.
-
-static bool sched_run(query *q, enum sched_mode mode)
+static void sched_run(query *q)
 {
-	scheduler *s = q->sched;
-	bool signalled = false;
+	scheduler *s = sched_get(q);
 
-	while (q->tasks && !q->end_wait) {
+	while (q->num_subtasks && !q->end_wait) {
 		CHECK_INTERRUPT();
 		uint64_t now = wall_time_in_usec() / 1000;
+
+		sched_lock(s);
 		sched_expire_timers(s, now);
 		query *task = sched_ready_pop(s);
-
-		if (!task) {
-			if (!s->timers_used && !s->io_head)
-				break;					// nothing left to wake us
-
-			sched_wait(s, now, true);
-			continue;
-		}
+		bool idle = !task && !s->timers_used && !s->io_head;
 
 		// A yield goes straight back on the ready queue, so a task that
 		// yields in a loop would keep this queue occupied and we would
-		// never reach the blocking wait above - leaving anyone parked on
+		// never reach the blocking wait below - leaving anyone parked on
 		// a descriptor unheard. Look at them anyway, without blocking,
 		// and at most once a millisecond so this stays off the hot path.
 
-		if (s->io_head && (now > s->last_poll)) {
+		bool peek_io = task && s->io_head && (now > s->last_poll);
+
+		if (peek_io)
 			s->last_poll = now;
-			sched_wait(s, now, false);
+
+		sched_unlock(s);
+
+		if (!task) {
+			if (idle)
+				break;					// nothing left to wake us
+
+			sched_wait(q, s, now, true);
+			continue;
 		}
+
+		if (peek_io)
+			sched_wait(q, s, now, false);
 
 		task->tmo_msecs = 0;
 		task->waiting_io = false;
-		task->yield_now = false;
+
+		// The one place task_cancel/1's request actually takes effect:
+		// single-threaded here, relative to this task, so folding it
+		// into `error` is safe in a way writing `error` directly from
+		// whatever foreign thread called task_cancel/1 would not be.
+
+		if (task->cancel_requested)
+			task->error = true;
 
 		if (!task->yielded || !task->st.instr || task->error) {
-			pop_task(q, task);
+			pop_task(task->parent, task);
 			query_destroy(task);
 			continue;
 		}
 
+		// Deliberately outside the lock: this runs arbitrary Prolog and
+		// can re-enter the scheduler.
+
 		start(task);
-		bool signal = task->yielded && !task->tmo_msecs && !task->yield_now;
+
+		sched_lock(s);
 		sched_park(s, task, now);
-
-		if (signal) {
-			signalled = true;
-
-			if (mode == SCHED_STEP)
-				break;
-		}
+		sched_unlock(s);
 	}
 
 	q->end_wait = false;
-	return signalled;
+}
+
+// A task counts against everyone above it, not just its spawner, so
+// that a wait/0 high up knows there is still work underneath it even
+// when its own direct children have all finished.
+
+static void count_subtask(query *q, int delta)
+{
+	for (; q; q = q->parent)
+		q->num_subtasks += delta;
 }
 
 static bool push_task(query *q, query *task)
@@ -548,7 +742,10 @@ static bool push_task(query *q, query *task)
 		q->tasks->prev = task;
 
 	q->tasks = task;
+	count_subtask(q, 1);
+	sched_lock(s);
 	sched_ready_push(s, task);
+	sched_unlock(s);
 	return true;
 }
 
@@ -562,6 +759,101 @@ static void pop_task(query *q, query *task)
 
 	if (task == q->tasks)
 		q->tasks = task->next;
+
+	count_subtask(q, -1);
+}
+
+// Take a query's tasks off the shared queues before it is torn down.
+// With a scheduler of its own this was free - the whole thing was
+// freed with the query - but the queues outlive any one query now, so
+// anything still sitting in them has to be unlinked or it dangles.
+
+void sched_release(query *q)
+{
+	scheduler *s = sched_get(q);
+
+	if (!s)
+		return;
+
+	sched_lock(s);
+
+	for (query *task = q->tasks; task; task = task->next)
+		sched_unlink(s, task);
+
+	sched_unlock(s);
+}
+
+// Registry for addressing an arbitrary task by qid, from any thread.
+// Same locking discipline as find_thread_by_id(): gated on
+// is_multithreaded, so a program that never creates a second thread
+// never pays for it, and the lock spans lookup-and-use rather than
+// being dropped before the caller trusts the result - the exact bug
+// class this session found and fixed on the thread side (a resolved
+// pointer going stale between lookup and use once another thread can
+// tear the target down concurrently).
+//
+// qid is a process-wide uint64_t counter, not a small per-instance
+// int like a thread's chan. On a platform where uintptr_t is 32 bits
+// the cast below truncates it - unlike chan, which never gets near
+// that range, qid genuinely can, given a long-running process or a
+// task-heavy benchmark (skynet alone creates 100,000+ in one run).
+// No 32-bit target currently exercises this codepath, but the risk is
+// real enough to be worth this note rather than silence.
+
+bool register_task(query *q)
+{
+	prolog *pl = q->pl;
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	if (!pl->tasks)
+		pl->tasks = sl_create(NULL, NULL, NULL);
+
+	bool ok = pl->tasks && sl_set(pl->tasks, (const void*)(uintptr_t)q->qid, q);
+
+	if (mt)
+		prolog_unlock(pl);
+
+	return ok;
+}
+
+void unregister_task(query *q)
+{
+	prolog *pl = q->pl;
+
+	if (!pl->tasks)
+		return;
+
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	sl_del(pl->tasks, (const void*)(uintptr_t)q->qid);
+
+	if (mt)
+		prolog_unlock(pl);
+}
+
+query *find_task_by_qid(prolog *pl, uint64_t qid)
+{
+	if (!pl->tasks)
+		return NULL;
+
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	const void *v = NULL;
+	bool found = sl_get(pl->tasks, (const void*)(uintptr_t)qid, &v);
+
+	if (mt)
+		prolog_unlock(pl);
+
+	return found ? (query*)v : NULL;
 }
 
 static bool bif_end_wait_0(query *q)
@@ -574,22 +866,10 @@ static bool bif_end_wait_0(query *q)
 
 static bool bif_wait_0(query *q)
 {
-	if (q->sched)
-		sched_run(q, SCHED_DRAIN);
+	if (sched_get(q))
+		sched_run(q);
 
 	q->end_wait = false;
-	return true;
-}
-
-static bool bif_await_0(query *q)
-{
-	if (q->sched)
-		sched_run(q, SCHED_STEP);
-
-	if (!q->tasks)
-		return false;
-
-	CHECKED(push_choice(q));
 	return true;
 }
 
@@ -687,6 +967,92 @@ static bool bif_call_task_n(query *q)
 	return true;
 }
 
+// call_task/N with the new task's address handed back immediately,
+// mirroring thread_create/2 - unlike task_self/1's lazy registration,
+// this registers eagerly, before the task has run a single instruction,
+// because the whole point is a caller holding Qid and being able to
+// send/2 to it right away. No variadic call_task(Goal,A1,...,Qid) form:
+// Qid is always the second and only other argument, and a caller
+// wanting extra goal arguments just builds the compound itself, e.g.
+// task_create(worker(A,B,C), Qid).
+
+static bool bif_task_create_2(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,var);
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+		cell *cm = p1 + 1;
+		cm = deref(q, cm, p1_ctx);
+
+		if (!is_atom(cm) && !is_var(cm))
+			return throw_error(q, cm, p1_ctx, "type_error", "callable");
+
+		if (!is_var(cm)) {
+			module *m = find_module(q->pl, C_STR(q, cm));
+			if (m) q->st.m = m;
+		}
+
+		p1 += 2;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+
+		if (!is_callable(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "callable");
+	}
+
+	CHECKED(init_tmp_heap(q));
+	CHECKED(append_to_tmp(q, p1, p1_ctx));
+
+	cell *tmp2 = get_tmp_heap(q, 0);
+	tmp2->num_cells = tmp_heap_used(q);
+	tmp2->arity = p1->arity;
+
+	if (is_cstring(tmp2)) {
+		share_cell(tmp2);
+		convert_to_literal(q->st.m, tmp2);
+	}
+
+	tmp2->match = NULL;
+	bool status;
+
+	if (!call_check(q, tmp2, &status, true))
+		return status;
+
+	// See bif_call_task_n just above for why this stages through a
+	// malloc'd copy rather than cloning tmp2 directly.
+
+	pl_idx num_cells = tmp2->num_cells;
+	cell *staged = TPL_malloc(num_cells * sizeof(cell));
+	CHECKED(staged);
+	copy_cells(staged, tmp2, num_cells);
+
+	if (!init_tmp_heap(q)) {
+		TPL_free(staged);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+	}
+
+	cell *goal = clone_term_to_tmp(q, staged, q->st.cur_ctx);
+	TPL_free(staged);
+	CHECKED(goal);
+
+	cell *tmp = prepare_call(q, CALL_SKIP, goal, q->st.cur_ctx, 0);
+	CHECKED(tmp);
+	unsigned num_vars = rebase_term(q, tmp, 0, false);
+	query *task = query_create_task_rebased(q, tmp, num_vars);
+	CHECKED(task);
+	task->yielded = task->spawned = true;
+	CHECKED(push_task(q, task));
+
+	if (!register_task(task))
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+
+	task->is_registered = true;
+	cell tmp_qid;
+	make_int(&tmp_qid, (pl_int)task->qid);
+	return unify(q, p2, p2_ctx, &tmp_qid, q->st.cur_ctx);
+}
+
 static bool bif_fork_0(query *q)
 {
 	cell *instr = q->st.instr + q->st.instr->num_cells;
@@ -709,9 +1075,17 @@ static bool bif_sys_cancel_future_1(query *q)
 			// lands on the next pass rather than whenever its
 			// descriptor or deadline happens to come up.
 
-			if (q->sched && (task->sched_where != SCHED_READY)) {
-				sched_unlink(q->sched, task);
-				sched_ready_push(q->sched, task);
+			scheduler *s = sched_get(q);
+
+			if (s && (task->sched_where != SCHED_READY)) {
+				sched_lock(s);
+
+				if (task->sched_where != SCHED_READY) {
+					sched_unlink(s, task);
+					sched_ready_push(s, task);
+				}
+
+				sched_unlock(s);
 			}
 
 			break;
@@ -728,21 +1102,128 @@ static bool bif_sys_set_future_1(query *q)
 	return true;
 }
 
-static bool bif_send_1(query *q)
-{
-	GET_FIRST_ARG(p1,nonvar);
-	query *dstq = q->parent && !q->parent->done ? q->parent : q;
-	CHECKED(init_tmp_heap(q));
-	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
-	CHECKED(c);
+// Cross-thread task cancellation, addressed by qid instead of the
+// future-id $cancel_future/1 uses (and restricted to the caller's own
+// children, via q->tasks - a qid found through the registry can belong
+// to any thread). Only cancel_requested gets written here; see its
+// comment in internal.h and the check in sched_run() for why the
+// `error = true` that actually stops the task has to happen on the
+// task's own owning thread, not this one. sched_promote() is the same
+// unconditionally-safe call send/2 already makes - a no-op if the task
+// is already ready or running, which just means the cancellation is
+// picked up next time it parks rather than instantly: there is no
+// preemption for a cooperative task, only the next checkpoint.
 
-	for (pl_idx i = 0; i < c->num_cells; i++) {
-		cell *c2 = c + i;
-		share_cell(c2);
+static bool bif_task_cancel_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	uint64_t qid = (uint64_t)get_smallint(p1);
+	query *target = find_task_by_qid(q->pl, qid);
+
+	if (!target || !target->is_task)
+		return throw_error(q, p1, p1_ctx, "existence_error", "task");
+
+	target->cancel_requested = true;
+	sched_promote(target);
+	return true;
+}
+
+// A task's own mailbox. Minimal on purpose - no from_chan-shaped extra
+// baggage beyond what a reply-to address needs (from_qid), unlike
+// thread.c's msg, which this deliberately does not share: the two
+// mailboxes are locked differently (a task's under its owning thread's
+// scheduler->guard, not a thread's own guard) and qid does not fit
+// where from_chan does (uint64_t vs int).
+
+typedef struct task_msg_ {
+	lnode hdr;						// must be first
+	uint64_t from_qid;
+	cell c[];
+} task_msg;
+
+// A task destroyed with unread mail still owns those cells' references -
+// query_destroy() calls this before it starts unsharing the heap, same
+// as thread teardown draining its own queue.
+
+void drain_mailbox(query *q)
+{
+	task_msg *m;
+
+	while ((m = list_pop_front(&q->mailbox))) {
+		unshare_cells(m->c, m->c->num_cells);
+		TPL_free(m);
+	}
+}
+
+static bool bif_task_self_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+
+	// Registered lazily, here, rather than at query construction: the
+	// only way anyone else ever learns this qid is by this query telling
+	// them (there's no other way to enumerate qids), so a query that
+	// never calls task_self/1 is unreachable and not worth a registry
+	// slot. This covers a plain top-level directive's query exactly the
+	// same as a task's or a thread's - none of them are otherwise
+	// distinguishable from the countless transient queries (format's
+	// ~@, with_output_to, goal/term expansion) that come and go by the
+	// thousand and must never touch the registry.
+
+	if (!q->is_registered) {
+		CHECKED(register_task(q));
+		q->is_registered = true;
 	}
 
-	CHECKED(alloc_queuen(dstq, 0, c));
-	q->yielded = true;
+	cell tmp;
+	make_int(&tmp, (pl_int)q->qid);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+}
+
+static bool bif_send_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,nonvar);
+	uint64_t qid = (uint64_t)get_smallint(p1);
+	query *target = find_task_by_qid(q->pl, qid);
+
+	if (!target)
+		return throw_error(q, p1, p1_ctx, "existence_error", "task");
+
+	CHECKED(init_tmp_heap(q));
+	cell *c = clone_term_to_tmp(q, p2, p2_ctx);
+	CHECKED(c);
+
+	for (pl_idx i = 0; i < c->num_cells; i++)
+		share_cell(c + i);
+
+	task_msg *m = TPL_malloc(sizeof(task_msg) + (sizeof(cell)*c->num_cells));
+
+	if (!m) {
+		for (pl_idx i = 0; i < c->num_cells; i++)
+			unshare_cell(c + i);
+
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+	}
+
+	m->from_qid = q->qid;
+	dup_cells(m->c, c, c->num_cells);
+
+	scheduler *s = sched_get(target);
+
+	if (s) sched_lock(s);
+	list_push_back(&target->mailbox, m);
+	if (s) sched_unlock(s);
+
+	// Safe unconditionally, not just when target happens to be parked:
+	// sched_where reads SCHED_READY both while genuinely on the ready
+	// queue and while actively running (sched_ready_pop() does not
+	// change it, only sched_park() does, after start() returns), and
+	// promoting either case is a correct no-op. No separate waiter
+	// list needed - unlike a thread's mailbox, which several tasks
+	// could be parked on at once, a task's own mailbox has at most one
+	// possible waiter: itself.
+
+	sched_promote(target);
 	return true;
 }
 
@@ -750,15 +1231,161 @@ static bool bif_recv_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 
-	while (true) {
-		CHECK_INTERRUPT();
-		cell *c = pop_queue(q);
-		if (!c) break;
+	// Under our own scheduler's lock: another thread's send/2 can be
+	// pushing into this mailbox concurrently right now.
 
-		if (unify(q, p1, p1_ctx, c, q->st.cur_ctx))
+	scheduler *s = sched_get(q);
+	if (s) sched_lock(s);
+
+	task_msg *m = list_front(&q->mailbox);
+	const frame *f = GET_CURR_FRAME();
+
+	while (m) {
+		CHECKED(push_choice(q), if (s) sched_unlock(s));
+		cell *tmp = import_term(q, m->c, q->st.cur_ctx);
+		CHECKED(tmp, if (s) sched_unlock(s));
+
+		if (unify(q, p1, p1_ctx, tmp, q->st.cur_ctx)) {
+			q->cur_task_qid = m->from_qid;
+			list_remove(&q->mailbox, m);
+			if (s) sched_unlock(s);
+			unshare_cells(m->c, m->c->num_cells);
+			TPL_free(m);
+			drop_choice(q);
 			return true;
+		}
 
-		CHECKED(alloc_queuen(q, 0, c));
+		retry_choice(q);
+		m = list_next(m);
+	}
+
+	if (s) sched_unlock(s);
+	return false;
+}
+
+// Backstop nap for recv/2's park, mirroring MSG_TASK_POLL_MS
+// (bif_threads.c): send/2 already promotes this task on every send
+// (sched_promote() is a correct no-op if we are not actually parked
+// yet, per its own comment), so this is not the wakeup path in the
+// ordinary case - it only bounds how long a missed promote (this task
+// not yet parked at the moment a concurrent send() calls it) costs.
+
+#define TASK_RECV_POLL_MS 5
+
+// Blocking counterpart to recv/1, with the same in-place selective
+// scan. Opts takes timeout(Seconds) (int or float); with no timeout,
+// blocks indefinitely. See do_match_message_()'s do_wait_message() in
+// bif_threads.c for the dual-path pattern this mirrors, and why it has
+// to be dual: do_yield() only parks a *task* (it is a correct no-op -
+// an immediate `true` - for anything else, per its own q->is_task
+// guard), but recv/2 can just as well be called from a plain top-level
+// directive or a thread's own root query, which are not tasks. Get
+// this wrong and a non-task caller's do_yield() silently no-ops,
+// making the surrounding recv/2 vacuously "succeed" without binding or
+// checking anything at all - caught by a test where a message that was
+// never sent appeared to have been received instantly.
+//
+// So: q->is_task parks via do_yield() and returns to the scheduler,
+// same as recv/1's plain wait would if it had one; otherwise this
+// blocks the real OS thread directly, sleeping and rescanning in a
+// plain C loop, the same as do_wait_message()'s non-task branch calls
+// suspend_thread() instead of parking. The deadline still has to live
+// on the query (q->msg_deadline), not a local, because a parked task
+// is retried from the top of this function on its next entry, and a
+// deadline recomputed there would reset the clock every time; q->retry
+// - already true on that re-entry - is what stops that.
+
+static bool bif_recv_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,list_or_nil);
+	PROLOG_LIST_HANDLER(p2);
+	cell *p2_orig = p2;
+	pl_ctx p2_orig_ctx = p2_ctx;
+	double timeout = -1.0;
+
+	while (is_iso_list(p2)) {
+		cell *h = PROLOG_LIST_HEAD(p2);
+		h = deref(q, h, p2_ctx);
+		pl_ctx h_ctx = q->latest_ctx;
+
+		if (!is_interned(h) || !is_compound(h))
+			return throw_error(q, h, h_ctx, "domain_error", "read_option");
+
+		if (!CMP_STRING_TO_CSTR(q, h, "timeout")) {
+			cell *c1 = deref(q, FIRST_ARG(h), h_ctx);
+
+			if (!is_number(c1))
+				return throw_error(q, c1, h_ctx, "type_error", "read_option");
+
+			timeout = is_float(c1) ? get_float(c1) : get_smallint(c1);
+		} else
+			return throw_error(q, h, h_ctx, "domain_error", "read_option");
+
+		p2 = PROLOG_LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_orig_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	if (is_var(p2))
+		return throw_error(q, p2_orig, p2_orig_ctx, "instantiation_error", "get_option");
+
+	if (!is_nil(p2))
+		return throw_error(q, p2_orig, p2_orig_ctx, "type_error", "list");
+
+	if (!q->retry) {
+		pl_int tmo_ms = timeout >= 0 ? (pl_int)(timeout * 1000) : -1;
+		q->msg_deadline = (tmo_ms >= 0) ? (wall_time_in_usec() / 1000) + tmo_ms : 0;
+	}
+
+	const uint64_t deadline = q->msg_deadline;
+
+	while (!q->halt && !q->abort) {
+		scheduler *s = sched_get(q);
+		if (s) sched_lock(s);
+
+		task_msg *m = list_front(&q->mailbox);
+		const frame *f = GET_CURR_FRAME();
+
+		while (m) {
+			CHECKED(push_choice(q), if (s) sched_unlock(s));
+			cell *tmp = import_term(q, m->c, q->st.cur_ctx);
+			CHECKED(tmp, if (s) sched_unlock(s));
+
+			if (unify(q, p1, p1_ctx, tmp, q->st.cur_ctx)) {
+				q->cur_task_qid = m->from_qid;
+				list_remove(&q->mailbox, m);
+				if (s) sched_unlock(s);
+				unshare_cells(m->c, m->c->num_cells);
+				TPL_free(m);
+				drop_choice(q);
+				return true;
+			}
+
+			retry_choice(q);
+			m = list_next(m);
+		}
+
+		if (s) sched_unlock(s);
+
+		uint64_t now = wall_time_in_usec() / 1000;
+
+		if (deadline && (now >= deadline))
+			return false;
+
+		uint64_t left = deadline ? deadline - now : 0;
+		uint64_t nap = TASK_RECV_POLL_MS;
+
+		if (deadline && (nap > left))
+			nap = left;
+
+		if (nap < 1)
+			nap = 1;
+
+		if (q->is_task)
+			return do_yield(q, (int)nap);
+
+		msleep((int)nap);
 	}
 
 	return false;
@@ -766,6 +1393,13 @@ static bool bif_recv_1(query *q)
 
 builtins g_tasks_bifs[] =
 {
+	{"task_self", 1, bif_task_self_1, "-integer", false, false, BLAH},
+	{"send", 2, bif_send_2, "+integer,+term", false, false, BLAH},
+	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
+	{"recv", 2, bif_recv_2, "?term,+list", false, false, BLAH},
+	{"task_create", 2, bif_task_create_2, ":callable,-integer", false, false, BLAH},
+	{"task_cancel", 1, bif_task_cancel_1, "+integer", false, false, BLAH},
+
 	{"call_task", 1, bif_call_task_n, ":callable", false, false, BLAH},
 	{"call_task", 2, bif_call_task_n, ":callable,?term", false, false, BLAH},
 	{"call_task", 3, bif_call_task_n, ":callable,?term,?term", false, false, BLAH},
@@ -777,11 +1411,8 @@ builtins g_tasks_bifs[] =
 
 	{"end_wait", 0, bif_end_wait_0, NULL, false, false, BLAH},
 	{"wait", 0, bif_wait_0, NULL, false, false, BLAH},
-	{"await", 0, bif_await_0, NULL, false, false, BLAH},
 	{"yield", 0, bif_yield_0, NULL, false, false, BLAH},
 	{"fork", 0, bif_fork_0, NULL, false, false, BLAH},
-	{"send", 1, bif_send_1, "+term", false, false, BLAH},
-	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
 
 	{"$cancel_future", 1, bif_sys_cancel_future_1, "+integer", false, false, BLAH},
 	{"$set_future", 1, bif_sys_set_future_1, "+integer", false, false, BLAH},

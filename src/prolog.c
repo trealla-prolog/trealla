@@ -1045,9 +1045,9 @@ void pl_destroy(prolog *pl)
 #if USE_THREADS
 	if (pl->q_cnt)
 		thread_cancel_all(pl);
+#endif
 
 	thread_deinitialize(pl);
-#endif
 
 	if (pl->logfp)
 		fclose(pl->logfp);
@@ -1055,6 +1055,10 @@ void pl_destroy(prolog *pl)
 	// Before the modules: tables hold cells referencing module data.
 
 	tabling_destroy(pl);
+
+	// After tabling_destroy(), which sweeps every thread's tables.
+
+	threads_destroy(pl);
 
 	module_destroy(pl->system_m);
 	module_destroy(pl->user_m);
@@ -1067,6 +1071,7 @@ void pl_destroy(prolog *pl)
 	sl_destroy(pl->fortab);
 	sl_destroy(pl->help);
 	sl_destroy(pl->alias);
+	sl_destroy(pl->tasks);		// NULL-safe: never created if no task ever spawned
 
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
@@ -1130,6 +1135,7 @@ prolog *pl_create()
 	if (!g_tpl_count++)
 		g_init(pl);
 
+
 	if (!g_tpl_lib) {
 #ifdef DEFAULT_LIBRARY_PATH
 		g_tpl_lib = strdup(DEFAULT_LIBRARY_PATH);
@@ -1176,9 +1182,12 @@ prolog *pl_create()
 
 	init_lock(&pl->guard);
 
-#if USE_THREADS
+	// Unconditional: the thread table holds the main thread, and
+	// q->pl->main_thread is dereferenced by interrupt_pending() whether
+	// or not this build has threads. It used to be threads[0] in a fixed
+	// array, so it existed for free; now it has to be made.
+
 	thread_initialize(pl);
-#endif
 
 	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);

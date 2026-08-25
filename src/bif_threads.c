@@ -62,7 +62,6 @@ void release_lock(lock *l) {}
 
 #endif
 
-#if USE_THREADS
 #define is_threaded(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct msg_ {
@@ -97,6 +96,118 @@ static int get_named_thread(prolog *pl, const char *name, size_t len)
 	return -1;
 }
 
+// Reaching the thread table.
+//
+// Everything that looks one up or walks the table goes through these,
+// so the storage underneath can be changed without touching the fifty
+// call sites that use it. Over an array they are trivial; the point is
+// that they are the only things that know it is an array.
+//
+// next_thread_after() takes an id rather than a position because the
+// property predicates resume across backtracking from a saved id
+// (q->st.v1). Ids are handed out in increasing order, so "the next one
+// after N" stays meaningful even when threads come and go in between -
+// which a raw index into a table that had been reshuffled would not.
+
+thread *find_thread_by_id(prolog *pl, int chan)
+{
+	if ((chan < 0) || !pl->threads)
+		return NULL;
+
+	// sl_get()/sl_set()/sl_del() do their own linked-list splicing with
+	// no locking of their own - only the skiplist's iterator functions
+	// take its guard. new_thread() mutates pl->threads (sl_del + sl_set)
+	// under prolog_lock() when it recycles a struct; this lookup used to
+	// run with no lock at all, so a concurrent sl_del() could free the
+	// node this is mid-traversal through. Traced from an intermittent
+	// heap-use-after-free under concurrent thread churn - see
+	// samples/skynet.pl.
+
+	const bool mt = pl->is_multithreaded;
+
+	if (mt)
+		prolog_lock(pl);
+
+	const void *v = NULL;
+	bool found = sl_get(pl->threads, (const void*)(uintptr_t)chan, &v);
+
+	if (mt)
+		prolog_unlock(pl);
+
+	return found ? (thread*)v : NULL;
+}
+
+
+static thread *main_thread(prolog *pl)
+{
+	return pl->main_thread;
+}
+
+// Which thread is running this query.
+//
+// There used to be a second one asking which *pthread* is executing,
+// by scanning. Its only caller was the SIGALRM handler, which had no
+// query to ask; timeouts are polled off the thread object now, so the
+// scan is gone and with it the last thing that could not answer this
+// question once a thread becomes a task rather than a pthread.
+//
+// The same q->thread_ptr-or-threads[0] idiom is used in query.h,
+// toplevel.c, bif_os.c and bif_tabling.c; this just names it.
+
+thread *get_self_query(const query *q)
+{
+	return q->thread_ptr ? q->thread_ptr : main_thread(q->pl);
+}
+
+// The live list is kept in increasing chan order and ids are handed out
+// increasing, so "the next one after N" is a walk from the head. That is
+// what the property predicates want when they resume from a saved id,
+// and it stays meaningful across entries coming and going in a way that
+// an index into the table never would.
+
+static thread *next_thread_after(prolog *pl, int chan)
+{
+	for (thread *t = pl->live_head; t; t = t->live_next) {
+		if (t->chan > chan)
+			return t;
+	}
+
+	return NULL;
+}
+
+static thread *first_thread(prolog *pl)
+{
+	return pl->live_head;
+}
+
+// Walks the intrusive list rather than the skiplist on purpose: this
+// runs in the SIGALRM handler, where sl_first() would take a lock and
+// allocate an iterator, and neither is async-signal-safe.
+
+#define for_each_thread(pl, t) \
+	for (thread *t = (pl)->live_head; t; t = t->live_next)
+
+// Threads, message queues and mutexes all live in the same table and are
+// told apart by two flags. The property predicates each enumerate one
+// kind, resuming from a saved id across backtracking, so they all want
+// the same thing: the next entry of this kind after that id.
+
+enum thread_kind { TK_THREAD, TK_QUEUE, TK_MUTEX };
+
+static thread *next_of_kind(prolog *pl, int chan, enum thread_kind kind)
+{
+	for (thread *t = next_thread_after(pl, chan); t; t = next_thread_after(pl, t->chan)) {
+		bool want = kind == TK_QUEUE ? t->is_queue_only
+			: kind == TK_MUTEX ? t->is_mutex_only
+			: !t->is_queue_only && !t->is_mutex_only;
+
+		if (want)
+			return t;
+	}
+
+	return NULL;
+}
+
 static int get_thread(query *q, cell *p1)
 {
 	if (is_atom(p1)) {
@@ -116,61 +227,220 @@ static int get_thread(query *q, cell *p1)
 
 	int n = get_smallint(p1);
 
-	if (!q->pl->threads[n].is_active)
+	thread *t = find_thread_by_id(q->pl, n);
+
+	if (!t || !t->is_active)
 		return -1;
 
 	return n;
 }
 
+// Put an entry on the live list. Ids only ever increase, so the new one
+// always belongs at the tail and the list stays sorted for free.
+
+static void link_live(prolog *pl, thread *t)
+{
+	t->live_next = NULL;
+	t->live_prev = pl->live_tail;
+
+	if (pl->live_tail)
+		pl->live_tail->live_next = t;
+	else
+		pl->live_head = t;
+
+	pl->live_tail = t;
+}
+
+static void unlink_live(prolog *pl, thread *t)
+{
+	if (t->live_prev)
+		t->live_prev->live_next = t->live_next;
+	else
+		pl->live_head = t->live_next;
+
+	if (t->live_next)
+		t->live_next->live_prev = t->live_prev;
+	else
+		pl->live_tail = t->live_prev;
+
+	t->live_next = t->live_prev = NULL;
+}
+
+// Hand a retired entry back. The struct is not freed - it goes on the
+// free list for the next new_thread() - so a stale `thread *` sees a
+// recycled struct rather than freed memory, which is exactly what the
+// fixed table did when it reissued a slot. What does *not* come back is
+// the id: those keep counting up, so a message naming an id that has
+// since been retired fails to find it instead of reaching a stranger.
+
+static void retire_thread(prolog *pl, thread *t)
+{
+	// Same lock new_thread() takes, and in the same order relative to
+	// t->guard: several callers retire while holding that, and nothing
+	// anywhere takes pl->guard before it.
+
+	prolog_lock(pl);
+
+	if (!t->is_active) {
+		prolog_unlock(pl);
+		return;
+	}
+
+	if (t->alias) {
+		sl_del(pl->alias, t->alias);
+		TPL_free(t->alias);
+		t->alias = NULL;
+	}
+
+	// The id stays in the map, pointing at the now-inactive struct, and
+	// is dropped only when the struct is handed out again. get_thread()
+	// rejects it either way because it tests is_active - but anything
+	// that only wants to know what kind of object an id named, printing
+	// most of all, still gets a straight answer for a stale handle.
+
+	unlink_live(pl, t);
+	t->is_active = false;
+
+	// Appended, not pushed: taking the oldest retired struct first means
+	// a stale handle stays readable for as long as possible, which is
+	// what the fixed table gave for free by cycling round its slots.
+
+	t->free_next = NULL;
+
+	if (pl->free_tail)
+		pl->free_tail->free_next = t;
+	else
+		pl->free_head = t;
+
+	pl->free_tail = t;
+	prolog_unlock(pl);
+}
+
+// The main thread is an entry like any other, made first so it gets id
+// 0 - which is what every "q->thread_ptr or the main thread" fallback in
+// query.h, toplevel.c, bif_os.c and bif_tabling.c resolves to. It used
+// to be threads[0] by construction; now it is explicit.
+
+static int new_thread(prolog *pl);
+
+// Free every struct, live or retired. Nothing is freed before this, so
+// this is the only place they go away.
+
+void threads_destroy(prolog *pl)
+{
+	for (thread *t = pl->live_head, *next; t; t = next) {
+		next = t->live_next;
+		sched_destroy(t);
+		TPL_free(t);
+	}
+
+	for (thread *t = pl->free_head, *next; t; t = next) {
+		next = t->free_next;
+		sched_destroy(t);
+		TPL_free(t);
+	}
+
+	pl->live_head = pl->live_tail = NULL;
+	pl->free_head = pl->free_tail = pl->main_thread = NULL;
+
+	if (pl->threads) {
+		sl_destroy(pl->threads);
+		pl->threads = NULL;
+	}
+}
+
 static int new_thread(prolog *pl)
 {
 	prolog_lock(pl);
+	thread *t = pl->free_head;
 
-	for (int i = 0; i < MAX_THREADS; i++) {
-		unsigned n = pl->thr_cnt++ % MAX_THREADS;
-		thread *t = &pl->threads[n];
+	if (t) {
+		pl->free_head = t->free_next;
 
-		if (!t->is_active) {
+		if (!pl->free_head)
+			pl->free_tail = NULL;
 
-			if (!t->is_init) {
-				pthread_cond_init(&t->cond, NULL);
-				pthread_mutex_init(&t->mutex, NULL);
-				init_lock(&t->guard);
-				t->guard.tid = n;
-				t->is_init = true;
-				t->pl = pl;
-				t->chan = n;
-			}
+		t->free_next = NULL;
 
-			t->id = pthread_self();
-			t->is_detached = false;
-			t->is_queue_only = false;
-			t->is_mutex_only = false;
-			t->is_finished = false;
-			t->is_exception = false;
-			t->is_failed = false;
-			t->locked_by = -1;
-			t->num_locks = 0;
-			t->at_exit_goal = NULL;
-			t->goal = NULL;
-			t->ball = NULL;
-			t->alias = NULL;
-			t->q = NULL;
-			t->is_active = true;
+		// Reusing the struct is the point at which its old id stops
+		// meaning anything, so that is when the key goes.
+
+		sl_del(pl->threads, (const void*)(uintptr_t)t->chan);
+	} else {
+		t = TPL_calloc(1, sizeof(thread));
+
+		if (!t) {
 			prolog_unlock(pl);
-			return n;
+			return -1;
 		}
 	}
 
+	int n = (int)pl->next_thread_id++;
+
+	if (!t->is_init) {
+#if USE_THREADS
+		pthread_cond_init(&t->cond, NULL);
+		pthread_mutex_init(&t->mutex, NULL);
+#endif
+		init_lock(&t->guard);
+		t->is_init = true;
+		t->pl = pl;
+	}
+
+	t->chan = n;
+#if USE_THREADS
+	t->guard.tid = n;
+	t->id = pthread_self();
+#endif
+	t->is_detached = false;
+	t->is_queue_only = false;
+	t->is_mutex_only = false;
+	t->is_finished = false;
+	t->is_exception = false;
+	t->is_failed = false;
+	t->locked_by = -1;
+	t->num_locks = 0;
+	t->at_exit_goal = NULL;
+	t->goal = NULL;
+	t->ball = NULL;
+	t->alias = NULL;
+	t->q = NULL;
+	t->is_active = true;
+
+	if (!sl_set(pl->threads, (const void*)(uintptr_t)n, t)) {
+		t->is_active = false;
+		t->free_next = NULL;
+
+		if (pl->free_tail)
+			pl->free_tail->free_next = t;
+		else
+			pl->free_head = t;
+
+		pl->free_tail = t;
+		prolog_unlock(pl);
+		return -1;
+	}
+
+	link_live(pl, t);
 	prolog_unlock(pl);
-	return -1;
+	return n;
 }
+
+// The table has to exist before anything can be looked up in it, and
+// the main thread is the first entry made - which is what gives it id 0,
+// the value every "q->thread_ptr or the main thread" fallback in
+// query.h, toplevel.c, bif_os.c and bif_tabling.c used to reach as
+// threads[0]. It is pl->main_thread now rather than an array slot.
 
 void thread_initialize(prolog *pl)
 {
+	pl->threads = sl_create(NULL, NULL, NULL);
+	ENSURE(pl->threads);
 	int n = new_thread(pl);
 	ENSURE(n == 0);
-	thread *t = &pl->threads[n];
+	thread *t = find_thread_by_id(pl, n);
+	ENSURE(t);
+	pl->main_thread = t;
 	t->alias = strdup("main");
 	sl_app(pl->alias, t->alias, t);
 	t->is_detached = true;
@@ -178,18 +448,18 @@ void thread_initialize(prolog *pl)
 
 void thread_deinitialize(prolog *pl)
 {
-	for (int i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
+	// Not for_each_thread(): retiring unlinks the entry we are standing
+	// on, so the successor has to be taken first.
 
-		if (!t->is_init || !t->is_active)
-			continue;
+	for (thread *t = pl->live_head, *next; t; t = next) {
+		next = t->live_next;
 
-		sl_del(pl->alias, t->alias);
-		TPL_free(t->alias);
-		t->alias = NULL;
-		t->is_active = false;
+		if (t->is_init)
+			retire_thread(pl, t);
 	}
 }
+
+#if USE_THREADS
 
 // Release a thread/mutex/queue slot whose option list failed to parse.
 //
@@ -205,13 +475,7 @@ void thread_deinitialize(prolog *pl)
 
 static void unwind_thread(prolog *pl, thread *t)
 {
-	if (t->alias) {
-		sl_del(pl->alias, t->alias);
-		TPL_free(t->alias);
-		t->alias = NULL;
-	}
-
-	t->is_active = false;
+	retire_thread(pl, t);
 }
 
 static bool is_thread_or_alias(query *q, cell *c)
@@ -226,7 +490,7 @@ static bool is_thread_or_alias(query *q, cell *c)
 	if (n < 0)
 		return throw_error(q, c, c_ctx, "existence_error", "thread_or_alias");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_active || t->is_mutex_only || t->is_queue_only)
 		return throw_error(q, c, c_ctx, "existence_error", "thread_or_alias");
@@ -246,7 +510,7 @@ static bool is_mutex_or_alias(query *q, cell *c)
 	if (n < 0)
 		return throw_error(q, c, c_ctx, "existence_error", "mutex_or_alias");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_active || t->is_queue_only)
 		return throw_error(q, c, c_ctx, "existence_error", "mutex_or_alias");
@@ -266,7 +530,7 @@ static bool is_queue_or_alias(query *q, cell *c)
 	if (n < 0)
 		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_active || t->is_mutex_only)
 		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
@@ -297,7 +561,7 @@ static bool check_thread_or_alias(query *q, cell *c)
 	if (n < 0)
 		return false;
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	return !t->is_mutex_only && !t->is_queue_only;
 }
 
@@ -311,7 +575,7 @@ static bool check_mutex_or_alias(query *q, cell *c)
 	if (n < 0)
 		return false;
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	return t->is_mutex_only;
 }
 
@@ -325,7 +589,7 @@ static bool check_queue_or_alias(query *q, cell *c)
 	if (n < 0)
 		return false;
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	return t->is_queue_only;
 }
 
@@ -352,14 +616,26 @@ static void resume_thread(thread *t)
 
 static unsigned queue_size(prolog *pl, unsigned chan)
 {
-	thread *t = &pl->threads[chan];
-	unsigned cnt = list_count(&t->queue);
-	return cnt;
+	thread *t = find_thread_by_id(pl, chan);
+
+	if (!t)
+		return 0;
+
+	return list_count(&t->queue);
 }
 
-static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
+static void wake_msg_waiters(thread *t);
+
+// Takes an already-resolved thread rather than looking one up itself.
+// It used to re-resolve chan with its own find_thread_by_id() call,
+// which gave do_send_message() two independent lookups for one id - and
+// between them, the thread the id named could retire and its struct get
+// handed to a completely different thread_create/3. The stale pointer
+// from the first lookup would then be used by resume_thread() to signal
+// someone else's condvar. One lookup, used immediately, closes that.
+
+static bool queue_to_chan(thread *t, const cell *c, unsigned from_chan, bool is_signal)
 {
-	thread *t = &pl->threads[chan];
 	msg *m = TPL_malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
 	if (!m) return false;
 	m->from_chan = from_chan;
@@ -372,18 +648,28 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 		list_push_back(&t->queue, m);
 	}
 
+	wake_msg_waiters(t);
 	release_lock(&t->guard);
 	return true;
 }
 
 static bool do_send_message(query *q, unsigned chan, cell *c, pl_ctx c_ctx, bool is_signal)
 {
-	thread *t = &q->pl->threads[chan];
+	thread *t = find_thread_by_id(q->pl, chan);
+
+	// find_thread_by_id() can return NULL - the id may already have
+	// been retired and reused for something else by the time this
+	// runs. Fail rather than dereference it: this was crashing under
+	// concurrent thread churn (samples/skynet.pl).
+
+	if (!t)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "existence_error", "thread_object");
+
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 	CHECKED(tmp);
 	rebase_term(q, tmp, 0, false);
-	CHECKED(queue_to_chan(q->pl, chan, tmp, q->my_chan, is_signal));
+	CHECKED(queue_to_chan(t, tmp, q->my_chan, is_signal));
 	resume_thread(t);
 	return true;
 }
@@ -408,29 +694,131 @@ static bool bif_thread_send_message_2(query *q)
 	return true;
 }
 
-thread *get_self(prolog *pl)
+// How long a parked task waits before looking again. It sits on the
+// scheduler's timer heap rather than spinning, so the cost of a short
+// interval is one pass round the scheduler - low enough that message
+// latency stays invisible. A wait-list that a send could wake directly
+// would remove the polling altogether, but that needs a scheduler which
+// can be woken from another thread, which is phase 3.
+
+#define MSG_TASK_POLL_MS 5
+
+enum msg_wait {
+	MSG_WAIT_AGAIN,						// waited in place, look again
+	MSG_WAIT_EXPIRED,					// deadline passed
+	MSG_WAIT_YIELDED					// task parked; unwind to the scheduler
+};
+
+// One wait, for whoever is asking.
+//
+// A task must not sit on the condvar. It would hold the only worker and
+// every sibling task with it - which is exactly what a blocking receive
+// inside a task used to do. It parks on the timer heap instead and the
+// scheduler runs everyone else until it comes round again. A real
+// thread has nothing else to hold up, so it still sleeps on the condvar
+// and a send wakes it immediately.
+
+// Put a task on the queue's waiter list while it is parked, so a send
+// can find it. Both ends run under t->guard, the same lock the message
+// list itself uses, so a message cannot slip in between a task deciding
+// to park and becoming visible to the sender.
+
+static void add_msg_waiter(thread *t, query *q)
 {
-	pthread_t tid = pthread_self();
+	if (q->waiting_on)
+		return;
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!t->is_active || t->is_queue_only || t->is_mutex_only)
-			continue;
-
-		if (t->id == tid)
-			return t;
-	}
-
-	return NULL;
+	acquire_lock(&t->guard);
+	q->waiting_on = t;
+	q->wait_next = t->msg_waiters;
+	t->msg_waiters = q;
+	release_lock(&t->guard);
 }
 
-static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
+static void del_msg_waiter(query *q)
+{
+	thread *t = q->waiting_on;
+
+	if (!t)
+		return;
+
+	acquire_lock(&t->guard);
+
+	for (query **pp = &t->msg_waiters; *pp; pp = &(*pp)->wait_next) {
+		if (*pp == q) {
+			*pp = q->wait_next;
+			break;
+		}
+	}
+
+	q->wait_next = NULL;
+	q->waiting_on = NULL;
+	release_lock(&t->guard);
+}
+
+// Everyone parked on this queue, promoted. Called with t->guard held by
+// the sender, right after the message goes on the list.
+
+static void wake_msg_waiters(thread *t)
+{
+	while (t->msg_waiters) {
+		query *q = t->msg_waiters;
+		t->msg_waiters = q->wait_next;
+		q->wait_next = NULL;
+		q->waiting_on = NULL;
+		sched_promote(q);
+	}
+}
+
+static enum msg_wait do_wait_message(query *q, thread *t, uint64_t deadline)
+{
+	uint64_t now = wall_time_in_usec() / 1000;
+
+	if (deadline && (now >= deadline))
+		return MSG_WAIT_EXPIRED;
+
+	uint64_t left = deadline ? deadline - now : 0;
+
+	if (q->is_task) {
+		uint64_t nap = MSG_TASK_POLL_MS;
+
+		if (deadline && (nap > left))
+			nap = left;
+
+		// On the waiter list before parking, so a send that lands in the
+		// gap promotes us rather than being missed. The nap is only a
+		// backstop now - delivery wakes us directly.
+
+		add_msg_waiter(t, q);
+		return do_yield(q, nap < 1 ? 1 : (int)nap) ? MSG_WAIT_AGAIN : MSG_WAIT_YIELDED;
+	}
+
+	uint64_t nap = 100;
+
+	if (deadline && (nap > left))
+		nap = left;
+
+	suspend_thread(t, nap < 1 ? 1 : (int)nap);
+	return MSG_WAIT_AGAIN;
+}
+
+static bool do_match_message_(query *q, unsigned chan, bool is_peek, double timeout)
 {
 	GET_FIRST_ARG(pq,queue);
-	thread *t = &q->pl->threads[chan];
-	pl_int started_ms = wall_time_in_usec() / 1000;
-	pl_int tmo_ms = timeout * 1000;
+	thread *t = find_thread_by_id(q->pl, chan);
+
+	// The deadline is absolute and lives on the query, because a task
+	// that parks in here is retried from the top of the builtin: a
+	// deadline recomputed on re-entry would reset the clock every time
+	// and never expire. q->retry is what distinguishes a resumption
+	// from a fresh call.
+
+	if (!q->retry) {
+		pl_int tmo_ms = timeout * 1000;
+		q->msg_deadline = (tmo_ms >= 0) ? (wall_time_in_usec() / 1000) + tmo_ms : 0;
+	}
+
+	const uint64_t deadline = q->msg_deadline;
 
 	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
@@ -448,17 +836,8 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			if (is_peek)
 				return false;
 
-			do {
-				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
-
-				if ((tmo_ms >= 0) && (elapsed_ms >= tmo_ms)) {
-					return false;
-				}
-
-				suspend_thread(t, tmo_ms > 0 ? tmo_ms : 100);
-			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort
-				&& !(q->thread_ptr ? q->thread_ptr->timedout : q->pl->threads[0].timedout));
+			if (do_wait_message(q, t, deadline) != MSG_WAIT_AGAIN)
+				return false;
 
 			continue;
 		}
@@ -502,35 +881,30 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 		// Nothing in the queue unified. Everything already there has
 		// been tried, so walking it again changes nothing until a new
 		// message arrives - and this is the only point at which a *non
-		// empty* queue can honour a deadline. Without it a receive that
-		// matched nothing spun here forever: the timeout is checked
-		// only in the branch taken when the queue is empty, which a
-		// non-empty queue never reaches. It did not even sleep.
-		//
-		// Nap for what is left of the deadline rather than the whole of
-		// it, capped so the blocking form (tmo_ms < 0) still comes back
-		// round to notice halt and abort. A send broadcasts the condvar
-		// either way, so an arriving message wakes us early.
+		// empty* queue can honour its deadline. Before both waits went
+		// through one place, the timeout was checked only in the branch
+		// an empty queue takes, which a non-empty queue never reaches,
+		// and a receive that matched nothing spun here forever.
 
-		pl_int elapsed_ms = (wall_time_in_usec() / 1000) - started_ms;
-
-		if ((tmo_ms >= 0) && (elapsed_ms >= tmo_ms))
+		if (do_wait_message(q, t, deadline) != MSG_WAIT_AGAIN)
 			return false;
-
-		int nap_ms = 100;
-
-		if (tmo_ms >= 0) {
-			pl_int remaining_ms = tmo_ms - elapsed_ms;
-			nap_ms = remaining_ms < 100 ? (int)remaining_ms : 100;
-
-			if (nap_ms < 1)
-				nap_ms = 1;
-		}
-
-		suspend_thread(t, nap_ms);
 	}
 
 	return false;
+}
+
+// A task stays on the queue's waiter list only while it is parked. On
+// any other way out - matched, timed out, gave up - it has to come off,
+// or the next send would promote a query that has long since moved on.
+
+static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
+{
+	bool ok = do_match_message_(q, chan, is_peek, timeout);
+
+	if (!q->yielded)
+		del_msg_waiter(q);
+
+	return ok;
 }
 
 static bool bif_thread_get_message_2(query *q)
@@ -627,19 +1001,12 @@ static bool bif_thread_peek_message_2(query *q)
 	return ok;
 }
 
-static void do_unlock_all(prolog *pl)
+
+static void do_unlock_all(thread *me)
 {
-	thread *me = get_self(pl);
+	prolog *pl = me->pl;
 
-	if (!me)	// FIX: get_self() may return NULL; don't deref me->chan
-		return;
-
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!t->is_active)
-			continue;
-
+	for_each_thread(pl, t) {
 		if (t->locked_by != me->chan)
 			continue;
 
@@ -685,7 +1052,7 @@ static void *start_routine_thread_create(thread *t)
 		t->at_exit_goal = NULL;
 	}
 
-	do_unlock_all(t->pl);
+	do_unlock_all(t);
 
 	// Tables are per-thread, so they die with the thread. Freed here
 	// rather than only at pl_destroy() so a long-lived process that
@@ -722,8 +1089,16 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
-	t->is_active = false;
+	// Unlock before retiring: retire_thread() puts t on the free list,
+	// and t->guard is a mutex embedded in t. A concurrent new_thread()
+	// reusing t writes t->guard.tid without reinitialising the mutex
+	// (is_init stays true), so retiring while still holding this lock
+	// let a second thread mutate a locked mutex, and let this release
+	// unlock a mutex that by then belonged to whoever grabbed t next.
+	// Traced from an intermittent SIGSEGV/SIGBUS under concurrent
+	// thread churn - see samples/skynet.pl.
 	release_lock(&t->guard);
+	retire_thread(t->pl, t);
     return 0;
 }
 
@@ -806,7 +1181,7 @@ static bool bif_thread_create_3(query *q)
 	if (n < 0)
 		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (alias) {
 		t->alias = DUP_STRING(q, alias);
@@ -879,15 +1254,21 @@ static bool bif_thread_create_3(query *q)
 	q->pl->is_multithreaded = true;
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
-		t->is_active = false;
-		// FIX: release shared cell refs before freeing (goal/at_exit_goal hold dup'd cells)
+		// retire_thread() puts t on the free list, where a *different*
+		// thread's new_thread() can pop and start reusing it the moment
+		// the lock inside is released. Everything that still touches t
+		// - freeing goal/at_exit_goal, destroying t->q, dropping the
+		// alias - has to happen BEFORE that, not after: this used to
+		// retire first, then kept writing into fields a concurrent
+		// thread_create/3 could already own. Only bit under load
+		// (pthread_create has to actually fail) and only with a second
+		// thread racing to grab the slot, which is why it looked like a
+		// skynet-scale crash rather than a use-after-free.
 		if (t->goal) { unshare_cells(t->goal, t->goal->num_cells); TPL_free(t->goal); t->goal = NULL; }
 		if (t->at_exit_goal) { unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells); TPL_free(t->at_exit_goal); t->at_exit_goal = NULL; }
 		query_destroy(t->q);
 		t->q = NULL;
-		sl_del(q->pl->alias, t->alias);
-		TPL_free(t->alias);
-		t->alias = NULL;
+		retire_thread(q->pl, t);
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
@@ -905,7 +1286,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
@@ -980,8 +1361,9 @@ static bool bif_thread_join_2(query *q)
 		t->at_exit_goal = NULL;
 	}
 
-	t->is_active = false;
+	// Unlock before retiring - see the note in start_routine_thread_create().
 	release_lock(&t->guard);
+	retire_thread(q->pl, t);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
@@ -1023,7 +1405,7 @@ static bool bif_thread_signal_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
@@ -1066,8 +1448,12 @@ static void do_cancel(thread *t)
 	query_destroy(t->q);
 	t->q = NULL;
 	//t->id = 0;
-	t->is_active = false;
+
+	// Unlock before retiring - see the note in start_routine_thread_create().
+	// pthread_cancel/kill below use the local id captured at entry, not
+	// t, so they are unaffected by t being reused as soon as it unlocks.
 	release_lock(&t->guard);
+	retire_thread(t->pl, t);
 
 #if defined(__ANDROID__)
 	pthread_kill(id, 0);
@@ -1090,7 +1476,7 @@ static bool bif_thread_cancel_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
@@ -1114,7 +1500,7 @@ static bool bif_thread_detach_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
@@ -1132,7 +1518,7 @@ static bool bif_thread_self_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,var);
-	thread *t = get_self(q->pl);
+	thread *t = get_self_query(q);
 
 	if (!t) {
 		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
@@ -1184,7 +1570,7 @@ static bool bif_thread_exit_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,nonvar);
-	thread *t = get_self(q->pl);
+	thread *t = get_self_query(q);
 
 	if (!t)	// FIX: guard NULL self (cf. thread_self/1)
 		return false;
@@ -1218,7 +1604,7 @@ static bool do_thread_property_pin_both(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (p2->arity != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "thread_property");
@@ -1275,38 +1661,16 @@ static bool do_thread_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,nonvar);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
+	thread *t = next_of_kind(q->pl, i, TK_THREAD);
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	if (!t)
+		return true;
 
-		thread *t = &q->pl->threads[i];
+	q->st.v1 = t->chan;
 
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_THREAD))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1327,7 +1691,7 @@ static bool do_thread_property_pin_id(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	unsigned i = 0;
 
 	if (q->retry)
@@ -1388,40 +1752,19 @@ static bool do_thread_property_wild(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
-	else
+	if (!q->retry)
 		q->st.v2 = -1;
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	thread *t = next_of_kind(q->pl, i, TK_THREAD);
 
-		thread *t = &q->pl->threads[i];
+	if (!t)
+		return true;
 
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
+	q->st.v1 = t->chan;
 
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || t->is_mutex_only || t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_THREAD))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1546,7 +1889,7 @@ static bool bif_message_queue_create_2(query *q)
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	t->is_queue_only = true;
 
 	// Commit. Nothing below can fail in a way that needs unwinding.
@@ -1579,7 +1922,7 @@ static bool bif_message_queue_destroy_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_queue_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_queue");
@@ -1592,11 +1935,9 @@ static bool bif_message_queue_destroy_1(query *q)
 		TPL_free(m);
 	}
 
-	sl_del(q->pl->alias, t->alias);
-	TPL_free(t->alias);
-	t->alias = NULL;
-	t->is_active = false;
+	// Unlock before retiring - see the note in start_routine_thread_create().
 	release_lock(&t->guard);
+	retire_thread(q->pl, t);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
@@ -1612,7 +1953,7 @@ static bool do_message_queue_property_pin_both(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (p2->arity != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "queue_property");
@@ -1654,38 +1995,16 @@ static bool do_message_queue_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,nonvar);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
+	thread *t = next_of_kind(q->pl, i, TK_QUEUE);
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	if (!t)
+		return true;
 
-		thread *t = &q->pl->threads[i];
+	q->st.v1 = t->chan;
 
-		if (!t->is_active || !t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_QUEUE))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1706,7 +2025,7 @@ static bool do_message_queue_property_pin_id(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	unsigned i = 0;
 
 	if (q->retry)
@@ -1746,40 +2065,19 @@ static bool do_message_queue_property_wild(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
-	else
+	if (!q->retry)
 		q->st.v2 = -1;
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	thread *t = next_of_kind(q->pl, i, TK_QUEUE);
 
-		thread *t = &q->pl->threads[i];
+	if (!t)
+		return true;
 
-		if (!t->is_active || !t->is_queue_only)
-			continue;
+	q->st.v1 = t->chan;
 
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_queue_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_QUEUE))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -1828,7 +2126,7 @@ static bool bif_mutex_create_2(query *q)
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	t->is_mutex_only = true;
 
 	// Commit. Nothing below can fail in a way that needs unwinding.
@@ -1861,15 +2159,12 @@ static bool bif_mutex_destroy_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
 
-	sl_del(q->pl->alias, t->alias);
-	TPL_free(t->alias);
-	t->alias = NULL;
-	t->is_active = false;
+	retire_thread(q->pl, t);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
@@ -1885,12 +2180,12 @@ static bool bif_mutex_trylock_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (!try_lock(&t->guard))
 		return false;
 
-	thread *me = get_self(q->pl);
+	thread *me = get_self_query(q);
 
 	if (!me) {	// FIX: guard NULL self
 		release_lock(&t->guard);
@@ -1913,8 +2208,8 @@ static bool bif_mutex_lock_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
-	thread *me = get_self(q->pl);
+	thread *t = find_thread_by_id(q->pl, n);
+	thread *me = get_self_query(q);
 
 	if (!me)	// FIX: guard NULL self
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
@@ -1937,8 +2232,8 @@ static bool bif_mutex_unlock_1(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
-	thread *me = get_self(q->pl);
+	thread *t = find_thread_by_id(q->pl, n);
+	thread *me = get_self_query(q);
 
 	if (!me)	// FIX: guard NULL self
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
@@ -1957,7 +2252,7 @@ static bool bif_mutex_unlock_1(query *q)
 static bool bif_mutex_unlock_all_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	do_unlock_all(q->pl);
+	do_unlock_all(get_self_query(q));
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
@@ -1973,7 +2268,7 @@ static bool do_mutex_property_pin_both(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 
 	if (p2->arity != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
@@ -2020,38 +2315,16 @@ static bool do_mutex_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,nonvar);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
+	thread *t = next_of_kind(q->pl, i, TK_MUTEX);
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	if (!t)
+		return true;
 
-		thread *t = &q->pl->threads[i];
+	q->st.v1 = t->chan;
 
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
-
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_MUTEX))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -2072,7 +2345,7 @@ static bool do_mutex_property_pin_id(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	thread *t = &q->pl->threads[n];
+	thread *t = find_thread_by_id(q->pl, n);
 	unsigned i = 0;
 
 	if (q->retry)
@@ -2124,40 +2397,19 @@ static bool do_mutex_property_wild(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
-	unsigned i = 0;
+	int i = q->retry ? (int)q->st.v1 : 0;
 
-	if (q->retry)
-		i = q->st.v1;
-	else
+	if (!q->retry)
 		q->st.v2 = -1;
 
-	while (++i) {
-		if (i == MAX_THREADS)
-			return true;
+	thread *t = next_of_kind(q->pl, i, TK_MUTEX);
 
-		thread *t = &q->pl->threads[i];
+	if (!t)
+		return true;
 
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
+	q->st.v1 = t->chan;
 
-		break;
-	}
-
-	q->st.v1 = i;
-
-	while (++i) {
-		if (i == MAX_THREADS)
-			break;
-
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || !t->is_mutex_only)
-			continue;
-
-		break;
-	}
-
-	if (i != MAX_THREADS)
+	if (next_of_kind(q->pl, t->chan, TK_MUTEX))
 		CHECKED(push_choice(q));
 
 	cell tmp;
@@ -2192,10 +2444,8 @@ void thread_cancel_all(prolog *pl)
 {
 	msleep(10);
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!is_threaded(t) || !t->is_active || t->is_detached)
+	for_each_thread(pl, t) {
+		if (!is_threaded(t) || t->is_detached)
 			continue;
 
 		do_cancel(t);
@@ -2248,19 +2498,3 @@ builtins g_threads_bifs[] =
 	{0}
 };
 
-#if !USE_THREADS
-
-// get_self() is defined inside the USE_THREADS block above, but
-// bif_os.c's SIGALRM handler calls it unconditionally. Without this
-// the threadless build - which is the WASI/WASM configuration - fails
-// to link at -O0; -O3 only papered over it by dropping the unused
-// handler before the reference reached the linker.
-//
-// With no threads there is exactly one, and it is threads[0].
-
-thread *get_self(prolog *pl)
-{
-	return pl ? &pl->threads[0] : NULL;
-}
-
-#endif

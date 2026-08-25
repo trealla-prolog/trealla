@@ -1,4 +1,4 @@
-:- module(actors, [
+:- module(threads, [
 	actor_spawn/2,
 	actor_spawn/3,
 	actor_self/1,

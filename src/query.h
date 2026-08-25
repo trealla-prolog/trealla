@@ -33,7 +33,14 @@ bool do_yield(query *q, int msecs);
 bool do_yield_on_stream(query *q, stream *str, bool is_write);
 bool do_yield_now(query *q);
 void do_yield_at(query *q, unsigned int time_in_ms);
-void sched_destroy(query *q);
+void sched_destroy(thread *t);
+void sched_wake(thread *t);
+void sched_promote(query *task);
+void sched_release(query *q);
+bool register_task(query *q);
+void unregister_task(query *q);
+query *find_task_by_qid(prolog *pl, uint64_t qid);
+void drain_mailbox(query *q);
 
 bool check_slot(query *q, unsigned cnt);
 bool check_trail(query *q);
@@ -71,9 +78,8 @@ void call_attrs(query *q, cell *attrs);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
-#ifdef USE_POLLED_ALARMS
 bool has_expired_alarm(query *q);
-#endif
+bool next_alarm_delay(query *q, unsigned *ms);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 void check_pressure(query *q);
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_ctx p1_ctx, unsigned extras);
@@ -217,19 +223,17 @@ builtins *get_fn_ptr(void *fn);
 
 inline static bool throw_timeout(query *q)
 {
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 	self->timedout = 0;
 	return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 }
 
 inline static bool interrupt_pending(query *q)
 {
-	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
 
-#ifdef USE_POLLED_ALARMS
 	if (!self->timedout && self->alarms && has_expired_alarm(q))
 		self->timedout = 1;
-#endif
 
 	return g_tpl_interrupt || self->timedout;
 }

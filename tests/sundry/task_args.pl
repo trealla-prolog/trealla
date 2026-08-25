@@ -13,27 +13,32 @@
 % value. library(concurrent) hit it squarely, since future/3 builds
 % '$future'(N) with N bound, and left a NOTE about "a bug to do with
 % passing variables in call_task/1" plus a write/read round trip through
-% an atom to work around it. send/1 crosses the same query boundary and
-% has always cloned.
+% an atom to work around it.
 %
-% The task has to judge the term itself and report only a verdict. Send
-% the term back instead and the test cannot fail: send/1 clones, and
-% while the spawning query is still sitting in wait/0 its frames are
+% The task has to judge the term itself and report only a verdict. Pass
+% the term back instead and the test cannot fail: recording it clones it,
+% and while the spawning query is still sitting in wait/0 its frames are
 % intact, so a dangling reference quietly resolves on the way out.
+%
+% Verdicts came back over send/1 and were read with recv/1 until GUSTTO
+% phase 1 removed both. They go through the shared database now; the
+% property under test is unchanged, only the reporting channel differs.
 
 :- initialization(main).
 
-% Report a verdict, not the term: send/1 would clone Got on the way out
-% and a lost binding would look intact by the time it is printed.
+:- dynamic(verdict/1).
+
+% Report a verdict, not the term: recording Got would clone it on the way
+% out and a lost binding would look intact by the time it is printed.
 
 check(Id, Expect, Got) :-
-	(	Got == Expect -> send(Id-ok)
-	;	\+ ground(Got) -> send(Id-'binding lost in transit')
-	;	send(Id-'wrong value')
+	(	Got == Expect -> assertz(verdict(Id-ok))
+	;	\+ ground(Got) -> assertz(verdict(Id-'binding lost in transit'))
+	;	assertz(verdict(Id-'wrong value'))
 	).
 
 drain(L) :- drain_([], L0), msort(L0, L).
-drain_(Acc, L) :- ( recv(X) -> drain_([X|Acc], L) ; L = Acc ).
+drain_(Acc, L) :- ( retract(verdict(X)) -> drain_([X|Acc], L) ; L = Acc ).
 
 report(Id-ok) :- !, format("~w: ok~n", [Id]).
 report(Id-Bad) :- format("~w: FAILED ~q~n", [Id,Bad]).
@@ -59,9 +64,9 @@ main :-
 % lets unrelated variables collide - distinct ones alias, shared ones
 % come apart - and that corruption reaches the point of a segfault.
 
-alias(X, Y) :- X = 1, (var(Y) -> send(distinct-ok) ; send(distinct-aliased)).
-shared(X, Y) :- X = 1, (Y == 1 -> send(shared-ok) ; send(shared-'came apart')).
-ingoal(G, X) :- call(G), (X == 7 -> send(goal_var-ok) ; send(goal_var-'came apart')).
+alias(X, Y) :- X = 1, (var(Y) -> assertz(verdict(distinct-ok)) ; assertz(verdict(distinct-aliased))).
+shared(X, Y) :- X = 1, (Y == 1 -> assertz(verdict(shared-ok)) ; assertz(verdict(shared-'came apart'))).
+ingoal(G, X) :- call(G), (X == 7 -> assertz(verdict(goal_var-ok)) ; assertz(verdict(goal_var-'came apart'))).
 
 vars :-
 	call_task(alias, _, _), wait, drain(L1), maplist(report, L1),
