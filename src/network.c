@@ -594,7 +594,45 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 // - see DESIGN-GUSTTO.md). Sets errno = EINTR and returns false on
 // timeout/interrupt; true means data is ready.
 
-#if !defined(_WIN32) && !defined(__wasi__)
+#if defined(_WIN32)
+// select() rather than WSAPoll(): the fd here came from fileno() on a
+// stream fdopen()'d over a socket the way the rest of this file already
+// treats Windows sockets (see tpl_connect()/tpl_server()), and select()
+// needs no extra header beyond winsock2.h, already included above.
+bool tpl_wait_fd_readable(query *q, int fd)
+{
+	if (fd < 0)
+		return true;
+
+	SOCKET sock = (SOCKET)fd;
+
+	for (;;) {
+		if (interrupt_pending(q)) {
+			errno = EINTR;
+			return false;
+		}
+
+		unsigned ms;
+		int wait_ms = next_alarm_delay(q, &ms) ? (int)ms : 250;
+
+		if (wait_ms > 250)
+			wait_ms = 250;
+
+		fd_set rfds;
+		FD_ZERO(&rfds);
+		FD_SET(sock, &rfds);
+
+		struct timeval tv;
+		tv.tv_sec = wait_ms / 1000;
+		tv.tv_usec = (wait_ms % 1000) * 1000;
+
+		int n = select(0, &rfds, NULL, NULL, &tv);	// nfds ignored on Windows
+
+		if (n != 0)
+			return true;	// readable, or select() itself errored - let the real read report it
+	}
+}
+#elif !defined(__wasi__)
 bool tpl_wait_fd_readable(query *q, int fd)
 {
 	if (fd < 0)
