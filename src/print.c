@@ -861,10 +861,36 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 	pl_ctx orig_c_ctx = c_ctx;
 	unsigned print_list = 0;
 
+	// Tortoise-and-hare (issue #1121), via the same term_next() used by
+	// skip_max_list()'s Brent's-algorithm walk. has_visited() below only
+	// catches a cycle back to a node still on the C call stack (nested
+	// compounds), and the single-hop check just below only catches the
+	// spine looping back to *this* iteration's start. Neither sees a
+	// spine that takes 2+ hops to return to an earlier node it already
+	// passed - eg. A=[c|D], D=[D|A], which just cycles A,D,A,D,... here.
+	cell *tortoise = c;
+	pl_ctx tortoise_ctx = c_ctx;
+	unsigned hops = 0;
+	bool tortoise_done = false;
+
 	while (is_iso_list(c)) {
 		CHECK_INTERRUPT();
 		cell *save_c = c;
 		pl_ctx save_c_ctx = c_ctx;
+
+		if (running) {
+			if (hops && (c == tortoise) && (c_ctx == tortoise_ctx)) {
+				emit(q, "|...]");
+				q->last_thing = WAS_OTHER;
+				q->cycle_error = true;
+				break;
+			}
+
+			if ((hops & 1) && !tortoise_done)
+				tortoise = term_next(q, tortoise, &tortoise_ctx, &tortoise_done);
+
+			hops++;
+		}
 
 		if (q->max_depth && (print_list >= q->max_depth)) {
 			emit_unget(q);
