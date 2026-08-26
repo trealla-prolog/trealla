@@ -383,7 +383,7 @@ ifndef NOLIB
 LIBTREALLA = libtrealla.a
 
 ifndef WIN
-SAMPLES += samples/embed
+SAMPLES += samples/embed samples/allocator
 endif
 
 ifdef FREESTANDING
@@ -609,8 +609,8 @@ raylib:
 	$(PYTHON) util/gen_raylib.py --verify
 	$(PYTHON) util/gen_raylib.py --in-place
 
-test: samples/allocator
-	./samples/allocator
+test:
+	@if test -x samples/allocator; then ./samples/allocator; fi
 	./tests/run.sh
 
 misc:

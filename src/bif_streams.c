@@ -3,7 +3,7 @@
 #endif
 #define _XOPEN_SOURCE 700
 #include <ctype.h>
-#include "features.h"
+#include "tpl_features.h"
 
 #if TPL_FEATURE_FILESYSTEM
 #include <dirent.h>

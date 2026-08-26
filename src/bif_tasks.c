@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include "features.h"
+#include "tpl_features.h"
 #include "module.h"
 #include "query.h"
 

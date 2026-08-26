@@ -807,7 +807,7 @@ ssize_t tpl_udp_recv(stream *str, void *buf, size_t buflen, char *host, size_t h
 	if (len < 0)
 		return -1;
 
-	char svc[NI_MAXSERV];
+	char svc[32];
 	host[0] = svc[0] = '\0';
 
 	if (getnameinfo((struct sockaddr*)&from, fromlen, host, hostlen, svc, sizeof(svc),

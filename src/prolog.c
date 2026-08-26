@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "features.h"
+#include "tpl_features.h"
 #include "files.h"
 
 #ifdef _WIN32

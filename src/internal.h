@@ -21,7 +21,7 @@
 #define USE_THREADS 0
 #endif
 
-#include "features.h"
+#include "tpl_features.h"
 
 #if USE_THREADS
 #include <pthread.h>

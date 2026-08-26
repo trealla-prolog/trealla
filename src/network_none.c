@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "network.h"
-#include "features.h"
+#include "tpl_features.h"
 
 #if TPL_FREESTANDING
 #include "platform/platform.h"
