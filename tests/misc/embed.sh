@@ -17,4 +17,6 @@ then
 	exit 1
 fi
 
-./samples/embed 2>&1 | sed -n '/=== results ===/,$p'
+# The sample leaves a presentation-only blank line after the results. Keep the
+# golden output focused on the table itself.
+./samples/embed 2>&1 | sed -n '/=== results ===/,$p' | sed '${/^$/d;}'

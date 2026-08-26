@@ -1,6 +1,9 @@
 === results ===
 
   ok   pl_create
+  ok   pl_consult_text loads bounded source
+  ok   consulted text predicate runs
+  ok   pl_consult_text rejects embedded NUL
   ok   pl_consult loads a file
   ok   goal succeeds
   ok   goal fails
@@ -41,4 +44,3 @@
   ok   names past the end are NULL
 
 all checks passed (0 failures)
-

@@ -46,6 +46,11 @@ static void record(const char *name, bool ok, const char *text)
 }
 
 static void check(const char *name, bool ok) { record(name, ok, NULL); }
+static void check_quiet(const char *name, bool ok)
+{
+	if (!ok)
+		check(name, false);
+}
 static void note(const char *name, const char *text) { record(name, true, text); }
 
 static const char *PROG =
@@ -123,11 +128,11 @@ int main(void)
 	set_quiet(pl);
 
 	check("pl_create", true);
-	check("allocator installs before first engine", allocator_installed);
-	check("allocator locks after first engine allocation", !pl_set_allocator(NULL));
+	check_quiet("allocator installs before first engine", allocator_installed);
+	check_quiet("allocator locks after first engine allocation", !pl_set_allocator(NULL));
 	pl_allocator_stats live_stats;
 	pl_get_allocator_stats(&live_stats);
-	check("allocator accounts live engine memory",
+	check_quiet("allocator accounts live engine memory",
 		live_stats.current_bytes && (live_stats.peak_bytes >= live_stats.current_bytes));
 
 	{
@@ -274,7 +279,7 @@ int main(void)
 	pl_destroy(pl);
 	pl_allocator_stats final_stats;
 	pl_get_allocator_stats(&final_stats);
-	check("allocator returns to zero after teardown", !final_stats.current_bytes);
+	check_quiet("allocator returns to zero after teardown", !final_stats.current_bytes);
 	remove(path);
 
 	// --- report ---

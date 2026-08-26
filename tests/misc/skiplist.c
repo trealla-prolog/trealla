@@ -26,9 +26,13 @@ static void *poison_malloc(size_t n)
 	return p;
 }
 
-#define malloc(n) poison_malloc(n)
+// skiplist.c uses Trealla's allocator boundary. Keep this a standalone unit
+// test, while preserving the deliberately poisoned non-zeroing allocations.
+void *tpl_malloc(size_t n) { return poison_malloc(n); }
+void *tpl_calloc(size_t n, size_t size) { return calloc(n, size); }
+void tpl_free(void *p) { free(p); }
+
 #include "../../src/skiplist.c"
-#undef malloc
 
 // skiplist.c only takes the guard around its iterator freelist. These
 // stand in for threads.c so the test links on its own.
