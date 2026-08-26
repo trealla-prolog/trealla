@@ -9,6 +9,21 @@
     pull_request:
 
   jobs:
+    freestanding-qemu:
+      name: Freestanding QEMU RV32
+      runs-on: ubuntu-24.04
+      timeout-minutes: 20
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Install cross tools
+          run: |
+            sudo apt-get update
+            sudo apt-get install gcc-riscv64-unknown-elf picolibc-riscv64-unknown-elf qemu-system-misc
+        - name: Build and boot
+          run: make qemu-riscv32-smoke
+
     build:
       name: Native
       runs-on: ${{ matrix.os }}

@@ -3,7 +3,12 @@
 #endif
 #define _XOPEN_SOURCE 700
 #include <ctype.h>
+#include "features.h"
+
+#if TPL_FEATURE_FILESYSTEM
 #include <dirent.h>
+#endif
+
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5523,6 +5528,7 @@ static bool bif_exists_file_1(query *q)
 	return true;
 }
 
+#if TPL_FEATURE_FILESYSTEM
 static bool bif_directory_files_2(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
@@ -5578,6 +5584,7 @@ static bool bif_directory_files_2(query *q)
 	bool ok = unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 	return ok;
 }
+#endif
 
 static bool bif_delete_file_1(query *q)
 {
@@ -6883,7 +6890,9 @@ builtins g_streams_bifs[] =
 {
 	// ISO...
 
+#if TPL_FEATURE_FILESYSTEM
 	{"open", 4, bif_iso_open_4, "+source_sink,+mode,--stream,+list", true, false, BLAH},
+#endif
 	{"close", 1, bif_iso_close_1, "+stream", true, false, BLAH},
 	{"close", 2, bif_iso_close_2, "+stream,+opts", true, false, BLAH},
 	{"read_term", 2, bif_iso_read_term_2, "+stream,-term", true, false, BLAH},
@@ -6934,10 +6943,12 @@ builtins g_streams_bifs[] =
 
 	// Edinburgh...
 
+#if TPL_FEATURE_FILESYSTEM
 	{"seeing", 1, bif_edin_seeing_1, "-atom", false, false, BLAH},
 	{"telling", 1, bif_edin_telling_1, "-atom", false, false, BLAH},
 	{"seen", 0, bif_edin_seen_0, NULL, false, false, BLAH},
 	{"told", 0, bif_edin_told_0, NULL, false, false, BLAH},
+#endif
 	{"redo", 1, bif_edin_redo_1, "+integer", false, false, BLAH},
 	{"redo", 2, bif_edin_redo_2, "+stream,+integer", false, false, BLAH},
 	{"tab", 1, bif_edin_tab_1, "+integer", false, false, BLAH},
@@ -6961,6 +6972,7 @@ builtins g_streams_bifs[] =
 	{"getlines", 1, bif_getlines_1, "-list", false, false, BLAH},
 	{"getlines", 2, bif_getlines_2, "+stream,-list", false, false, BLAH},
 	{"getlines", 3, bif_getlines_3, "+stream,-list,+list", false, false, BLAH},
+#if TPL_FEATURE_FILESYSTEM
 	{"load_files", 2, bif_load_files_2, "+atom,+list", false, false, BLAH},
 	{"unload_files", 1, bif_unload_files_1, "+atom", false, false, BLAH},
 	{"make", 0, bif_make_0, NULL, false, false, BLAH},
@@ -6983,6 +6995,7 @@ builtins g_streams_bifs[] =
 	{"absolute_file_name", 3, bif_absolute_file_name_3, "+source_sink,-atom,+list", false, false, BLAH},
 	{"is_absolute_file_name", 1, bif_is_absolute_file_name_1, "+source_sink", false, false, BLAH},
 	{"chdir", 1, bif_chdir_1, "+source_sink", false, false, BLAH},
+#endif
 	{"$put_chars", 1, bif_sys_put_chars_1, "+string", false, false, BLAH},
 	{"$put_chars", 2, bif_sys_put_chars_2, "+stream,+string", false, false, BLAH},
 	{"read_term_from_atom", 3, bif_read_term_from_atom_3, "+atom,?term,+list", false, false, BLAH},
@@ -6994,10 +7007,14 @@ builtins g_streams_bifs[] =
 	{"write_canonical_to_chars", 3, bif_write_canonical_to_chars_3, "?string,?term,+list", false, false, BLAH},
 	{"read_line_to_codes", 2, bif_read_line_to_codes_2, "+stream,-list", false, false, BLAH},
 	{"read_line_to_string", 2, bif_read_line_to_string_2, "+stream,-string", false, false, BLAH},
+#if TPL_FEATURE_FILESYSTEM
 	{"read_file_to_string", 3, bif_read_file_to_string_3, "+source_sink,-string,+options", false, false, BLAH},
+#endif
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
 
+#if TPL_FEATURE_FILESYSTEM
 	{"$stream_to_file", 2, bif_sys_stream_to_file_2, "+stream,-integer", false, false, BLAH},
+#endif
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, bif_sys_capture_output_to_chars_1, "-string", false, false, BLAH},
 	{"$capture_output_to_atom", 1, bif_sys_capture_output_to_atom_1, "-atom", false, false, BLAH},

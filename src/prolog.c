@@ -3,13 +3,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "features.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
 #endif
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !TPL_FREESTANDING && !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <sys/resource.h>
 #endif
 
@@ -894,7 +896,7 @@ static unsigned detect_cpu_count(void)
 
 static unsigned detect_max_os_threads(void)
 {
-#if defined(_WIN32) || defined(__wasi__)
+#if !TPL_FEATURE_THREADS || defined(_WIN32) || defined(__wasi__)
 	return 0;					// no fixed per-process limit to report
 #else
 #if defined(__OpenBSD__)
@@ -1044,7 +1046,7 @@ static bool g_init(prolog *pl)
 	if (ptr)
 		g_tpl_lib = strdup(ptr);
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !TPL_FREESTANDING && !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	struct rlimit rlp;
 	getrlimit(RLIMIT_STACK, &rlp);
 	g_max_depth = rlp.rlim_cur / 1024;

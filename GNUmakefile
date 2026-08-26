@@ -11,6 +11,16 @@ FREESTANDING_BASE_LIBS = builtins error lists iso_ext gensym si
 EMBED_LIBS ?= $(FREESTANDING_BASE_LIBS)
 
 PYTHON ?= python3
+QEMU_RISCV_CC ?= riscv64-unknown-elf-gcc
+QEMU_RISCV_AR ?= riscv64-unknown-elf-ar
+QEMU_RISCV ?= qemu-system-riscv32
+QEMU_RISCV_ELF = ports/qemu-riscv32/trealla.elf
+PICOLIBC_SPECS ?= $(shell $(QEMU_RISCV_CC) --print-file-name=picolibc.specs 2>/dev/null)
+QEMU_RISCV_CFLAGS = -specs=$(PICOLIBC_SPECS) -march=rv32imac -mabi=ilp32 \
+	-mcmodel=medany -ffunction-sections -fdata-sections
+QEMU_RISCV_LDFLAGS = --oslib=semihost \
+	-march=rv32imac -mabi=ilp32 -mcmodel=medany \
+	-Tports/qemu-riscv32/picolibc.ld -Wl,--gc-sections -lm
 # Captured eagerly (before WASI/WIN below reassign CC to a cross-compiler)
 # so a plain `make CC=clang` also builds util/bin2c with clang, matching
 # https://github.com/trealla-prolog/trealla/issues/1123
@@ -28,6 +38,7 @@ CFLAGS = -MMD -MP -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-Wno-unused-parameter \
 	-Wno-unused-variable     \
 	-Wno-unused-function
+CFLAGS += $(TARGET_CFLAGS)
 
 ifeq ($(EMBED), 1)
 CFLAGS += -DEMBED=1
@@ -109,6 +120,7 @@ ifdef FREESTANDING
 CFLAGS += -DTPL_FREESTANDING=1 -DUSE_MMAP=0
 override EMBED_LIBS := $(FREESTANDING_BASE_LIBS) $(filter-out $(FREESTANDING_BASE_LIBS),$(EMBED_LIBS))
 PROGRAM ?= samples/freestanding.pl
+PLATFORM_OBJ ?= src/platform/hosted.o
 NOFFI = 1
 NOSSL = 1
 NOTHREADS = 1
@@ -331,7 +343,7 @@ ifdef ISOCLINE
 SRCOBJECTS += src/isocline/src/isocline.o
 endif
 
-OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS)
+OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS) $(PLATFORM_OBJ)
 
 # Everything except tpl.o, which carries main(). This is the whole engine,
 # and it is what an embedder links against.
@@ -351,7 +363,7 @@ OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS)
 # native loader to run it with.
 
 LIBTREALLA =
-LIBTREALLA_OBJECTS = $(filter-out tpl.o,$(OBJECTS))
+LIBTREALLA_OBJECTS = $(filter-out tpl.o $(PLATFORM_OBJ),$(OBJECTS))
 SAMPLES =
 
 ifndef NOLIB
@@ -406,9 +418,15 @@ tpl: $(OBJECTS) README.md LICENSE
 # to re-stamp the git version at link time, so archiving in parallel with
 # it would be a race for that one object.
 
+ifdef FREESTANDING
+$(LIBTREALLA): $(LIBTREALLA_OBJECTS)
+	rm -f $@
+	$(AR) rcs $@ $(LIBTREALLA_OBJECTS)
+else
 $(LIBTREALLA): $(LIBTREALLA_OBJECTS) | tpl
 	rm -f $@
 	$(AR) rcs $@ $(LIBTREALLA_OBJECTS)
+endif
 
 # Links exactly the way an embedder would, so it catches a libtrealla.a
 # that does not stand on its own.
@@ -416,8 +434,8 @@ $(LIBTREALLA): $(LIBTREALLA_OBJECTS) | tpl
 samples/embed: samples/embed.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
-samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA)
-	$(CC) $(CFLAGS) -o $@ $< program.o $(LIBTREALLA) $(OPT) $(LDFLAGS)
+samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA) $(PLATFORM_OBJ)
+	$(CC) $(CFLAGS) -o $@ $< program.o $(LIBTREALLA) $(PLATFORM_OBJ) $(OPT) $(LDFLAGS)
 
 .PHONY: freestanding freestanding-smoke
 
@@ -430,6 +448,26 @@ freestanding-smoke: samples/freestanding
 	@if nm -u samples/freestanding | grep -E '(_| )(connect|socket|getaddrinfo|fork|posix_spawn[A-Za-z_]*|mmap|dlopen|pthread_[A-Za-z_]*|readline|el_init|icl_init)$$'; then \
 		echo "freestanding smoke image imports a disabled hosted service"; exit 1; \
 	fi
+
+.PHONY: qemu-riscv32 qemu-riscv32-smoke
+
+qemu-riscv32:
+	@command -v $(QEMU_RISCV_CC) >/dev/null || { \
+		echo "missing $(QEMU_RISCV_CC) (install a RISC-V bare-metal GCC toolchain)"; exit 1; \
+	}
+	@test -f "$(PICOLIBC_SPECS)" || { \
+		echo "missing Picolibc for $(QEMU_RISCV_CC)"; exit 1; \
+	}
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 NOPIC=1 \
+		CC=$(QEMU_RISCV_CC) AR=$(QEMU_RISCV_AR) HOST_CC=$(HOST_CC) \
+		PLATFORM_OBJ=ports/qemu-riscv32/platform.o \
+		'TARGET_CFLAGS=$(QEMU_RISCV_CFLAGS)' 'LDFLAGS=$(QEMU_RISCV_LDFLAGS)' \
+		samples/freestanding
+	cp samples/freestanding $(QEMU_RISCV_ELF)
+
+qemu-riscv32-smoke: qemu-riscv32
+	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF)
 
 util/bin2c: util/bin2c.c
 	$(HOST_CC) -o util/bin2c util/bin2c.c
@@ -603,11 +641,13 @@ valgrind:
 clean:
 	rm -f tpl tpl.aarch64.elf tpl.com.dbg tpl.wasm $(LIBTREALLA) \
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
-		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
+		src/platform/*.o src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d \
+		src/platform/*.d library/*.d *.d \
 		library/*.o library/*.c library/actors/*.o library/actors/*.c library/actors/*.d \
 		*.o program.c samples/*.o samples/*.so \
 		samples/embed samples/freestanding samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
+	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

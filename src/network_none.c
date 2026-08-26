@@ -2,6 +2,11 @@
 #include <stdio.h>
 
 #include "network.h"
+#include "features.h"
+
+#if TPL_FREESTANDING
+#include "platform/platform.h"
+#endif
 
 static int unavailable(void)
 {
@@ -57,21 +62,83 @@ size_t tpl_write(const void *ptr, size_t nbytes, stream *str)
 		return nbytes;
 	}
 
+#if TPL_FREESTANDING
+	FILE *fp = str->fp_out ? str->fp_out : str->fp;
+
+	if ((fp == stdout) || (fp == stderr))
+		return tpl_platform_console_write(fp == stderr ? TPL_CONSOLE_ERROR : TPL_CONSOLE_OUTPUT,
+			ptr, nbytes);
+#endif
+
 	return fwrite(ptr, 1, nbytes, str->fp_out ? str->fp_out : str->fp);
 }
 
 int tpl_getc(stream *str)
 {
+#if TPL_FREESTANDING
+	if (str->fp_in == stdin) {
+		unsigned char ch;
+		return tpl_platform_console_read(&ch, 1) == 1 ? ch : EOF;
+	}
+#endif
+
 	return fgetc(str->fp_in);
 }
 
 size_t tpl_read(void *ptr, size_t len, stream *str)
 {
+#if TPL_FREESTANDING
+	if (str->fp_in == stdin)
+		return tpl_platform_console_read(ptr, len);
+#endif
+
 	return fread(ptr, 1, len, str->fp_in);
 }
 
 int tpl_getline(char **lineptr, size_t *n, stream *str)
 {
+#if TPL_FREESTANDING
+	if (str->fp_in == stdin) {
+		if (!lineptr || !n) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		size_t len = 0;
+
+		for (;;) {
+			int ch = tpl_getc(str);
+
+			if ((ch == EOF) && !len)
+				return -1;
+
+			if ((len + 1) >= *n) {
+				size_t cap = *n ? *n * 2 : 128;
+				char *tmp = TPL_realloc(*lineptr, cap);
+
+				if (!tmp) {
+					errno = ENOMEM;
+					return -1;
+				}
+
+				*lineptr = tmp;
+				*n = cap;
+			}
+
+			if (ch == EOF)
+				break;
+
+			(*lineptr)[len++] = (char)ch;
+
+			if (ch == '\n')
+				break;
+		}
+
+		(*lineptr)[len] = '\0';
+		return (int)len;
+	}
+#endif
+
 	return getline(lineptr, n, str->fp_in);
 }
 
@@ -80,6 +147,9 @@ int tpl_close(stream *str)
 	int ok = 1;
 
 	if (!str->is_memory && !str->is_popen) {
+		if ((str->fp_in == stdin) || (str->fp_in == stdout) || (str->fp_in == stderr))
+			return ok;
+
 		ok = fclose(str->fp_in);
 
 		if (str->fp_out != str->fp_in)

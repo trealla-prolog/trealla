@@ -2423,6 +2423,11 @@ static const char *g_src_suffixes[] = {
 
 bool unload_file(module *m, const char *filename)
 {
+#if !TPL_FEATURE_FILESYSTEM
+	(void)m;
+	(void)filename;
+	return false;
+#else
 	size_t len = strlen(filename);
 	char *tmpbuf = TPL_malloc(len + 20);
 	ENSURE(tmpbuf);
@@ -2465,6 +2470,7 @@ bool unload_file(module *m, const char *filename)
 	bool ok = unload_realfile(m, filename);
 	TPL_free(realbuf);
 	return ok;
+#endif
 }
 
 module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool init)
@@ -2559,6 +2565,13 @@ bool restore_log(module *m, const char *filename)
 
 module *load_file(module *m, const char *filename, bool including, bool init)
 {
+#if !TPL_FEATURE_FILESYSTEM
+	(void)m;
+	(void)filename;
+	(void)including;
+	(void)init;
+	return NULL;
+#else
 	const char *orig_filename = filename;
 
 	if (!strcmp(filename, "user")) {
@@ -2694,6 +2707,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 	fclose(fp);
 	TPL_free(realbuf);
 	return save_m;
+#endif
 }
 
 static void module_save_fp(module *m, FILE *fp, int canonical, int dq)

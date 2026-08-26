@@ -1,6 +1,7 @@
 # Freestanding Trealla — design
 
-Status: proposed. No runtime or build changes are implied by this document.
+Status: phases 1-3 implemented on the `freestanding` branch; phases 4-5 remain
+proposed.
 
 ## 1. Goal
 

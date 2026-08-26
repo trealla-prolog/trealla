@@ -6,10 +6,20 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include "features.h"
 #include "module.h"
 #include "query.h"
 
-#ifdef _WIN32
+#if TPL_FREESTANDING
+#include "platform/platform.h"
+static void msleep(int ms)
+{
+	uint64_t until = tpl_platform_monotonic_usec() + (uint64_t)ms * 1000u;
+
+	while (tpl_platform_monotonic_usec() < until)
+		;
+}
+#elif defined(_WIN32)
 #include <windows.h>
 #define msleep Sleep
 #define localtime_r(p1,p2) localtime(p1)
@@ -27,7 +37,7 @@ static void msleep(int ms)
 // otherwise the read would have blocked rather than yielded and we'd
 // never get here anyway. Keep this condition identical to that one.
 
-#if !defined(_WIN32) && !defined(__wasi__)
+#if TPL_FEATURE_NETWORK && !defined(_WIN32) && !defined(__wasi__)
 #define USE_POLL 1
 #include <poll.h>
 #include <fcntl.h>
