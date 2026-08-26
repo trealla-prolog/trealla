@@ -112,8 +112,7 @@ To build without pre-emptive multi-threading support:
 	make NOTHREADS=1
 
 To build (as a last resort) with the included ISOCLINE sources (most native builds default
-to EDITLINE; WASI uses its own simple line reader). Windows cross-builds default to
-ISOCLINE, but can select EDITLINE=1 when wineditline is installed:
+to EDITLINE; WASI uses its own simple line reader).
 
 	make ISOCLINE=1
 
@@ -151,14 +150,15 @@ On macOS:
 
 	brew install libffi openssl coreutils
 
-By default `editline` is used on `'nix` systems, however if using GNU
-readline instead (make READLINE=1) install the BREW version of readline.
-
 
 Building with Cosmopolitan
 ==========================
 
+Cosmopolitan uses the included ISOCLINE.
+
 	make cosmo
+
+Cosmopolitan can also boot bare-metal or Qemu via boot-sector.
 
 
 Building with MUSL
