@@ -34,18 +34,16 @@ TREALLA HEAP PEAK <bytes>
 TREALLA FREESTANDING COMPLETE
 ```
 
-The peak is reported rather than enforced while compiler and debug-format
-variance are being measured. ELF section sizes are recorded from the build for
-the same reason; reviewed hard budgets belong after the baseline is stable.
-
 The first measured RV32IMAC baseline (GCC 16.2.0, Picolibc 1.8.6) is:
 
-| Metric | Bytes |
-| --- | ---: |
-| ELF text | 1,036,678 |
-| ELF data | 239,768 |
-| ELF bss | 1,423,536 |
-| Peak Trealla-owned heap | 5,446,673 |
+| Metric | Baseline bytes | CI limit |
+| --- | ---: | ---: |
+| ELF text | 1,036,678 | 1,250,000 |
+| ELF data | 239,768 | 300,000 |
+| ELF bss | 1,423,536 | 1,600,000 |
+| Peak Trealla-owned heap | 5,446,673 | 6,500,000 |
 
-These are observations, not limits. The CI log records fresh section and heap
-figures on every run so a stable cross-run budget can be chosen later.
+The smoke runner enforces these deliberately conservative limits. They leave
+room for ordinary compiler variation while catching a material footprint
+regression. A change which intentionally exceeds a limit must update the
+baseline and limit together with an explanation.

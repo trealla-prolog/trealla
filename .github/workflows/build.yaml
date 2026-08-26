@@ -9,6 +9,19 @@
     pull_request:
 
   jobs:
+    freestanding-hosted:
+      name: Freestanding hosted
+      runs-on: ubuntu-24.04
+      timeout-minutes: 15
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Run hosted adapter smoke test
+          run: make freestanding
+        - name: Run port template smoke test
+          run: make port-template-smoke
+
     freestanding-qemu:
       name: Freestanding QEMU RV32
       runs-on: ubuntu-24.04

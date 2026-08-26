@@ -1,8 +1,9 @@
 # Freestanding Trealla — design
 
-Status: phases 1-4 implemented on the `freestanding` branch; phase 5 is in
-progress with an Arduino Nano ESP32 adapter compiling as the second independent
-target; physical-board boot validation remains.
+Status: phases 1-5 implemented on the `freestanding` branch. The hosted and
+QEMU adapters are continuously exercised, and the Arduino Nano ESP32 adapter
+is cross-built with its memory layout checked. Physical-board validation is
+outside the automated acceptance suite.
 
 ## 1. Goal
 
@@ -386,10 +387,11 @@ Normal hosted tests remain mandatory. Freestanding tests additionally cover:
 - exhausted-heap behaviour once allocation accounting exists; and
 - selected library closure.
 
-Binary size and peak heap are recorded from the first reference build. They are
-reported before becoming hard limits, because toolchain and debug-format
-changes can otherwise produce noisy failures. Once stable, CI enforces reviewed
-budgets.
+Binary size and peak heap are recorded from the first reference build. CI
+enforces reviewed budgets with headroom for toolchain variation; an intentional
+increase updates both the baseline and its limit. The ESP32-S3 cross-build
+likewise enforces firmware and internal-memory limits and checks that Trealla's
+static BSS remains in PSRAM.
 
 ## 11. Implementation phases
 
@@ -456,6 +458,11 @@ small heap fails with a controlled Prolog/resource error rather than corruption.
 
 Exit criterion: a new adapter can be written without modifying Trealla engine
 sources.
+
+Phase 5 outcome: the QEMU, template and ESP-IDF adapters all use the same
+engine boundary. The template and second adapter were added without target
+conditionals under `src/`. The platform structure remains internal for now;
+two adapters validate its shape, but do not justify freezing it as public ABI.
 
 ## 12. Patch sequence
 

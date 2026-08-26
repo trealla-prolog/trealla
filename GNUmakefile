@@ -491,7 +491,7 @@ qemu-riscv32:
 	$(QEMU_RISCV_SIZE) $(QEMU_RISCV_ELF)
 
 qemu-riscv32-smoke: qemu-riscv32
-	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF)
+	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF) $(QEMU_RISCV_SIZE)
 
 .PHONY: arduino-nano-esp32 arduino-nano-esp32-lib
 
