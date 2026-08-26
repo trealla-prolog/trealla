@@ -867,7 +867,9 @@ void load_builtins(prolog *pl)
 
 static unsigned detect_cpu_count(void)
 {
-#if defined(_WIN32)
+#if defined(TPL_FREESTANDING)
+	return 1;
+#elif defined(_WIN32)
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	return si.dwNumberOfProcessors > 0 ? (unsigned)si.dwNumberOfProcessors : 1;

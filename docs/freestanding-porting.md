@@ -107,3 +107,8 @@ order and timeout for the RV32 image.
 
 A new port is ready when it can perform the same sequence without modifying
 `src/`, and its normal and failure paths are repeatable after a clean build.
+
+The first physical-board application of this checklist is under
+`ports/arduino-nano-esp32/`. It deliberately places both Trealla's static BSS
+and owned heap in the board's directly mapped PSRAM, leaving internal SRAM for
+the ESP-IDF runtime and task stack.

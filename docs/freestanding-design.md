@@ -1,7 +1,8 @@
 # Freestanding Trealla — design
 
 Status: phases 1-4 implemented on the `freestanding` branch; phase 5 is in
-progress.
+progress with an Arduino Nano ESP32 adapter compiling as the second independent
+target; physical-board boot validation remains.
 
 ## 1. Goal
 

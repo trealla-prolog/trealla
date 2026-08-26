@@ -16,6 +16,13 @@ QEMU_RISCV_AR ?= riscv64-unknown-elf-ar
 QEMU_RISCV_SIZE ?= riscv64-unknown-elf-size
 QEMU_RISCV ?= qemu-system-riscv32
 QEMU_RISCV_ELF = ports/qemu-riscv32/trealla.elf
+ifdef IDF_PATH
+IDF_PY ?= $(IDF_PATH)/tools/idf.py
+else
+IDF_PY ?= idf.py
+endif
+ESP32S3_CC ?= xtensa-esp32s3-elf-gcc
+ESP32S3_AR ?= xtensa-esp32s3-elf-ar
 PICOLIBC_SPECS ?= $(shell $(QEMU_RISCV_CC) --print-file-name=picolibc.specs 2>/dev/null)
 QEMU_RISCV_CFLAGS = -specs=$(PICOLIBC_SPECS) -march=rv32imac -mabi=ilp32 \
 	-mcmodel=medany -ffunction-sections -fdata-sections
@@ -33,12 +40,15 @@ COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
 CFLAGS = -MMD -MP -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-DDEFAULT_LIBRARY_PATH='"$(LIBDIR)/library"' \
-	-O3 $(OPT) -D_GNU_SOURCE \
+	-O3 $(OPT) \
 	-Wall -Wextra \
 	-Wno-unused-but-set-variable \
 	-Wno-unused-parameter \
 	-Wno-unused-variable     \
 	-Wno-unused-function
+ifndef NO_GNU_SOURCE
+CFLAGS += -D_GNU_SOURCE
+endif
 CFLAGS += $(TARGET_CFLAGS)
 
 ifeq ($(EMBED), 1)
@@ -482,6 +492,29 @@ qemu-riscv32:
 
 qemu-riscv32-smoke: qemu-riscv32
 	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF)
+
+.PHONY: arduino-nano-esp32 arduino-nano-esp32-lib
+
+arduino-nano-esp32-lib:
+	@command -v $(IDF_PY) >/dev/null || { \
+		echo "missing $(IDF_PY) (activate ESP-IDF 6.0.2 or newer)"; exit 1; \
+	}
+	@command -v $(ESP32S3_CC) >/dev/null || { \
+		echo "missing $(ESP32S3_CC) (activate the ESP32-S3 toolchain)"; exit 1; \
+	}
+	@command -v $(ESP32S3_AR) >/dev/null || { \
+		echo "missing $(ESP32S3_AR) (activate the ESP32-S3 toolchain)"; exit 1; \
+	}
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 NOPIC=1 CC=$(ESP32S3_CC) AR=$(ESP32S3_AR) \
+		HOST_CC=$(HOST_CC) NO_GNU_SOURCE=1 \
+		'TARGET_CFLAGS=-mlongcalls -specs=picolibc.specs -I$(IDF_PATH)/components/xtensa/esp32s3/include' \
+		$(LIBTREALLA)
+
+arduino-nano-esp32: arduino-nano-esp32-lib
+	@test -f ports/arduino-nano-esp32/sdkconfig || \
+		{ cd ports/arduino-nano-esp32 && $(IDF_PY) set-target esp32s3; }
+	cd ports/arduino-nano-esp32 && $(IDF_PY) build
 
 util/bin2c: util/bin2c.c
 	$(HOST_CC) -o util/bin2c util/bin2c.c
