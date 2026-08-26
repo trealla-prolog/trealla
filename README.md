@@ -173,6 +173,24 @@ contract, build shape and validation checklist.
 	make port-template-smoke
 	make qemu-riscv32-smoke
 
+Arduino Nano ESP32
+------------------
+
+The `freestanding` profile also includes an ESP-IDF adapter for the Arduino
+Nano ESP32. It targets the board's ESP32-S3, places Trealla's static BSS and
+owned heap in the 8 MB PSRAM, embeds a Prolog smoke program in flash and uses
+the native USB Serial/JTAG console.
+
+	source ~/.espressif/tools/activate_idf_v6.0.2.sh
+	make arduino-nano-esp32
+	cd ports/arduino-nano-esp32
+	idf.py -p /dev/cu.<board-port> flash monitor
+
+The run is successful when the serial console ends with
+`TREALLA NANO ESP32 COMPLETE`. See the
+[Nano ESP32 port notes](ports/arduino-nano-esp32/README.md) for memory figures,
+configuration details and the full validation procedure.
+
 
 Building with MUSL
 ==================
