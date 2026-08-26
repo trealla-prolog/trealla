@@ -56,6 +56,11 @@ ifeq ($(UNAME_S), SunOS)
 LDFLAGS += -lsocket -lnsl
 endif
 
+ifdef TRIBBLIX
+CFLAGS += -m64
+LDFLAGS += -L/usr/lib/amd64
+endif
+
 ifeq ($(UNAME_S), Haiku)
 LDFLAGS += -lnetwork
 endif

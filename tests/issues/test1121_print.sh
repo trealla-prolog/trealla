@@ -6,7 +6,10 @@
 
 TPL=${TPL:-./tpl}
 
-printf '%s\n' \
-	'dif(A,B),C=[[]|C],A=[C|D],D=[D|A],B=[C|A].' \
-	'C=[[]|C],A=[C|D],D=[D|A],B=[C|A],dif(A,B).' \
-	| "$TPL" -q -f -g 'use_module(library(dif))' --autofail
+run() {
+	printf '%s\n' "$1" \
+		| "$TPL" -q -f -g 'use_module(library(dif))' --autofail
+}
+
+run 'dif(A,B),C=[[]|C],A=[C|D],D=[D|A],B=[C|A].'
+run 'C=[[]|C],A=[C|D],D=[D|A],B=[C|A],dif(A,B).'
