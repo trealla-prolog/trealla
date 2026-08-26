@@ -3,45 +3,33 @@
 #include "query.h"
 
 static int compare_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth);
+static bool compound_pair_seen(query *q, cell *c1, pl_ctx ctx1, cell *c2, pl_ctx ctx2);
 
 static int compare_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
 {
-	bool any1 = false, any2 = false;
-
 	while (is_iso_list(p1) && is_iso_list(p2)) {
+		if ((p1 == p2) && (p1_ctx == p2_ctx))
+			return 0;
+
+		if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
+			return 0;
+
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_ctx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
-		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen, save_vgen2;
-		int both = 0;
+		c1 = deref(q, c1, c1_ctx);
+		c1_ctx = q->latest_ctx;
+		c2 = deref(q, c2, c2_ctx);
+		c2_ctx = q->latest_ctx;
 
-		DEREF_VAR(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_VAR(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
-
-		if (both != 2) {
-			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-			if (val) return val;
-		}
-
-		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen2 = save_vgen2;
+		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+		if (val) return val;
 
 		p1 = p1 + 1; p1 += p1->num_cells;
 		p2 = p2 + 1; p2 += p2->num_cells;
-		e1 = e2 = NULL;
-		int both1 = 0, both2 = 0;
-
-		DEREF_VAR(any2, both1, save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_VAR(any2, both2, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
-
-		if (both1)
-			q->is_cyclic1++;
-
-		if (both2)
-			q->is_cyclic2++;
-
-		if (q->is_cyclic1 && q->is_cyclic2)
-			break;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
 	}
 
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
@@ -52,7 +40,12 @@ static int compare_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 	int val = CMP_STRING_TO_STRING(q, p1, p2);
 	if (val) return val;
 
-	bool any = false;
+	if ((p1 == p2) && (p1_ctx == p2_ctx))
+		return 0;
+
+	if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
+		return 0;
+
 	int arity = p1->arity;
 	p1 = p1 + 1;
 	p2 = p2 + 1;
@@ -60,20 +53,13 @@ static int compare_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 	while (arity--) {
 		cell *c1 = p1, *c2 = p2;
 		pl_ctx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
-		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen, save_vgen2;
-		int both = 0;
+		c1 = deref(q, c1, c1_ctx);
+		c1_ctx = q->latest_ctx;
+		c2 = deref(q, c2, c2_ctx);
+		c2_ctx = q->latest_ctx;
 
-		DEREF_VAR(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_VAR(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
-
-		if (both != 2) {
-			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-			if (val) return val;
-		}
-
-		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen2 = save_vgen2;
+		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+		if (val) return val;
 
 		p1 += p1->num_cells;
 		p2 += p2->num_cells;
@@ -84,11 +70,6 @@ static int compare_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 
 static int compare_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
 {
-	if (depth > 30) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		return 0;
-	}
-
 	if (is_var(p1)) {
 		if (is_var(p2)) {
 			if (p1_ctx < p2_ctx)
@@ -236,6 +217,7 @@ int compare(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 {
 	q->is_cyclic1 = q->is_cyclic2 = false;
 	if (++q->vgen == 0) q->vgen = 1;
+	q->unify_seen_used = 0;
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
@@ -405,10 +387,10 @@ static bool unify_cstrings(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 }
 
 // Probe for (c1,ctx1)/(c2,ctx2). Returns the slot to use and sets
-// *found. Entries from an earlier unify() have a stale gen and read as
-// empty, which is safe with linear probing: an entry inserted this
-// generation can never sit behind a stale slot in its own probe chain,
-// because the insert that placed it would have stopped at that slot.
+// *found. Entries from an earlier compare/unify operation have a stale
+// generation and read as empty, which is safe with linear probing: an
+// entry inserted this generation can never sit behind a stale slot in
+// its own probe chain, because insertion would have stopped there.
 //
 // Terminates because the caller keeps at least half the table free.
 
@@ -461,9 +443,10 @@ static bool unify_seen_grow(query *q)
 	return true;
 }
 
-// True if this compound pair was already visited this unify(); else record it.
+// True if this compound pair was already visited by the current
+// compare/unify operation; otherwise record it.
 
-static bool unify_pair_seen(query *q, cell *c1, pl_ctx ctx1, cell *c2, pl_ctx ctx2)
+static bool compound_pair_seen(query *q, cell *c1, pl_ctx ctx1, cell *c2, pl_ctx ctx2)
 {
 	if (((q->unify_seen_used + 1) * 2) > q->unify_seen_size) {
 		if (!unify_seen_grow(q))
@@ -491,7 +474,7 @@ static bool unify_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_c
 	if ((p1 == p2) && (p1_ctx == p2_ctx))
 		return true;
 
-	if (unify_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
+	if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
 		return true;
 
 	bool any1 = false, any2 = false;
@@ -545,7 +528,7 @@ static bool unify_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	if ((p1 == p2) && (p1_ctx == p2_ctx))
 		return true;
 
-	if (unify_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
+	if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
 		return true;
 
 	int arity = p1->arity;
@@ -773,7 +756,7 @@ bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 	// The memo is keyed by vgen, so every entry is invalidated by the
 	// bump above and the table is reused as-is; only the occupancy
 	// count has to reset, and doing it here keeps that branch out of
-	// unify_pair_seen()'s per-pair path.
+	// compound_pair_seen()'s per-pair path.
 
 	q->unify_seen_used = 0;
 	bool ok;
