@@ -515,5 +515,5 @@ clean:
 		samples/embed samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
-		samples/*.xwam util/bin2c
+		samples/*.xwam util/bin2c util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po
