@@ -24,6 +24,39 @@
         - name: Build and boot
           run: make qemu-riscv32-smoke
 
+    freestanding-esp32s3:
+      name: Freestanding ESP32-S3
+      runs-on: ubuntu-24.04
+      timeout-minutes: 30
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Cross-build Arduino Nano ESP32 firmware
+          uses: espressif/esp-idf-ci-action@v1
+          with:
+            esp_idf_version: v6.0.2
+            target: esp32s3
+            path: ports/arduino-nano-esp32
+            command: make -C ../.. arduino-nano-esp32
+        - name: Check firmware layout and size
+          run: |
+            python3 util/esp32s3_build_check.py \
+              ports/arduino-nano-esp32/build/trealla_nano_esp32.map \
+              ports/arduino-nano-esp32/build/trealla_nano_esp32.bin
+        - name: Upload firmware
+          uses: actions/upload-artifact@v4
+          with:
+            name: trealla-arduino-nano-esp32
+            path: |
+              ports/arduino-nano-esp32/build/bootloader/bootloader.bin
+              ports/arduino-nano-esp32/build/partition_table/partition-table.bin
+              ports/arduino-nano-esp32/build/trealla_nano_esp32.bin
+              ports/arduino-nano-esp32/build/trealla_nano_esp32.map
+              ports/arduino-nano-esp32/build/flash_args
+              ports/arduino-nano-esp32/build/flasher_args.json
+            if-no-files-found: error
+
     build:
       name: Native
       runs-on: ${{ matrix.os }}

@@ -48,3 +48,9 @@ Trealla's present allocator and live-heap profile.
 The firmware has been cross-built and its linker map checked. Board boot,
 serial output and the run-time heap figures still require validation on a
 connected Nano ESP32.
+
+GitHub Actions repeats that cross-build with the pinned ESP-IDF release. The
+job checks that Trealla's static BSS remains in PSRAM, enforces firmware and
+internal-DRAM budgets, and uploads the flash binaries and linker map as the
+`trealla-arduino-nano-esp32` artifact. This is compile-time validation only;
+the artifact does not imply that the firmware has booted on physical hardware.
