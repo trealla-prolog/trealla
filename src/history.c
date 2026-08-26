@@ -20,14 +20,11 @@
 #if !defined(_WIN32)
 #include <histedit.h>
 #endif
-#if defined(__OpenBSD__)
+#if defined(__OpenBSD__) || defined(__NetBSD__)
 #include <readline/readline.h>
 #include <readline/history.h>
 #else
 #include <editline/readline.h>
-#endif
-#if defined __NetBSD__
-#include <editline/history.h>
 #endif
 #endif
 
