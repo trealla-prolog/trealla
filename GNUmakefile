@@ -1,4 +1,6 @@
 # Installation paths
+.DEFAULT_GOAL := all
+
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 LIBDIR ?= $(PREFIX)/share/trealla
