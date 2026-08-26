@@ -292,5 +292,4 @@ inline static pl_idx get_actual_slot_num(const query *q, const frame *f, unsigne
 
 #ifdef _WIN32
 typedef intptr_t ssize_t;
-extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #endif

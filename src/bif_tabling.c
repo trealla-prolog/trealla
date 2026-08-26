@@ -500,12 +500,12 @@ static void trie_free(tnode *n)
 		}
 
 		if (cur->index) {
-			free(cur->index->buckets);
-			free(cur->index);
+			TPL_free(cur->index->buckets);
+			TPL_free(cur->index);
 		}
 
 		unshare_cell(&cur->key);
-		free(cur);
+		TPL_free(cur);
 	}
 }
 
@@ -708,7 +708,7 @@ static void tbl_free_pending(table *t)
 
 	while (p) {
 		tbl_pair *next = p->next;
-		free(p);
+		TPL_free(p);
 		p = next;
 	}
 
@@ -732,19 +732,19 @@ static void tbl_destroy(table *t)
 	for (tbl_ans *a = t->first_ans; a; ) {
 		tbl_ans *next = a->next;
 		tbl_image_free(a->image);
-		free(a);
+		TPL_free(a);
 		a = next;
 	}
 
 	for (tbl_susp *s = t->first_susp; s; ) {
 		tbl_susp *next = s->next;
 		tbl_image_free(s->image);
-		free(s);
+		TPL_free(s);
 		s = next;
 	}
 
 	tbl_free_pending(t);
-	free(t);
+	TPL_free(t);
 }
 
 // Table handles cross into Prolog as integers. The '$tbl_*' builtins
@@ -907,7 +907,7 @@ static bool bif_tbl_variant_table_3(query *q)
 		if (!tbl_slot_alloc(s, t)) {
 			s->all_tables = t->all_next;
 			leaf->value = NULL;
-			free(t);
+			TPL_free(t);
 			return throw_error(q, p1, p1_ctx, "resource_error", "memory");
 		}
 	}
@@ -1300,7 +1300,7 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 		for (tbl_susp *sp = t->first_susp; sp; ) {
 			tbl_susp *snext = sp->next;
 			tbl_image_free(sp->image);
-			free(sp);
+			TPL_free(sp);
 			sp = snext;
 		}
 
@@ -1357,7 +1357,7 @@ static bool bif_tbl_reset_incomplete_0(query *q)
 			for (tbl_susp *sp = t->first_susp; sp; ) {
 				tbl_susp *snext = sp->next;
 				tbl_image_free(sp->image);
-				free(sp);
+				TPL_free(sp);
 				sp = snext;
 			}
 
@@ -1396,7 +1396,7 @@ static void tbl_clear_all(tbl_state *s)
 	// The SCC stack is a high-water-mark array that otherwise lives as
 	// long as the instance; nothing is on it here, so hand it back.
 
-	free(s->scc);
+	TPL_free(s->scc);
 	s->scc = NULL;
 	s->scc_max = 0;
 	s->saw_exception = false;
@@ -1413,8 +1413,8 @@ void tabling_destroy_thread(thread *t)
 		return;
 
 	tbl_clear_all(s);
-	free(s->slots);
-	free(s);
+	TPL_free(s->slots);
+	TPL_free(s);
 	t->tabling_state = NULL;
 }
 

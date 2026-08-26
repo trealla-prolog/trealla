@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../allocator.h"
+
 #define MP_NUMER_SIGN(Q) (MP_NUMER_P(Q)->sign)
 #define MP_DENOM_SIGN(Q) (MP_DENOM_P(Q)->sign)
 
@@ -63,11 +65,11 @@ mp_result mp_rat_init(mp_rat r) {
 }
 
 mp_rat mp_rat_alloc(void) {
-  mp_rat out = malloc(sizeof(*out));
+  mp_rat out = TPL_malloc(sizeof(*out));
 
   if (out != NULL) {
     if (mp_rat_init(out) != MP_OK) {
-      free(out);
+      TPL_free(out);
       return NULL;
     }
   }
@@ -143,7 +145,7 @@ void mp_rat_free(mp_rat r) {
 
   if (r->num.digits != NULL) mp_rat_clear(r);
 
-  free(r);
+  TPL_free(r);
 }
 
 mp_result mp_rat_numer(mp_rat r, mp_int z) {

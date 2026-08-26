@@ -9,11 +9,43 @@ typedef struct prolog_ prolog;
 // matters now this header is installed for embedders to include.
 typedef struct pl_sub_query_ pl_sub_query;
 
+// Trealla uses one runtime-wide allocator because atoms and other state are
+// shared by every engine. Install it before the first pl_create() or any other
+// Trealla allocation; later calls fail and leave the active allocator intact.
+// The allocator callbacks and their context must remain valid until every
+// Trealla allocation has been released.
+
+typedef void *(*pl_malloc_fn)(void *context, size_t size);
+typedef void *(*pl_realloc_fn)(void *context, void *ptr, size_t size);
+typedef void (*pl_free_fn)(void *context, void *ptr);
+
+typedef struct pl_allocator_ {
+	size_t struct_size;
+	void *context;
+	pl_malloc_fn malloc_fn;
+	pl_realloc_fn realloc_fn;
+	pl_free_fn free_fn;
+} pl_allocator;
+
+typedef struct pl_allocator_stats_ {
+	size_t current_bytes;
+	size_t peak_bytes;
+	size_t allocation_count;
+	size_t failure_count;
+} pl_allocator_stats;
+
+bool pl_set_allocator(const pl_allocator *allocator);
+void pl_get_allocator_stats(pl_allocator_stats *stats);
+// Start a new peak measurement at the current live-byte count.
+void pl_reset_allocator_peak(void);
+void pl_free(void *ptr);
+
 prolog *pl_create(void);
 void pl_destroy(prolog*);
 
 bool pl_consult(prolog*, const char *filename);
 bool pl_consult_fp(prolog*, FILE *fp, const char *filename);
+bool pl_consult_text(prolog*, const char *source, size_t source_len, const char *source_name);
 bool pl_eval(prolog*, const char *expr, bool interactive);
 bool pl_isatty(prolog*);
 FILE *pl_stdin(prolog*);
@@ -32,7 +64,8 @@ bool pl_done(pl_sub_query *q);	// only call if redo still active
 // the query and stays valid until the next pl_redo() or pl_done() on
 // that query - copy anything you need to keep. Text returned by
 // pl_atom_text/pl_functor points into the engine and has the same
-// lifetime; pl_term_text returns a malloc'd string the caller frees.
+// lifetime; pl_term_text/pl_int_text return an owned string which the caller
+// releases with pl_free().
 
 typedef struct pl_term_ pl_term;
 
@@ -48,10 +81,10 @@ const char *pl_atom_text(pl_term*);			// atom or string, NUL-terminated
 size_t      pl_atom_len(pl_term*);			// bytes, for embedded NULs
 bool        pl_get_int64(pl_term*, int64_t*);	// false if it does not fit
 bool        pl_get_float(pl_term*, double*);
-char       *pl_term_text(pl_term*);			// canonical text, caller frees
+char       *pl_term_text(pl_term*);			// canonical text, caller calls pl_free
 											// (this is how a bignum is read)
 char       *pl_int_text(pl_term*, int radix);	// an integer in base 2..36,
-											// caller frees; NULL if not an
+											// caller calls pl_free; NULL if not an
 											// integer. Base 16 is how a host
 											// with a limit on decimal parsing
 											// reads an unbounded integer.

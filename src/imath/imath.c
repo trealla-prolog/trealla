@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include "../allocator.h"
+
 const mp_result MP_OK = 0;      /* no error, all is well  */
 const mp_result MP_FALSE = 0;   /* boolean false          */
 const mp_result MP_TRUE = -1;   /* boolean true           */
@@ -379,7 +381,7 @@ mp_result mp_int_init(mp_int z) {
 }
 
 mp_int mp_int_alloc(void) {
-  mp_int out = malloc(sizeof(mpz_t));
+  mp_int out = TPL_malloc(sizeof(mpz_t));
   if(out == NULL) errno = ENOMEM;
 
   if (out != NULL) mp_int_init(out);
@@ -474,7 +476,7 @@ void mp_int_free(mp_int z) {
   assert(z != NULL);
 
   mp_int_clear(z);
-  free(z); /* note: NOT s_free() */
+  TPL_free(z); /* note: NOT s_free() */
 }
 
 mp_result mp_int_copy(mp_int a, mp_int c) {
@@ -1656,7 +1658,7 @@ static mp_result s_read_fast(mp_int z, mp_size radix, const char *str,
   m = (nd + k - 1) / k;
   first = nd - (m - 1) * k; /* leftmost chunk may be short */
 
-  mpz_t *v = malloc((size_t)m * sizeof(mpz_t));
+  mpz_t *v = TPL_malloc((size_t)m * sizeof(mpz_t));
   if (v == NULL) return MP_MEMORY;
 
   for (j = 0; j < m; j++) {
@@ -1665,7 +1667,7 @@ static mp_result s_read_fast(mp_int z, mp_size radix, const char *str,
     while (cnt-- > 0) acc = acc * radix + (mp_word)s_ch2val(*str++, radix);
     if ((res = mp_int_init_uvalue(&v[j], (mp_usmall)acc)) != MP_OK) {
       while (--j >= 0) mp_int_clear(&v[j]);
-      free(v);
+      TPL_free(v);
       return res;
     }
   }
@@ -1674,7 +1676,7 @@ static mp_result s_read_fast(mp_int z, mp_size radix, const char *str,
     /* P is untouched when init fails - mp_int_init_copy() returns
        before writing z - so it must not reach mp_int_clear() below. */
     for (j = 0; j < m; j++) mp_int_clear(&v[j]);
-    free(v);
+    TPL_free(v);
     return res;
   }
 
@@ -1712,7 +1714,7 @@ static mp_result s_read_fast(mp_int z, mp_size radix, const char *str,
 CLEANUP:
   /* On success or failure, v[0..m-1] are the still-live elements. */
   for (j = 0; j < m; j++) mp_int_clear(&v[j]);
-  free(v);
+  TPL_free(v);
   mp_int_clear(&P);
   return res;
 }
@@ -1917,7 +1919,7 @@ static const mp_digit fill = (mp_digit)0xdeadbeefabad1dea;
 #endif
 
 static mp_digit *s_alloc(mp_size num) {
-  mp_digit *out = malloc(num * sizeof(mp_digit));
+  mp_digit *out = TPL_malloc(num * sizeof(mp_digit));
   //assert(out != NULL);
   if (out == NULL) { errno = ENOMEM; return out; }
 
@@ -1935,9 +1937,9 @@ static mp_digit *s_realloc(mp_digit *old, mp_size osize, mp_size nsize) {
 
   for (mp_size ix = 0; ix < nsize; ++ix) new[ix] = fill;
   memcpy(new, old, osize * sizeof(mp_digit));
-  s_free(old); /* realloc() frees the old buffer; this path must too */
+  s_free(old); /* TPL_realloc() frees the old buffer; this path must too */
 #else
-  mp_digit *new = realloc(old, nsize * sizeof(mp_digit));
+  mp_digit *new = TPL_realloc(old, nsize * sizeof(mp_digit));
   //assert(new != NULL);
   if (new == NULL) errno = ENOMEM;
 #endif
@@ -1945,7 +1947,7 @@ static mp_digit *s_realloc(mp_digit *old, mp_size osize, mp_size nsize) {
   return new;
 }
 
-static void s_free(void *ptr) { free(ptr); }
+static void s_free(void *ptr) { TPL_free(ptr); }
 
 static bool s_pad(mp_int z, mp_size min) {
   if (MP_ALLOC(z) < min) {

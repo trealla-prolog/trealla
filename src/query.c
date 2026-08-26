@@ -10,7 +10,16 @@
 #include "prolog.h"
 #include "query.h"
 
-#ifdef _WIN32
+#if TPL_FREESTANDING
+#include "platform/platform.h"
+static void msleep(int ms)
+{
+	uint64_t until = tpl_platform_monotonic_usec() + (uint64_t)ms * 1000u;
+
+	while (tpl_platform_monotonic_usec() < until)
+		;
+}
+#elif defined(_WIN32)
 #include <windows.h>
 #define msleep Sleep
 #else
@@ -2473,7 +2482,7 @@ void query_destroy(query *q)
 	}
 
 	release_pl_terms(q);			// the embedding API's term handles
-	free(q->terms);
+	TPL_free(q->terms);
 
 	q->pl->q_cnt--;
 	TPL_free(q);

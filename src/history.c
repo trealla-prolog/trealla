@@ -87,11 +87,11 @@ LOOP:
 
 	if (cmd) {
 		size_t n = strlen(cmd) + strlen(line);
-		cmd = realloc(cmd, n+1);
+		cmd = TPL_realloc(cmd, n+1);
 		ENSURE(cmd);
 		strcat(cmd, line);
 	} else {
-		cmd = strdup(line);
+		cmd = TPL_strdup(line);
 	}
 
 	free(line);
@@ -121,7 +121,7 @@ LOOP:
 		}
 
 		if (ch == 0) {
-			cmd = realloc(cmd, strlen(cmd)+1+1);
+			cmd = TPL_realloc(cmd, strlen(cmd)+1+1);
 			ENSURE(cmd);
 			strcat(cmd, "\n");
 			prompt = "";
@@ -345,11 +345,11 @@ LOOP:
 
 	if (cmd) {
 		size_t n = strlen(cmd) + strlen(line);
-		cmd = realloc(cmd, n+1);
+		cmd = TPL_realloc(cmd, n+1);
 		ENSURE(cmd);
 		strcat(cmd, line);
 	} else {
-		cmd = strdup(line);
+		cmd = TPL_strdup(line);
 	}
 
 	free(line);
@@ -370,7 +370,7 @@ LOOP:
 		}
 
 		if (ch == 0) {
-			cmd = realloc(cmd, strlen(cmd)+1+1);
+			cmd = TPL_realloc(cmd, strlen(cmd)+1+1);
 			ENSURE(cmd);
 			strcat(cmd, "\n");
 			prompt = "";

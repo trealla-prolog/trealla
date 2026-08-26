@@ -1,12 +1,34 @@
 # Installation paths
+.DEFAULT_GOAL := all
+
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 LIBDIR ?= $(PREFIX)/share/trealla
 MANDIR ?= $(PREFIX)/share/man
 
 EMBED ?= 1
+FREESTANDING_BASE_LIBS = builtins error lists iso_ext gensym si
+EMBED_LIBS ?= $(FREESTANDING_BASE_LIBS)
 
 PYTHON ?= python3
+QEMU_RISCV_CC ?= riscv64-unknown-elf-gcc
+QEMU_RISCV_AR ?= riscv64-unknown-elf-ar
+QEMU_RISCV_SIZE ?= riscv64-unknown-elf-size
+QEMU_RISCV ?= qemu-system-riscv32
+QEMU_RISCV_ELF = ports/qemu-riscv32/trealla.elf
+ifdef IDF_PATH
+IDF_PY ?= $(IDF_PATH)/tools/idf.py
+else
+IDF_PY ?= idf.py
+endif
+ESP32S3_CC ?= xtensa-esp32s3-elf-gcc
+ESP32S3_AR ?= xtensa-esp32s3-elf-ar
+PICOLIBC_SPECS ?= $(shell $(QEMU_RISCV_CC) --print-file-name=picolibc.specs 2>/dev/null)
+QEMU_RISCV_CFLAGS = -specs=$(PICOLIBC_SPECS) -march=rv32imac -mabi=ilp32 \
+	-mcmodel=medany -ffunction-sections -fdata-sections
+QEMU_RISCV_LDFLAGS = --oslib=semihost \
+	-march=rv32imac -mabi=ilp32 -mcmodel=medany \
+	-Tports/qemu-riscv32/picolibc.ld -Wl,--gc-sections -lm
 # Captured eagerly (before WASI/WIN below reassign CC to a cross-compiler)
 # so a plain `make CC=clang` also builds util/bin2c with clang, matching
 # https://github.com/trealla-prolog/trealla/issues/1123
@@ -18,12 +40,16 @@ COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
 CFLAGS = -MMD -MP -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-DDEFAULT_LIBRARY_PATH='"$(LIBDIR)/library"' \
-	-O3 $(OPT) -D_GNU_SOURCE \
+	-O3 $(OPT) \
 	-Wall -Wextra \
 	-Wno-unused-but-set-variable \
 	-Wno-unused-parameter \
 	-Wno-unused-variable     \
 	-Wno-unused-function
+ifndef NO_GNU_SOURCE
+CFLAGS += -D_GNU_SOURCE
+endif
+CFLAGS += $(TARGET_CFLAGS)
 
 ifeq ($(EMBED), 1)
 CFLAGS += -DEMBED=1
@@ -101,6 +127,21 @@ ifndef NOFFI
 endif
 endif
 
+ifdef FREESTANDING
+CFLAGS += -DTPL_FREESTANDING=1 -DUSE_MMAP=0
+override EMBED_LIBS := $(FREESTANDING_BASE_LIBS) $(filter-out $(FREESTANDING_BASE_LIBS),$(EMBED_LIBS))
+PROGRAM ?= samples/freestanding.pl
+PLATFORM_OBJ ?= src/platform/hosted.o
+NOFFI = 1
+NOSSL = 1
+NOTHREADS = 1
+NOTTY = 1
+NONETWORK = 1
+override ISOCLINE =
+override READLINE =
+override EDITLINE =
+endif
+
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
 endif
@@ -124,8 +165,10 @@ ifndef EDITLINE
 ifndef READLINE
 ifndef WASI
 ifndef WIN
+ifndef NOTTY
 CFLAGS += -DUSE_EDITLINE=1
 LDFLAGS += -ledit
+endif
 endif
 endif
 endif
@@ -171,6 +214,7 @@ WASMOPT = wasm-opt
 endif
 
 SRCOBJECTS = tpl.o \
+	src/allocator.o \
 	src/base64.o \
 	src/bif_atts.o \
 	src/bif_bboard.o \
@@ -181,9 +225,9 @@ SRCOBJECTS = tpl.o \
 	src/bif_format.o \
 	src/bif_functions.o \
 	src/bif_maps.o \
-	src/bif_net.o \
-	src/bif_os.o \
-	src/bif_posix.o \
+	$(BIF_NET_OBJECT) \
+	$(BIF_OS_OBJECT) \
+	$(BIF_POSIX_OBJECT) \
 	src/bif_predicates.o \
 	src/bif_sort.o \
 	src/bif_sregex.o \
@@ -194,12 +238,13 @@ SRCOBJECTS = tpl.o \
 	src/bif_threads.o \
 	src/bif_uri.o \
 	src/compile.o \
+	src/files.o \
 	src/heap.o \
-	src/history.o \
-	src/library.o \
+	$(HISTORY_OBJECT) \
+	$(LIBRARY_REGISTRY_OBJECT) \
 	src/list.o \
 	src/module.o \
-	src/network.o \
+	$(NETWORK_OBJECT) \
 	src/parser.o \
 	src/print.o \
 	src/prolog.o \
@@ -211,9 +256,40 @@ SRCOBJECTS = tpl.o \
 	src/utf8.o \
 	src/version.o
 
+ifdef NONETWORK
+BIF_NET_OBJECT = src/bif_net_none.o
+NETWORK_OBJECT = src/network_none.o
+else
+BIF_NET_OBJECT = src/bif_net.o
+NETWORK_OBJECT = src/network.o
+endif
+
+ifdef FREESTANDING
+BIF_OS_OBJECT = src/bif_os_none.o
+BIF_POSIX_OBJECT = src/bif_posix_none.o
+else
+BIF_OS_OBJECT = src/bif_os.o
+BIF_POSIX_OBJECT = src/bif_posix.o
+endif
+
+ifdef NOTTY
+HISTORY_OBJECT = src/history_none.o
+else
+HISTORY_OBJECT = src/history.o
+endif
+
+ifdef FREESTANDING
+LIBRARY_REGISTRY_OBJECT = library/embedded_registry.o
+else
+LIBRARY_REGISTRY_OBJECT = src/library.o
+endif
+
 LIBOBJECTS =
 
 ifeq ($(EMBED), 1)
+ifdef FREESTANDING
+LIBOBJECTS += $(addprefix library/,$(addsuffix .o,$(EMBED_LIBS)))
+else
 LIBOBJECTS +=  \
 	library/abnf.o \
 	library/aggregate.o \
@@ -262,6 +338,7 @@ LIBOBJECTS +=  \
 	library/uuid.o \
 	library/when.o \
 	library/yall.o
+endif
 
 # Janus is opt-in: `make janus`, never a plain `make`. Inside the EMBED
 # block because that is where the embedded library list lives.
@@ -279,7 +356,7 @@ ifdef ISOCLINE
 SRCOBJECTS += src/isocline/src/isocline.o
 endif
 
-OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS)
+OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS) $(PLATFORM_OBJ)
 
 # Everything except tpl.o, which carries main(). This is the whole engine,
 # and it is what an embedder links against.
@@ -299,20 +376,36 @@ OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS)
 # native loader to run it with.
 
 LIBTREALLA =
-LIBTREALLA_OBJECTS = $(filter-out tpl.o,$(OBJECTS))
+LIBTREALLA_OBJECTS = $(filter-out tpl.o $(PLATFORM_OBJ),$(OBJECTS))
 SAMPLES =
 
 ifndef NOLIB
 LIBTREALLA = libtrealla.a
 
 ifndef WIN
-SAMPLES += samples/embed
+SAMPLES += samples/embed samples/allocator
+endif
+
+ifdef FREESTANDING
+SAMPLES = samples/freestanding
 endif
 endif
 
 library/%.c: library/%.pl util/bin2c
 	echo '#include <stddef.h>' > $@
 	./util/bin2c $< >> $@
+
+.PHONY: FORCE
+
+library/embedded_registry.c: util/embed_registry FORCE
+	./util/embed_registry $(EMBED_LIBS) > $@
+
+program.c: $(PROGRAM) util/bin2c
+	echo '#include <stddef.h>' > $@
+	./util/bin2c $(PROGRAM) program_pl >> $@
+
+program.o: program.c
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 all: tpl $(LIBTREALLA) $(SAMPLES)
 
@@ -338,9 +431,15 @@ tpl: $(OBJECTS) README.md LICENSE
 # to re-stamp the git version at link time, so archiving in parallel with
 # it would be a race for that one object.
 
+ifdef FREESTANDING
+$(LIBTREALLA): $(LIBTREALLA_OBJECTS)
+	rm -f $@
+	$(AR) rcs $@ $(LIBTREALLA_OBJECTS)
+else
 $(LIBTREALLA): $(LIBTREALLA_OBJECTS) | tpl
 	rm -f $@
 	$(AR) rcs $@ $(LIBTREALLA_OBJECTS)
+endif
 
 # Links exactly the way an embedder would, so it catches a libtrealla.a
 # that does not stand on its own.
@@ -348,8 +447,80 @@ $(LIBTREALLA): $(LIBTREALLA_OBJECTS) | tpl
 samples/embed: samples/embed.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
+samples/allocator: samples/allocator.c $(LIBTREALLA)
+	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
+
+samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA) $(PLATFORM_OBJ)
+	$(CC) $(CFLAGS) -o $@ $< program.o $(LIBTREALLA) $(PLATFORM_OBJ) $(OPT) $(LDFLAGS)
+
+.PHONY: freestanding freestanding-smoke port-template-smoke
+
+freestanding:
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 freestanding-smoke
+
+freestanding-smoke: samples/freestanding
+	./samples/freestanding
+	@if nm -u samples/freestanding | grep -E '(_| )(connect|socket|getaddrinfo|fork|posix_spawn[A-Za-z_]*|mmap|dlopen|pthread_[A-Za-z_]*|readline|el_init|icl_init)$$'; then \
+		echo "freestanding smoke image imports a disabled hosted service"; exit 1; \
+	fi
+
+port-template-smoke:
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 \
+		'PLATFORM_OBJ=ports/template/platform.o ports/template/hosted-board.o' \
+		samples/freestanding
+	./samples/freestanding
+
+.PHONY: qemu-riscv32 qemu-riscv32-smoke
+
+qemu-riscv32:
+	@command -v $(QEMU_RISCV_CC) >/dev/null || { \
+		echo "missing $(QEMU_RISCV_CC) (install a RISC-V bare-metal GCC toolchain)"; exit 1; \
+	}
+	@test -f "$(PICOLIBC_SPECS)" || { \
+		echo "missing Picolibc for $(QEMU_RISCV_CC)"; exit 1; \
+	}
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 NOPIC=1 \
+		CC=$(QEMU_RISCV_CC) AR=$(QEMU_RISCV_AR) HOST_CC=$(HOST_CC) \
+		PLATFORM_OBJ=ports/qemu-riscv32/platform.o \
+		'TARGET_CFLAGS=$(QEMU_RISCV_CFLAGS)' 'LDFLAGS=$(QEMU_RISCV_LDFLAGS)' \
+		samples/freestanding
+	cp samples/freestanding $(QEMU_RISCV_ELF)
+	$(QEMU_RISCV_SIZE) $(QEMU_RISCV_ELF)
+
+qemu-riscv32-smoke: qemu-riscv32
+	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF) $(QEMU_RISCV_SIZE)
+
+.PHONY: arduino-nano-esp32 arduino-nano-esp32-lib
+
+arduino-nano-esp32-lib:
+	@command -v $(IDF_PY) >/dev/null || { \
+		echo "missing $(IDF_PY) (activate ESP-IDF 6.0.2 or newer)"; exit 1; \
+	}
+	@command -v $(ESP32S3_CC) >/dev/null || { \
+		echo "missing $(ESP32S3_CC) (activate the ESP32-S3 toolchain)"; exit 1; \
+	}
+	@command -v $(ESP32S3_AR) >/dev/null || { \
+		echo "missing $(ESP32S3_AR) (activate the ESP32-S3 toolchain)"; exit 1; \
+	}
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 NOPIC=1 CC=$(ESP32S3_CC) AR=$(ESP32S3_AR) \
+		HOST_CC=$(HOST_CC) NO_GNU_SOURCE=1 \
+		'TARGET_CFLAGS=-mlongcalls -specs=picolibc.specs -I$(IDF_PATH)/components/xtensa/esp32s3/include' \
+		$(LIBTREALLA)
+
+arduino-nano-esp32: arduino-nano-esp32-lib
+	@test -f ports/arduino-nano-esp32/sdkconfig || \
+		{ cd ports/arduino-nano-esp32 && $(IDF_PY) set-target esp32s3; }
+	cd ports/arduino-nano-esp32 && $(IDF_PY) build
+
 util/bin2c: util/bin2c.c
 	$(HOST_CC) -o util/bin2c util/bin2c.c
+
+util/embed_registry: util/embed_registry.c
+	$(HOST_CC) -o util/embed_registry util/embed_registry.c
 
 profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
@@ -398,13 +569,12 @@ wasm: tpl.wasm
 
 compile: util/bin2c
 	echo '#include <stddef.h>' > main.c
-	cp $(main) main.pl
-	./util/bin2c main.pl >> main.c
+	./util/bin2c $(main) main_pl >> main.c
 	rm -f src/library.o
 	$(CC) $(CFLAGS) -o main.o -c main.c
 	$(CC) $(CFLAGS) -DUSE_MAIN=1 -o src/library.o -c src/library.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) main.o $(OPT) $(LDFLAGS)
-	rm -f main.pl main.c main.o src/library.o
+	rm -f main.c main.o src/library.o
 
 # Janus: the Prolog-Python interface, off unless asked for. See
 # docs/janus-design.md.
@@ -440,6 +610,7 @@ raylib:
 	$(PYTHON) util/gen_raylib.py --in-place
 
 test:
+	@if test -x samples/allocator; then ./samples/allocator; fi
 	./tests/run.sh
 
 misc:
@@ -518,11 +689,15 @@ valgrind:
 clean:
 	rm -f tpl tpl.aarch64.elf tpl.com.dbg tpl.wasm $(LIBTREALLA) \
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
-		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
+		src/platform/*.o src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d \
+		src/platform/*.d library/*.d *.d \
 		library/*.o library/*.c library/actors/*.o library/actors/*.c library/actors/*.d \
-		*.o samples/*.o samples/*.so \
-		samples/embed samples/*.d samples/embed_demo.pl \
+		*.o program.c samples/*.o samples/*.so \
+		samples/embed samples/allocator samples/freestanding samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
-		samples/*.xwam util/bin2c util/bin2c.aarch64.elf util/bin2c.com.dbg
+		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
+	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
+	rm -f ports/template/*.o ports/template/*.d
+	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/freestanding.dSYM
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

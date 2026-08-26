@@ -2,18 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Usage: ./bin2c <input_file_path>
+// Usage: ./bin2c <input_file_path> [symbol_name]
 // Reads the input file and prints a C-style byte array to stdout.
 // The variable name is derived from the input file path by replacing
-// non-alphanumeric characters with underscores.
+// non-alphanumeric characters with underscores unless explicitly supplied.
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <input_file_path>\n", argv[0]);
+    if ((argc < 2) || (argc > 3)) {
+        fprintf(stderr, "Usage: %s <input_file_path> [symbol_name]\n", argv[0]);
         return 1;
     }
 
     const char *filepath = argv[1];
-    char *var_name = strdup(filepath);
+    char *var_name = strdup(argc == 3 ? argv[2] : filepath);
     if (!var_name) {
         fprintf(stderr, "Error: Memory allocation failed.\n");
         return 1;

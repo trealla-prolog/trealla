@@ -69,7 +69,7 @@ struct skiplist_ {
 
 inline static slnode_t *new_node_of_level(unsigned x)
 {
-	return malloc(sizeof(slnode_t) + ((x+1) * sizeof(slnode_t*)));
+	return TPL_malloc(sizeof(slnode_t) + ((x+1) * sizeof(slnode_t*)));
 }
 
 static int default_cmpkey(const void *p1, const void *p2, __attribute__((unused)) const void *p, void *l)
@@ -83,7 +83,7 @@ static int g_sl_random = -1;
 
 skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *), void(*delkey)(void*, void*, const void*), const void *p)
 {
-	skiplist *l = (skiplist*)calloc(1, sizeof(struct skiplist_));
+	skiplist *l = (skiplist*)TPL_calloc(1, sizeof(struct skiplist_));
 	if (!l) return NULL;
 
 	init_lock(&l->guard);
@@ -447,7 +447,7 @@ sliter *sl_first(skiplist *l)
 		acquire_lock(&l->guard);
 
 		if (!l->iters) {
-			iter = malloc(sizeof(sliter));
+			iter = TPL_malloc(sizeof(sliter));
 			if (!iter) { release_lock(&l->guard); return NULL; }
 		} else {
 			iter = l->iters;
@@ -527,7 +527,7 @@ sliter *sl_find_key(skiplist *l, const void *key)
 		acquire_lock(&l->guard);
 
 		if (!l->iters) {
-			iter = malloc(sizeof(sliter));
+			iter = TPL_malloc(sizeof(sliter));
 			if (!iter) { release_lock(&l->guard); return NULL; }
 		} else {
 			iter = l->iters;

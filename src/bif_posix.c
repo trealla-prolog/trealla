@@ -370,14 +370,14 @@ static bool bif_sys_openlog_3(query *q)
 	if (!is_nil(p2))
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	char *ident = strdup(C_STR(q, p1));
+	char *ident = TPL_strdup(C_STR(q, p1));
 	CHECKED(ident);
 	openlog(ident, mask, facility);
 
 	// Freed only after the new one is in place, since the old pointer is
 	// live until openlog() replaces it.
 
-	free(g_syslog_ident);
+	TPL_free(g_syslog_ident);
 	g_syslog_ident = ident;
 	return true;
 #else
@@ -418,7 +418,7 @@ static bool bif_sys_syslog_2(query *q)
 	syslog(pri, "%s", src);
 
 	if (tofree)
-		free(tofree);
+		TPL_free(tofree);
 
 	return true;
 #else
@@ -430,7 +430,7 @@ static bool bif_sys_closelog_0(query *q)
 {
 #if USE_SYSLOG
 	closelog();
-	free(g_syslog_ident);
+	TPL_free(g_syslog_ident);
 	g_syslog_ident = NULL;
 	return true;
 #else

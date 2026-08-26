@@ -393,7 +393,7 @@ char *formatted(const char *src, int srclen, bool dq, bool json)
 		}
 	}
 
-	char *dst = strdup(SB_cstr(sb));
+	char *dst = TPL_strdup(SB_cstr(sb));
 	SB_free(sb);
 	return dst;
 }

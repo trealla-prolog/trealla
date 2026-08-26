@@ -1,0 +1,9 @@
+[scheme:trealla_extram_bss]
+entries:
+    bss -> extern_ram
+    common -> extern_ram
+
+[mapping:trealla_external_bss]
+archive: libtrealla.a
+entries:
+    * (trealla_extram_bss)

@@ -830,7 +830,7 @@ static bool bif_popen_4(query *q)
 	str->is_pipe = true;
 	str->is_popen = true;
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
-	CHECKED(str->filename = strdup(filename));
+	CHECKED(str->filename = TPL_strdup(filename));
 	CHECKED(str->mode = DUP_STRING(q, p2));
 	str->binary = binary;
 	str->eof_action = eof_action;
@@ -918,10 +918,10 @@ static bool bif_process_create_3(query *q)
 	int args = 0, envs = 0;
 	char *arguments[MAX_ARGS] = {NULL};
 	char *environments[MAX_ARGS] = {NULL};
-	arguments[args++] = strdup(filename);
+	arguments[args++] = TPL_strdup(filename);
 
 	for (int i = 0; g_envp[i] != NULL; i++)
-		environments[envs++] = strdup(g_envp[i]);
+		environments[envs++] = TPL_strdup(g_envp[i]);
 
 	PROLOG_LIST_HANDLER(p2);
 
@@ -1050,7 +1050,7 @@ static bool bif_process_create_3(query *q)
 				q->pl->streams[n].fp = fdopen(fds[1], "w");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
-				CHECKED(q->pl->streams[n].mode = strdup("write"));
+				CHECKED(q->pl->streams[n].mode = TPL_strdup("write"));
 				cell tmp;
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
@@ -1075,7 +1075,7 @@ static bool bif_process_create_3(query *q)
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
-				CHECKED(q->pl->streams[n].mode = strdup("read"));
+				CHECKED(q->pl->streams[n].mode = TPL_strdup("read"));
 				cell tmp;
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
@@ -1100,7 +1100,7 @@ static bool bif_process_create_3(query *q)
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
-				CHECKED(q->pl->streams[n].mode = strdup("read"));
+				CHECKED(q->pl->streams[n].mode = TPL_strdup("read"));
 				cell tmp;
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;

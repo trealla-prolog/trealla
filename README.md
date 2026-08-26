@@ -6,6 +6,7 @@ and using a plain old Makefile.
 
 	MIT licensed
 	Runs on Linux, Android, MacOS, FreeBSD, OpenBSD, NetBSD, RISC/OS, Haiku, OpenIndiana, Solaris & Tribblix
+	Runs on many bare boards eg. RISC-V, ESP-32
 	Integers & Rationals are unbounded
 	Atoms and strings are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
@@ -159,6 +160,37 @@ Cosmopolitan uses the included ISOCLINE.
 	make cosmo
 
 Cosmopolitan can also boot bare-metal or Qemu via boot-sector.
+
+
+Freestanding and bare-metal ports
+=================================
+
+Trealla also has a freestanding profile, a QEMU RV32 reference firmware and a
+generic board adapter template. See the
+[freestanding porting guide](docs/freestanding-porting.md) for the service
+contract, build shape and validation checklist.
+
+	make freestanding-smoke
+	make port-template-smoke
+	make qemu-riscv32-smoke
+
+Arduino Nano ESP32
+------------------
+
+The `freestanding` profile also includes an ESP-IDF adapter for the Arduino
+Nano ESP32. It targets the board's ESP32-S3, places Trealla's static BSS and
+owned heap in the 8 MB PSRAM, embeds a Prolog smoke program in flash and uses
+the native USB Serial/JTAG console.
+
+	source ~/.espressif/tools/activate_idf_v6.0.2.sh
+	make arduino-nano-esp32
+	cd ports/arduino-nano-esp32
+	idf.py -p /dev/cu.<board-port> flash monitor
+
+The run is successful when the serial console ends with
+`TREALLA NANO ESP32 COMPLETE`. See the
+[Nano ESP32 port notes](ports/arduino-nano-esp32/README.md) for memory figures,
+configuration details and the full validation procedure.
 
 
 Building with MUSL

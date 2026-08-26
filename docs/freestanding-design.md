@@ -1,6 +1,9 @@
 # Freestanding Trealla — design
 
-Status: proposed. No runtime or build changes are implied by this document.
+Status: phases 1-5 implemented on the `freestanding` branch. The hosted and
+QEMU adapters are continuously exercised, and the Arduino Nano ESP32 adapter
+is cross-built with its memory layout checked. Physical-board validation is
+outside the automated acceptance suite.
 
 ## 1. Goal
 
@@ -225,15 +228,21 @@ one. Trealla has process-global state, most engine allocations use
 still call the C allocator directly. A per-`prolog` allocator would therefore
 be misleading.
 
-The allocation phase will first route every owned allocation through one
-internal family and add accounting there. It can then expose either:
+All engine-owned allocations now pass through one internal family. The public
+installation rule is deliberately runtime-wide: `pl_set_allocator()` must be
+called before the first `pl_create()` or any other Trealla allocation. The
+first allocation locks the choice for the lifetime of the process. This
+matches the current ownership of global atoms without pretending allocation is
+per-engine.
 
-- one runtime-wide allocator installed before the first `pl_create()`; or
-- an explicit runtime object which owns global atoms and the allocator.
+The allocator layer records current bytes, peak bytes, successful allocation
+operations and failed allocation operations. Returned strings from
+`pl_term_text()` and `pl_int_text()` belong to this family and must be released
+with `pl_free()`.
 
-The former is a smaller compatible change; the latter is cleaner but much
-larger. This decision is deferred until allocation coverage and global-state
-ownership have been measured.
+The runtime-wide option is the smaller compatible change. An explicit runtime
+object which owns global atoms and the allocator remains cleaner, but is a much
+larger future API and ownership change.
 
 ## 6. Build interface
 
@@ -378,10 +387,11 @@ Normal hosted tests remain mandatory. Freestanding tests additionally cover:
 - exhausted-heap behaviour once allocation accounting exists; and
 - selected library closure.
 
-Binary size and peak heap are recorded from the first reference build. They are
-reported before becoming hard limits, because toolchain and debug-format
-changes can otherwise produce noisy failures. Once stable, CI enforces reviewed
-budgets.
+Binary size and peak heap are recorded from the first reference build. CI
+enforces reviewed budgets with headroom for toolchain variation; an intentional
+increase updates both the baseline and its limit. The ESP32-S3 cross-build
+likewise enforces firmware and internal-memory limits and checks that Trealla's
+static BSS remains in PSRAM.
 
 ## 11. Implementation phases
 
@@ -449,6 +459,11 @@ small heap fails with a controlled Prolog/resource error rather than corruption.
 Exit criterion: a new adapter can be written without modifying Trealla engine
 sources.
 
+Phase 5 outcome: the QEMU, template and ESP-IDF adapters all use the same
+engine boundary. The template and second adapter were added without target
+conditionals under `src/`. The platform structure remains internal for now;
+two adapters validate its shape, but do not justify freezing it as public ABI.
+
 ## 12. Patch sequence
 
 Keep patches reviewable and independently useful:
@@ -495,4 +510,3 @@ Those may become separate projects after the platform boundary is stable.
   a second adapter validates it.
 - Treat allocation as a dedicated phase because Trealla's global state makes a
   casual per-instance callback incorrect.
-

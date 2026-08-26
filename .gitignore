@@ -21,3 +21,7 @@ tpl
 faultinject*
 util/bin2c
 samples/embed
+/ports/arduino-nano-esp32/build/
+/ports/arduino-nano-esp32/sdkconfig
+/ports/arduino-nano-esp32/sdkconfig.old
+/ports/arduino-nano-esp32/dependencies.lock

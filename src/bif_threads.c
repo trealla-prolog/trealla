@@ -441,7 +441,7 @@ void thread_initialize(prolog *pl)
 	thread *t = find_thread_by_id(pl, n);
 	ENSURE(t);
 	pl->main_thread = t;
-	t->alias = strdup("main");
+	t->alias = TPL_strdup("main");
 	sl_app(pl->alias, t->alias, t);
 	t->is_detached = true;
 }

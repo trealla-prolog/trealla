@@ -14,6 +14,7 @@
 #include "history.h"
 #include "library.h"
 #include "module.h"
+#include "network.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -190,7 +191,7 @@ int main(int ac, char *av[], char * envp[])
 	for (i = 1; i < ac; i++) {
 		if (!strcmp(av[i], "--library")) {
 			if (++i < ac) {
-				g_tpl_lib = strdup(av[i]);
+				g_tpl_lib = TPL_strdup(av[i]);
 			}
 		}
 	}
@@ -322,7 +323,7 @@ int main(int ac, char *av[], char * envp[])
 		} else if (av[i][0] == '-') {
 			continue;
 		} else if (do_lib) {
-			g_tpl_lib = strdup(av[i]);
+			g_tpl_lib = TPL_strdup(av[i]);
 			do_lib = 0;
 		} else if (do_goal) {
 			do_goal = 0;
@@ -415,8 +416,8 @@ int main(int ac, char *av[], char * envp[])
 		} else {
 			size_t n = 0;
 
-			if (getline(&line, &n, pl_stdin(pl)) < 0) {
-				free(line);
+			if (tpl_getline_fp(&line, &n, pl_stdin(pl)) < 0) {
+				TPL_free(line);
 				break;
 			}
 
@@ -443,7 +444,7 @@ int main(int ac, char *av[], char * envp[])
 			src++;
 
 		if (!*src || (*src == '\n')) {
-			free(line);
+			TPL_free(line);
 			continue;
 		}
 
@@ -459,7 +460,7 @@ int main(int ac, char *av[], char * envp[])
 		} while (pl_redo(subq));
 #endif
 
-		free(line);
+		TPL_free(line);
 
 		if (get_halt(pl))
 			break;
