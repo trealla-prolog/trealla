@@ -870,6 +870,8 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 	// passed - eg. A=[c|D], D=[D|A], which just cycles A,D,A,D,... here.
 	cell *tortoise = c;
 	pl_ctx tortoise_ctx = c_ctx;
+	cell *cycle_link = NULL;
+	pl_ctx cycle_link_ctx = 0;
 	unsigned hops = 0;
 	bool tortoise_done = false;
 
@@ -880,9 +882,15 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 		if (running) {
 			if (hops && (c == tortoise) && (c_ctx == tortoise_ctx)) {
-				emit(q, "|...]");
+				emit_unget(q);
+				emit(q, "|");
+
+				if (!cycle_link || !q->do_dump_vars
+					|| !dump_variable(q, cycle_link, cycle_link_ctx, running))
+					emit(q, "...");
+
+				emit(q, "]");
 				q->last_thing = WAS_OTHER;
-				q->cycle_error = true;
 				break;
 			}
 
@@ -905,16 +913,21 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 			q->last_thing = WAS_OTHER;
 		}
 
-		cell *head = c + 1;
-		pl_ctx head_ctx = c_ctx;
-			head = deref_if(q, running, head, &head_ctx);
+		cell *save_head = c + 1;
+		pl_ctx save_head_ctx = c_ctx;
+		cell *head = save_head;
+		pl_ctx head_ctx = save_head_ctx;
+		head = deref_if(q, running, head, &head_ctx);
 		int parens = 0;
 
-		if (has_visited(visited, head, head_ctx)) {
-			if ((q->portray_vars || q->do_dump_vars) && ((unsigned)q->dump_var_num != (unsigned)-1)) {
-				emit(q, GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
-			} else {
-				emit(q, "...");
+		if (has_visited(visited, head, head_ctx)
+			|| ((head == save_c) && (head_ctx == save_c_ctx))) {
+			if (!q->do_dump_vars
+				|| !dump_variable(q, save_head, save_head_ctx, running)) {
+				if ((q->portray_vars || q->do_dump_vars) && ((unsigned)q->dump_var_num != (unsigned)-1))
+					emit(q, GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
+				else
+					emit(q, "...");
 			}
 		} else {
 			bool special_op = false;
@@ -954,7 +967,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars) {
 				if (q->do_dump_vars) {
-					if (!dump_variable(q, save_tail, tail_ctx, running))
+					if (!dump_variable(q, save_tail, save_tail_ctx, running))
 						print_variable(q, save_tail, save_tail_ctx, running);
 				} else
 					emit(q, GET_POOL(q, q->top->vartab.off[v.var_num]));
@@ -1032,6 +1045,8 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 			} else {
 				emit(q, ",");
 				q->last_thing = WAS_COMMA;
+				cycle_link = save_tail;
+				cycle_link_ctx = save_tail_ctx;
 				c = tail;
 				c_ctx = tail_ctx;
 				print_list++;
