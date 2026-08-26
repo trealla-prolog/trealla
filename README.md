@@ -13,6 +13,7 @@ and using a plain old Makefile.
 	Rational trees ##EXPERIMENTAL##
 	REPL with history
 	Builds for Cosmopolitan, WebAssembly (WASI) & Go
+	Cosmopolitan builds can also boot with no host OS at all (network calls just fail cleanly there)
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)

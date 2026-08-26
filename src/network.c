@@ -5,6 +5,19 @@
 #include <string.h>
 #include <time.h>
 
+// Cosmopolitan produces one binary that runs both hosted (Linux/Mac/Windows,
+// with a real network stack) and booted directly with no OS at all - and
+// IsMetal() is how it tells the two apart at runtime. There's no NIC driver
+// in the no-OS case, so refuse up front rather than let socket() hit an
+// unimplemented syscall path.
+#ifdef __COSMOPOLITAN__
+#define _COSMO_SOURCE	// gates dce.h below - IsMetal() is otherwise compiled out
+#include <libc/dce.h>
+#define NET_CHECK_METAL() do { if (IsMetal()) { errno = ENOSYS; return -1; } } while (0)
+#else
+#define NET_CHECK_METAL() do { } while (0)
+#endif
+
 #if USE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -92,6 +105,7 @@ const char *get_local_hostname(char *hostname_buffer, size_t buffer_size) {
 int tpl_domain_connect(const char *name, bool udp)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
+	NET_CHECK_METAL();
 	int fd = socket(AF_UNIX, udp?SOCK_DGRAM:SOCK_STREAM, 0);
 
 	if (fd == -1) {
@@ -120,6 +134,7 @@ int tpl_domain_connect(const char *name, bool udp)
 int tpl_domain_server(const char *name, bool udp)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
+	NET_CHECK_METAL();
     struct sockaddr_un server_sockaddr;
     memset(&server_sockaddr, 0, sizeof(struct sockaddr_un));
     int fd = socket(AF_UNIX, udp?SOCK_DGRAM:SOCK_STREAM, 0);
@@ -157,6 +172,7 @@ int tpl_domain_server(const char *name, bool udp)
 int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
+	NET_CHECK_METAL();
 	struct addrinfo hints, *result, *rp;
 	int fd, status, save_errno = ECONNREFUSED;
 
@@ -217,6 +233,7 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfile, const char *certfile)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
+	NET_CHECK_METAL();
 	struct addrinfo hints, *result, *rp;
 	int fd, status, save_errno = EADDRNOTAVAIL;
 
@@ -318,6 +335,7 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 int tpl_accept(stream *str, char **addr, int *port)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
+	NET_CHECK_METAL();
 	struct sockaddr_in sa = {0};
 	socklen_t len = sizeof(sa);
 	int fd = accept(fileno(str->fp_in), (struct sockaddr*)&sa, &len);
