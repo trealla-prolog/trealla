@@ -374,7 +374,7 @@
               export LC_ALL
               echo "using LC_ALL=$LC_ALL"
               version=$(printf '%s' "$GITHUB_SHA" | cut -c1-7)
-              gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc ISOCLINE=1 NOFFI=1 NOSSL=1 release
+              gmake "GIT_VERSION=\"$version\"" CC=gcc HOST_CC=gcc NOFFI=1 NOSSL=1 release
               ./tpl -q -g 'writeln(netbsd_x64_ok),halt'
               gmake test
         - name: Upload artifacts
