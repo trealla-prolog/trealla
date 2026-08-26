@@ -161,6 +161,19 @@ Cosmopolitan uses the included ISOCLINE.
 Cosmopolitan can also boot bare-metal or Qemu via boot-sector.
 
 
+Freestanding and bare-metal ports
+=================================
+
+Trealla also has a freestanding profile, a QEMU RV32 reference firmware and a
+generic board adapter template. See the
+[freestanding porting guide](docs/freestanding-porting.md) for the service
+contract, build shape and validation checklist.
+
+	make freestanding-smoke
+	make port-template-smoke
+	make qemu-riscv32-smoke
+
+
 Building with MUSL
 ==================
 

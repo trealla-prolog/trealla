@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 // Internal link-time service contract for an OS-free Trealla image. A port
-// supplies exactly one adapter object. This is intentionally not public ABI:
-// it will remain internal until a second materially different target has
-// validated the shape of the interface.
+// supplies one adapter or adapter pair. This remains internal rather than a
+// stable public ABI; hosted, reusable board-shim and RV32 implementations keep
+// validating the shape while ports are still experimental.
 
 enum tpl_console_channel {
 	TPL_CONSOLE_OUTPUT,

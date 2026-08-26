@@ -1,7 +1,7 @@
 # Freestanding Trealla — design
 
-Status: phases 1-4 implemented on the `freestanding` branch; phase 5 remains
-proposed.
+Status: phases 1-4 implemented on the `freestanding` branch; phase 5 is in
+progress.
 
 ## 1. Goal
 

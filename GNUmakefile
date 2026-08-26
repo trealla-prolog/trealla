@@ -443,7 +443,7 @@ samples/allocator: samples/allocator.c $(LIBTREALLA)
 samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA) $(PLATFORM_OBJ)
 	$(CC) $(CFLAGS) -o $@ $< program.o $(LIBTREALLA) $(PLATFORM_OBJ) $(OPT) $(LDFLAGS)
 
-.PHONY: freestanding freestanding-smoke
+.PHONY: freestanding freestanding-smoke port-template-smoke
 
 freestanding:
 	$(MAKE) clean
@@ -454,6 +454,13 @@ freestanding-smoke: samples/freestanding
 	@if nm -u samples/freestanding | grep -E '(_| )(connect|socket|getaddrinfo|fork|posix_spawn[A-Za-z_]*|mmap|dlopen|pthread_[A-Za-z_]*|readline|el_init|icl_init)$$'; then \
 		echo "freestanding smoke image imports a disabled hosted service"; exit 1; \
 	fi
+
+port-template-smoke:
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 \
+		'PLATFORM_OBJ=ports/template/platform.o ports/template/hosted-board.o' \
+		samples/freestanding
+	./samples/freestanding
 
 .PHONY: qemu-riscv32 qemu-riscv32-smoke
 
@@ -658,5 +665,6 @@ clean:
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
+	rm -f ports/template/*.o ports/template/*.d
 	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/freestanding.dSYM
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po
