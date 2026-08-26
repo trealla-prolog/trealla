@@ -9,6 +9,10 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#ifndef USE_FFI
+#define USE_FFI 0
+#endif
+
 #ifndef USE_OPENSSL
 #define USE_OPENSSL 0
 #endif
@@ -16,6 +20,8 @@
 #ifndef USE_THREADS
 #define USE_THREADS 0
 #endif
+
+#include "features.h"
 
 #if USE_THREADS
 #include <pthread.h>

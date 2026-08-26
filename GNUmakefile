@@ -101,6 +101,18 @@ ifndef NOFFI
 endif
 endif
 
+ifdef FREESTANDING
+CFLAGS += -DTPL_FREESTANDING=1 -DUSE_MMAP=0
+NOFFI = 1
+NOSSL = 1
+NOTHREADS = 1
+NOTTY = 1
+NONETWORK = 1
+override ISOCLINE =
+override READLINE =
+override EDITLINE =
+endif
+
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
 endif
@@ -124,8 +136,10 @@ ifndef EDITLINE
 ifndef READLINE
 ifndef WASI
 ifndef WIN
+ifndef NOTTY
 CFLAGS += -DUSE_EDITLINE=1
 LDFLAGS += -ledit
+endif
 endif
 endif
 endif
@@ -181,9 +195,9 @@ SRCOBJECTS = tpl.o \
 	src/bif_format.o \
 	src/bif_functions.o \
 	src/bif_maps.o \
-	src/bif_net.o \
-	src/bif_os.o \
-	src/bif_posix.o \
+	$(BIF_NET_OBJECT) \
+	$(BIF_OS_OBJECT) \
+	$(BIF_POSIX_OBJECT) \
 	src/bif_predicates.o \
 	src/bif_sort.o \
 	src/bif_sregex.o \
@@ -195,11 +209,11 @@ SRCOBJECTS = tpl.o \
 	src/bif_uri.o \
 	src/compile.o \
 	src/heap.o \
-	src/history.o \
+	$(HISTORY_OBJECT) \
 	src/library.o \
 	src/list.o \
 	src/module.o \
-	src/network.o \
+	$(NETWORK_OBJECT) \
 	src/parser.o \
 	src/print.o \
 	src/prolog.o \
@@ -210,6 +224,28 @@ SRCOBJECTS = tpl.o \
 	src/unify.o \
 	src/utf8.o \
 	src/version.o
+
+ifdef NONETWORK
+BIF_NET_OBJECT = src/bif_net_none.o
+NETWORK_OBJECT = src/network_none.o
+else
+BIF_NET_OBJECT = src/bif_net.o
+NETWORK_OBJECT = src/network.o
+endif
+
+ifdef FREESTANDING
+BIF_OS_OBJECT = src/bif_os_none.o
+BIF_POSIX_OBJECT = src/bif_posix_none.o
+else
+BIF_OS_OBJECT = src/bif_os.o
+BIF_POSIX_OBJECT = src/bif_posix.o
+endif
+
+ifdef NOTTY
+HISTORY_OBJECT = src/history_none.o
+else
+HISTORY_OBJECT = src/history.o
+endif
 
 LIBOBJECTS =
 
@@ -308,6 +344,10 @@ LIBTREALLA = libtrealla.a
 ifndef WIN
 SAMPLES += samples/embed
 endif
+
+ifdef FREESTANDING
+SAMPLES = samples/freestanding
+endif
 endif
 
 library/%.c: library/%.pl util/bin2c
@@ -347,6 +387,21 @@ $(LIBTREALLA): $(LIBTREALLA_OBJECTS) | tpl
 
 samples/embed: samples/embed.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
+
+samples/freestanding: samples/freestanding.c $(LIBTREALLA)
+	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
+
+.PHONY: freestanding freestanding-smoke
+
+freestanding:
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 freestanding-smoke
+
+freestanding-smoke: samples/freestanding
+	./samples/freestanding
+	@if nm -u samples/freestanding | grep -E '(_| )(connect|socket|getaddrinfo|fork|posix_spawn[A-Za-z_]*|mmap|dlopen|pthread_[A-Za-z_]*|readline|el_init|icl_init)$$'; then \
+		echo "freestanding smoke image imports a disabled hosted service"; exit 1; \
+	fi
 
 util/bin2c: util/bin2c.c
 	$(HOST_CC) -o util/bin2c util/bin2c.c
@@ -521,7 +576,7 @@ clean:
 		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
 		library/*.o library/*.c library/actors/*.o library/actors/*.c library/actors/*.d \
 		*.o samples/*.o samples/*.so \
-		samples/embed samples/*.d samples/embed_demo.pl \
+		samples/embed samples/freestanding samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c util/bin2c.aarch64.elf util/bin2c.com.dbg
