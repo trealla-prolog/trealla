@@ -111,8 +111,9 @@ To build without pre-emptive multi-threading support:
 
 	make NOTHREADS=1
 
-To build (as a last resort) with the included ISOCLINE sources (default is to use EDITLINE,
-except with WASI & Windows):
+To build (as a last resort) with the included ISOCLINE sources (most native builds default
+to EDITLINE; WASI uses its own simple line reader). Windows cross-builds default to
+ISOCLINE, but can select EDITLINE=1 when wineditline is installed:
 
 	make ISOCLINE=1
 

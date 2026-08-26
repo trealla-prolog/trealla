@@ -17,7 +17,9 @@
 #endif
 
 #if defined(USE_EDITLINE) && !defined(__wasi__)
+#if !defined(_WIN32)
 #include <histedit.h>
+#endif
 #if defined(__OpenBSD__)
 #include <readline/readline.h>
 #include <readline/history.h>

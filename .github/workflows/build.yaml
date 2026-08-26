@@ -61,7 +61,7 @@
         - name: Install deps
           run: |
             pacman --noconfirm -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-headers-git mingw-w64-x86_64-libffi mingw-w64-x86_64-dlfcn
-            pacman --noconfirm -S mingw-w64-x86_64-openssl mingw-w64-x86_64-libwinpthread vim diffutils git
+            pacman --noconfirm -S mingw-w64-x86_64-openssl mingw-w64-x86_64-libwinpthread mingw-w64-x86_64-wineditline vim diffutils git
         - name: Configure line endings
           run: git config --global core.autocrlf input
         - uses: actions/checkout@v4
@@ -70,12 +70,12 @@
         - name: Fetch tags
           run: git fetch --tags --force origin
         - name: Build
-          run: make WIN=1 release
+          run: make WIN=1 EDITLINE=1 release
         - name: Test
           run: make test
         - name: Make Windows-friendly
           run: |
-            cp ${MINGW_PREFIX}/bin/{libcrypto-3-x64.dll,libssl-3-x64.dll,libffi-8.dll,libdl.dll,libwinpthread-1.dll} .
+            cp ${MINGW_PREFIX}/bin/{libcrypto-3-x64.dll,libssl-3-x64.dll,libffi-8.dll,libdl.dll,libwinpthread-1.dll,edit.dll} .
             echo -e "\n\nOpenSSL (libcrypto-3-x64.dll, libssl-3-x64.dll):\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/openssl/LICENSE >> ATTRIBUTION
             echo -e "\n\nlibffi: (libffi-8.dll)\n" >> ATTRIBUTION
@@ -84,8 +84,8 @@
             cat ${MINGW_PREFIX}/share/licenses/dlfcn/LICENSE >> ATTRIBUTION
             echo -e "\n\nlibwinpthread:\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/libwinpthread/COPYING >> ATTRIBUTION
-            echo -e "\n\nisocline:\n" >> ATTRIBUTION
-            cat src/isocline/LICENSE >> ATTRIBUTION
+            echo -e "\n\nwineditline:\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/wineditline/LICENSE >> ATTRIBUTION
             if [ ! -f "tpl.exe" ]; then
               mv tpl tpl.exe
             fi
@@ -105,6 +105,7 @@
               libffi-8.dll
               libdl.dll
               libwinpthread-1.dll
+              edit.dll
 
     windows-arm64:
       name: Windows ARM64
@@ -121,7 +122,7 @@
           run: |
             pacman --noconfirm -S make file mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-headers-git
             pacman --noconfirm -S mingw-w64-clang-aarch64-libffi mingw-w64-clang-aarch64-dlfcn mingw-w64-clang-aarch64-openssl
-            pacman --noconfirm -S mingw-w64-clang-aarch64-winpthreads mingw-w64-clang-aarch64-libwinpthread vim diffutils git
+            pacman --noconfirm -S mingw-w64-clang-aarch64-winpthreads mingw-w64-clang-aarch64-libwinpthread mingw-w64-clang-aarch64-wineditline vim diffutils git
         - name: Configure line endings
           run: git config --global core.autocrlf input
         - uses: actions/checkout@v4
@@ -130,7 +131,7 @@
         - name: Fetch tags
           run: git fetch --tags --force origin
         - name: Build
-          run: make WIN=1 CC=clang HOST_CC=clang AR=llvm-ar release
+          run: make WIN=1 EDITLINE=1 CC=clang HOST_CC=clang AR=llvm-ar release
         - name: Verify architecture
           run: |
             llvm-readobj --file-headers tpl.exe | grep -q 'Machine: IMAGE_FILE_MACHINE_ARM64'
@@ -138,7 +139,7 @@
           run: make test
         - name: Make Windows-friendly
           run: |
-            cp ${MINGW_PREFIX}/bin/{libcrypto-3-arm64.dll,libssl-3-arm64.dll,libffi-8.dll,libdl.dll,libwinpthread-1.dll} .
+            cp ${MINGW_PREFIX}/bin/{libcrypto-3-arm64.dll,libssl-3-arm64.dll,libffi-8.dll,libdl.dll,libwinpthread-1.dll,edit.dll} .
             echo -e "\n\nOpenSSL (libcrypto-3-arm64.dll, libssl-3-arm64.dll):\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/openssl/LICENSE >> ATTRIBUTION
             echo -e "\n\nlibffi: (libffi-8.dll)\n" >> ATTRIBUTION
@@ -147,8 +148,8 @@
             cat ${MINGW_PREFIX}/share/licenses/dlfcn/LICENSE >> ATTRIBUTION
             echo -e "\n\nlibwinpthread:\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/winpthreads/COPYING >> ATTRIBUTION
-            echo -e "\n\nisocline:\n" >> ATTRIBUTION
-            cat src/isocline/LICENSE >> ATTRIBUTION
+            echo -e "\n\nwineditline:\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/wineditline/LICENSE >> ATTRIBUTION
             mv ATTRIBUTION ATTRIBUTION.txt
             mv LICENSE LICENSE.txt
         - name: Upload artifacts
@@ -165,6 +166,7 @@
               libffi-8.dll
               libdl.dll
               libwinpthread-1.dll
+              edit.dll
 
     linux32:
       name: Linux x86 (32-bit)

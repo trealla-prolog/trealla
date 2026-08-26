@@ -89,7 +89,11 @@ endif
 endif
 
 ifdef WIN
+ifndef EDITLINE
+ifndef READLINE
 ISOCLINE = 1
+endif
+endif
 NOPIC = 1
 CC = x86_64-w64-mingw32-gcc
 LDFLAGS += -lws2_32
