@@ -297,7 +297,7 @@ static bool bif_bb_b_put_2(query *q)
 	CHECKED(val);
 	dup_cells(val, tmp, tmp->num_cells);
 	val->flags |= FLAG_LIVE;
-	char *key = strdup(tmpbuf);
+	char *key = TPL_strdup(tmpbuf);
 	CHECKED(key);
 	CHECKED(undo_on_backtrack(q, key, UNDO_BBOARD));
 
@@ -348,7 +348,7 @@ static bool bif_bb_put_2(query *q)
 
 	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf2, p2, p2_ctx, 1);
 
-	char *key2 = strdup(tmpbuf2);
+	char *key2 = TPL_strdup(tmpbuf2);
 
 	// If the term contains attributed variables, store an augmented
 	// image carrying the raw attributes so they survive the round-trip.
@@ -594,7 +594,7 @@ static bool bif_bb_update_3(query *q)
 		return false;
 	}
 
-	key = strdup(tmpbuf);
+	key = TPL_strdup(tmpbuf);
 	tmp = copy_term_to_heap(q, p3, p3_ctx, false);
 	CHECKED(tmp, prolog_unlock(q->pl));
 	cell *value = TPL_malloc(sizeof(cell)*tmp->num_cells);

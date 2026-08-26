@@ -5,8 +5,10 @@
 #include <sys/stat.h>
 
 #include "history.h"
+#include "files.h"
 #include "library.h"
 #include "module.h"
+#include "network.h"
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
@@ -134,8 +136,8 @@ static const char *set_known(module *m, const char *filename)
 	ptr = TPL_malloc(sizeof(loaded_file));
 	ENSURE(ptr);
 	ptr->next = m->loaded_files;
-	ptr->orig_filename = strdup(filename);
-	ptr->filename = strdup(filename);
+	ptr->orig_filename = TPL_strdup(filename);
+	ptr->filename = TPL_strdup(filename);
 	ptr->is_loaded = false;
 	ptr->parent = NULL;
 	m->loaded_files = ptr;
@@ -158,8 +160,8 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	ptr = TPL_malloc(sizeof(loaded_file));
 	ENSURE(ptr);
 	ptr->next = m->loaded_files;
-	ptr->orig_filename = strdup(orig_filename);
-	ptr->filename = strdup(filename);
+	ptr->orig_filename = TPL_strdup(orig_filename);
+	ptr->filename = TPL_strdup(filename);
 	ptr->when_loaded = time(0);
 	ptr->is_loaded = true;
 	ptr->parent = NULL;
@@ -261,7 +263,7 @@ void make(module *m)
 
 		if (stat(ptr->filename, &st) == 0) {
 			if (st.st_mtime > ptr->when_loaded) {
-				char *parent_filename = strdup(get_parent(m, ptr->filename));
+				char *parent_filename = TPL_strdup(get_parent(m, ptr->filename));
 				printf("%% %s changed\n", ptr->filename);
 
 				if (strcmp(parent_filename, ptr->filename))
@@ -2444,7 +2446,7 @@ bool unload_file(module *m, const char *filename)
 		}
 	}
 
-	char *savebuf = strdup(tmpbuf);
+	char *savebuf = TPL_strdup(tmpbuf);
 	char *realbuf = NULL;
 
 	// Same order as load_file, or unloading `f` would not find the
@@ -2454,7 +2456,7 @@ bool unload_file(module *m, const char *filename)
 		strcpy(tmpbuf, savebuf);
 		strcat(tmpbuf, g_src_suffixes[i]);
 
-		if ((realbuf = realpath(tmpbuf, NULL)))
+		if ((realbuf = tpl_realpath(tmpbuf)))
 			break;
 	}
 
@@ -2487,7 +2489,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 	tokenize(p, false, false);
 
 	do {
-		if (getline(&p->save_line, &p->n_line, p->fp) == -1) {
+		if (tpl_getline_fp(&p->save_line, &p->n_line, p->fp) == -1) {
 			virtual_term(p, "end_of_file.");
 			break;
 		}
@@ -2550,7 +2552,7 @@ bool restore_log(module *m, const char *filename)
 	for (;;) {
 		size_t n = 0;
 
-		if (getline(&line, &n, fp) < 0) {
+		if (tpl_getline_fp(&line, &n, fp) < 0) {
 			TPL_free(line);
 			break;
 		}
@@ -2639,7 +2641,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 		}
 	}
 
-	char *savebuf = strdup(tmpbuf);
+	char *savebuf = TPL_strdup(tmpbuf);
 	char *realbuf = NULL;
 
 	// ".pl" is tried before the bare name. Quintus and SICStus both
@@ -2653,7 +2655,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 		strcpy(tmpbuf, savebuf);
 		strcat(tmpbuf, g_src_suffixes[i]);
 
-		if ((realbuf = realpath(tmpbuf, NULL)))
+		if ((realbuf = tpl_realpath(tmpbuf)))
 			break;
 	}
 

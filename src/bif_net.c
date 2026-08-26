@@ -74,7 +74,7 @@ static bool bif_sys_server_3(query *q)
 
 	if (is_var(p1)) {
 		port = 0;
-		filename = strdup(":0");
+		filename = TPL_strdup(":0");
 	} else if (is_compound(p1) && (p1->arity == 2)) {
 		cell *p11 = deref(q, p1+1, p1_ctx);
 		cell *p12 = deref(q, p1+2, p1_ctx);
@@ -89,7 +89,7 @@ static bool bif_sys_server_3(query *q)
 		} else
 			return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
 
-		filename = strdup(tmpbuf);
+		filename = TPL_strdup(tmpbuf);
 	} else if (is_atom(p1))
 		filename = DUP_STRING(q, p1);
 	else if (!is_iso_list(p1))
@@ -197,9 +197,9 @@ static bool bif_sys_server_3(query *q)
 
 	stream *str = &q->pl->streams[n];
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
-	sl_app(str->alias, strdup(hostname), NULL);
+	sl_app(str->alias, TPL_strdup(hostname), NULL);
 	CHECKED(str->filename = DUP_STRING(q, p1));
-	CHECKED(str->mode = strdup("update"));
+	CHECKED(str->mode = TPL_strdup("update"));
 	str->is_socket = true;
 	str->nodelay = nodelay;
 	str->udp = udp;
@@ -253,9 +253,9 @@ static bool bif_sys_accept_2(query *q)
 	// FIX 13: new_stream() does not allocate the alias skiplist; create it before
 	// sl_app() (matching bif_sys_server_3 / bif_sys_client_5).
 	CHECKED(str2->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
-	sl_app(str2->alias, strdup(str->filename), NULL);
-	CHECKED(str2->filename = strdup(str->filename));
-	CHECKED(str2->mode = strdup("update"));
+	sl_app(str2->alias, TPL_strdup(str->filename), NULL);
+	CHECKED(str2->filename = TPL_strdup(str->filename));
+	CHECKED(str2->mode = TPL_strdup("update"));
 	str2->addr = peer_addr;
 	str2->port = peer_port;
 	str2->is_socket = true;
@@ -325,7 +325,7 @@ static bool bif_sys_client_5(query *q)
 		char host[1024];
 		snprintf(host, sizeof(host), "%s", C_STR(q, deref(q, p1+1, p1_ctx)));
 		port = (int)get_smallint(deref(q, p1+2, p1_ctx));
-		filename = strdup(host);
+		filename = TPL_strdup(host);
 	}
 
 	if (is_iso_list(p1)) {
@@ -412,7 +412,7 @@ static bool bif_sys_client_5(query *q)
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	sl_app(str->alias, DUP_STRING(q, p1), NULL);
 	CHECKED(str->filename = DUP_STRING(q, p1));
-	CHECKED(str->mode = strdup("update"));
+	CHECKED(str->mode = TPL_strdup("update"));
 	str->is_socket = true;
 	str->nodelay = nodelay;
 	str->udp = udp;
@@ -420,7 +420,7 @@ static bool bif_sys_client_5(query *q)
 	str->level = level;
 	str->fp = str->fp_in = fdopen(fd, "r");
 	str->port = port;
-	str->addr = strdup(hostname);
+	str->addr = TPL_strdup(hostname);
 
 	if (!str->filename || !str->mode) {
 		sl_destroy(str->alias);
@@ -577,7 +577,7 @@ static bool bif_sys_udp_recv_5(query *q)
 		p4_ctx = q->latest_ctx;
 	}
 
-	char *buf = malloc(maxlen);
+	char *buf = TPL_malloc(maxlen);
 	CHECKED(buf);
 	char host[256];
 	int port = 0;
@@ -585,13 +585,13 @@ static bool bif_sys_udp_recv_5(query *q)
 
 	if (len < 0) {
 		int save_errno = errno;
-		free(buf);
+		TPL_free(buf);
 		return throw_error(q, pstr, pstr_ctx, "socket_error", tpl_socket_errname(save_errno));
 	}
 
 	if (octet) {
 		if (!init_tmp_heap(q)) {
-			free(buf);
+			TPL_free(buf);
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
 		}
 
@@ -601,7 +601,7 @@ static bool bif_sys_udp_recv_5(query *q)
 			append_list(q, &tmp);
 		}
 
-		free(buf);
+		TPL_free(buf);
 		cell *l = len ? end_list(q) : make_nil();
 		CHECKED(l);
 
@@ -610,7 +610,7 @@ static bool bif_sys_udp_recv_5(query *q)
 	} else {
 		cell tmp;
 		bool ok = make_stringn(&tmp, buf, (size_t)len);
-		free(buf);
+		TPL_free(buf);
 
 		if (!ok)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
@@ -675,7 +675,7 @@ static bool bif_sys_udp_send_5(query *q)
 
 	if (octet) {
 		size_t cnt = 0, cap = 256;
-		char *bytes = malloc(cap);
+		char *bytes = TPL_malloc(cap);
 		CHECKED(bytes);
 		cell *l = p1;
 		pl_ctx l_ctx = p1_ctx;
@@ -685,16 +685,16 @@ static bool bif_sys_udp_send_5(query *q)
 			cell *h = deref(q, PROLOG_LIST_HEAD(l), l_ctx);
 
 			if (!is_smallint(h) || (get_smallint(h) < 0) || (get_smallint(h) > 255)) {
-				free(bytes);
+				TPL_free(bytes);
 				return throw_error(q, h, l_ctx, "type_error", "byte");
 			}
 
 			if (cnt == cap) {
 				cap *= 2;
-				char *tmp = realloc(bytes, cap);
+				char *tmp = TPL_realloc(bytes, cap);
 
 				if (!tmp) {
-					free(bytes);
+					TPL_free(bytes);
 					return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
 				}
 
@@ -707,7 +707,7 @@ static bool bif_sys_udp_send_5(query *q)
 		}
 
 		if (!is_nil(l)) {
-			free(bytes);
+			TPL_free(bytes);
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
 		}
 
@@ -735,7 +735,7 @@ static bool bif_sys_udp_send_5(query *q)
 	int save_errno = errno;
 
 	if (tofree)
-		free(tofree);
+		TPL_free(tofree);
 
 	if (sent < 0)
 		return throw_error(q, pstr, pstr_ctx, "socket_error", tpl_socket_errname(save_errno));

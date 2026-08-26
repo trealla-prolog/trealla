@@ -1453,7 +1453,7 @@ static bool directive_term(parser *p, cell *c)
 		char *dst = print_term_to_strbuf(&q, p1, p1_ctx, 0);
 		builtins *ptr = TPL_calloc(1, sizeof(builtins));
 		ENSURE(ptr);
-		ptr->name = strdup(C_STR(p, p1));
+		ptr->name = TPL_strdup(C_STR(p, p1));
 		ptr->arity = p1->arity;
 		ptr->m = p->m;
 		ptr->desc = desc;
@@ -3984,7 +3984,7 @@ static ssize_t getline_interruptible(parser *p)
 		return -1;
 	}
 
-	return getline(&p->save_line, &p->n_line, p->fp);
+	return tpl_getline_fp(&p->save_line, &p->n_line, p->fp);
 }
 
 char *eat_space(parser *p)

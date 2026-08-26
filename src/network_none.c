@@ -14,6 +14,43 @@ static int unavailable(void)
 	return -1;
 }
 
+int tpl_getline_fp(char **lineptr, size_t *n, FILE *fp)
+{
+	if (!lineptr || !n || !fp) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	size_t pos = 0;
+	int ch;
+
+	while ((ch = getc(fp)) != EOF) {
+		if ((pos + 1) >= *n) {
+			size_t new_size = *n ? *n + (*n >> 1) : 128;
+			char *new_ptr = TPL_realloc(*lineptr, new_size);
+
+			if (!new_ptr) {
+				errno = ENOMEM;
+				return -1;
+			}
+
+			*lineptr = new_ptr;
+			*n = new_size;
+		}
+
+		(*lineptr)[pos++] = (char)ch;
+
+		if (ch == '\n')
+			break;
+	}
+
+	if (!pos)
+		return -1;
+
+	(*lineptr)[pos] = '\0';
+	return (int)pos;
+}
+
 int tpl_server(const char *hostname, unsigned port, bool is_udp, const char *keyfile, const char *certfile)
 {
 	(void)hostname; (void)port; (void)is_udp; (void)keyfile; (void)certfile;
@@ -139,7 +176,7 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 	}
 #endif
 
-	return getline(lineptr, n, str->fp_in);
+	return tpl_getline_fp(lineptr, n, str->fp_in);
 }
 
 int tpl_close(stream *str)

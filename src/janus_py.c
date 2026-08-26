@@ -173,7 +173,7 @@ static PyObject *py_from_compound(pl_term *t)
 		return PyErr_NoMemory();
 
 	PyObject *s = PyUnicode_FromString(text);
-	free(text);
+	pl_free(text);
 	return s;
 }
 
@@ -199,7 +199,7 @@ static PyObject *py_from_term(pl_term *t)
 			return PyErr_NoMemory();
 
 		PyObject *n = PyLong_FromString(text, NULL, 16);
-		free(text);
+		pl_free(text);
 		return n;
 	}
 

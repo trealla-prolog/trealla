@@ -348,7 +348,7 @@ int tpl_accept(stream *str, char **addr, int *port)
 	if (addr) {
 		char buf[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
-		*addr = strdup(buf);
+		*addr = TPL_strdup(buf);
 	}
 
 	if (port)
@@ -556,56 +556,42 @@ size_t tpl_read(void *ptr, size_t len, stream *str)
 	return ok;
 }
 
-#ifdef _WIN32
-ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
-    size_t pos;
-    int c;
+int tpl_getline_fp(char **lineptr, size_t *n, FILE *fp)
+{
+	if (!lineptr || !n || !fp) {
+		errno = EINVAL;
+		return -1;
+	}
 
-    if (lineptr == NULL || stream == NULL || n == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
+	size_t pos = 0;
+	int ch;
 
-    c = getc(stream);
-    if (c == EOF) {
-        return -1;
-    }
+	while ((ch = getc(fp)) != EOF) {
+		if ((pos + 1) >= *n) {
+			size_t new_size = *n ? *n + (*n >> 1) : 128;
+			char *new_ptr = TPL_realloc(*lineptr, new_size);
 
-    if (*lineptr == NULL) {
-        *lineptr = TPL_malloc(128);
- 		check_error(*lineptr);
-       if (*lineptr == NULL) {
-            return -1;
-        }
-        *n = 128;
-    }
+			if (!new_ptr) {
+				errno = ENOMEM;
+				return -1;
+			}
 
-    pos = 0;
-    while(c != EOF) {
-        if (pos + 1 >= *n) {
-            size_t new_size = *n + (*n >> 2);
-            if (new_size < 128) {
-                new_size = 128;
-            }
-            char *new_ptr = TPL_realloc(*lineptr, new_size);
-            if (new_ptr == NULL) {
-                return -1;
-            }
-            *n = new_size;
-            *lineptr = new_ptr;
-        }
+			*lineptr = new_ptr;
+			*n = new_size;
+		}
 
-        ((unsigned char *)(*lineptr))[pos ++] = c;
-        if (c == '\n') {
-            break;
-        }
-        c = getc(stream);
-    }
+		(*lineptr)[pos++] = (char)ch;
 
-    (*lineptr)[pos] = '\0';
-    return pos;
+		if (ch == '\n')
+			break;
+	}
+
+	if (!pos)
+		return -1;
+
+	(*lineptr)[pos] = '\0';
+	return (int)pos;
 }
-#endif
 
 // Waits for fd in short, alarm-aware poll() slices instead of one
 // uninterruptible blocking read (real SIGALRM used to do this via EINTR
@@ -743,7 +729,7 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 	if (str->is_socket && str->fp_out)
 		fflush(str->fp_out);
 
-	int ok = getline(lineptr, n, str->fp_in);
+	int ok = tpl_getline_fp(lineptr, n, str->fp_in);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);

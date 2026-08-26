@@ -79,8 +79,11 @@ static int solutions(prolog *pl, const char *goal, int limit)
 	if (!pl_query(pl, goal, &q, 0))
 		return -1;						// an error, not a failure
 
-	if (!get_status(pl))
+	if (!get_status(pl)) {
+		if (q)
+			pl_done(q);
 		return 0;						// failed, nothing to redo
+	}
 
 	int n = 1;
 
@@ -108,6 +111,7 @@ int main(void)
 
 	printf("\n=== engine output ===\n\n");
 
+	bool allocator_installed = pl_set_allocator(NULL);
 	prolog *pl = pl_create();
 
 	if (!pl) {
@@ -119,6 +123,12 @@ int main(void)
 	set_quiet(pl);
 
 	check("pl_create", true);
+	check("allocator installs before first engine", allocator_installed);
+	check("allocator locks after first engine allocation", !pl_set_allocator(NULL));
+	pl_allocator_stats live_stats;
+	pl_get_allocator_stats(&live_stats);
+	check("allocator accounts live engine memory",
+		live_stats.current_bytes && (live_stats.peak_bytes >= live_stats.current_bytes));
 
 	{
 		const char source[] = "from_text(embedded).\n";
@@ -235,7 +245,7 @@ int main(void)
 		char *txt = y ? pl_term_text(y) : NULL;
 		check("Y reads as text",
 			txt && !strcmp(txt, "1180591620717411303424"));
-		free(txt);
+		pl_free(txt);
 
 		// An unbound variable has no value at all
 		check("Z is unbound", pl_binding(q, "Z") == NULL);
@@ -262,6 +272,9 @@ int main(void)
 	}
 
 	pl_destroy(pl);
+	pl_allocator_stats final_stats;
+	pl_get_allocator_stats(&final_stats);
+	check("allocator returns to zero after teardown", !final_stats.current_bytes);
 	remove(path);
 
 	// --- report ---

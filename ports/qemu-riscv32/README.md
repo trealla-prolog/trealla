@@ -29,5 +29,23 @@ timeout:
 ```
 TREALLA FREESTANDING BOOT
 TREALLA PROLOG OK
+TREALLA ALLOCATION FAILURE CONTROLLED
+TREALLA HEAP PEAK <bytes>
 TREALLA FREESTANDING COMPLETE
 ```
+
+The peak is reported rather than enforced while compiler and debug-format
+variance are being measured. ELF section sizes are recorded from the build for
+the same reason; reviewed hard budgets belong after the baseline is stable.
+
+The first measured RV32IMAC baseline (GCC 16.2.0, Picolibc 1.8.6) is:
+
+| Metric | Bytes |
+| --- | ---: |
+| ELF text | 1,036,678 |
+| ELF data | 239,768 |
+| ELF bss | 1,423,536 |
+| Peak Trealla-owned heap | 5,446,673 |
+
+These are observations, not limits. The CI log records fresh section and heap
+figures on every run so a stable cross-run budget can be chosen later.

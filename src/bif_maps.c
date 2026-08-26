@@ -99,7 +99,7 @@ static bool bif_map_set_3(query *q)
 	if (is_integer(p1)) {
 		char tmpbuf[128];
 		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
-		key = strdup(tmpbuf);
+		key = TPL_strdup(tmpbuf);
 	} else if (is_atom(p1))
 		key = DUP_STRING(q, p1);
 	else
@@ -111,11 +111,11 @@ static bool bif_map_set_3(query *q)
 	if (is_integer(p2)) {
 		char tmpbuf[128];
 		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p2));
-		val = strdup(tmpbuf);
+		val = TPL_strdup(tmpbuf);
 	} else if (is_float(p2)) {
 		char tmpbuf[128];
 		snprintf(tmpbuf, sizeof(tmpbuf), "%.*lg", DBL_DECIMAL_DIG, get_float(p2));
-		val = strdup(tmpbuf);
+		val = TPL_strdup(tmpbuf);
 	} else if (is_atom(p2))
 		val = DUP_STRING(q, p2);
 	else {
@@ -219,7 +219,7 @@ static bool bif_map_del_2(query *q)
 	if (is_integer(p1)) {
 		char tmpbuf[128];
 		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
-		key = strdup(tmpbuf);
+		key = TPL_strdup(tmpbuf);
 	} else if (is_atom(p1))
 		key = DUP_STRING(q, p1);
 	else

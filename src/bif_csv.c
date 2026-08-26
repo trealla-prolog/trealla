@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "module.h"
+#include "network.h"
 #include "query.h"
 
 bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *p2, pl_ctx p2_ctx)
@@ -65,7 +66,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 			if (quoted && p->fp) {
 				ssize_t len;
 
-				if ((len = getline(&p->save_line, &p->n_line, p->fp)) == -1)
+				if ((len = tpl_getline_fp(&p->save_line, &p->n_line, p->fp)) == -1)
 					return true;
 
 				src = p->save_line;
@@ -347,7 +348,7 @@ bool bif_parse_csv_file_2(query *q)
 	ssize_t len;
 	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
 
-	while ((len = getline(&p->save_line, &p->n_line, p->fp)) != -1) {
+	while ((len = tpl_getline_fp(&p->save_line, &p->n_line, p->fp)) != -1) {
 		CHECK_INTERRUPT();
 		char *line = p->save_line;
 		line_num++;

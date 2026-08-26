@@ -2482,7 +2482,7 @@ void query_destroy(query *q)
 	}
 
 	release_pl_terms(q);			// the embedding API's term handles
-	free(q->terms);
+	TPL_free(q->terms);
 
 	q->pl->q_cnt--;
 	TPL_free(q);

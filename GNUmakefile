@@ -13,6 +13,7 @@ EMBED_LIBS ?= $(FREESTANDING_BASE_LIBS)
 PYTHON ?= python3
 QEMU_RISCV_CC ?= riscv64-unknown-elf-gcc
 QEMU_RISCV_AR ?= riscv64-unknown-elf-ar
+QEMU_RISCV_SIZE ?= riscv64-unknown-elf-size
 QEMU_RISCV ?= qemu-system-riscv32
 QEMU_RISCV_ELF = ports/qemu-riscv32/trealla.elf
 PICOLIBC_SPECS ?= $(shell $(QEMU_RISCV_CC) --print-file-name=picolibc.specs 2>/dev/null)
@@ -203,6 +204,7 @@ WASMOPT = wasm-opt
 endif
 
 SRCOBJECTS = tpl.o \
+	src/allocator.o \
 	src/base64.o \
 	src/bif_atts.o \
 	src/bif_bboard.o \
@@ -226,6 +228,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_threads.o \
 	src/bif_uri.o \
 	src/compile.o \
+	src/files.o \
 	src/heap.o \
 	$(HISTORY_OBJECT) \
 	$(LIBRARY_REGISTRY_OBJECT) \
@@ -434,6 +437,9 @@ endif
 samples/embed: samples/embed.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
+samples/allocator: samples/allocator.c $(LIBTREALLA)
+	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
+
 samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA) $(PLATFORM_OBJ)
 	$(CC) $(CFLAGS) -o $@ $< program.o $(LIBTREALLA) $(PLATFORM_OBJ) $(OPT) $(LDFLAGS)
 
@@ -465,6 +471,7 @@ qemu-riscv32:
 		'TARGET_CFLAGS=$(QEMU_RISCV_CFLAGS)' 'LDFLAGS=$(QEMU_RISCV_LDFLAGS)' \
 		samples/freestanding
 	cp samples/freestanding $(QEMU_RISCV_ELF)
+	$(QEMU_RISCV_SIZE) $(QEMU_RISCV_ELF)
 
 qemu-riscv32-smoke: qemu-riscv32
 	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF)
@@ -562,7 +569,8 @@ raylib:
 	$(PYTHON) util/gen_raylib.py --verify
 	$(PYTHON) util/gen_raylib.py --in-place
 
-test:
+test: samples/allocator
+	./samples/allocator
 	./tests/run.sh
 
 misc:
@@ -645,9 +653,10 @@ clean:
 		src/platform/*.d library/*.d *.d \
 		library/*.o library/*.c library/actors/*.o library/actors/*.c library/actors/*.d \
 		*.o program.c samples/*.o samples/*.so \
-		samples/embed samples/freestanding samples/*.d samples/embed_demo.pl \
+		samples/embed samples/allocator samples/freestanding samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
+	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/freestanding.dSYM
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

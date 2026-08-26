@@ -27,6 +27,7 @@
 #endif
 
 #include "history.h"
+#include "files.h"
 #include "module.h"
 #include "network.h"
 #include "query.h"
@@ -223,7 +224,7 @@ skip_readlink:
 		return memcpy(resolved, output, q+1);
 	}
 	if (stat(output, &st) == -1) return NULL;
-	return strdup(output);
+	return TPL_strdup(output);
 
 toolong:
 	errno = ENAMETOOLONG;
@@ -1143,7 +1144,7 @@ static bool bif_iso_open_4(query *q)
 	}
 
 	stream *str = &q->pl->streams[n];
-	CHECKED(str->filename = strdup(filename));
+	CHECKED(str->filename = TPL_strdup(filename));
 	TPL_free(src);
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	CHECKED(str->mode = DUP_STRING(q, p2));
@@ -1297,17 +1298,17 @@ bool stream_close(query *q, int n)
 
 	if (sl_get(str->alias, "user_input", NULL)) {
 		stream *str2 = &q->pl->streams[0];
-		sl_app(str2->alias, strdup("user_input"), NULL);
+		sl_app(str2->alias, TPL_strdup("user_input"), NULL);
 	}
 
 	if (sl_get(str->alias, "user_output", NULL)) {
 		stream *str2 = &q->pl->streams[1];
-		sl_app(str2->alias, strdup("user_output"), NULL);
+		sl_app(str2->alias, TPL_strdup("user_output"), NULL);
 	}
 
 	if (sl_get(str->alias, "user_error", NULL)) {
 		stream *str2 = &q->pl->streams[2];
-		sl_app(str2->alias, strdup("user_error"), NULL);
+		sl_app(str2->alias, TPL_strdup("user_error"), NULL);
 	}
 
 	del_stream_properties(q, n);
@@ -4876,7 +4877,7 @@ static bool bif_getfile_2(query *q)
 	size_t len = 0;
 	CHECKED(init_tmp_heap(q));
 
-	while (getline(&line, &len, fp) != -1) {
+	while (tpl_getline_fp(&line, &len, fp) != -1) {
 		int len = strlen(line);
 
 		if (len && (line[len-1] == '\n')) {
@@ -4993,7 +4994,7 @@ static bool bif_getfile_3(query *q)
 	size_t len = 0;
 	CHECKED(init_tmp_heap(q));
 
-	while (getline(&line, &len, fp) != -1) {
+	while (tpl_getline_fp(&line, &len, fp) != -1) {
 		int len = strlen(line);
 
 		if (!terminator) {
@@ -5030,7 +5031,7 @@ static bool bif_getlines_1(query *q)
 	size_t len = 0;
 	CHECKED(init_tmp_heap(q));
 
-	while (getline(&line, &len, str->fp) != -1) {
+	while (tpl_getline_fp(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
 
 		if (len && (line[len-1] == '\n')) {
@@ -5137,7 +5138,7 @@ static bool bif_getlines_3(query *q)
 
 static char *fixup(const char *srcptr)
 {
-	char *tmpbuf = strdup(srcptr);
+	char *tmpbuf = TPL_strdup(srcptr);
 	const char *src = srcptr;
 	char *dst = tmpbuf;
 
@@ -5185,10 +5186,10 @@ static bool bif_absolute_file_name_3(query *q)
 	bool expand = false;
 	char *filename = NULL;
 	char cwdbuf[1024*4];
-	const char *cwd0 = getcwd(cwdbuf, sizeof(cwdbuf));	// FIX: getcwd may fail; don't strdup(NULL)
+	const char *cwd0 = getcwd(cwdbuf, sizeof(cwdbuf));	// FIX: getcwd may fail; don't TPL_strdup(NULL)
 	if (!cwd0)
 		return throw_error(q, p1, p1_ctx, "system_error", "getcwd");
-	char *here = strdup(cwd0);
+	char *here = TPL_strdup(cwd0);
 	CHECKED(here);
 	char *cwd = here;
 
@@ -5256,15 +5257,15 @@ static bool bif_absolute_file_name_3(query *q)
 		snprintf(tmpbuf, buflen, "%s/%s", ptr, s);
 		char *tmpbuf2;
 
-		if ((tmpbuf2 = realpath(tmpbuf, NULL)) == NULL) {
+		if ((tmpbuf2 = tpl_realpath(tmpbuf)) == NULL) {
 		} else {
 			TPL_free(tmpbuf);
 			tmpbuf = tmpbuf2;
 		}
 	} else {
-		if ((tmpbuf = realpath(s, NULL)) == NULL) {
-			if ((tmpbuf = realpath(cwd, NULL)) == NULL)
-				tmpbuf = realpath(".", NULL);
+		if ((tmpbuf = tpl_realpath(s)) == NULL) {
+			if ((tmpbuf = tpl_realpath(cwd)) == NULL)
+				tmpbuf = tpl_realpath(".");
 
 			CHECKED(tmpbuf);
 

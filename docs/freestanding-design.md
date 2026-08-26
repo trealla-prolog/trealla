@@ -1,6 +1,6 @@
 # Freestanding Trealla — design
 
-Status: phases 1-3 implemented on the `freestanding` branch; phases 4-5 remain
+Status: phases 1-4 implemented on the `freestanding` branch; phase 5 remains
 proposed.
 
 ## 1. Goal
@@ -226,15 +226,21 @@ one. Trealla has process-global state, most engine allocations use
 still call the C allocator directly. A per-`prolog` allocator would therefore
 be misleading.
 
-The allocation phase will first route every owned allocation through one
-internal family and add accounting there. It can then expose either:
+All engine-owned allocations now pass through one internal family. The public
+installation rule is deliberately runtime-wide: `pl_set_allocator()` must be
+called before the first `pl_create()` or any other Trealla allocation. The
+first allocation locks the choice for the lifetime of the process. This
+matches the current ownership of global atoms without pretending allocation is
+per-engine.
 
-- one runtime-wide allocator installed before the first `pl_create()`; or
-- an explicit runtime object which owns global atoms and the allocator.
+The allocator layer records current bytes, peak bytes, successful allocation
+operations and failed allocation operations. Returned strings from
+`pl_term_text()` and `pl_int_text()` belong to this family and must be released
+with `pl_free()`.
 
-The former is a smaller compatible change; the latter is cleaner but much
-larger. This decision is deferred until allocation coverage and global-state
-ownership have been measured.
+The runtime-wide option is the smaller compatible change. An explicit runtime
+object which owns global atoms and the allocator remains cleaner, but is a much
+larger future API and ownership change.
 
 ## 6. Build interface
 
@@ -496,4 +502,3 @@ Those may become separate projects after the platform boundary is stable.
   a second adapter validates it.
 - Treat allocation as a dedicated phase because Trealla's global state makes a
   casual per-instance callback incorrect.
-

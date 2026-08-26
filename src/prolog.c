@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "features.h"
+#include "files.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -99,7 +100,7 @@ static pl_idx add_to_global_atoms(const char *name)
 
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
-	const char *key = strdup(name);
+	const char *key = TPL_strdup(name);
 	sl_app(g_symtab, key, (void*)(size_t)offset);
 	return (pl_idx)offset;
 }
@@ -233,13 +234,13 @@ static pl_term *new_pl_term(query *q, cell *c, pl_ctx c_ctx)
 
 	if (q->terms_used == q->terms_cap) {
 		unsigned cap = q->terms_cap ? q->terms_cap * 2 : 16;
-		struct pl_term_ **tmp = realloc(q->terms, cap * sizeof(*tmp));
+		struct pl_term_ **tmp = TPL_realloc(q->terms, cap * sizeof(*tmp));
 		if (!tmp) return NULL;
 		q->terms = tmp;
 		q->terms_cap = cap;
 	}
 
-	pl_term *t = malloc(sizeof(struct pl_term_));
+	pl_term *t = TPL_malloc(sizeof(struct pl_term_));
 
 	if (!t)
 		return NULL;
@@ -254,7 +255,7 @@ static pl_term *new_pl_term(query *q, cell *c, pl_ctx c_ctx)
 void release_pl_terms(query *q)
 {
 	for (unsigned i = 0; i < q->terms_used; i++)
-		free(q->terms[i]);
+		TPL_free(q->terms[i]);
 
 	q->terms_used = 0;
 }
@@ -348,7 +349,7 @@ char *pl_int_text(pl_term *t, int radix)
 		if (neg)
 			buf[i++] = '-';
 
-		char *out = malloc(i + 1);
+		char *out = TPL_malloc(i + 1);
 
 		if (!out)
 			return NULL;
@@ -365,13 +366,13 @@ char *pl_int_text(pl_term *t, int radix)
 	if (len <= 0)
 		return NULL;
 
-	char *out = malloc(len);
+	char *out = TPL_malloc(len);
 
 	if (!out)
 		return NULL;
 
 	if (mp_int_to_string(&t->c->val_bigint->ival, radix, out, len) != MP_OK) {
-		free(out);
+		TPL_free(out);
 		return NULL;
 	}
 
@@ -1044,7 +1045,7 @@ static bool g_init(prolog *pl)
 	char *ptr = getenv("TPL_LIBRARY_PATH");
 
 	if (ptr)
-		g_tpl_lib = strdup(ptr);
+		g_tpl_lib = TPL_strdup(ptr);
 
 #if !TPL_FREESTANDING && !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	struct rlimit rlp;
@@ -1158,9 +1159,9 @@ prolog *pl_create()
 
 	if (!g_tpl_lib) {
 #ifdef DEFAULT_LIBRARY_PATH
-		g_tpl_lib = strdup(DEFAULT_LIBRARY_PATH);
+		g_tpl_lib = TPL_strdup(DEFAULT_LIBRARY_PATH);
 #else
-		g_tpl_lib = realpath(g_argv0, NULL);
+		g_tpl_lib = tpl_realpath(g_argv0);
 
 		if (g_tpl_lib) {
 			char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
@@ -1172,32 +1173,32 @@ prolog *pl_create()
 			g_tpl_lib = TPL_realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
 			strcat(g_tpl_lib, "/library");
 		} else
-			g_tpl_lib = strdup("../library");
+			g_tpl_lib = TPL_strdup("../library");
 #endif
 	}
 
 	pl->streams[0].fp_in = stdin;
 	pl->streams[0].fp_out = stdin;
 	CHECK_SENTINEL(pl->streams[0].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(pl->streams[0].filename = strdup("stdin"), NULL);
-	CHECK_SENTINEL(pl->streams[0].mode = strdup("read"), NULL);
-	sl_app(pl->streams[0].alias, strdup("user_input"), NULL);
+	CHECK_SENTINEL(pl->streams[0].filename = TPL_strdup("stdin"), NULL);
+	CHECK_SENTINEL(pl->streams[0].mode = TPL_strdup("read"), NULL);
+	sl_app(pl->streams[0].alias, TPL_strdup("user_input"), NULL);
 	pl->streams[0].eof_action = eof_action_reset;
 
 	pl->streams[1].fp_in = stdout;
 	pl->streams[1].fp_out = stdout;
 	CHECK_SENTINEL(pl->streams[1].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(pl->streams[1].filename = strdup("stdout"), NULL);
-	CHECK_SENTINEL(pl->streams[1].mode = strdup("append"), NULL);
-	sl_app(pl->streams[1].alias, strdup("user_output"), NULL);
+	CHECK_SENTINEL(pl->streams[1].filename = TPL_strdup("stdout"), NULL);
+	CHECK_SENTINEL(pl->streams[1].mode = TPL_strdup("append"), NULL);
+	sl_app(pl->streams[1].alias, TPL_strdup("user_output"), NULL);
 	pl->streams[1].eof_action = eof_action_reset;
 
 	pl->streams[2].fp_in = stderr;
 	pl->streams[2].fp_out = stderr;
 	CHECK_SENTINEL(pl->streams[2].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(pl->streams[2].filename = strdup("stderr"), NULL);
-	CHECK_SENTINEL(pl->streams[2].mode = strdup("append"), NULL);
-	sl_app(pl->streams[2].alias, strdup("user_error"), NULL);
+	CHECK_SENTINEL(pl->streams[2].filename = TPL_strdup("stderr"), NULL);
+	CHECK_SENTINEL(pl->streams[2].mode = TPL_strdup("append"), NULL);
+	sl_app(pl->streams[2].alias, TPL_strdup("user_error"), NULL);
 	pl->streams[2].eof_action = eof_action_reset;
 
 	init_lock(&pl->guard);
