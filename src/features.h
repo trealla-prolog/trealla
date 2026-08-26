@@ -8,6 +8,10 @@
 #define TPL_FREESTANDING 0
 #endif
 
+#if TPL_FREESTANDING && (!defined(EMBED) || !(EMBED))
+#error "freestanding builds require embedded library(builtins)"
+#endif
+
 #ifndef TPL_FEATURE_FILESYSTEM
 #define TPL_FEATURE_FILESYSTEM (!TPL_FREESTANDING)
 #endif

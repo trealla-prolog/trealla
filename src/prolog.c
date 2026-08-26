@@ -506,6 +506,24 @@ bool pl_consult(prolog *pl, const char *filename)
 	return load_file(pl->user_m, filename, false, true);
 }
 
+bool pl_consult_text(prolog *pl, const char *source, size_t source_len, const char *source_name)
+{
+	if (!pl || !source || !source_name || (source_len == SIZE_MAX)
+		|| memchr(source, '\0', source_len))
+		return false;
+
+	char *copy = TPL_malloc(source_len + 1);
+
+	if (!copy)
+		return false;
+
+	memcpy(copy, source, source_len);
+	copy[source_len] = '\0';
+	module *m = load_text(pl->user_m, copy, source_name);
+	TPL_free(copy);
+	return m != NULL;
+}
+
 bool pl_logging(prolog *pl, const char *filename)
 {
 	pl->logfp = fopen(filename, "a");
@@ -1269,6 +1287,11 @@ prolog *pl_create()
 		}
 
 		if (!found) {
+#if TPL_FREESTANDING
+			fprintf(stderr, "Error: freestanding build is missing embedded library(%s)\n", bootstrap[i]);
+			pl_destroy(pl);
+			return NULL;
+#else
 			SB(s1);
 			SB_sprintf(s1, "%s/%s.pl", g_tpl_lib, bootstrap[i]);
 			module *m = load_file(pl->user_m, SB_cstr(s1), false, true);
@@ -1282,6 +1305,7 @@ prolog *pl_create()
 
 			m->prebuilt = true;
 			SB_free(s1);
+#endif
 		}
 	}
 

@@ -119,6 +119,17 @@ int main(void)
 	set_quiet(pl);
 
 	check("pl_create", true);
+
+	{
+		const char source[] = "from_text(embedded).\n";
+		const char invalid[] = "visible.\0hidden.";
+		check("pl_consult_text loads bounded source",
+			pl_consult_text(pl, source, sizeof(source) - 1, "embedded-source"));
+		check("consulted text predicate runs", succeeds(pl, "from_text(embedded)"));
+		check("pl_consult_text rejects embedded NUL",
+			!pl_consult_text(pl, invalid, sizeof(invalid) - 1, "embedded-nul"));
+	}
+
 	check("pl_consult loads a file", pl_consult(pl, path));
 
 	// --- deterministic goals, where get_status is trustworthy ---

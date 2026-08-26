@@ -5,6 +5,8 @@ LIBDIR ?= $(PREFIX)/share/trealla
 MANDIR ?= $(PREFIX)/share/man
 
 EMBED ?= 1
+FREESTANDING_BASE_LIBS = builtins error lists iso_ext gensym si
+EMBED_LIBS ?= $(FREESTANDING_BASE_LIBS)
 
 PYTHON ?= python3
 # Captured eagerly (before WASI/WIN below reassign CC to a cross-compiler)
@@ -103,6 +105,8 @@ endif
 
 ifdef FREESTANDING
 CFLAGS += -DTPL_FREESTANDING=1 -DUSE_MMAP=0
+override EMBED_LIBS := $(FREESTANDING_BASE_LIBS) $(filter-out $(FREESTANDING_BASE_LIBS),$(EMBED_LIBS))
+PROGRAM ?= samples/freestanding.pl
 NOFFI = 1
 NOSSL = 1
 NOTHREADS = 1
@@ -210,7 +214,7 @@ SRCOBJECTS = tpl.o \
 	src/compile.o \
 	src/heap.o \
 	$(HISTORY_OBJECT) \
-	src/library.o \
+	$(LIBRARY_REGISTRY_OBJECT) \
 	src/list.o \
 	src/module.o \
 	$(NETWORK_OBJECT) \
@@ -247,9 +251,18 @@ else
 HISTORY_OBJECT = src/history.o
 endif
 
+ifdef FREESTANDING
+LIBRARY_REGISTRY_OBJECT = library/embedded_registry.o
+else
+LIBRARY_REGISTRY_OBJECT = src/library.o
+endif
+
 LIBOBJECTS =
 
 ifeq ($(EMBED), 1)
+ifdef FREESTANDING
+LIBOBJECTS += $(addprefix library/,$(addsuffix .o,$(EMBED_LIBS)))
+else
 LIBOBJECTS +=  \
 	library/abnf.o \
 	library/aggregate.o \
@@ -298,6 +311,7 @@ LIBOBJECTS +=  \
 	library/uuid.o \
 	library/when.o \
 	library/yall.o
+endif
 
 # Janus is opt-in: `make janus`, never a plain `make`. Inside the EMBED
 # block because that is where the embedded library list lives.
@@ -354,6 +368,18 @@ library/%.c: library/%.pl util/bin2c
 	echo '#include <stddef.h>' > $@
 	./util/bin2c $< >> $@
 
+.PHONY: FORCE
+
+library/embedded_registry.c: util/embed_registry FORCE
+	./util/embed_registry $(EMBED_LIBS) > $@
+
+program.c: $(PROGRAM) util/bin2c
+	echo '#include <stddef.h>' > $@
+	./util/bin2c $(PROGRAM) program_pl >> $@
+
+program.o: program.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
 all: tpl $(LIBTREALLA) $(SAMPLES)
 
 .PHONY: cosmo
@@ -388,8 +414,8 @@ $(LIBTREALLA): $(LIBTREALLA_OBJECTS) | tpl
 samples/embed: samples/embed.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
-samples/freestanding: samples/freestanding.c $(LIBTREALLA)
-	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
+samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA)
+	$(CC) $(CFLAGS) -o $@ $< program.o $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
 .PHONY: freestanding freestanding-smoke
 
@@ -405,6 +431,9 @@ freestanding-smoke: samples/freestanding
 
 util/bin2c: util/bin2c.c
 	$(HOST_CC) -o util/bin2c util/bin2c.c
+
+util/embed_registry: util/embed_registry.c
+	$(HOST_CC) -o util/embed_registry util/embed_registry.c
 
 profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
@@ -453,13 +482,12 @@ wasm: tpl.wasm
 
 compile: util/bin2c
 	echo '#include <stddef.h>' > main.c
-	cp $(main) main.pl
-	./util/bin2c main.pl >> main.c
+	./util/bin2c $(main) main_pl >> main.c
 	rm -f src/library.o
 	$(CC) $(CFLAGS) -o main.o -c main.c
 	$(CC) $(CFLAGS) -DUSE_MAIN=1 -o src/library.o -c src/library.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) main.o $(OPT) $(LDFLAGS)
-	rm -f main.pl main.c main.o src/library.o
+	rm -f main.c main.o src/library.o
 
 # Janus: the Prolog-Python interface, off unless asked for. See
 # docs/janus-design.md.
@@ -575,9 +603,9 @@ clean:
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
 		src/*.d src/imath/*.d src/isocline/src/*.d src/sre/*.d library/*.d *.d \
 		library/*.o library/*.c library/actors/*.o library/actors/*.c library/actors/*.d \
-		*.o samples/*.o samples/*.so \
+		*.o program.c samples/*.o samples/*.so \
 		samples/embed samples/freestanding samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
-		samples/*.xwam util/bin2c util/bin2c.aarch64.elf util/bin2c.com.dbg
+		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po
