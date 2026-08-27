@@ -5,18 +5,15 @@
 :- use_module(library(freeze)).
 :- initialization(main).
 
-main :-
-	findall(Y, (freeze(X, (Y=1;Y=2)), X=c), Ys),
-	(   Ys == [1,2]
-	->  write(freeze_nondet_ok)
-	;   write('FAIL: nondeterministic frozen goal lost answers')
-	), nl,
+freeze_nondet ?- freeze(X, (Y=1;Y=2)), X=c.
+   X = c, Y = 1
+;  X = c, Y = 2.
 
-	findall([X2,Y2],
-		((freeze(X2, (Y2=1;Y2=2)), freeze(X2, !), X2=c); X2=end),
-		Solutions),
-	(   Solutions = [[c,1],[c,2],[end,_]]
-	->  write(freeze_cut_ok)
-	;   write('FAIL: separately frozen cut pruned answers')
-	), nl,
-	halt.
+freeze_cut ?- freeze(X, (Y=1;Y=2)), freeze(X, !), X=c ; X=end.
+   X = c, Y = 1
+;  X = c, Y = 2
+;  X = end.
+
+main :-
+	use_module(library(quads)),
+	run_quads.
