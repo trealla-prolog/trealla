@@ -115,14 +115,14 @@ static bool bif_nb_setarg_3(query *q)
 	GET_NEXT_ARG(p2,compound);
 	GET_NEXT_ARG(p3,integer);
 
-	int arg_nbr = get_smallint(p1);
+	unsigned arg_nbr = get_smalluint(p1);
 
 	if ((arg_nbr == 0) || (arg_nbr > p2->arity))
 		return false;
 
 	p2 = p2 + 1;
 
-	for (int i = 1; i <= arg_nbr; i++) {
+	for (unsigned i = 1; i <= arg_nbr; i++) {
 		if (i == arg_nbr) {
 			*p2 = *p3;
 			return true;
@@ -1841,7 +1841,7 @@ static bool bif_iso_arg_3(query *q)
 	if (is_bigint(p1))
 		return false;
 
-	int arg_nbr = get_smallint(p1);
+	unsigned arg_nbr = get_smalluint(p1);
 
 	if ((arg_nbr == 0) || (arg_nbr > p2->arity))
 		return false;
@@ -1863,7 +1863,7 @@ static bool bif_iso_arg_3(query *q)
 
 	p2 = p2 + 1;
 
-	for (int i = 1; i <= arg_nbr; i++) {
+	for (unsigned i = 1; i <= arg_nbr; i++) {
 		if (i == arg_nbr) {
 			cell *c = deref(q, p2, p2_ctx);
 			pl_ctx c_ctx = q->latest_ctx;
@@ -1914,7 +1914,7 @@ static bool bif_iso_univ_2(query *q)
 		tmp2.arity = 0;
 		CLR_OP(&tmp2);
 		allocate_list(q, &tmp2);
-		int arity = p1->arity;
+		unsigned arity = p1->arity;
 		p1++;
 
 		while (arity--) {
@@ -2048,7 +2048,7 @@ static bool bif_iso_univ_2(query *q)
 	}
 
 	allocate_list(q, &tmp);
-	int arity = p1->arity;
+	unsigned arity = p1->arity;
 	p1++;
 
 	while (arity--) {
@@ -2350,7 +2350,7 @@ static bool bif_iso_functor_3(query *q)
 		return false;
 
 	GET_NEXT_ARG(p3,any);
-	make_int(&tmp, p1->arity);
+	make_uint(&tmp, p1->arity);
 	return unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 }
 
