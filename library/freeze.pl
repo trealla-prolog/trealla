@@ -14,7 +14,7 @@ verify_attributes(Var, Other, Goals) :-
         get_atts(Var, frozen(Fa)), !,       % are we involved?
         (   var(Other) ->                   % must be attributed then
             (   get_atts(Other,  frozen(Fb)) % has a pending goal?
-            ->  put_atts(Other,  frozen((Fb,Fa))) % rescue conjunction
+            ->  put_atts(Other,  frozen((call(Fb),call(Fa)))) % rescue conjunction
             ;   put_atts(Other,  frozen(Fa)) % rescue the pending goal
             ),
             Goals = []
