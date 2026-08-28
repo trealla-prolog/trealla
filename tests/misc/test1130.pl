@@ -1,6 +1,7 @@
 % Issue #1130: advancing an engine past its final answer retried the plain
 % bottom barrier. Its saved instruction pointer predated engine execution
 % and was NULL, so start() dereferenced it instead of reporting exhaustion.
+% Needs real threads, so this test belongs in tests/misc.
 
 :- use_module(library(tabling)).
 :- initialization(main).
