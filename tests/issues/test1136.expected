@@ -1,0 +1,6 @@
+copy_term_variable_ok
+copy_term_nat_variable_ok
+duplicate_term_variable_ok
+compound_source_ok
+atomic_source_ok
+compound_atomic_mismatch_ok

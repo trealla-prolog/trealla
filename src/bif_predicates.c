@@ -2193,7 +2193,7 @@ static bool do_copy_term(query *q, bool copy_attrs)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
-	if (is_atomic(p1) || is_atomic(p2))
+	if (is_atomic(p1) || (is_atomic(p2) && !is_var(p1)))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	cell *tmp;
