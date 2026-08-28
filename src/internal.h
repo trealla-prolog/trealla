@@ -160,6 +160,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define get_smalluint(c) (c)->val_uint
 #define set_smalluint(c,v) (c)->val_uint = (v)
 #define get_voidptr(c) (c)->val_voidptr
+#define get_arity(c) (c)->arity
 
 #define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
 #define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
