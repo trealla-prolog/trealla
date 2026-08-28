@@ -224,7 +224,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_ffi.o \
 	src/bif_format.o \
 	src/bif_functions.o \
-	src/bif_maps.o \
+	src/bif_misc.o \
 	$(BIF_NET_OBJECT) \
 	$(BIF_OS_OBJECT) \
 	$(BIF_POSIX_OBJECT) \

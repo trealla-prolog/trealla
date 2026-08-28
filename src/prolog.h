@@ -53,7 +53,7 @@ extern builtins g_evaluable_bifs[];
 extern builtins g_format_bifs[];
 extern builtins g_ffi_bifs[];
 extern builtins g_iso_bifs[];
-extern builtins g_maps_bifs[];
+extern builtins g_misc_bifs[];
 extern builtins g_net_bifs[];
 extern builtins g_os_bifs[];
 extern builtins g_other_bifs[];

@@ -430,7 +430,7 @@ static bool bif_engine_create_4(query *q)
 	cell *tmp = prepare_call(q, CALL_NOSKIP, xp2, xp2_ctx, 1);
 	CHECKED(tmp);
 	make_call_engine(q, tmp+xp2->num_cells, save_q->st.instr);
-	CHECKED(push_barrier(q));
+	CHECKED(push_fail_on_retry_with_barrier(q));
 	q->st.instr = tmp;
 	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);
 	CHECKED(str->pattern);
@@ -464,6 +464,12 @@ static bool bif_engine_next_2(query *q)
 		if (!query_redo(str->engine))
 			return false;
 	}
+
+	// The fail-on-retry barrier is the engine's bottom choicepoint. If it
+	// was consumed, the goal has no answer rather than an unbound pattern.
+
+	if (!str->engine->st.cp)
+		return false;
 
 	cell *tmp = copy_term_to_heap(str->engine, str->pattern, 0, false);
 	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
@@ -555,7 +561,7 @@ static bool bif_engine_destroy_1(query *q)
 	return bif_iso_close_1(q);
 }
 
-builtins g_maps_bifs[] =
+builtins g_misc_bifs[] =
 {
 	{"map_create", 2, bif_map_create_2, "--stream,+list", false, false, BLAH},
 	{"map_set", 3, bif_map_set_3, "+stream,+atomic,+atomic", false, false, BLAH},

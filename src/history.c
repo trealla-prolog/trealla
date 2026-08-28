@@ -147,7 +147,7 @@ static char *functor_name_generator(const char *text, int state)
 	static int s_os_list_index, s_os_len;
 	static int s_other_list_index, s_other_len;
 	static int s_posix_list_index, s_posix_len;
-	static int s_maps_list_index, s_maps_len;
+	static int s_misc_list_index, s_misc_len;
 	static int s_sort_list_index, s_sort_len;
 	static int s_streams_list_index, s_streams_len;
 	static int s_sregex_list_index, s_sregex_len;
@@ -172,7 +172,7 @@ static char *functor_name_generator(const char *text, int state)
 		s_other_list_index = 0; s_other_len = strlen(text);
 		s_os_list_index = 0; s_os_len = strlen(text);
 		s_posix_list_index = 0; s_posix_len = strlen(text);
-		s_maps_list_index = 0; s_maps_len = strlen(text);
+		s_misc_list_index = 0; s_misc_len = strlen(text);
 		s_sort_list_index = 0; s_sort_len = strlen(text);
 		s_streams_list_index = 0; s_streams_len = strlen(text);
 		s_sregex_list_index = 0; s_sregex_len = strlen(text);
@@ -236,10 +236,10 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_maps_bifs[s_maps_list_index].name)) {
-		s_maps_list_index++;
+	while ((name = g_misc_bifs[s_misc_list_index].name)) {
+		s_misc_list_index++;
 
-		if (strncmp(name, text, s_maps_len) == 0)
+		if (strncmp(name, text, s_misc_len) == 0)
 			return strdup(name);
 	}
 
