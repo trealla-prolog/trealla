@@ -2666,7 +2666,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_arity")) {
 		cell tmp;
-		make_int(&tmp, MAX_ARITY);
+		make_atom(&tmp, new_atom(q->pl, "unbounded"));
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_integer")) {
 		return false;

@@ -46,7 +46,7 @@ copy_variant ?- copy_variant.
 database_limit ?- database_limit.
    true.
 
-max_arity_flag ?- current_prolog_flag(max_arity, 4294967295).
+max_arity_flag ?- current_prolog_flag(max_arity, unbounded).
    true.
 
 syntax_error ?- syntax_error.
