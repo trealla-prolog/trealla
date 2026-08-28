@@ -1220,7 +1220,7 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 	q->did_quote = !braces&&quote;
 
 	if (is_compound(c) && !is_string(c)) {
-		int arity = get_arity(c);
+		uint32_t arity = get_arity(c);
 		emit(q, braces&&!q->ignore_ops?"{":"(");
 		q->last_thing = WAS_OTHER;
 		q->parens = true;

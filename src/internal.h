@@ -74,7 +74,8 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000
-#define MAX_ARITY UINT8_MAX
+#define MAX_ARITY UINT32_MAX
+#define MAX_PREDICATE_ARITY UINT8_MAX
 #define MAX_IF_DEPTH 256
 #define MAX_VARS 1024
 #define MAX_QUEUES 256
@@ -160,8 +161,14 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define get_smalluint(c) (c)->val_uint
 #define set_smalluint(c,v) (c)->val_uint = (v)
 #define get_voidptr(c) (c)->val_voidptr
-#define get_arity(c) ((c)->arity)
-#define set_arity(c,v) ((c)->arity = (v))
+#define get_arity(c) (is_interned(c) ? (c)->arity : (uint32_t)(c)->small_arity)
+#define set_arity(c,v) do { \
+	if (is_interned(c)) { \
+		(c)->small_arity = 0; \
+		(c)->arity = (uint32_t)(v); \
+	} else \
+		(c)->small_arity = (uint8_t)(v); \
+} while (0)
 
 #define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
 #define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
@@ -374,7 +381,7 @@ struct cell_ {
 	// 1 * 8 = 8 bytes
 
 	uint8_t tag;
-	uint8_t arity;
+	uint8_t small_arity;				// used by strings/CSTR callables
 	uint16_t flags;
 
 	union {
@@ -419,7 +426,10 @@ struct cell_ {
 				cell *val_attrs;		// used with TAG_EMPTY in slot
 			};
 
-			uint32_t var_num;			// used with TAG_VAR
+			union {
+				uint32_t var_num;		// used with TAG_VAR
+				uint32_t arity;			// used with TAG_INTERNED
+			};
 
 			union {
 				uint32_t val_off;		// used with TAG_INTERNED / TAG_VAR -FLAG_VAR_REF

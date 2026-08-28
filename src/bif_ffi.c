@@ -11,6 +11,8 @@
 #include "module.h"
 #include "query.h"
 
+#define MAX_FFI_STRUCT_FIELDS UINT8_MAX
+
 #define MAX_FFI 1000
 
 // These are pseudo tags just used here...
@@ -89,8 +91,8 @@ typedef union ffi_ret_ {
 typedef struct foreign_struct_ {
 	const char *name;
 	unsigned arity;
-	uint8_t types[MAX_ARITY];
-	const char *names[MAX_ARITY];
+	uint8_t types[MAX_FFI_STRUCT_FIELDS];
+	const char *names[MAX_FFI_STRUCT_FIELDS];
 } foreign_struct;
 
 static foreign_struct g_ffi_structs[MAX_FFI] = {{0}};
@@ -469,7 +471,7 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 }
 
 // A struct's field count has nothing to do with MAX_FFI_ARGS either. The
-// storage in foreign_struct is MAX_ARITY wide, but this loop used to stop
+// storage in foreign_struct is 8-bit limited, but this loop used to stop
 // at MAX_FFI_ARGS (64) and silently drop every field past it - so an
 // over-long foreign_struct produced a quietly wrong layout rather than an
 // error. Structs get big when they are declared flattened, which is the
@@ -477,14 +479,14 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 
 bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_ctx l_ctx, const char *ret)
 {
-	uint8_t arg_types[MAX_ARITY];
-	const char *arg_names[MAX_ARITY];
+	uint8_t arg_types[MAX_FFI_STRUCT_FIELDS];
+	const char *arg_names[MAX_FFI_STRUCT_FIELDS];
 	PROLOG_LIST_HANDLER(l);
 	int idx = 0;
 
 	while (is_iso_list(l)) {
-		if (idx >= MAX_ARITY) {
-			printf("Error: foreign_struct %s: over %u fields\n", symbol, (unsigned)MAX_ARITY);
+		if (idx >= MAX_FFI_STRUCT_FIELDS) {
+			printf("Error: foreign_struct %s: over %u fields\n", symbol, (unsigned)MAX_FFI_STRUCT_FIELDS);
 			return false;
 		}
 

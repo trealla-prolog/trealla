@@ -191,7 +191,7 @@ static void record_clone_def(query *q, pl_idx slot_nbr, pl_idx tmp_offset);
 // beneath it) has been fully cloned - i.e. at the point the recursive call
 // would otherwise have returned.
 
-typedef struct { lnode hdr; cell *p1; pl_ctx p1_ctx; int arity; pl_idx save_idx; unsigned depth; slot *e; uint32_t save_vgen; } snode;
+typedef struct { lnode hdr; cell *p1; pl_ctx p1_ctx; uint32_t arity; pl_idx save_idx; unsigned depth; slot *e; uint32_t save_vgen; } snode;
 
 static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
@@ -324,7 +324,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 	cell *result = NULL;
 
 	while ((n = (snode*)list_back(&stack)) != NULL) {
-		if (n->arity <= 0) {
+		if (!n->arity) {
 			// This node's arguments are all done, so finalize it. This is
 			// the point at which a recursive call would have returned.
 			tmp = get_tmp_heap(q, n->save_idx);

@@ -342,7 +342,17 @@ bool check_frame(query *q, unsigned max_vars)
 
 bool check_slot(query *q, unsigned cnt)
 {
+	if (cnt > UINT32_MAX - 2) {
+		q->oom = q->error = true;
+		return false;
+	}
+
 	cnt += 2;	// Allow some extra
+
+	if (q->st.sp > UINT32_MAX - cnt) {
+		q->oom = q->error = true;
+		return false;
+	}
 
 	pl_idx num = q->st.sp + cnt;
 
@@ -616,7 +626,7 @@ int create_vars(query *q, unsigned cnt)
 	// Fail soft: callers use CHECKED() to throw resource_error(memory).
 	// Setting oom/error here would make start() abort the query even when
 	// catch/3 handles the throw (issue #1094).
-	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS)
+	if ((f->actual_slots > MAX_LOCAL_VARS) || (cnt > (MAX_LOCAL_VARS - f->actual_slots)))
 		return -1;
 
 	if (!check_slot(q, cnt))
@@ -1523,7 +1533,7 @@ bool has_next_key(query *q)
 
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
-	int arity = get_arity(q->st.key);
+	uint32_t arity = get_arity(q->st.key);
 	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// allocate max possible
 	CHECKED(tmp);
 	cell *save_tmp = tmp;

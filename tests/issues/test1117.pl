@@ -1,30 +1,55 @@
 :- initialization(main).
 
-% Issue #1117: a term with more args than MAX_ARITY is well-formed
-% text that this representation has no room for - arity lives in a
-% byte of the cell - so read/1 must raise representation_error/1,
-% not syntax_error/1. The quads below are the ones from the issue.
+% Issue #1117: transient compounds use a 32-bit arity. Predicates stored
+% in the database deliberately retain the 8-bit arity limit.
 
-read_functor(F, A) :- read(T), functor(T, F, A).
+parser_roundtrip :-
+	functor(T, a_long_functor_name, 256),
+	write_term_to_chars(T, [], Chars),
+	read_term_from_chars(Chars, U, []),
+	functor(U, a_long_functor_name, 256).
 
-% 255 args is the limit, and is read like any other term
+univ_roundtrip :-
+	length(Args, 256),
+	L = [a_long_functor_name|Args],
+	T =.. L,
+	T =.. L2,
+	length(L2, 257),
+	functor(T, a_long_functor_name, 256).
 
-?- read_functor(F, A).
-   inputs("t(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)."), peeks("\n"), F = t, A = 255.
+copy_variant :-
+	functor(T, a_long_functor_name, 256),
+	copy_term(T, U),
+	variant(T, U).
 
-% one arg over it is a limit of the representation...
+database_limit :-
+	functor(T, a_long_functor_name, 256),
+	catch(assertz(T), E, true),
+	E = error(representation_error(max_arity),_).
 
-?- catch(read(X), error(E,_), true).
-   inputs("t(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)."), peeks("\n"), E = representation_error(max_arity).
+syntax_error :-
+	catch(read(_), E, true),
+	E = error(syntax_error(args),_).
 
-% ...and not a syntax error
+constructor ?- functor(_, a_long_functor_name, 256).
+   true.
 
-?- catch(read(X), error(E,_), true).
-   inputs("t(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)."), peeks("\n"), E = syntax_error(max_arity), unexpected.
+parser_roundtrip ?- parser_roundtrip.
+   true.
 
-% a real syntax error is still reported as one
+univ_roundtrip ?- univ_roundtrip.
+   true.
 
-?- catch(read(X), error(E,_), true).
-   inputs("t(1,,2)."), peeks("\n"), E = syntax_error(args).
+copy_variant ?- copy_variant.
+   true.
+
+database_limit ?- database_limit.
+   true.
+
+max_arity_flag ?- current_prolog_flag(max_arity, 4294967295).
+   true.
+
+syntax_error ?- syntax_error.
+   inputs("t(1,,2)."), peeks("\n"), true.
 
 main :- use_module(library(quads)), run_quads.

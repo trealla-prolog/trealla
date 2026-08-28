@@ -283,14 +283,18 @@ void make(module *m)
 
 predicate *find_predicate(module *m, cell *c)
 {
+	uint32_t arity = get_arity(c);
 	cell tmp = *c;
 	tmp.tag = TAG_INTERNED;
 	tmp.flags = 0;
 	tmp.num_cells = 1;
+	tmp.match = NULL;
 
 	if (is_cstring(c)) {
 		tmp.val_off = new_atom(m->pl, C_STR(m, c));
 	}
+
+	set_arity(&tmp, arity);
 
 	sliter *iter = sl_find_key(m->index, &tmp);
 	predicate *pr = NULL;
@@ -329,7 +333,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (created) *created = false;
 	bool found, evaluable;
 
-	if ((c->val_off == g_neck_s) || is_var(c))
+	if ((c->val_off == g_neck_s) || is_var(c) || (get_arity(c) > MAX_PREDICATE_ARITY))
 		return NULL;
 
 	builtins *b;
@@ -354,6 +358,8 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	pr->key = *c;
 	pr->key.tag = TAG_INTERNED;
 	pr->key.num_cells = 1;
+	pr->key.match = NULL;
+	set_arity(&pr->key, get_arity(c));
 	pr->is_noindex = m->pl->noindex || !get_arity(&pr->key);
 	sl_app(m->index, &pr->key, pr);
 	return pr;
@@ -630,7 +636,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			if (p1->val_off != p2->val_off)
 				return strcmp(C_STR(m, p1), C_STR(m, p2));
 
-			int arity = get_arity(p1);
+			uint32_t arity = get_arity(p1);
 			p1++; p2++;
 
 			while (arity--) {
@@ -837,6 +843,11 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 
 void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 {
+	if (arity > MAX_PREDICATE_ARITY) {
+		m->error = true;
+		return;
+	}
+
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
@@ -854,6 +865,11 @@ void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 
 void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 {
+	if (arity > MAX_PREDICATE_ARITY) {
+		m->error = true;
+		return;
+	}
+
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
@@ -871,6 +887,11 @@ void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 
 void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 {
+	if (arity > MAX_PREDICATE_ARITY) {
+		m->error = true;
+		return;
+	}
+
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
@@ -890,6 +911,12 @@ void set_meta_predicate_in_db(module *m, cell *c)
 {
 	const char *name = C_STR(m, c);
 	unsigned arity = get_arity(c);
+
+	if (arity > MAX_PREDICATE_ARITY) {
+		m->error = true;
+		return;
+	}
+
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
@@ -1225,15 +1252,13 @@ bool do_use_foreign_module(module *m, cell *p)
 
 void convert_to_literal(module *m, cell *c)
 {
-	bool was_string = is_string(c);
+	uint32_t arity = is_string(c) ? 0 : get_arity(c);
 	pl_idx off = new_atom(m->pl, C_STR(m, c));
 	c->tag = TAG_INTERNED;
 	c->val_off = off;
 	c->match = NULL;
 	c->flags = 0;
-
-	if (was_string)
-		set_arity(c, 0);
+	set_arity(c, arity);
 }
 
 predicate *find_functor(module *m, const char *name, unsigned arity)

@@ -5,22 +5,20 @@ A compact, efficient ISO Prolog interpreter. Written in plain old C
 and using a plain old Makefile.
 
 	MIT licensed
-	Runs on Linux, Android, MacOS, FreeBSD, OpenBSD, NetBSD, RISC/OS, Haiku, OpenIndiana, Solaris & Tribblix
+	Runs on Linux, Android, MacOS, *BSD, Windows, RISC/OS, Haiku, OpenIndiana, Solaris & Tribblix
 	Runs on many bare boards eg. RISC-V, ESP-32
 	Integers & Rationals are unbounded
 	Atoms and strings are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
 	Strings & slices are efficient (especially with mmap'd files)
-	Rational trees ##EXPERIMENTAL##
+	Effectively unlimited arity for compounds
 	REPL with history
 	Builds for Cosmopolitan, WebAssembly (WASI) & Go
 	Cosmopolitan builds can also boot with no host OS (bare-metal)
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
-	FFIs for GNU Scientific Library (GSL) ##EXPERIMENTAL##
 	FFIs for Raylib & Raymath
-	Python interface (Janus), opt-in via 'make janus'		##EXPERIMENTAL##
 	Concurrency via threads / tasks / futures / engines (aka. generators) & actors
 	Definite Clause Grammar (DCGs)
 	Attributed variables with freeze/2, dif/2 & when/2
@@ -30,7 +28,9 @@ and using a plain old Makefile.
 	Thread-local variant tabling
 	Socket(s) library
 	...
-	Windows build (your mileage may vary) ##UNSUPPORTED##
+	Rational trees ##EXPERIMENTAL##
+	FFIs for GNU Scientific Library (GSL) ##EXPERIMENTAL##
+	Bi-directional Python interface (Janus) ##EXPERIMENTAL##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).

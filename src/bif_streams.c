@@ -1542,7 +1542,7 @@ static bool bif_iso_nl_1(query *q)
 
 static bool bif_iso_read_1(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p1,any);
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
@@ -1558,7 +1558,7 @@ static bool bif_iso_read_1(query *q)
 
 static bool bif_iso_read_2(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -2083,7 +2083,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 
 static bool bif_iso_read_term_2(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 	int n = q->pl->current_input;
@@ -2100,7 +2100,7 @@ static bool bif_iso_read_term_2(query *q)
 
 static bool bif_iso_read_term_3(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -3889,7 +3889,7 @@ static bool bif_iso_set_stream_position_2(query *q)
 
 static bool bif_sys_read_term_from_chars_4(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
 	GET_NEXT_ARG(p_chars,any);
@@ -3993,7 +3993,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 
 static bool bif_read_term_from_chars_3(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
@@ -4067,7 +4067,7 @@ static bool bif_read_term_from_chars_3(query *q)
 
 static bool bif_read_term_from_atom_3(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);

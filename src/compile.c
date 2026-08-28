@@ -170,7 +170,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	if (((*src)->val_off == g_call_s) && (get_arity((*src)) > 1) && is_callable(c)) {
 		unsigned var_num = cl->num_vars++;
-		int arity = get_arity((*src)) - 1;
+		uint32_t arity = get_arity((*src)) - 1;
 		unsigned save_num_cells = (*src)->num_cells;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);

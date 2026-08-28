@@ -217,6 +217,7 @@ cell *make_nil(void)
 		.tag = TAG_INTERNED,
 		.num_cells = 1,
 		.flags = 0,
+		.small_arity = 0,
 		.arity = 0,
 		.val_off = 0
 	};
@@ -3151,7 +3152,7 @@ static cell *goal_expansion_(parser *p, cell *goal)
 
 static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 {
-	int arity = get_arity(goal);
+	uint32_t arity = get_arity(goal);
 
 	// Both `goal` and `k` point into p->cl->cells, which make_room()
 	// below can grow and hence move. Their indices survive the realloc
@@ -3386,7 +3387,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 
 		cell *arg = c + 1;
-		int arity = get_arity(c), i = 0;
+		uint32_t arity = get_arity(c), i = 0;
 
 		while (arity--) {
 			int extra = 0;
@@ -5013,6 +5014,22 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				}
 
 				cell *c = p->cl->cells + save_idx;
+
+				if (is_cstring(c)) {
+					pl_idx off = new_atom(p->pl, C_STR(p, c));
+
+					if (off == ERR_IDX) {
+						p->error = true;
+						break;
+					}
+
+					unshare_cell(c);
+					c->tag = TAG_INTERNED;
+					c->flags = 0;
+					c->match = NULL;
+					c->val_off = off;
+				}
+
 				set_arity(c, tmp_arity);
 				c->num_cells = p->cl->cidx - save_idx;
 			}
@@ -5111,9 +5128,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			}
 
 			if (is_arg_processing) {
-				arity++;
-
-				if (arity > MAX_ARITY) {
+				if (arity == MAX_ARITY) {
 					if (!p->do_read_term)
 						fprintf(stderr, "Error: max arity reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -5122,6 +5137,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					p->error = true;
 					break;
 				}
+
+				arity++;
 			}
 
 			if (is_consing && !SB_strcmp(p->token, "|")) {

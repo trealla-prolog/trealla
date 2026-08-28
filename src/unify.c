@@ -46,7 +46,7 @@ static int compare_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 	if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
 		return 0;
 
-	int arity = get_arity(p1);
+	uint32_t arity = get_arity(p1);
 	p1 = p1 + 1;
 	p2 = p2 + 1;
 
@@ -531,7 +531,7 @@ static bool unify_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
 		return true;
 
-	int arity = get_arity(p1);
+	uint32_t arity = get_arity(p1);
 	p1++; p2++;
 
 	while (arity--) {

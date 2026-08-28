@@ -1937,7 +1937,7 @@ static bool bif_iso_univ_2(query *q)
 
 		cell *tmp;
 		CHECKED(init_tmp_heap(q));
-		int arity = 0;
+		uint32_t arity = 0;
 		cell *save_p2 = p2;
 		cell *l = p2;
 		pl_ctx l_ctx = p2_ctx;
@@ -1955,6 +1955,9 @@ static bool bif_iso_univ_2(query *q)
 			l = PROLOG_LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
+			if (arity == MAX_ARITY)
+				return throw_error(q, save_p2, p2_ctx, "representation_error", "max_arity");
+
 			arity++;
 		}
 
@@ -1989,9 +1992,6 @@ static bool bif_iso_univ_2(query *q)
 
 		if (get_arity(tmp2))
 			return throw_error(q, tmp2, q->st.cur_ctx, "type_error", "atomic");
-
-		if (arity > MAX_ARITY)
-			return throw_error(q, tmp2, q->st.cur_ctx, "representation_error", "max_arity");
 
 		CHECKED(tmp = alloc_heap(q, num_cells));
 		dup_cells(tmp, tmp2, num_cells);
@@ -2273,13 +2273,13 @@ static bool bif_iso_functor_3(query *q)
 		if (is_negative(p3))
 			return throw_error(q, p3, p3_ctx, "domain_error", "not_less_than_zero");
 
-		if (is_gt(p3,MAX_ARITY))
+		if (is_bigint(p3) || ((uint64_t)get_smallint(p3) > MAX_ARITY))
 			return throw_error(q, p3, p3_ctx, "representation_error", "max_arity");
 
 		if (!is_atom(p2) && is_positive(p3))
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 
-		unsigned arity = get_smallint(p3);
+		uint32_t arity = (uint32_t)get_smallint(p3);
 
 		if (!arity)
 			return unify(q, p1, p1_ctx, p2, p2_ctx);
