@@ -769,7 +769,7 @@ static bool bif_popen_4(query *q)
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, q->latest_ctx);
 
@@ -955,7 +955,7 @@ static bool bif_process_create_3(query *q)
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, c_ctx);
 			pl_ctx name_ctx = q->latest_ctx;
@@ -992,7 +992,7 @@ static bool bif_process_create_3(query *q)
 					cell *h = PROLOG_LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
 
-					if (is_compound(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
+					if (is_compound(c) && (get_arity(c) == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
 						SB(pr);
 
@@ -1017,7 +1017,7 @@ static bool bif_process_create_3(query *q)
 					cell *h = PROLOG_LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
 
-					if (is_compound(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
+					if (is_compound(c) && (get_arity(c) == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
 						SB(pr);
 
@@ -1039,7 +1039,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 0, "/dev/null", O_RDONLY, 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "pipe")
-				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
+				&& is_compound(name) && (get_arity(name) == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_ctx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -1064,7 +1064,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 1, "/dev/null", O_WRONLY, 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "pipe")
-				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
+				&& is_compound(name) && (get_arity(name) == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_ctx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -1089,7 +1089,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 2, "/dev/null", O_WRONLY, 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "pipe")
-				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
+				&& is_compound(name) && (get_arity(name) == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_ctx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -1161,7 +1161,7 @@ static bool bif_process_wait_3(query *q)
 		cell *h = PROLOG_LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 
-		if (is_compound(c) && (c->arity == 1) && !CMP_STRING_TO_CSTR(q, c, "timeout")) {
+		if (is_compound(c) && (get_arity(c) == 1) && !CMP_STRING_TO_CSTR(q, c, "timeout")) {
 			if (is_integer(FIRST_ARG(c)))
 				secs = get_smallint(FIRST_ARG(c));
 			else if (is_atom(FIRST_ARG(c)) && !CMP_STRING_TO_CSTR(q, FIRST_ARG(c), "infinite"))

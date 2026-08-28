@@ -22,7 +22,7 @@ static void calln_check(module *m, cell *p1)
 	} else if ((p1->bif_ptr = get_builtin_term(m, p1, &found, NULL)), found) {
 		p1->flags |= FLAG_INTERNED_BUILTIN;
 
-		if (p1->arity <= 2) {
+		if (get_arity(p1) <= 2) {
 			const char *functor = C_STR(m, p1);
 			unsigned specifier;
 
@@ -40,7 +40,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 , T2
 
-	if (((*src)->val_off == g_conjunction_s) && ((*src)->arity == 2)) {
+	if (((*src)->val_off == g_conjunction_s) && (get_arity((*src)) == 2)) {
 		*src += 1;
 		compile_term(pr, cl, dst, src);								// LHS
 		compile_term(pr, cl, dst, src);								// RHS
@@ -49,8 +49,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 -> T2 ; T3
 
-	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
-		&& c->bif_ptr && (c->arity == 2)
+	if (((*src)->val_off == g_disjunction_s) && (get_arity((*src)) == 2)
+		&& c->bif_ptr && (get_arity(c) == 2)
 		&& (c->bif_ptr->fn == bif_iso_if_then_2)) {
 		*src += 2;
 		unsigned var_num = cl->num_vars++;
@@ -75,8 +75,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 *-> T2 ; T3
 
-	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
-		&& c->bif_ptr && (c->arity == 2)
+	if (((*src)->val_off == g_disjunction_s) && (get_arity((*src)) == 2)
+		&& c->bif_ptr && (get_arity(c) == 2)
 		&& (c->bif_ptr->fn == bif_soft_if_then_2)) {
 		*src += 2;
 		unsigned var_num = cl->num_vars++;
@@ -102,7 +102,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 ; T2
 
-	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)) {
+	if (((*src)->val_off == g_disjunction_s) && (get_arity((*src)) == 2)) {
 		*src += 1;
 		cell *save_dst1 = *dst;
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_1, 1, 1);
@@ -120,7 +120,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 -> T2
 
-	if (((*src)->val_off == g_if_then_s) && ((*src)->arity == 2)) {
+	if (((*src)->val_off == g_if_then_s) && (get_arity((*src)) == 2)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -135,7 +135,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 *-> T2
 
-	if (((*src)->val_off == g_soft_cut_s) && ((*src)->arity == 2)) {
+	if (((*src)->val_off == g_soft_cut_s) && (get_arity((*src)) == 2)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -147,7 +147,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_if_s) && ((*src)->arity == 3)) {
+	if (((*src)->val_off == g_if_s) && (get_arity((*src)) == 3)) {
 		*src += 1;
 		unsigned var_num = cl->num_vars++;
 		cell *save_dst1 = *dst;
@@ -168,9 +168,9 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && is_callable(c)) {
+	if (((*src)->val_off == g_call_s) && (get_arity((*src)) > 1) && is_callable(c)) {
 		unsigned var_num = cl->num_vars++;
-		int arity = (*src)->arity - 1;
+		uint32_t arity = get_arity((*src)) - 1;
 		unsigned save_num_cells = (*src)->num_cells;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -189,12 +189,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		// the module it names.
 
 		if (is_interned(save_dst) && (save_dst->val_off == g_colon_s)
-			&& (save_dst->arity == 2)) {
+			&& (get_arity(save_dst) == 2)) {
 			cell *mod = save_dst + 1;
 			target = mod + mod->num_cells;
 		}
 
-		target->arity += arity;
+		set_arity(target, get_arity(target) + arity);
 
 		while (arity--)
 			copy_term(dst, src);									// Args
@@ -211,7 +211,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_call_s) && (get_arity((*src)) == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -228,7 +228,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_once_s) && (get_arity((*src)) == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -246,7 +246,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_ignore_s) && (get_arity((*src)) == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -268,7 +268,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_negation_s) && (get_arity((*src)) == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -291,7 +291,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_notunify_s) && ((*src)->arity == 2)) {
+	if (((*src)->val_off == g_notunify_s) && (get_arity((*src)) == 2)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -312,7 +312,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && is_callable((c))) {
+	if (((*src)->val_off == g_colon_s) && (get_arity((*src)) == 2) && is_callable((c))) {
 		unsigned var_num1 = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, 1);

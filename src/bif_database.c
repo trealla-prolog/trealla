@@ -350,7 +350,7 @@ static bool bif_iso_abolish_1(query *q)
 		}
 	}
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
@@ -374,7 +374,7 @@ static bool bif_iso_abolish_1(query *q)
 	if (is_negative(p1_arity))
 		return throw_error(q, p1_arity, p1_ctx, "domain_error", "not_less_than_zero");
 
-	if (get_smallint(p1_arity) > MAX_ARITY)
+	if (get_smallint(p1_arity) > MAX_PREDICATE_ARITY)
 		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
 
 	bool found = false;
@@ -385,12 +385,22 @@ static bool bif_iso_abolish_1(query *q)
 
 	cell tmp;
 	tmp = *p1_name;
-	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
+	set_arity(&tmp, get_smallint(p1_arity));
 	prolog_lock_mod(q->pl, q->st.m);
 	bool ok = do_abolish(q, p1, &tmp, true);
 	prolog_unlock_mod(q->pl, q->st.m);
 	return ok;
+}
+
+static cell *get_db_head(cell *head)
+{
+	if (is_interned(head) && (head->val_off == g_colon_s) && (get_arity(head) == 2)) {
+		cell *module_name = FIRST_ARG(head);
+		return NEXT_ARG(module_name);
+	}
+
+	return head;
 }
 
 static bool bif_iso_asserta_1(query *q)
@@ -406,6 +416,11 @@ static bool bif_iso_asserta_1(query *q)
 
 	if (!is_interned(head) && !is_cstring(head))
 		return throw_error(q, head, q->st.cur_ctx, "type_error", "callable");
+
+	cell *db_head = get_db_head(head);
+
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+		return throw_error(q, db_head, q->st.cur_ctx, "representation_error", "max_arity");
 
 	bool found = false;
 
@@ -471,6 +486,11 @@ static bool do_assertz_1(query *q, bool consulting)
 
 	if (!is_interned(head) && !is_cstring(head))
 		return throw_error(q, head, q->st.cur_ctx, "type_error", "callable");
+
+	cell *db_head = get_db_head(head);
+
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+		return throw_error(q, db_head, q->st.cur_ctx, "representation_error", "max_arity");
 
 	bool found = false, evaluable = false;
 
@@ -540,6 +560,11 @@ static bool do_asserta_2(query *q)
 
 	if (is_var(head))
 		return throw_error(q, head, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+	cell *db_head = get_db_head(head);
+
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+		return throw_error(q, db_head, q->latest_ctx, "representation_error", "max_arity");
 
 	bool found = false;
 
@@ -641,6 +666,11 @@ static bool do_assertz_2(query *q)
 
 	if (is_var(head))
 		return throw_error(q, head, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+	cell *db_head = get_db_head(head);
+
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+		return throw_error(q, db_head, q->latest_ctx, "representation_error", "max_arity");
 
 	bool found = false;
 
@@ -789,7 +819,7 @@ static bool bif_abolish_2(query *q)
 		}
 	}
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
@@ -813,7 +843,7 @@ static bool bif_abolish_2(query *q)
 	if (is_negative(p1_arity))
 		return throw_error(q, p1_arity, p1_ctx, "domain_error", "not_less_than_zero");
 
-	if (get_smallint(p1_arity) > MAX_ARITY)
+	if (get_smallint(p1_arity) > MAX_PREDICATE_ARITY)
 		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
 
 	bool force = false, tree = false;
@@ -826,7 +856,7 @@ static bool bif_abolish_2(query *q)
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, q->latest_ctx);
 
@@ -865,8 +895,8 @@ static bool bif_abolish_2(query *q)
 
 	cell tmp;
 	tmp = *p1_name;
-	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
+	set_arity(&tmp, get_smallint(p1_arity));
 
 	bool ok = do_abolish(q, p1, &tmp, true);
 	return ok;
@@ -942,12 +972,12 @@ static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p
 				tmp->tag == TAG_BLOB ? "blob" :
 				"other"
 			),
-			tmp->num_cells, tmp->arity);
+			tmp->num_cells, get_arity(tmp));
 
 		if ((tmp->tag == TAG_INT) && !is_managed(tmp))
 			printf(", %lld", (long long)tmp->val_int);
 
-		if (tmp->arity && (tmp->tag == TAG_INTERNED))
+		if (get_arity(tmp) && (tmp->tag == TAG_INTERNED))
 			printf(", ground=%u", is_ground(tmp)?1:0);
 
 		if (tmp->tag == TAG_INTERNED)
@@ -990,22 +1020,21 @@ static bool bif_listing_0(query *q)
 	return true;
 }
 
-static bool save_name(FILE *fp, query *q, pl_idx name, unsigned pr_arity, bool alt, bool dump)
+static bool save_name(FILE *fp, query *q, pl_idx name, pl_int arity, bool alt, bool dump)
 {
 	module *m = q->st.dbe ? q->st.dbe->owner->m : q->st.m;
 	q->listing = true;
 	bool any = false;
-	int arity = pr_arity;
 
 	for (predicate *pr = list_front(&m->predicates);
 		pr; pr = list_next(pr)) {
-		if (pr->is_builtin && (arity == -1))
+		if (pr->is_builtin && (arity < 0))
 			continue;
 
 		if (name != pr->key.val_off)
 			continue;
 
-		if ((arity != pr->key.arity) && (arity != -1))
+		if ((arity >= 0) && ((uint32_t)arity != get_arity(&pr->key)))
 			continue;
 
 		any = true;
@@ -1048,7 +1077,7 @@ static bool bif_listing_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	pl_idx name = p1->val_off;
-	int arity = -1;
+	pl_int arity = -1;
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -1061,7 +1090,7 @@ static bool bif_listing_1(query *q)
 		p1 += p1->num_cells;
 	}
 
-	if (p1->arity) {
+	if (get_arity(p1)) {
 		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
 			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
@@ -1082,13 +1111,15 @@ static bool bif_listing_1(query *q)
 			arity += 2;
 	}
 
-	cell tmp;
-	make_atom(&tmp, name);
-	tmp.arity = arity;
-	bool found;
+	if (arity >= 0) {
+		cell tmp;
+		make_atom(&tmp, name);
+		set_arity(&tmp, arity);
+		bool found;
 
-	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
-		return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
+		if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
+			return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
+	}
 
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
@@ -1099,7 +1130,7 @@ static bool bif_sys_xlisting_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	pl_idx name = p1->val_off;
-	int arity = -1;
+	pl_int arity = -1;
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -1112,7 +1143,7 @@ static bool bif_sys_xlisting_1(query *q)
 		p1 += p1->num_cells;
 	}
 
-	if (p1->arity) {
+	if (get_arity(p1)) {
 		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
 			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
@@ -1133,13 +1164,15 @@ static bool bif_sys_xlisting_1(query *q)
 			arity += 2;
 	}
 
-	cell tmp;
-	make_atom(&tmp, name);
-	tmp.arity = arity;
-	bool found;
+	if (arity >= 0) {
+		cell tmp;
+		make_atom(&tmp, name);
+		set_arity(&tmp, arity);
+		bool found;
 
-	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
-		return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
+		if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
+			return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
+	}
 
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
@@ -1162,7 +1195,7 @@ static bool bif_sys_dlisting_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	pl_idx name = p1->val_off;
-	int arity = -1;
+	pl_int arity = -1;
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -1175,7 +1208,7 @@ static bool bif_sys_dlisting_1(query *q)
 		p1 += p1->num_cells;
 	}
 
-	if (p1->arity) {
+	if (get_arity(p1)) {
 		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
 			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
@@ -1196,13 +1229,15 @@ static bool bif_sys_dlisting_1(query *q)
 			arity += 2;
 	}
 
-	cell tmp;
-	make_atom(&tmp, name);
-	tmp.arity = arity;
-	bool found;
+	if (arity >= 0) {
+		cell tmp;
+		make_atom(&tmp, name);
+		set_arity(&tmp, arity);
+		bool found;
 
-	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
-		return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
+		if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
+			return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
+	}
 
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];

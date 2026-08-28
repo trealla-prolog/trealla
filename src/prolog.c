@@ -76,7 +76,7 @@ bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned 
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
 	if (tmp.val_off == ERR_IDX) return false;
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) return false;
 	return pr->is_multifile ? true : false;
@@ -389,12 +389,12 @@ const char *pl_functor(pl_term *t)
 
 unsigned pl_arity(pl_term *t)
 {
-	return t && is_compound(t->c) ? t->c->arity : 0;
+	return t && is_compound(t->c) ? get_arity(t->c) : 0;
 }
 
 pl_term *pl_arg(pl_term *t, unsigned n)
 {
-	if (!t || !is_compound(t->c) || (n >= t->c->arity))
+	if (!t || !is_compound(t->c) || (n >= get_arity(t->c)))
 		return NULL;
 
 	cell *c = t->c + 1;

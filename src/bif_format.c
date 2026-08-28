@@ -718,7 +718,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			pl_idx num_cells;
 			cell pc = {0};
 			make_atom(&pc, new_atom(q->pl, "portray"));
-			pc.arity = 1;
+			set_arity(&pc, 1);
 
 			predicate *pr = find_predicate(q->st.m, &pc);
 
@@ -946,7 +946,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		&& ((CMP_STRING_TO_CSTR(q, str, "atom")
 		&& CMP_STRING_TO_CSTR(q, str, "chars")
 		&& CMP_STRING_TO_CSTR(q, str, "string"))
-		|| (str->arity > 1) || !is_var(str+1))) {
+		|| (get_arity(str) > 1) || !is_var(str+1))) {
 		TPL_free(tmpbuf);
 		return throw_error(q, str, str_ctx, "type_error", "structure");
 	} else if (is_compound(str) && !CMP_STRING_TO_CSTR(q, str, "atom")) {

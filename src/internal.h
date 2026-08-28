@@ -74,7 +74,8 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000
-#define MAX_ARITY UINT8_MAX
+#define MAX_ARITY UINT32_MAX
+#define MAX_PREDICATE_ARITY UINT8_MAX
 #define MAX_IF_DEPTH 256
 #define MAX_VARS 1024
 #define MAX_QUEUES 256
@@ -108,12 +109,12 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 // Derived type...
 
-#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
-#define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
+#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !get_arity(c))
+#define is_iso_list(c) (is_interned(c) && (get_arity(c) == 2) && ((c)->val_off == g_dot_s))
 #define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_INT_BIG))
 #define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_INT_BIG))
-#define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
-#define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
+#define is_boolean(c) ((is_interned(c) && !get_arity(c) && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
+#define is_atom(c) ((is_interned(c) && !get_arity(c)) || is_cstring(c))
 #define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
 #define is_codes(c) (is_string(c) && ((c)->flags & FLAG_CSTR_CODES))
 #define is_managed(c) ((c)->flags & FLAG_MANAGED)
@@ -121,7 +122,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
 #define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
 #define is_list(c) (is_iso_list(c) || is_string(c))
-#define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
+#define is_nil(c) (is_interned(c) && !get_arity(c) && ((c)->val_off == g_nil_s))
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
 #define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
 #define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
@@ -136,7 +137,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) ((c)->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
-#define is_compound(c) (is_interned(c) && (c)->arity)
+#define is_compound(c) (is_interned(c) && get_arity(c))
 #define is_structure(c) (is_compound(c) || is_string(c))
 #define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
 #define is_atomic(c) (is_atom(c) || is_number(c))
@@ -160,7 +161,14 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define get_smalluint(c) (c)->val_uint
 #define set_smalluint(c,v) (c)->val_uint = (v)
 #define get_voidptr(c) (c)->val_voidptr
-#define get_arity(c) (c)->arity
+#define get_arity(c) (is_interned(c) ? (c)->arity : (uint32_t)(c)->small_arity)
+#define set_arity(c,v) do { \
+	if (is_interned(c)) { \
+		(c)->small_arity = 0; \
+		(c)->arity = (uint32_t)(v); \
+	} else \
+		(c)->small_arity = (uint8_t)(v); \
+} while (0)
 
 #define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
 #define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
@@ -373,7 +381,7 @@ struct cell_ {
 	// 1 * 8 = 8 bytes
 
 	uint8_t tag;
-	uint8_t arity;
+	uint8_t small_arity;				// used by strings/CSTR callables
 	uint16_t flags;
 
 	union {
@@ -418,7 +426,10 @@ struct cell_ {
 				cell *val_attrs;		// used with TAG_EMPTY in slot
 			};
 
-			uint32_t var_num;			// used with TAG_VAR
+			union {
+				uint32_t var_num;		// used with TAG_VAR
+				uint32_t arity;			// used with TAG_INTERNED
+			};
 
 			union {
 				uint32_t val_off;		// used with TAG_INTERNED / TAG_VAR -FLAG_VAR_REF

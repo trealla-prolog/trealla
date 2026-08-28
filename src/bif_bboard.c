@@ -208,13 +208,13 @@ static cell *bb_reattach_attv(query *q, cell *tmp)
 
 	cell *inner = tmp+1;
 
-	if (!is_interned(inner) || (inner->val_off != g_bb_attv_s) || (inner->arity != 2))
+	if (!is_interned(inner) || (inner->val_off != g_bb_attv_s) || (get_arity(inner) != 2))
 		return tmp;
 
 	cell *T = inner+1;
 	cell *lst = T + T->num_cells;
 
-	while (is_interned(lst) && (lst->val_off == g_dot_s) && (lst->arity == 2)) {
+	while (is_interned(lst) && (lst->val_off == g_dot_s) && (get_arity(lst) == 2)) {
 		cell *pair = lst+1;		// '-'(V, Attrs)
 		cell *v = pair+1;
 		cell *attrs = v+1;
@@ -262,7 +262,7 @@ static bool bif_bb_b_put_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (get_arity(p1) != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -314,7 +314,7 @@ static bool bif_bb_put_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (get_arity(p1) != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -357,7 +357,7 @@ static bool bif_bb_put_2(query *q)
 	cell *src = p2;
 	pl_ctx src_ctx = p2_ctx;
 
-	if (is_compound(p2) && (p2->arity == 1)) {
+	if (is_compound(p2) && (get_arity(p2) == 1)) {
 		bb_attv_scan sc;
 
 		if (bb_collect_attv(q, p2+1, p2_ctx, &sc) && sc.num_ents) {
@@ -409,7 +409,7 @@ static bool bif_bb_get_2(query *q)
 	GET_FIRST_ARG(p1,nonvar);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (get_arity(p1) != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -459,7 +459,7 @@ static bool bif_bb_get_2(query *q)
 		import_term(q, val, q->st.cur_ctx);
 	CHECKED(tmp);
 
-	if (!(val->flags & FLAG_LIVE) && is_compound(tmp) && (tmp->arity == 1)) {
+	if (!(val->flags & FLAG_LIVE) && is_compound(tmp) && (get_arity(tmp) == 1)) {
 		tmp = bb_reattach_attv(q, tmp);
 		CHECKED(tmp);
 	}
@@ -477,7 +477,7 @@ static bool bif_bb_delete_2(query *q)
 	GET_FIRST_ARG(p1,nonvar);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (get_arity(p1) != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -542,7 +542,7 @@ static bool bif_bb_update_3(query *q)
 	GET_FIRST_ARG(p1,nonvar);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (get_arity(p1) != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -616,7 +616,7 @@ static bool bif_sys_bb_is_live_1(query *q)
 	GET_FIRST_ARG(p1,nonvar);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s) || (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (get_arity(p1) != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;

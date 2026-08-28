@@ -23,7 +23,7 @@ static int nodecmp_term(const void *ptr1, const void *ptr2)
 	cell *p1 = cp1->c, *p2 = cp2->c;
 	pl_ctx p1_ctx = cp1->c_ctx, p2_ctx = cp2->c_ctx;
 
-	if ((p1->arity >= arg) && (arg > 0)) {
+	if ((arg > 0) && (get_arity(p1) >= (uint32_t)arg)) {
 		p1 = p1 + 1;
 		p2 = p2 + 1;
 

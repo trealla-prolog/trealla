@@ -2,6 +2,8 @@
 
 #include "query.h"
 
+static const size_t INITIAL_VAR_TABLE_SIZE = 256;
+
 typedef struct { lnode hdr; cell *c; pl_ctx c_ctx; slot *e; uint32_t save_vgen; } snode;
 
 static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
@@ -19,7 +21,7 @@ static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 	sl_app(q->vars, e, (void*)(size_t)q->tab_idx);
 
 	if (!q->tabs) {
-		q->tabs_size = MAX_ARITY;
+		q->tabs_size = INITIAL_VAR_TABLE_SIZE;
 		q->tabs = TPL_malloc(sizeof(var_item)*q->tabs_size);
 
 		if (!q->tabs)
@@ -47,7 +49,7 @@ typedef struct {
 	lnode hdr;
 	cell *p1;
 	pl_ctx p1_ctx;
-	int arity;
+	uint32_t arity;
 	unsigned depth;
 	slot *e;
 	uint32_t save_vgen;
@@ -80,7 +82,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 	list stack = {0};
 	vnode *n = TPL_malloc(sizeof(vnode));
 	if (!n) return;
-	n->arity = p1->arity;
+	n->arity = get_arity(p1);
 	n->p1 = p1 + 1;
 	n->p1_ctx = p1_ctx;
 	n->depth = depth;
@@ -89,7 +91,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 	list_push_back(&stack, n);
 
 	while ((n = (vnode*)list_back(&stack)) != NULL) {
-		if (n->arity <= 0) {
+		if (!n->arity) {
 			// This node's arguments are all done - the point at which the
 			// recursive call would have returned. Restore the parent
 			// arg-slot's vgen mark now that its subtree is complete.
@@ -136,7 +138,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 				return;
 			}
 
-			cn->arity = c->arity;
+			cn->arity = get_arity(c);
 			cn->p1 = c + 1;
 			cn->p1_ctx = c_ctx;
 			cn->depth = n->depth + 1;
@@ -156,7 +158,7 @@ void collect_vars(query *q, cell *p1, pl_ctx p1_ctx)
 	q->tab_idx = 0;
 	TPL_free(q->tabs);
 	q->tabs = NULL;
-	q->tabs_size = MAX_ARITY;
+	q->tabs_size = INITIAL_VAR_TABLE_SIZE;
 	ENSURE(q->vars = sl_create(NULL, NULL, NULL));
 	collect_vars_internal(q, p1, p1_ctx, 0);
 	sl_destroy(q->vars);
@@ -196,7 +198,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 		}
 
 		bool any = false;
-		int arity = p1->arity;
+		uint32_t arity = get_arity(p1);
 		p1++;
 
 		while (arity--) {
@@ -267,7 +269,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 	if (!n)
 		return true;
 
-	n->arity = p1->arity;
+	n->arity = get_arity(p1);
 	n->p1 = p1 + 1;
 	n->p1_ctx = p1_ctx;
 	n->depth = depth;
@@ -276,7 +278,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 	list_push_back(&stack, n);
 
 	while ((n = (vnode*)list_back(&stack)) != NULL) {
-		if (n->arity <= 0) {
+		if (!n->arity) {
 			slot *pending_e = n->e;
 			uint32_t pending_vgen = n->save_vgen;
 
@@ -318,7 +320,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 				return true;
 			}
 
-			cn->arity = c->arity;
+			cn->arity = get_arity(c);
 			cn->p1 = c + 1;
 			cn->p1_ctx = c_ctx;
 			// List spines do not consume depth (same as the old iterative
@@ -505,4 +507,3 @@ bool check_list(query *q, cell *p1, pl_ctx p1_ctx, bool *is_partial, pl_int *ski
 
 	return false;
 }
-

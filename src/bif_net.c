@@ -75,7 +75,7 @@ static bool bif_sys_server_3(query *q)
 	if (is_var(p1)) {
 		port = 0;
 		filename = TPL_strdup(":0");
-	} else if (is_compound(p1) && (p1->arity == 2)) {
+	} else if (is_compound(p1) && (get_arity(p1) == 2)) {
 		cell *p11 = deref(q, p1+1, p1_ctx);
 		cell *p12 = deref(q, p1+2, p1_ctx);
 		char tmpbuf[1024];
@@ -110,7 +110,7 @@ static bool bif_sys_server_3(query *q)
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, c, "udp")) {
 				c = deref(q, c + 1, c_ctx);
 
@@ -344,7 +344,7 @@ static bool bif_sys_client_5(query *q)
 		cell *c = deref(q, h, p5_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, c, "udp")) {
 				c = deref(q, c + 1, c_ctx);
 
@@ -556,7 +556,7 @@ static bool bif_sys_udp_recv_5(query *q)
 		cell *c = deref(q, h, p4_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_compound(c) && (c->arity == 1)
+		if (is_compound(c) && (get_arity(c) == 1)
 			&& !CMP_STRING_TO_CSTR(q, c, "max_message_size")) {
 			cell *arg = deref(q, c+1, c_ctx);
 
@@ -564,7 +564,7 @@ static bool bif_sys_udp_recv_5(query *q)
 				maxlen = (size_t)get_smallint(arg);
 		}
 
-		if (is_compound(c) && (c->arity == 1)
+		if (is_compound(c) && (get_arity(c) == 1)
 			&& !CMP_STRING_TO_CSTR(q, c, "encoding")) {
 			cell *arg = deref(q, c+1, c_ctx);
 
@@ -656,7 +656,7 @@ static bool bif_sys_udp_send_5(query *q)
 		cell *c = deref(q, h, p4_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_compound(c) && (c->arity == 1)
+		if (is_compound(c) && (get_arity(c) == 1)
 			&& !CMP_STRING_TO_CSTR(q, c, "encoding")) {
 			cell *arg = deref(q, c+1, c_ctx);
 

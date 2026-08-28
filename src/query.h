@@ -245,19 +245,9 @@ inline static bool interrupt_pending(query *q)
 			break; \
 	}
 
-inline static bool make_cstring(cell *d, const char *s)
-{
-	return make_cstringn(d, s, strlen(s));
-}
-
-inline static bool make_string(cell *d, const char *s)
-{
-	return make_stringn(d, s, strlen(s));
-}
-
 inline static bool is_a_rule(const cell *c)
 {
-	return is_interned(c) && (c->arity == 2) && (c->val_off == g_neck_s);
+	return is_interned(c) && (get_arity(c) == 2) && (c->val_off == g_neck_s);
 }
 
 inline static cell *get_head(cell *c)

@@ -558,7 +558,7 @@ static bool del_stream_properties(query *q, int n)
 	CHECKED(vnbr != -1);
 	make_ref(tmp+2, vnbr, q->st.cur_ctx);
 	tmp->num_cells = 3;
-	tmp->arity = 2;
+	set_arity(tmp, 2);
 	q->retry = QUERY_OK;
 
 	while (do_retract(q, tmp, q->st.cur_ctx, DO_RETRACTALL)) {
@@ -756,7 +756,7 @@ static void clear_streams_properties(query *q)
 	cell tmp;
 	make_atom(&tmp, g_sys_stream_property_s);
 	tmp.num_cells = 1;
-	tmp.arity = 2;
+	set_arity(&tmp, 2);
 
 	predicate *pr = find_predicate(q->st.m, &tmp);
 
@@ -789,7 +789,7 @@ static bool bif_iso_stream_property_2(query *q)
 			return throw_error(q, pstr, q->st.cur_ctx, "domain_error", "stream");
 	}
 
-	if (p1->arity > 1)
+	if (get_arity(p1) > 1)
 		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 	if (!is_var(p1) && !is_callable(p1))
@@ -959,7 +959,7 @@ static bool bif_iso_open_4(query *q)
 
 	stream *oldstr = NULL;
 
-	if (is_compound(p1) && (p1->arity == 1) && !CMP_STRING_TO_CSTR(q, p1, "stream")) {
+	if (is_compound(p1) && (get_arity(p1) == 1) && !CMP_STRING_TO_CSTR(q, p1, "stream")) {
 		int oldn = get_stream(q, p1+1);
 
 		if (oldn < 0)
@@ -1256,7 +1256,7 @@ static bool bif_iso_open_4(query *q)
 			tmp.tag = TAG_CSTR;
 			tmp.flags = FLAG_CSTR_BLOB | FLAG_CSTR_STRING | FLAG_CSTR_SLICE;
 			tmp.num_cells = 1;
-			tmp.arity = 2;
+			set_arity(&tmp, 2);
 			tmp.val_str = addr;
 			tmp.str_len = len;
 		} else
@@ -1542,7 +1542,7 @@ static bool bif_iso_nl_1(query *q)
 
 static bool bif_iso_read_1(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p1,any);
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
@@ -1558,7 +1558,7 @@ static bool bif_iso_read_1(query *q)
 
 static bool bif_iso_read_2(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -1634,9 +1634,9 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_ctx c_ctx, cell
 			throw_error(q, c, c_ctx, "domain_error", "read_option");
 			return false;
 		}
-	} else if (!CMP_STRING_TO_CSTR(q, c, "positions") && (c->arity == 2) && str->fp_out) {
+	} else if (!CMP_STRING_TO_CSTR(q, c, "positions") && (get_arity(c) == 2) && str->fp_out) {
 		p->pos_start = ftello(str->fp_out);
-	} else if (!CMP_STRING_TO_CSTR(q, c, "line_counts") && (c->arity == 2)) {
+	} else if (!CMP_STRING_TO_CSTR(q, c, "line_counts") && (get_arity(c) == 2)) {
 	} else {
 		throw_error(q, c, c_ctx, "domain_error", "read_option");
 		return false;
@@ -1778,7 +1778,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 					if (is_var(h))
 						return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
 
-					if (!CMP_STRING_TO_CSTR(q, h, "positions") && (h->arity == 2)) {
+					if (!CMP_STRING_TO_CSTR(q, h, "positions") && (get_arity(h) == 2)) {
 						cell *p = h+1;
 						p = deref(q, p, h_ctx);
 						pl_ctx p_ctx = q->latest_ctx;
@@ -1790,7 +1790,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 						p_ctx = q->latest_ctx;
 						make_int(&tmp, ftello(str->fp_out));
 						unify(q, p, p_ctx, &tmp, q->st.cur_ctx);
-					} else if (!CMP_STRING_TO_CSTR(q, h, "line_counts") && (h->arity == 2)) {
+					} else if (!CMP_STRING_TO_CSTR(q, h, "line_counts") && (get_arity(h) == 2)) {
 						cell *p = h+1;
 						p = deref(q, p, h_ctx);
 						pl_ctx p_ctx = q->latest_ctx;
@@ -1867,7 +1867,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		if (is_var(h))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
 
-		if (!CMP_STRING_TO_CSTR(q, h, "positions") && (h->arity == 2)) {
+		if (!CMP_STRING_TO_CSTR(q, h, "positions") && (get_arity(h) == 2)) {
 			cell *p = h+1;
 			p = deref(q, p, h_ctx);
 			pl_ctx p_ctx = q->latest_ctx;
@@ -1884,7 +1884,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 
 			if (!unify(q, p, p_ctx, &tmp, q->st.cur_ctx))
 				return false;
-		} else if (!CMP_STRING_TO_CSTR(q, h, "line_counts") && (h->arity == 2)) {
+		} else if (!CMP_STRING_TO_CSTR(q, h, "line_counts") && (get_arity(h) == 2)) {
 			cell *p = h+1;
 			p = deref(q, p, h_ctx);
 			pl_ctx p_ctx = q->latest_ctx;
@@ -1938,7 +1938,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
 				make_atom(tmp+idx, g_dot_s);
-				tmp[idx].arity = 2;
+				set_arity(&tmp[idx], 2);
 				tmp[idx++].num_cells = ((cnt-done)*2)+1;
 				cell v;
 				make_ref(&v, q->tabs[i].var_num, q->st.cur_ctx);
@@ -1947,7 +1947,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			}
 
 			make_atom(tmp+idx++, g_nil_s);
-			tmp[0].arity = 2;
+			set_arity(&tmp[0], 2);
 			tmp[0].num_cells = idx;
 
 			cell *save = tmp;
@@ -1985,7 +1985,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 					continue;
 
 				make_atom(tmp+idx, g_dot_s);
-				tmp[idx].arity = 2;
+				set_arity(&tmp[idx], 2);
 				tmp[idx++].num_cells = ((cnt-done)*4)+1;
 				cell v;
 				make_instr(&v, g_unify_s, bif_iso_unify_2, 2, 2);
@@ -1999,7 +1999,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			}
 
 			make_atom(tmp+idx++, g_nil_s);
-			tmp[0].arity = 2;
+			set_arity(&tmp[0], 2);
 			tmp[0].num_cells = idx;
 
 			cell *save = tmp;
@@ -2043,7 +2043,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 					continue;
 
 				make_atom(tmp+idx, g_dot_s);
-				tmp[idx].arity = 2;
+				set_arity(&tmp[idx], 2);
 				tmp[idx++].num_cells = ((cnt-done)*4)+1;
 				cell v;
 				make_instr(&v, g_unify_s, bif_iso_unify_2, 2, 2);
@@ -2057,7 +2057,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			}
 
 			make_atom(tmp+idx++, g_nil_s);
-			tmp[0].arity = 2;
+			set_arity(&tmp[0], 2);
 			tmp[0].num_cells = idx;
 
 			cell *save = tmp;
@@ -2083,7 +2083,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 
 static bool bif_iso_read_term_2(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 	int n = q->pl->current_input;
@@ -2100,7 +2100,7 @@ static bool bif_iso_read_term_2(query *q)
 
 static bool bif_iso_read_term_3(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -3889,7 +3889,7 @@ static bool bif_iso_set_stream_position_2(query *q)
 
 static bool bif_sys_read_term_from_chars_4(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
 	GET_NEXT_ARG(p_chars,any);
@@ -3993,7 +3993,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 
 static bool bif_read_term_from_chars_3(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
@@ -4067,7 +4067,7 @@ static bool bif_read_term_from_chars_3(query *q)
 
 static bool bif_read_term_from_atom_3(query *q)
 {
-	CHECKED(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_VARS));
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
@@ -4544,7 +4544,7 @@ static bool bif_read_file_to_string_3(query *q)
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, q->latest_ctx);
 
@@ -5211,7 +5211,7 @@ static bool bif_absolute_file_name_3(query *q)
 		cell *h = PROLOG_LIST_HEAD(p_opts);
 		h = deref(q, h, p_opts_ctx);
 
-		if (is_compound(h) && (h->arity == 1)) {
+		if (is_compound(h) && (get_arity(h) == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, h, "expand")) {
 				if (is_interned(h+1)) {
 					if (!CMP_STRING_TO_CSTR(q, h+1, "true"))

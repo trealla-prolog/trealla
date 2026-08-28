@@ -42,11 +42,11 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 	if (!c->val_attrs && is_minus)
 		return true;
 
-	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
+	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (get_arity(attr) == 1))
 		attr++;
 
 	CHECKED(add_trail(q, p1_ctx, p1->var_num, c->val_attrs));
-	unsigned a_arity = attr->arity;
+	unsigned a_arity = get_arity(attr);
 	bool found;
 	const char *m_name = find_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
@@ -58,10 +58,10 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 		cell *tmp = alloc_tmp(q, 1+1);
 		CHECKED(tmp);
 		make_atom(tmp, g_dot_s);
-		tmp->arity = 2;
+		set_arity(tmp, 2);
 		tmp->num_cells += 1;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
-		tmp[1].arity = 1;
+		set_arity(&tmp[1], 1);
 		cell *tmp2 = clone_term_to_tmp(q, attr, attr_ctx);
 		CHECKED(tmp2);
 		cell *tmp3 = get_tmp_heap(q, 1);
@@ -86,7 +86,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 
 			if (CMP_STRING_TO_CSTR(q, h, m_name)
 				|| CMP_STRING_TO_STRING(q, h1, attr)
-				|| (h1->arity != a_arity)) {
+				|| (get_arity(h1) != a_arity)) {
 				append_list(q, h);
 			} else if (is_minus) {
 				if (!unify(q, attr, attr_ctx, h1, h1_ctx))
@@ -124,7 +124,7 @@ static bool bif_put_atts_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable);
-	bool is_minus = (p2->val_off == g_minus_s) && (p2->arity == 1);
+	bool is_minus = (p2->val_off == g_minus_s) && (get_arity(p2) == 1);
 
 	if (is_iso_list(p2)) {
 		PROLOG_LIST_HANDLER(p2);
@@ -159,7 +159,7 @@ static bool bif_get_atts_2(query *q)
 	slot *e = get_slot(q, f, p1->var_num);
 	cell *c = deref(q, &e->c, e->c.val_ctx);
 	pl_ctx c_ctx = q->latest_ctx;
-	bool is_minus = !is_var(p2) && (p2->val_off == g_minus_s) && (p2->arity == 1);
+	bool is_minus = !is_var(p2) && (p2->val_off == g_minus_s) && (get_arity(p2) == 1);
 
 	if (!c->val_attrs)
 		return is_minus ? true : false;
@@ -194,10 +194,10 @@ static bool bif_get_atts_2(query *q)
 
 	cell *attr = p2;
 
-	if (((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s)) && (p2->arity == 1))
+	if (((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s)) && (get_arity(p2) == 1))
 		attr++;
 
-	unsigned a_arity = attr->arity;
+	unsigned a_arity = get_arity(attr);
 	bool found;
 	const char *m_name = find_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
@@ -214,7 +214,7 @@ static bool bif_get_atts_2(query *q)
 
 		if (!CMP_STRING_TO_CSTR(q, h, m_name)
 			&& !CMP_STRING_TO_STRING(q, h1, attr)
-			&& (h1->arity == a_arity)) {
+			&& (get_arity(h1) == a_arity)) {
 			if (is_minus)
 				return false;
 

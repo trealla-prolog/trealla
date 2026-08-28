@@ -39,6 +39,8 @@ void make_var(cell *tmp, pl_idx off, unsigned var_num);
 void make_end(cell *tmp);
 void make_atom(cell *tmp, pl_idx offset);
 void make_smalln(cell *tmp, const char *s, size_t n);
+bool make_cstring(cell *d, const char *s);
+bool make_string(cell *d, const char *s);
 bool make_cstringn(cell *tmp, const char *s, size_t n);
 bool make_stringn(cell *tmp, const char *s, size_t n);
 void make_blob(cell *tmp, void *ptr);
@@ -75,8 +77,8 @@ inline static void make_ref(cell *tmp, unsigned var_num, pl_ctx ctx)
 {
 	tmp->tag = TAG_VAR;
 	tmp->num_cells = 1;
-	tmp->arity = 0;
 	tmp->flags = FLAG_VAR_REF;
+	set_arity(tmp, 0);
 	tmp->var_num = var_num;
 	tmp->val_ctx = ctx;
 	tmp->val_attrs = NULL;
@@ -86,8 +88,8 @@ inline static void make_indirect(cell *tmp, cell *v, pl_ctx v_ctx)
 {
 	tmp->tag = TAG_INDIRECT;
 	tmp->num_cells = 1;
-	tmp->arity = 0;
 	tmp->flags = 0;
+	set_arity(tmp, 0);
 	tmp->val_ptr = v;
 	tmp->val_ctx = v_ctx;
 }

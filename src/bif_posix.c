@@ -39,7 +39,7 @@ static bool bif_posix_strftime_3(query *q)
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p2,compound);
 
-	if ((p2->val_off != g_tm_s) || (p2->arity != 9)) {
+	if ((p2->val_off != g_tm_s) || (get_arity(p2) != 9)) {
 		return false;
 	}
 
@@ -128,7 +128,7 @@ static bool bif_posix_mktime_2(query *q)
 	GET_FIRST_ARG(p1,compound);
 	GET_NEXT_ARG(p2,var);
 
-	if ((p1->val_off != g_tm_s) || (p1->arity != 9)) {
+	if ((p1->val_off != g_tm_s) || (get_arity(p1) != 9)) {
 		return false;
 	}
 

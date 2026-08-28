@@ -451,7 +451,7 @@ static bool bif_engine_next_2(query *q)
 
 	if (str->first_time) {
 		str->first_time = false;
-		execute(str->engine, str->engine->st.instr, MAX_ARITY);
+		execute(str->engine, str->engine->st.instr, MAX_VARS);
 	}
 
 	if (str->cur_yield) {

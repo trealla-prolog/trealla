@@ -63,7 +63,7 @@ static index_profile_row *index_profile_get(const predicate *pr)
 
 		if (!r->pr) {
 			r->pr = pr;
-			r->arity = pr->key.arity;
+			r->arity = get_arity(&pr->key);
 			snprintf(r->name, sizeof(r->name), "%s", C_STR(pr->m, &pr->key));
 			return r;
 		}
@@ -158,7 +158,7 @@ void dump_term(query *q, const char *s, const cell *c)
 		else if (is_var(c))
 			printf("_%u ", c->var_num);
 		else if (is_compound(c))
-			printf("%s/%u ", C_STR(q, c), c->arity);
+			printf("%s/%u ", C_STR(q, c), get_arity(c));
 
 		printf("\n");
 	}
@@ -342,7 +342,17 @@ bool check_frame(query *q, unsigned max_vars)
 
 bool check_slot(query *q, unsigned cnt)
 {
+	if (cnt > UINT32_MAX - 2) {
+		q->oom = q->error = true;
+		return false;
+	}
+
 	cnt += 2;	// Allow some extra
+
+	if (q->st.sp > UINT32_MAX - cnt) {
+		q->oom = q->error = true;
+		return false;
+	}
 
 	pl_idx num = q->st.sp + cnt;
 
@@ -616,7 +626,7 @@ int create_vars(query *q, unsigned cnt)
 	// Fail soft: callers use CHECKED() to throw resource_error(memory).
 	// Setting oom/error here would make start() abort the query even when
 	// catch/3 handles the throw (issue #1094).
-	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS)
+	if ((f->actual_slots > MAX_LOCAL_VARS) || (cnt > (MAX_LOCAL_VARS - f->actual_slots)))
 		return -1;
 
 	if (!check_slot(q, cnt))
@@ -696,7 +706,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 	// Predicate is no longer being used
 
 	//printf("*** leave %u, %s/%u, in_retractall=%d, is_final=%d, retry=%d\n",
-	//	(unsigned)list_count(&pr->dirty), C_STR(q, &pr->key), pr->key.arity, q->in_retractall, is_final, q->retry);
+	//	(unsigned)list_count(&pr->dirty), C_STR(q, &pr->key), get_arity(&pr->key), q->in_retractall, is_final, q->retry);
 
 	rule *r;
 	const frame *f = GET_CURR_FRAME();
@@ -863,9 +873,9 @@ static const cell *skip_landings(const cell *c)
 		if (!is_interned(c))
 			break;
 
-		if ((c->val_off == g_true_s) && !c->arity)
+		if ((c->val_off == g_true_s) && !get_arity(c))
 			c += c->num_cells;						// landing
-		else if ((c->val_off == g_sys_jump_s) && (c->arity == 1)
+		else if ((c->val_off == g_sys_jump_s) && (get_arity(c) == 1)
 			&& is_smallint(c+1) && (get_smallint(c+1) > 0))
 			c += get_smallint(c+1);					// jump to a landing
 		else
@@ -993,7 +1003,7 @@ static void commit_frame(query *q, bool head_has_vars)
 	if (last_match) {
 		fprintf(stderr, "*** q->no_recov=%d, last_match=%d %s/%u, q->st.cur_ctx=%u,q->st.fp=%u\n",
 			q->no_recov, last_match,
-			C_STR(q, q->st.key), q->st.key->arity,
+			C_STR(q, q->st.key), get_arity(q->st.key),
 			q->st.cur_ctx, q->st.fp
 			);
 	}
@@ -1016,7 +1026,7 @@ static void commit_frame(query *q, bool head_has_vars)
 			"*** %s/%u tco=%d,q->no_recov=%d,last_match=%d,is_det=%d,"
 			"tail_recursive=%d,slots_ok=%d,choices=%d,"
 			"cl->num_vars=%u,f->initial_slots=%u/%u\n",
-			C_STR(q, head), head->arity,
+			C_STR(q, head), get_arity(head),
 			tco, q->no_recov, last_match, is_det,
 			tail_recursive, slots_ok, choices,
 			cl->num_vars, f->initial_slots, f->actual_slots);
@@ -1420,13 +1430,13 @@ static void setup_key(query *q)
 	q->st.karg1_is_ground = !is_var(arg1);
 	q->st.karg1_is_atomic = is_atomic(arg1);
 
-	if (q->st.key->arity > 1) {
+	if (get_arity(q->st.key) > 1) {
 		cell *arg2 = deref(q, save_arg2 = NEXT_ARG(save_arg1), q->st.key_ctx);
 		q->st.karg2_is_ground = arg2 && !is_var(arg2);
 		q->st.karg2_is_atomic = arg2 && is_atomic(arg2);
 	}
 
-	if (q->st.key->arity > 2) {
+	if (get_arity(q->st.key) > 2) {
 		cell *arg3 = deref(q, NEXT_ARG(save_arg2), q->st.key_ctx);
 		q->st.karg3_is_ground = arg3 && !is_var(arg3);
 		q->st.karg3_is_atomic = arg3 && is_atomic(arg3);
@@ -1463,17 +1473,17 @@ bool has_next_key(query *q)
 	if (!q->st.dbe->next)
 		return false;
 
-	if (!q->st.key->arity)
+	if (!get_arity(q->st.key))
 		return true;
 
 	if (q->st.dbe->cl.is_unique) {
-		if ((q->st.key->arity == 1) && q->st.karg1_is_atomic)
+		if ((get_arity(q->st.key) == 1) && q->st.karg1_is_atomic)
 			return false;
 
-		if ((q->st.key->arity == 2) && q->st.karg1_is_atomic && q->st.karg2_is_atomic)
+		if ((get_arity(q->st.key) == 2) && q->st.karg1_is_atomic && q->st.karg2_is_atomic)
 			return false;
 
-		if ((q->st.key->arity == 3) && q->st.karg1_is_atomic && q->st.karg2_is_atomic && q->st.karg3_is_atomic)
+		if ((get_arity(q->st.key) == 3) && q->st.karg1_is_atomic && q->st.karg2_is_atomic && q->st.karg3_is_atomic)
 			return false;
 	}
 
@@ -1494,7 +1504,7 @@ bool has_next_key(query *q)
 	for (rule *next = q->st.dbe->next; next; next = next->next) {
 		cell *dkey = next->cl.cells;
 
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
+		if ((dkey->val_off == g_neck_s) && (get_arity(dkey) == 2))
 			dkey++;
 
 		//DUMP_TERM("next", dkey, q->st.cur_ctx, 0);
@@ -1523,7 +1533,7 @@ bool has_next_key(query *q)
 
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
-	int arity = q->st.key->arity;
+	uint32_t arity = get_arity(q->st.key);
 	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// allocate max possible
 	CHECKED(tmp);
 	cell *save_tmp = tmp;
@@ -1534,7 +1544,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	for (cell *k = q->st.key+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
 		cell *k0 = deref(q, k, q->st.key_ctx);
 
-		if ((k0->arity == 2) && (k0->val_off == g_colon_s) && is_atom(FIRST_ARG(k0)))
+		if ((get_arity(k0) == 2) && (k0->val_off == g_colon_s) && is_atom(FIRST_ARG(k0)))
 			;
 		else if (!is_interned(k0) || is_iso_list(k0))
 			;
@@ -1586,7 +1596,7 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 		cell *ch = get_head(((rule*)c)->cl.cells);
 		cell *ck = ch;
 
-		if (idx_arg >= 0 && ch->arity)
+		if (idx_arg >= 0 && get_arity(ch))
 			ck = get_nth_arg(ch, idx_arg);
 
 		if (index_cmpkey(ck, key, q->st.m, NULL) != 0)
@@ -1597,7 +1607,7 @@ static void index_check(query *q, predicate *pr, cell *goal, cell *key,
 
 		if (!missing) {
 			fprintf(stderr, "\n*** index-check FAILED for %s/%u (%s)\n",
-				C_STR(q, &pr->key), pr->key.arity,
+				C_STR(q, &pr->key), get_arity(&pr->key),
 				idx_arg < 0 ? "head" : "argument");
 			fprintf(stderr, "***   goal   ");
 			DUMP_TERM("", goal, q->st.cur_ctx, 1);
@@ -1652,7 +1662,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 	if (!pr->idx1) {
 		q->st.dbe = pr->head;
 
-		if (key->arity) {
+		if (get_arity(key)) {
 			if (pr->is_meta_predicate) {
 				if (!expand_meta_predicate(q, pr))
 					return false;
@@ -1678,7 +1688,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		key_ctx = q->st.cur_ctx;
 	}
 
-	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
+	cell *arg1 = get_arity(key) ? FIRST_ARG(key) : NULL;
 	skiplist *idx = pr->idx1;
 	cell *goal = key;
 	int idx_arg = 0;

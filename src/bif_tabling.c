@@ -54,7 +54,7 @@ typedef struct thash_ {
 
 static bool key_is_atomish(const cell *c)
 {
-	return (is_interned(c) && !c->arity) || (is_cstring(c) && !is_string(c));
+	return (is_interned(c) && !get_arity(c)) || (is_cstring(c) && !is_string(c));
 }
 
 static bool key_eq(query *q, const cell *a, const cell *b)
@@ -77,7 +77,7 @@ static bool key_eq(query *q, const cell *a, const cell *b)
 
 	switch (a->tag) {
 	case TAG_INTERNED:
-		return (a->val_off == b->val_off) && (a->arity == b->arity);
+		return (a->val_off == b->val_off) && (get_arity(a) == get_arity(b));
 	case TAG_INT:
 		if (is_bigint(a) && is_bigint(b))
 			return mp_int_compare(&a->val_bigint->ival, &b->val_bigint->ival) == 0;
@@ -129,7 +129,7 @@ static unsigned key_hash(query *q, const cell *c)
 	}
 
 	if (is_interned(c))
-		return (unsigned)c->val_off * 33u + c->arity;
+		return (unsigned)c->val_off * 33u + get_arity(c);
 
 	switch (c->tag) {
 	case TAG_INT:
@@ -400,11 +400,11 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 		if (!trie_step(w, &key))
 			return false;
 
-		if (!c->arity)
+		if (!get_arity(c))
 			return true;
 
 		cell *arg = c + 1;
-		const unsigned last = c->arity - 1;	// arity >= 1, checked above
+		const unsigned last = get_arity(c) - 1;	// arity >= 1, checked above
 
 		for (unsigned i = 0; i < last; i++) {
 			if (!trie_walk(w, arg, ctx))
@@ -898,7 +898,7 @@ static bool bif_tbl_variant_table_3(query *q)
 		// key rather than a silent 0.
 
 		t->functor = is_interned(p1) ? p1->val_off : 0;
-		t->arity = p1->arity;
+		t->arity = get_arity(p1);
 		t->leaf = leaf;
 		t->all_next = s->all_tables;
 		s->all_tables = t;
