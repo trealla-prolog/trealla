@@ -312,7 +312,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 	list stack = {0};
 	snode *n = TPL_malloc(sizeof(snode));
 	if (!n) return NULL;
-	n->arity = p1->arity;
+	n->arity = get_arity(p1);
 	n->p1 = p1 + 1;
 	n->p1_ctx = p1_ctx;
 	n->save_idx = save_idx;
@@ -389,7 +389,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 				return NULL;
 			}
 
-			cn->arity = c->arity;
+			cn->arity = get_arity(c);
 			cn->p1 = c + 1;
 			cn->p1_ctx = c_ctx;
 			cn->save_idx = child_idx;
@@ -871,8 +871,8 @@ cell *append_list(query *q, const cell *c)
 	tmp->tag = TAG_INTERNED;
 	tmp->num_cells = 1 + c->num_cells;
 	tmp->val_off = g_dot_s;
-	tmp->arity = 2;
 	tmp->flags = 0;
+	set_arity(tmp, 2);
 	tmp++;
 	copy_cells(tmp, c, c->num_cells);
 	return save;
@@ -885,7 +885,8 @@ cell *end_list(query *q)
 	tmp->tag = TAG_INTERNED;
 	tmp->num_cells = 1;
 	tmp->val_off = g_nil_s;
-	tmp->arity = tmp->flags = 0;
+	tmp->flags = 0;
+	set_arity(tmp, 0);
 
 	if (is_nil(get_tmp_heap(q, 0))) {
 		init_tmp_heap(q);
@@ -909,7 +910,8 @@ cell *end_list_unsafe(query *q)
 	tmp->tag = TAG_INTERNED;
 	tmp->num_cells = 1;
 	tmp->val_off = g_nil_s;
-	tmp->arity = tmp->flags = 0;
+	tmp->flags = 0;
+	set_arity(tmp, 0);
 
 	if (is_nil(get_tmp_heap(q, 0))) {
 		init_tmp_heap(q);
@@ -935,8 +937,8 @@ cell *allocate_structure(query *q, const char *functor, const cell *c)
 	tmp->tag = TAG_INTERNED;
 	tmp->num_cells = 1;
 	tmp->val_off = new_atom(q->pl, functor);
-	tmp->arity = 0;
 	tmp->flags = 0;
+	set_arity(tmp, 0);
 	append_structure(q, c);
 	return get_tmp_heap(q, 0);
 }
@@ -947,7 +949,7 @@ cell *append_structure(query *q, const cell *c)
 	if (!tmp) return NULL;
 	copy_cells(tmp, c, c->num_cells);
 	tmp = q->tmp_heap;
-	tmp->arity++;
+	set_arity(tmp, get_arity(tmp) + 1);
 	return tmp;
 }
 

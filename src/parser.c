@@ -50,7 +50,6 @@ cell *list_head(cell *l, cell *tmp)
 	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr + l->val_off;
 	tmp->num_cells = 1;
 	tmp->flags = 0;
-	tmp->arity = 0;
 
 	if (is_codes(l)) {
 		tmp->tag = TAG_INT;
@@ -69,6 +68,8 @@ cell *list_head(cell *l, cell *tmp)
 		}
 	}
 
+	set_arity(tmp, 0);
+
 	return tmp;
 }
 
@@ -86,8 +87,8 @@ cell *list_tail(cell *l, cell *tmp)
 	if (str_len == char_len) {
 		tmp->tag = TAG_INTERNED;
 		tmp->num_cells = 1;
-		tmp->arity = 0;
 		tmp->flags = 0;
+		set_arity(tmp, 0);
 		tmp->val_off = g_nil_s;
 		return tmp;
 	}
@@ -122,7 +123,7 @@ cell *get_logical_body(cell *c)
 
 	// A body of just 'true' is equivalent to no body at all,
 
-	if (!body->arity && is_interned(body) && (body->val_off == g_true_s))
+	if (!get_arity(body) && is_interned(body) && (body->val_off == g_true_s))
 		return NULL;
 
 	return body;
@@ -157,6 +158,16 @@ static void *make_string_internal(cell *c, const char *s, size_t n, size_t off)
 	return strb;
 }
 
+bool make_cstring(cell *d, const char *s)
+{
+	return make_cstringn(d, s, strlen(s));
+}
+
+bool make_string(cell *d, const char *s)
+{
+	return make_stringn(d, s, strlen(s));
+}
+
 bool make_cstringn(cell *d, const char *s, size_t n)
 {
 	if (!n) {
@@ -187,7 +198,7 @@ bool make_stringn(cell *d, const char *s, size_t n)
 	d->tag = TAG_CSTR;
 	d->flags = FLAG_CSTR_STRING;
 	d->num_cells = 1;
-	d->arity = 2;
+	set_arity(d, 2);
 	make_string_internal(d, s, n, 0);
 	return true;
 }
@@ -521,7 +532,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			char *name = DUP_STRING(p, h);
 
 			unsigned tmp_optype = 0;
-			unsigned tmp_pri = search_op(p->m, name, &tmp_optype, p3->arity);
+			unsigned tmp_pri = search_op(p->m, name, &tmp_optype, get_arity(p3));
 
 			if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
 				if (!p->do_read_term)
@@ -566,7 +577,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 	if (is_atom(p3) && !is_nil(p3)) {
 		char *name = DUP_STRING(p, p3);
 		unsigned tmp_optype = 0;
-		unsigned tmp_pri = search_op(p->m, name, &tmp_optype, p3->arity);
+		unsigned tmp_pri = search_op(p->m, name, &tmp_optype, get_arity(p3));
 
 		if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
 			if (!p->do_read_term)
@@ -645,7 +656,7 @@ static bool goal_run(parser *p, cell *goal)
 	if (p->error || p->internal || !is_interned(goal))
 		return false;
 
-	if ((goal->val_off == g_goal_expansion_s) && (goal->arity == 2))
+	if ((goal->val_off == g_goal_expansion_s) && (get_arity(goal) == 2))
 		return false;
 
 	if (goal->val_off == g_cut_s)
@@ -680,44 +691,44 @@ static bool conditionals(parser *p, cell *d)
 
 	const char *dirname = C_STR(p, c);
 
-	if (!strcmp(dirname, "if") && (c->arity == 1) && !p->m->ifs_blocked[p->m->if_depth]) {
+	if (!strcmp(dirname, "if") && (get_arity(c) == 1) && !p->m->ifs_blocked[p->m->if_depth]) {
 		bool ok = goal_run(p, FIRST_ARG(c));
 		p->m->ifs_blocked[++p->m->if_depth] = !ok;
 		p->m->ifs_done[p->m->if_depth] = ok;
 		return true;
 	}
 
-	if (!strcmp(dirname, "if") && (c->arity == 1)) {
+	if (!strcmp(dirname, "if") && (get_arity(c) == 1)) {
 		bool save1 = p->m->ifs_blocked[p->m->if_depth];
 		p->m->ifs_blocked[++p->m->if_depth] = save1;
 		p->m->ifs_done[p->m->if_depth] = true;
 		return true;
 	}
 
-	if (!strcmp(dirname, "elif") && (c->arity == 1) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
+	if (!strcmp(dirname, "elif") && (get_arity(c) == 1) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
 		bool ok = goal_run(p, FIRST_ARG(c));
 		p->m->ifs_blocked[p->m->if_depth] = !ok;
 		p->m->ifs_done[p->m->if_depth] = ok;
 		return true;
 	}
 
-	if (!strcmp(dirname, "elif") && (c->arity == 1)) {
+	if (!strcmp(dirname, "elif") && (get_arity(c) == 1)) {
 		p->m->ifs_blocked[p->m->if_depth] = true;
 		return true;
 	}
 
-	if (!strcmp(dirname, "else") && (c->arity == 0) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
+	if (!strcmp(dirname, "else") && (get_arity(c) == 0) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
 		p->m->ifs_blocked[p->m->if_depth] = false;
 		p->m->ifs_done[p->m->if_depth] = true;
 		return true;
 	}
 
-	if (!strcmp(dirname, "else") && (c->arity == 0)) {
+	if (!strcmp(dirname, "else") && (get_arity(c) == 0)) {
 		p->m->ifs_blocked[p->m->if_depth] = true;
 		return true;
 	}
 
-	if (!strcmp(dirname, "endif") && (c->arity == 0)) {
+	if (!strcmp(dirname, "endif") && (get_arity(c) == 0)) {
 		--p->m->if_depth;
 		return true;
 	}
@@ -847,7 +858,7 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 
 	const char *name = C_STR(p, c);
 
-	if (c->arity == 0) {
+	if (get_arity(c) == 0) {
 		if (!strcmp(name, "sto"))
 			seen->sto = true;
 
@@ -864,7 +875,7 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			? ANSWER_OK : ANSWER_NO;
 	}
 
-	if (c->arity == 2) {
+	if (get_arity(c) == 2) {
 		const cell *lhs = c + 1;
 		const cell *rhs = lhs + lhs->num_cells;
 
@@ -901,7 +912,7 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			return ANSWER_OK;
 	}
 
-	if (c->arity == 1)
+	if (get_arity(c) == 1)
 		return (!strcmp(name, "throw")
 			|| !strcmp(name, "syntax_error")
 			|| !strcmp(name, "representation_error")
@@ -913,7 +924,7 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			|| !strcmp(name, "peeks"))
 			? ANSWER_OK : ANSWER_NO;
 
-	if (c->arity == 3)
+	if (get_arity(c) == 3)
 		return !strcmp(name, "permission_error") ? ANSWER_OK : ANSWER_NO;
 
 	return ANSWER_NO;
@@ -926,7 +937,7 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 
 static bool answer_is_substitution(parser *p, const cell *c, const answer_vars *seen)
 {
-	if (!is_interned(c) || (c->arity != 2))
+	if (!is_interned(c) || (get_arity(c) != 2))
 		return true;
 
 	const char *name = C_STR(p, c);
@@ -1041,7 +1052,8 @@ static void quad_record(parser *p, cell *ad)
 	cell *dst = tmp;
 	dst->tag = TAG_INTERNED;
 	dst->val_off = g_sys_quad_s;
-	dst->arity = 6;
+	dst->flags = 0;
+	set_arity(dst, 6);
 	dst->num_cells = total;
 	dst++;
 
@@ -1063,12 +1075,14 @@ static void quad_record(parser *p, cell *ad)
 	for (unsigned i = 0; i < num_named; i++) {
 		dst->tag = TAG_INTERNED;			// list cell
 		dst->val_off = g_dot_s;
-		dst->arity = 2;
+		dst->flags = 0;
+		set_arity(dst, 2);
 		dst->num_cells = (4 * (num_named - i)) + 1;
 		dst++;
 		dst->tag = TAG_INTERNED;			// Name = Var
 		dst->val_off = g_eq_s;
-		dst->arity = 2;
+		dst->flags = 0;
+		set_arity(dst, 2);
 		dst->num_cells = 3;
 		dst++;
 		dst->tag = TAG_INTERNED;			// Name
@@ -1141,8 +1155,8 @@ static bool quads(parser *p, cell *d)
 
 	// '?- Query.' or, labelled with a ground term, 'Name ?- Query.'
 
-	if ((d->val_off == g_quad_s) && ((d->arity == 1) || (d->arity == 2))) {
-		cell *id = (d->arity == 2) ? d + 1 : NULL;
+	if ((d->val_off == g_quad_s) && ((get_arity(d) == 1) || (get_arity(d) == 2))) {
+		cell *id = (get_arity(d) == 2) ? d + 1 : NULL;
 		cell *q = id ? id + id->num_cells : d + 1;
 
 		// A non-ground label is recorded like a malformed answer
@@ -1281,7 +1295,7 @@ static bool is_declaration(parser *p, cell *c)
 	if (!is_interned(c))
 		return false;
 
-	if ((c->val_off == g_conjunction_s) && (c->arity == 2)) {
+	if ((c->val_off == g_conjunction_s) && (get_arity(c) == 2)) {
 		cell *lhs = c + 1;
 		cell *rhs = lhs + lhs->num_cells;
 		return is_declaration(p, lhs) && is_declaration(p, rhs);
@@ -1299,13 +1313,13 @@ static bool has_initialization(parser *p, cell *c)
 	if (!is_interned(c))
 		return false;
 
-	if ((c->val_off == g_conjunction_s) && (c->arity == 2)) {
+	if ((c->val_off == g_conjunction_s) && (get_arity(c) == 2)) {
 		cell *lhs = c + 1;
 		cell *rhs = lhs + lhs->num_cells;
 		return has_initialization(p, lhs) || has_initialization(p, rhs);
 	}
 
-	return !strcmp(C_STR(p, c), "initialization") && (c->arity == 1);
+	return !strcmp(C_STR(p, c), "initialization") && (get_arity(c) == 1);
 }
 
 static bool directive_term(parser *p, cell *c);
@@ -1326,7 +1340,7 @@ static bool directives(parser *p, cell *d)
 	if (strcmp(C_STR(p, d), ":-"))
 		return false;
 
-	if (d->arity != 1)
+	if (get_arity(d) != 1)
 		return false;
 
 	cell *c = d + 1;
@@ -1362,7 +1376,7 @@ static bool directive_term(parser *p, cell *c)
 	module *m = p->m;
 	const char *dirname = C_STR(p, c);
 
-	if ((c->val_off == g_conjunction_s) && (c->arity == 2)
+	if ((c->val_off == g_conjunction_s) && (get_arity(c) == 2)
 		&& is_declaration(p, c) && !has_initialization(p, c)) {
 		cell *lhs = c + 1;
 		cell *rhs = lhs + lhs->num_cells;
@@ -1380,7 +1394,7 @@ static bool directive_term(parser *p, cell *c)
 	// ensure_loaded/1 hand theirs up, since they load with init false
 	// and leave their goals for the load still going on to run.
 
-	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
+	if (!strcmp(dirname, "initialization") && (get_arity(c) == 1)) {
 		p->m->run_init = true;
 		p->saw_initialization = true;
 		return false;
@@ -1397,21 +1411,21 @@ static bool directive_term(parser *p, cell *c)
 			fflush(stdout);
 			fprintf(stderr, "Warning: directive %s: %s/%u, %s:%d\n",
 				raised ? "raised an exception" : "failed",
-				dirname, (unsigned)c->arity,
+				dirname, (unsigned)get_arity(c),
 				get_loaded(p->m, p->m->filename), p->line_num);
 		}
 
 		return true;
 	}
 
-	if (!strcmp(dirname, "info") && (c->arity == 1)) {
+	if (!strcmp(dirname, "info") && (get_arity(c) == 1)) {
 		printf("INFO: %s\n", C_STR(p, FIRST_ARG(c)));
 		return true;
 	}
 
 	cell *p1 = c + 1;
 
-	if (!strcmp(dirname, "help") && (c->arity == 2)) {
+	if (!strcmp(dirname, "help") && (get_arity(c) == 2)) {
 		// An atom here is a zero-arity predicate. This used to bail out,
 		// so ':- help(foo, [...])' was accepted and silently did nothing
 		// - which is why nothing in library/ documents a 0-arity
@@ -1454,7 +1468,7 @@ static bool directive_term(parser *p, cell *c)
 		builtins *ptr = TPL_calloc(1, sizeof(builtins));
 		ENSURE(ptr);
 		ptr->name = TPL_strdup(C_STR(p, p1));
-		ptr->arity = p1->arity;
+		ptr->arity = get_arity(p1);
 		ptr->m = p->m;
 		ptr->desc = desc;
 		char *src = dst;
@@ -1469,7 +1483,7 @@ static bool directive_term(parser *p, cell *c)
 		// there is no paren, and chopping the last character would eat a
 		// letter off the name.
 
-		if (p1->arity) {
+		if (get_arity(p1)) {
 			char *end = dst + strlen(dst) - 1;
 			*end = '\0';
 		}
@@ -1487,7 +1501,7 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if (!strcmp(dirname, "include") && (c->arity == 1)) {
+	if (!strcmp(dirname, "include") && (get_arity(c) == 1)) {
 		if (!is_atom(p1)) return true;
 		unsigned save_line_nbr = p->line_num;
 		const char *name = C_STR(p, p1);
@@ -1510,7 +1524,7 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if (!strcmp(dirname, "ensure_loaded") && (c->arity == 1)) {
+	if (!strcmp(dirname, "ensure_loaded") && (get_arity(c) == 1)) {
 		if (!is_atom(p1)) return true;
 		unsigned save_line_nbr = p->line_num;
 		const char *name = C_STR(p, p1);
@@ -1532,7 +1546,7 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if (!strcmp(dirname, "pragma") && (c->arity == 2)) {
+	if (!strcmp(dirname, "pragma") && (get_arity(c) == 2)) {
 		cell *p2 = c + 2;
 		const char *name = "";
 		char tmpbuf[1024];
@@ -1590,7 +1604,7 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if (!strcmp(dirname, "attribute") && (c->arity == 1)) {
+	if (!strcmp(dirname, "attribute") && (get_arity(c) == 1)) {
 		cell *arg = c + 1;
 
 		if (arg->val_off == g_slash_s) {
@@ -1624,7 +1638,7 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if (!strcmp(dirname, "module") && (c->arity >= 1)) {
+	if (!strcmp(dirname, "module") && (get_arity(c) >= 1)) {
 		module *save_m = p->m;
 		const char *name = "";
 		char tmpbuf[1024];
@@ -1674,7 +1688,7 @@ static bool directive_term(parser *p, cell *c)
 			p->m = tmp_m;
 		}
 
-		if (c->arity == 1)
+		if (get_arity(c) == 1)
 			return true;
 
 		cell *p2 = c + 2;
@@ -1690,10 +1704,10 @@ static bool directive_term(parser *p, cell *c)
 					if (!is_interned(f)) return true;
 					if (!is_integer(a)) return true;
 					cell tmp = *f;
-					tmp.arity = get_smallint(a);
+	set_arity(&tmp, get_smallint(a));
 
 					if (!strcmp(C_STR(p, head), "//"))
-						tmp.arity += 2;
+						set_arity(&tmp, get_arity(&tmp) + 2);
 
 					predicate *pr = find_predicate(p->m, &tmp);
 					if (!pr) pr = create_predicate(p->m, &tmp, NULL);
@@ -1709,7 +1723,7 @@ static bool directive_term(parser *p, cell *c)
 					}
 
 					pr->is_public = true;
-				} else if (!strcmp(C_STR(p, head), "op") && (head->arity == 3)) {
+				} else if (!strcmp(C_STR(p, head), "op") && (get_arity(head) == 3)) {
 					// Keep exported operators in their declaring module. Importers
 					// find them through search_op() after use_module/1.
 					do_op(p, head, false);
@@ -1728,16 +1742,16 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if ((!strcmp(dirname, "use_module") || !strcmp(dirname, "autoload") || !strcmp(dirname, "reexport")) && (c->arity >= 1)) {
+	if ((!strcmp(dirname, "use_module") || !strcmp(dirname, "autoload") || !strcmp(dirname, "reexport")) && (get_arity(c) >= 1)) {
 		if (!is_callable(p1))
 			return true;
 
-		c->arity == 1 ? do_use_module_1(p->m, c) : do_use_module_2(p->m, c);
+		get_arity(c) == 1 ? do_use_module_1(p->m, c) : do_use_module_2(p->m, c);
 		return true;
 	}
 
 #if USE_FFI
-	if (!strcmp(dirname, "foreign_struct") && (c->arity == 2)) {
+	if (!strcmp(dirname, "foreign_struct") && (get_arity(c) == 2)) {
 		if (!is_iso_atom(p1)) {
 			p->error = true;
 			return true;
@@ -1747,7 +1761,7 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if (!strcmp(dirname, "use_foreign_module") && (c->arity == 2)) {
+	if (!strcmp(dirname, "use_foreign_module") && (get_arity(c) == 2)) {
 		if (!is_atom(p1)) {
 			p->error = true;
 			return true;
@@ -1762,12 +1776,12 @@ static bool directive_term(parser *p, cell *c)
 	}
 #endif
 
-	if (!strcmp(dirname, "meta_predicate") && (c->arity == 1)) {
+	if (!strcmp(dirname, "meta_predicate") && (get_arity(c) == 1)) {
 		if (!is_compound(p1))
 			return true;
 	}
 
-	if (!strcmp(dirname, "set_prolog_flag") && (c->arity == 2)) {
+	if (!strcmp(dirname, "set_prolog_flag") && (get_arity(c) == 2)) {
 		cell *p2 = c + 2;
 
 		if (!is_interned(p2))
@@ -1818,7 +1832,7 @@ static bool directive_term(parser *p, cell *c)
 		return true;
 	}
 
-	if (!strcmp(dirname, "op") && (c->arity == 3)) {
+	if (!strcmp(dirname, "op") && (get_arity(c) == 3)) {
 		do_op(p, c, false);
 		return true;
 	}
@@ -1829,12 +1843,12 @@ static bool directive_term(parser *p, cell *c)
 		while (is_list(p1)) {
 			cell *h = PROLOG_LIST_HEAD(p1);
 
-			if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (h->arity == 2)) {
+			if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (get_arity(h) == 2)) {
 				cell *c_name = h + 1;
 
 				if (is_var(c_name)) {
 					if (((!p->do_read_term)) && !p->pl->quiet)
-						fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+						fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, get_arity(c));
 
 					p->error = true;
 					return true;
@@ -1860,7 +1874,7 @@ static bool directive_term(parser *p, cell *c)
 					arity += 2;
 
 				cell tmp = *c_name;
-				tmp.arity = arity;
+				set_arity(&tmp, arity);
 
 				if (!strcmp(dirname, "dynamic")) {
 					predicate * pr = find_predicate(p->m, &tmp);
@@ -1909,7 +1923,7 @@ static bool directive_term(parser *p, cell *c)
 						}
 					}
 				} else {
-					report_unknown_directive(p, "Error", dirname, c->arity);
+					report_unknown_directive(p, "Error", dirname, get_arity(c));
 					p->error = true;
 					return true;
 				}
@@ -1926,7 +1940,7 @@ static bool directive_term(parser *p, cell *c)
 
 	if (is_var(p1)) {
 		if (((!p->do_read_term)) && !p->pl->quiet)
-			fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+			fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, get_arity(c));
 
 		p->error = true;
 		return true;
@@ -1943,7 +1957,7 @@ static bool directive_term(parser *p, cell *c)
 		module *m = p->m;
 		cell *c_id = p1;
 
-		if (!strcmp(C_STR(p, p1), ":") && (p1->arity == 2)) {
+		if (!strcmp(C_STR(p, p1), ":") && (get_arity(p1) == 2)) {
 			cell *c_mod = p1 + 1;
 
 			if (!is_atom(c_mod))
@@ -1958,12 +1972,12 @@ static bool directive_term(parser *p, cell *c)
 		}
 
 		if ((!strcmp(C_STR(p, c_id), "/") || !strcmp(C_STR(p, c_id), "//"))
-			&& (p1->arity == 2)) {
+			&& (get_arity(p1) == 2)) {
 			cell *c_name = c_id + 1;
 
 			if (is_var(c_name)) {
 				if (((!p->do_read_term)) && !p->pl->quiet)
-					fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+					fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, get_arity(c));
 
 				p->error = true;
 				return true;
@@ -1985,7 +1999,7 @@ static bool directive_term(parser *p, cell *c)
 
 			unsigned arity = get_smallint(c_arity);
 			cell tmp = *c_name;
-			tmp.arity = arity;
+			set_arity(&tmp, arity);
 
 
 			if (!strcmp(C_STR(p, c_id), "//"))
@@ -2015,7 +2029,7 @@ static bool directive_term(parser *p, cell *c)
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
 				p->error = m->error;
 			} else {
-				report_unknown_directive(p, "Error", dirname, c->arity);
+				report_unknown_directive(p, "Error", dirname, get_arity(c));
 				p->error = true;
 				return true;
 			}
@@ -2032,27 +2046,27 @@ static bool directive_term(parser *p, cell *c)
 			set_meta_predicate_in_db(m, p1);
 			p->error = m->error;
 			p1 += p1->num_cells;
-		} else if (!strcmp(C_STR(p, p1), ",") && (p1->arity == 2))
+		} else if (!strcmp(C_STR(p, p1), ",") && (get_arity(p1) == 2))
 			p1 += 1;
 		else {
-			report_unknown_directive(p, "Warning", dirname, c->arity);
+			report_unknown_directive(p, "Warning", dirname, get_arity(c));
 			return true;
 		}
 	}
 
-	if (!strcmp(dirname, "meta_predicate") && (c->arity == 1))
+	if (!strcmp(dirname, "meta_predicate") && (get_arity(c) == 1))
 		return true;
 
-	if (!strcmp(dirname, "dynamic") && (c->arity == 1))
+	if (!strcmp(dirname, "dynamic") && (get_arity(c) == 1))
 		return true;
 
-	if (!strcmp(dirname, "discontiguous") && (c->arity == 1))
+	if (!strcmp(dirname, "discontiguous") && (get_arity(c) == 1))
 		return true;
 
-	if (!strcmp(dirname, "multifile") && (c->arity == 1))
+	if (!strcmp(dirname, "multifile") && (get_arity(c) == 1))
 		return true;
 
-	report_unknown_directive(p, "Warning", dirname, c->arity);
+	report_unknown_directive(p, "Warning", dirname, get_arity(c));
 	return true;
 }
 
@@ -2068,7 +2082,7 @@ static bool starts_with_cut(const cell *c)
 	if (c->val_off == g_cut_s)
 		return true;
 
-	if ((c->arity == 2) && (c->val_off == g_conjunction_s))
+	if ((get_arity(c) == 2) && (c->val_off == g_conjunction_s))
 		return starts_with_cut(c + 1);
 
 	return false;
@@ -2076,13 +2090,13 @@ static bool starts_with_cut(const cell *c)
 
 static void mark_next_cut(cell *c)
 {
-	if (!is_interned(c) || !c->arity)
+	if (!is_interned(c) || !get_arity(c))
 		return;
 
 	cell *arg1 = c + 1;
 	cell *arg2 = arg1 + arg1->num_cells;
 
-	if ((c->val_off == g_conjunction_s) && (c->arity == 2)) {
+	if ((c->val_off == g_conjunction_s) && (get_arity(c) == 2)) {
 		if (starts_with_cut(arg2))
 			arg1->flags |= FLAG_INTERNED_NEXT_CUT;
 
@@ -2091,20 +2105,20 @@ static void mark_next_cut(cell *c)
 		return;
 	}
 
-	if ((c->val_off == g_disjunction_s) && (c->arity == 2)) {
+	if ((c->val_off == g_disjunction_s) && (get_arity(c) == 2)) {
 		mark_next_cut(arg1);
 		mark_next_cut(arg2);
 		return;
 	}
 
 	if (((c->val_off == g_if_then_s) || (c->val_off == g_soft_cut_s))
-		&& (c->arity == 2)) {
+		&& (get_arity(c) == 2)) {
 		mark_next_cut(arg1);
 		mark_next_cut(arg2);
 		return;
 	}
 
-	if ((c->val_off == g_if_s) && (c->arity == 3)) {
+	if ((c->val_off == g_if_s) && (get_arity(c) == 3)) {
 		cell *arg3 = arg2 + arg2->num_cells;
 		mark_next_cut(arg1);
 		mark_next_cut(arg2);
@@ -2382,8 +2396,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			// && (p->vartab.name[i][strlen(p->vartab.name[i])-1] != '_')
 			&& (GET_POOL(p, p->vartab.off[i])[0] != '_')) {
 			if (!p->pl->quiet
-				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1)
-				&& !((cl->cells->val_off == g_quad_s) && ((cl->cells->arity == 1) || (cl->cells->arity == 2)))
+				&& !((cl->cells->val_off == g_neck_s) && get_arity(cl->cells) == 1)
+				&& !((cl->cells->val_off == g_quad_s) && ((get_arity(cl->cells) == 1) || (get_arity(cl->cells) == 2)))
 				&& !p->m->in_quad)
 				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", GET_POOL(p, p->vartab.off[i]), get_loaded(p->m, p->m->filename), p->line_num);
 		}
@@ -2512,14 +2526,14 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			printf("*** OP2 last=%u/start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", last_idx, start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
 #endif
 
-		c->arity = 1;
+		set_arity(c, 1);
 
 		// Prefix...
 
 		if (is_fx(c)) {
 			const cell *rhs = c + 1;
 
-			if (is_fx(rhs) && !rhs->arity && (rhs->priority == c->priority)) {
+			if (is_fx(rhs) && !get_arity(rhs) && (rhs->priority == c->priority)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2544,7 +2558,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		if (is_prefix(c)) {
 			cell *rhs = c + 1;
 
-			if (is_infix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
+			if (is_infix(rhs) && !get_arity(rhs) && (rhs->priority > c->priority)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2553,7 +2567,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 				return false;
 			}
 
-			if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
+			if (is_prefix(rhs) && !get_arity(rhs) && (rhs->priority > c->priority)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2593,7 +2607,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
+		if (is_prefix(rhs) && !get_arity(rhs) && (rhs->priority > c->priority)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2637,7 +2651,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			break;
 		}
 
-		if (is_infix(rhs) && !rhs->arity) {
+		if (is_infix(rhs) && !get_arity(rhs)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2662,7 +2676,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		cell *lhs = p->cl->cells + last_idx;
 
-		if (is_infix(lhs) && !lhs->arity) {
+		if (is_infix(lhs) && !get_arity(lhs)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2680,7 +2694,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		*c = save;
 		c->num_cells += rhs->num_cells;
-		c->arity = 2;
+		set_arity(c, 2);
 
 		if (is_xfx(c)) {
 			cell *next = c + c->num_cells;
@@ -2796,7 +2810,7 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	//fprintf(stderr, "+++ term_expansion %s/%u ==> ", C_STR(p, h), h->arity);
+	//fprintf(stderr, "+++ term_expansion %s/%u ==> ", C_STR(p, h), get_arity(h));
 
 	strcat(src, ".");
 	parser *p2 = parser_create(p->m);
@@ -2922,7 +2936,7 @@ static cell *goal_expansion_(parser *p, cell *goal)
 	if (p->error || p->internal || !is_interned(goal) || !is_callable(goal))
 		return goal;
 
-	if ((goal->val_off == g_goal_expansion_s) && (goal->arity == 2))
+	if ((goal->val_off == g_goal_expansion_s) && (get_arity(goal) == 2))
 		return goal;
 
 	if (goal->val_off == g_cut_s)
@@ -2941,11 +2955,11 @@ static cell *goal_expansion_(parser *p, cell *goal)
 	//	return goal;
 
 	if (p->pl->in_goal_expansion) {
-		//printf("??? goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
+		//printf("??? goal_expansion %s/%u\n", C_STR(p, goal), get_arity(goal));
 		return goal;
 	}
 
-	//printf("*** [%s] goal_expansion %s/%u, p->is_command=%d\n", p->m->name, C_STR(p, goal), goal->arity, p->is_command);
+	//printf("*** [%s] goal_expansion %s/%u, p->is_command=%d\n", p->m->name, C_STR(p, goal), get_arity(goal), p->is_command);
 
 	// Scryer-compatible: user:goal_expansion/2 is registered in `user`, but
 	// each module has its own (empty) goal_expansion/2 that shadows it. When
@@ -2973,7 +2987,7 @@ static cell *goal_expansion_(parser *p, cell *goal)
 	// variables should create anew. Hence we pull the
 	// vartab from the main parser... IS THIS TRUE?
 
-	//printf("+++ goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
+	//printf("+++ goal_expansion %s/%u\n", C_STR(p, goal), get_arity(goal));
 	p->pl->in_goal_expansion = true;
 	const unsigned num_vars_before = p->cl->num_vars;
 	parser *p2 = parser_create(exp_m);
@@ -3006,7 +3020,7 @@ static cell *goal_expansion_(parser *p, cell *goal)
 		return goal;
 	}
 
-	//printf("-- goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
+	//printf("-- goal_expansion %s/%u\n", C_STR(p, goal), get_arity(goal));
 
 	clear_write_options(q);
 
@@ -3137,7 +3151,7 @@ static cell *goal_expansion_(parser *p, cell *goal)
 
 static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 {
-	int arity = goal->arity;
+	int arity = get_arity(goal);
 
 	// Both `goal` and `k` point into p->cl->cells, which make_room()
 	// below can grow and hence move. Their indices survive the realloc
@@ -3150,7 +3164,7 @@ static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 
 		if (is_interned(k) && ((k->val_off == g_call_s) || (k->val_off == g_once_s) || (k->val_off == g_ignore_s)))
 			continue;
-		else if ((k->arity == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
+		else if ((get_arity(k) == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
 			continue;
 		else if (!is_interned(k) || is_iso_list(k))
 			continue;
@@ -3197,12 +3211,12 @@ static bool is_meta_arg(predicate *pr, cell *c, unsigned arg, int *extra)
 	if (!pr->meta_args)
 		return false;
 
-	if (arg >= pr->key.arity)
+	if (arg >= get_arity(&pr->key))
 		return false;
 
 	unsigned i = 0;
 
-	for (cell *m = pr->meta_args+1; m && (i < pr->key.arity); m += m->num_cells, i++) {
+	for (cell *m = pr->meta_args+1; m && (i < get_arity(&pr->key)); m += m->num_cells, i++) {
 		if (!is_integer(m) || (i != arg))
 			continue;
 
@@ -3235,7 +3249,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 
 static cell *term_to_body_conversion(parser *p, cell *c)
 {
-	//printf("*** term_to_body_conversion %s/%u, p->is_command=%d\n", C_STR(p, c), c->arity, p->is_command);
+	//printf("*** term_to_body_conversion %s/%u, p->is_command=%d\n", C_STR(p, c), get_arity(c), p->is_command);
 
 	pl_idx c_idx = c - p->cl->cells;
 	bool is_head = c_idx == 0;
@@ -3253,7 +3267,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				c = insert_call_here(p, c, lhs);
 				lhs = c + 1;
 			} else {
-				lhs->arity += extra;
+				set_arity(lhs, get_arity(lhs) + extra);
 
 				if ((c->val_off != g_neck_s))
 					lhs = goal_expansion(p, lhs);
@@ -3261,7 +3275,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				if (!is_head)
 					lhs = term_to_body_conversion(p, lhs);
 
-				lhs->arity -= extra;
+				set_arity(lhs, get_arity(lhs) - extra);
 			}
 
 			cell *rhs = lhs + lhs->num_cells;
@@ -3281,10 +3295,10 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				rhs = p->cl->cells + rhs_idx;
 			} else {
 				pl_idx lhs_idx = lhs - p->cl->cells;
-				rhs->arity += extra;
+				set_arity(rhs, get_arity(rhs) + extra);
 				rhs = goal_expansion(p, rhs);
 				rhs = term_to_body_conversion(p, rhs);
-				rhs->arity -= extra;
+				set_arity(rhs, get_arity(rhs) - extra);
 
 				// Both calls above can grow, and hence move, the
 				// clause. Re-derive the pointers into it; rhs is
@@ -3319,15 +3333,15 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				c->num_cells = 1 + rhs->num_cells;
 			}
 		}
-	} else if (!is_head && c->arity) {
+	} else if (!is_head && get_arity(c)) {
 		bool is_goal_expansion = find_goal_expansion(p->m, c);
 		predicate *pr = find_predicate(p->m, c);
 		bool meta = !pr || pr->is_meta_predicate || is_goal_expansion || p->m->wild_goal_expansion;
 		bool control = false;
 
-		if ((c->val_off == g_throw_s) && (c->arity == 1))
+		if ((c->val_off == g_throw_s) && (get_arity(c) == 1))
 			control = true;
-		else if ((c->val_off == g_catch_s) && (c->arity == 3))
+		else if ((c->val_off == g_catch_s) && (get_arity(c) == 3))
 			control = true;
 
 		if (pr) {
@@ -3345,11 +3359,11 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		if (meta) {
 			pl_idx old_val_off = c->val_off;
-			unsigned old_arity = c->arity;
+			unsigned old_arity = get_arity(c);
 			c = goal_expansion(p, c);
 			c_idx = c - p->cl->cells;
 
-			if ((c->val_off != old_val_off) || (c->arity != old_arity)) {
+			if ((c->val_off != old_val_off) || (get_arity(c) != old_arity)) {
 				pr = find_predicate(p->m, c);
 
 				if (pr) {
@@ -3364,21 +3378,21 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 				control = false;
 
-				if ((c->val_off == g_throw_s) && (c->arity == 1))
+				if ((c->val_off == g_throw_s) && (get_arity(c) == 1))
 					control = true;
-				else if ((c->val_off == g_catch_s) && (c->arity == 3))
+				else if ((c->val_off == g_catch_s) && (get_arity(c) == 3))
 					control = true;
 			}
 		}
 
 		cell *arg = c + 1;
-		int arity = c->arity, i = 0;
+		int arity = get_arity(c), i = 0;
 
 		while (arity--) {
 			int extra = 0;
 			bool meta = pr ? is_meta_arg(pr, c, i, &extra) : false;
 			int save_num_cells = arg->num_cells;
-			arg->arity += extra;
+			set_arity(arg, get_arity(arg) + extra);
 
 			if (meta)
 				arg = goal_expansion(p, arg);
@@ -3386,7 +3400,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			if (control || meta)
 				arg = term_to_body_conversion(p, arg);
 
-			arg->arity -= extra;
+			set_arity(arg, get_arity(arg) - extra);
 			c = p->cl->cells + c_idx;	// may have moved
 			c->num_cells += arg->num_cells - save_num_cells;
 			arg += arg->num_cells;
@@ -3406,7 +3420,7 @@ void term_to_body(parser *p)
 
 cell *check_body_callable(cell *c)
 {
-	if ((c->arity == 2) && (is_xfx(c) || is_xfy(c))) {
+	if ((get_arity(c) == 2) && (is_xfx(c) || is_xfy(c))) {
 		if ((c->val_off == g_conjunction_s)
 			|| (c->val_off == g_disjunction_s)
 			|| (c->val_off == g_if_then_s)
@@ -4635,7 +4649,7 @@ static bool process_term(parser *p, cell *p1)
 		h->tag = TAG_INTERNED;
 		h->val_off = off;
 		h->flags = 0;
-		h->arity = 0;
+		set_arity(h, 0);
 	}
 
 	rule *r;
@@ -4790,7 +4804,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				if (p->is_consulting && !p->skip && !p->internal
 					&& is_interned(p->cl->cells)
 					&& (p->cl->cells->val_off == g_dcg_s)
-					&& (p->cl->cells->arity == 2)) {
+					&& (get_arity(p->cl->cells) == 2)) {
 					// The old FIXME here read "need to term_expand &
 					// may be a list?". The list half is done: a user
 					// term_expansion/2 returning a list is handled by
@@ -4840,7 +4854,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					term_expansion(p);
 					cell *p1 = p->cl->cells;
 
-					if (!p1->arity && !strcmp(C_STR(p, p1), "begin_of_file")) {
+					if (!get_arity(p1) && !strcmp(C_STR(p, p1), "begin_of_file")) {
 						p->end_of_term = true;
 						last_op = true;
 						last_num = false;
@@ -4848,7 +4862,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 						continue;
 					}
 
-					if (!p1->arity && !strcmp(C_STR(p, p1), "end_of_file")) {
+					if (!get_arity(p1) && !strcmp(C_STR(p, p1), "end_of_file")) {
 						p->end_of_term = true;
 						p->end_of_file = true;
 
@@ -4914,7 +4928,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && !SB_strcmp(p->token, "[")) {
 			save_idx = p->cl->cidx;
 			cell *c = make_interned(p, g_dot_s);
-			c->arity = 2;
+			set_arity(c, 2);
 			p->start_term = true;
 			p->nesting_brackets++;
 			bool was_consing = p->was_consing;
@@ -4943,7 +4957,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			save_idx = p->cl->cidx;
 			cell *c = make_interned(p, g_braces_s);
 			ENSURE(c);
-			c->arity = 1;
+			set_arity(c, 1);
 			p->start_term = true;
 			p->nesting_braces++;
 			p->entered = '{';
@@ -4987,9 +5001,9 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					cell *c = p->cl->cells + save_idx;	// may have moved
 					*arg = *c;
 					arg->num_cells = 1;
-					arg->arity = 0;
 					arg->priority = 0;
 					SET_OP(arg, 0);
+					set_arity(arg, 0);
 					c->tag = TAG_INTERNED;
 					c->flags = 0;
 					c->priority = 0;
@@ -4999,7 +5013,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				}
 
 				cell *c = p->cl->cells + save_idx;
-				c->arity = tmp_arity;
+				set_arity(c, tmp_arity);
 				c->num_cells = p->cl->cidx - save_idx;
 			}
 
@@ -5063,7 +5077,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			}
 
 			cell *c = make_interned(p, g_dot_s);
-			c->arity = 2;
+			set_arity(c, 2);
 			p->start_term = last_op = true;
 			last_num = false;
 			p->last_close = false;
@@ -5453,7 +5467,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 				if (p->is_string) {
 					c->flags |= FLAG_CSTR_STRING;
-					c->arity = 2;
+					set_arity(c, 2);
 				}
 
 				if (!p->is_number_chars)

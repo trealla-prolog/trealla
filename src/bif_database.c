@@ -350,7 +350,7 @@ static bool bif_iso_abolish_1(query *q)
 		}
 	}
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
@@ -385,8 +385,8 @@ static bool bif_iso_abolish_1(query *q)
 
 	cell tmp;
 	tmp = *p1_name;
-	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
+	set_arity(&tmp, get_smallint(p1_arity));
 	prolog_lock_mod(q->pl, q->st.m);
 	bool ok = do_abolish(q, p1, &tmp, true);
 	prolog_unlock_mod(q->pl, q->st.m);
@@ -789,7 +789,7 @@ static bool bif_abolish_2(query *q)
 		}
 	}
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
@@ -826,7 +826,7 @@ static bool bif_abolish_2(query *q)
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, q->latest_ctx);
 
@@ -865,8 +865,8 @@ static bool bif_abolish_2(query *q)
 
 	cell tmp;
 	tmp = *p1_name;
-	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
+	set_arity(&tmp, get_smallint(p1_arity));
 
 	bool ok = do_abolish(q, p1, &tmp, true);
 	return ok;
@@ -942,12 +942,12 @@ static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p
 				tmp->tag == TAG_BLOB ? "blob" :
 				"other"
 			),
-			tmp->num_cells, tmp->arity);
+			tmp->num_cells, get_arity(tmp));
 
 		if ((tmp->tag == TAG_INT) && !is_managed(tmp))
 			printf(", %lld", (long long)tmp->val_int);
 
-		if (tmp->arity && (tmp->tag == TAG_INTERNED))
+		if (get_arity(tmp) && (tmp->tag == TAG_INTERNED))
 			printf(", ground=%u", is_ground(tmp)?1:0);
 
 		if (tmp->tag == TAG_INTERNED)
@@ -1005,7 +1005,7 @@ static bool save_name(FILE *fp, query *q, pl_idx name, unsigned pr_arity, bool a
 		if (name != pr->key.val_off)
 			continue;
 
-		if ((arity != pr->key.arity) && (arity != -1))
+		if ((arity != get_arity(&pr->key)) && (arity != -1))
 			continue;
 
 		any = true;
@@ -1061,7 +1061,7 @@ static bool bif_listing_1(query *q)
 		p1 += p1->num_cells;
 	}
 
-	if (p1->arity) {
+	if (get_arity(p1)) {
 		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
 			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
@@ -1084,7 +1084,7 @@ static bool bif_listing_1(query *q)
 
 	cell tmp;
 	make_atom(&tmp, name);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	bool found;
 
 	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
@@ -1112,7 +1112,7 @@ static bool bif_sys_xlisting_1(query *q)
 		p1 += p1->num_cells;
 	}
 
-	if (p1->arity) {
+	if (get_arity(p1)) {
 		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
 			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
@@ -1135,7 +1135,7 @@ static bool bif_sys_xlisting_1(query *q)
 
 	cell tmp;
 	make_atom(&tmp, name);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	bool found;
 
 	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
@@ -1175,7 +1175,7 @@ static bool bif_sys_dlisting_1(query *q)
 		p1 += p1->num_cells;
 	}
 
-	if (p1->arity) {
+	if (get_arity(p1)) {
 		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
 			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
@@ -1198,7 +1198,7 @@ static bool bif_sys_dlisting_1(query *q)
 
 	cell tmp;
 	make_atom(&tmp, name);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	bool found;
 
 	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)

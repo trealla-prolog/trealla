@@ -934,7 +934,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 			if (is_interned(head)) {
 				unsigned specifier = 0;
-				unsigned priority = match_op(q->st.m, C_STR(q, head), &specifier, head->arity);
+				unsigned priority = match_op(q->st.m, C_STR(q, head), &specifier, get_arity(head));
 				special_op = (priority >= 1000);
 			}
 
@@ -1071,7 +1071,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				me->c_ctx = tail_ctx;
 				visited = me;
 				unsigned specifier = 0;
-				unsigned priority = match_op(q->st.m, C_STR(q, tail), &specifier, tail->arity);
+				unsigned priority = match_op(q->st.m, C_STR(q, tail), &specifier, get_arity(tail));
 				bool tail_parens = (is_infix(tail) || is_prefix(tail)) && (priority >= 1000);
 				if (tail_parens) { emit(q, "("); q->last_thing = WAS_OTHER; }
 				print_term_dispatch(q, tail, tail_ctx, running, true, depth+1, visited);
@@ -1116,7 +1116,7 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 
 		if (is_interned(head)) {
 			unsigned specifier = 0;
-			unsigned priority = match_op(q->st.m, C_STR(q, head), &specifier, head->arity);
+			unsigned priority = match_op(q->st.m, C_STR(q, head), &specifier, get_arity(head));
 			special_op = (priority >= 1000);
 		}
 
@@ -1169,10 +1169,10 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 	int dq = 0, braces = 0;
 	if (is_string(c) && q->double_quotes && dq_string_ok(q, c)) dq = quote = 1;
 	if (q->quoted < 0) quote = 0;
-	if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
-	cell *c1 = c->arity && running ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
+	if ((get_arity(c) == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
+	cell *c1 = get_arity(c) && running ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
 
-	if (running && is_interned(c) && c->arity
+	if (running && is_interned(c) && get_arity(c)
 		&& q->numbervars && (c->val_off == g_sys_var_s) && c1
 		&& is_integer(c1) && (get_smallint(c1) >= 0)) {
 		char tmpbuf[256];
@@ -1206,7 +1206,7 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 			&& strcmp(src, "[]") && strcmp(src, "{}") && !q->parens;
 
 		if ((q->last_thing == WAS_SYMBOL) && is_symbol && !q->parens && !quote
-			&& (c->arity == 1) // Only if prefix
+			&& (get_arity(c) == 1) // Only if prefix
 			) {
 			emit(q, " ");
 			q->last_thing = WAS_SPACE;
@@ -1220,7 +1220,7 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 	q->did_quote = !braces&&quote;
 
 	if (is_compound(c) && !is_string(c)) {
-		int arity = c->arity;
+		int arity = get_arity(c);
 		emit(q, braces&&!q->ignore_ops?"{":"(");
 		q->last_thing = WAS_OTHER;
 		q->parens = true;
@@ -1265,9 +1265,9 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 			bool parens = false;
 
 			if (!braces && is_interned(tmp) && !q->ignore_ops) {
-				unsigned tmp_priority = match_op(q->st.m, C_STR(q, tmp), NULL, tmp->arity);
+				unsigned tmp_priority = match_op(q->st.m, C_STR(q, tmp), NULL, get_arity(tmp));
 
-				if ((tmp_priority >= 1000) && tmp->arity)
+				if ((tmp_priority >= 1000) && get_arity(tmp))
 					q->parens = parens = true;
 			}
 
@@ -1306,7 +1306,7 @@ static bool print_operator(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		pl_ctx lhs_ctx = c_ctx;
 		lhs = deref_if(q, running, lhs, &lhs_ctx);
 		unsigned lhs_specifier = false;
-		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
+		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, get_arity(lhs)) : 0;
 		bool is_lhs_xf = IS_XF(lhs_specifier);
 		bool is_lhs_yf = IS_YF(lhs_specifier);
 		bool is_op_lhs = lhs_pri;
@@ -1379,7 +1379,7 @@ static bool print_operator(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		pl_ctx rhs_ctx = c_ctx;
 		const char *rhs_src = C_STR(q, rhs);
 		rhs = deref_if(q, running, rhs, &rhs_ctx);
-		unsigned rhs_pri = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
+		unsigned rhs_pri = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, get_arity(rhs)) : 0;
 		bool is_op_rhs = rhs_pri;
 
 		if ((q->last_thing == WAS_SYMBOL) && !strcmp(src, "\\+")) {
@@ -1398,18 +1398,18 @@ static bool print_operator(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		if ((!strcmp(src, ":-") || !strcmp(src, "?-")) && (rhs_pri >= my_priority)) parens = true;
 		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
 		if (rhs_pri > my_priority) parens = true;
-		if ((rhs_pri > 0) && !rhs->arity) parens = true;
+		if ((rhs_pri > 0) && !get_arity(rhs)) parens = true;
 		//if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
-		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (rhs->arity > 1)) parens = true;
+		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (get_arity(rhs) > 1)) parens = true;
 		if ((c->val_off == g_minus_s) && is_number(rhs) && !is_negative(rhs)) parens = true;
-		if ((c->val_off == g_minus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
-		if ((c->val_off == g_plus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
+		if ((c->val_off == g_minus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, true) && !get_arity(rhs)) parens = true;
+		if ((c->val_off == g_plus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, true) && !get_arity(rhs)) parens = true;
 
 		if (!strcmp(src, "?-") || !strcmp(src, ":-")) space = 1;
 
 		bool quote = q->quoted && needs_quoting(q->st.m, src, src_len);
 
-		if (is_interned(rhs) && !rhs->arity && !parens) {
+		if (is_interned(rhs) && !get_arity(rhs) && !parens) {
 			if (!iswalnum(peek_char_utf8(rhs_src)) && strcmp(rhs_src, "[]") && strcmp(rhs_src, "{}"))
 				space = 1;
 		}
@@ -1472,9 +1472,9 @@ static bool print_operator(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	// Print LHS..
 
 	unsigned lhs_specifier = 0;
-	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
-	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, true) : 0;
-	bool lhs_postfix = (lhs->arity == 1) && IS_POSTFIX(lhs_specifier);
+	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, get_arity(lhs)) : 0;
+	unsigned lhs_pri_2 = is_interned(lhs) && !get_arity(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, true) : 0;
+	bool lhs_postfix = (get_arity(lhs) == 1) && IS_POSTFIX(lhs_specifier);
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
 	//if (lhs_postfix) lhs_parens = true;
@@ -1510,7 +1510,7 @@ static bool print_operator(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	bool space = false;
 
-	if (is_interned(lhs) && !lhs->arity && !lhs_parens) {
+	if (is_interned(lhs) && !get_arity(lhs) && !lhs_parens) {
 		if (!iswalpha(peek_char_utf8(lhs_src)) && !iswdigit(peek_char_utf8(lhs_src)) && (peek_char_utf8(lhs_src) != '$')
 			&& strcmp(src, ",") && strcmp(src, ";")
 			&& strcmp(lhs_src, "[]") && strcmp(lhs_src, "{}")
@@ -1574,15 +1574,15 @@ static bool print_operator(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	// Print RHS..
 
-	unsigned rhs_pri_1 = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
-	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? match_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
+	unsigned rhs_pri_1 = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, get_arity(rhs)) : 0;
+	unsigned rhs_pri_2 = is_interned(rhs) && !get_arity(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
 
 	if (!rhs_parens && is_prefix(rhs) && strcmp(src, "|"))
 		space = true;
 
-	bool rhs_is_symbol = is_interned(rhs) && !rhs->arity
+	bool rhs_is_symbol = is_interned(rhs) && !get_arity(rhs)
 		&& !iswalpha(peek_char_utf8(rhs_src))
 		&& !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
 		&& strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}")
@@ -1639,13 +1639,13 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	// the honest output. The argument has to be an atom for the same
 	// reason; '()'(1) would print as 1(), which reads back as nothing.
 
-	if ((c->arity == 1) && is_interned(c) && (src_len == 2)
+	if ((get_arity(c) == 1) && is_interned(c) && (src_len == 2)
 		&& !strcmp(src, "()") && q->st.m->flags.empty_args) {
 		cell *arg = FIRST_ARG(c);
 		pl_ctx arg_ctx = c_ctx;
 		arg = deref_if(q, running, arg, &arg_ctx);
 
-		if (is_interned(arg) && !arg->arity) {
+		if (is_interned(arg) && !get_arity(arg)) {
 			print_term_dispatch(q, arg, arg_ctx, running, 0, depth+1, visited);
 			emit(q, "()");
 			q->last_thing = WAS_OTHER;
@@ -1653,11 +1653,11 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		}
 	}
 	unsigned my_specifier = 0;
-	unsigned my_priority = match_op(q->st.m, src, &my_specifier, c->arity);
+	unsigned my_priority = match_op(q->st.m, src, &my_specifier, get_arity(c));
 
 	if (!my_priority
-		|| ((IS_PREFIX(my_specifier) || IS_POSTFIX(my_specifier)) && (c->arity != 1))
-		|| (IS_INFIX(my_specifier) && (c->arity != 2))
+		|| ((IS_PREFIX(my_specifier) || IS_POSTFIX(my_specifier)) && (get_arity(c) != 1))
+		|| (IS_INFIX(my_specifier) && (get_arity(c) != 2))
 		) {
 		my_priority = 0;
 	}
@@ -1665,8 +1665,8 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	bool is_op = my_priority;
 	unsigned pri = 0, spec = 0;
 
-	if (!is_op && !is_var(c) && (c->arity == 1)
-		&& (pri = match_op(q->st.m, src, &spec, c->arity))) {
+	if (!is_op && !is_var(c) && (get_arity(c) == 1)
+		&& (pri = match_op(q->st.m, src, &spec, get_arity(c)))) {
 		if (IS_PREFIX(spec)) {
 			is_op = true;
 			my_specifier = spec;
@@ -1674,7 +1674,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		}
 	}
 
-	if (q->ignore_ops || !is_op || !c->arity)
+	if (q->ignore_ops || !is_op || !get_arity(c))
 		return print_canonical_compound(q, c, c_ctx, running, depth, visited, src, src_len);
 
 	return print_operator(q, c, c_ctx, running, depth, visited, src, src_len, my_specifier, my_priority);

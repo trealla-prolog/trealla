@@ -895,7 +895,7 @@ static bool bif_call_task_n(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	if ((p1->val_off == g_colon_s) && (get_arity(p1) == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -915,7 +915,7 @@ static bool bif_call_task_n(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
-	int arity = p1->arity, args = 1, xarity = q->st.instr->arity;
+	int arity = get_arity(p1), args = 1, xarity = get_arity(q->st.instr);
 	CHECKED(init_tmp_heap(q));
 	CHECKED(append_to_tmp(q, p1, p1_ctx));
 
@@ -927,7 +927,7 @@ static bool bif_call_task_n(query *q)
 
 	cell *tmp2 = get_tmp_heap(q, 0);
 	tmp2->num_cells = tmp_heap_used(q);
-	tmp2->arity = arity;
+	set_arity(tmp2, arity);
 
 	if (is_cstring(tmp2)) {
 		share_cell(tmp2);
@@ -991,7 +991,7 @@ static bool bif_task_create_2(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,var);
 
-	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	if ((p1->val_off == g_colon_s) && (get_arity(p1) == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -1016,7 +1016,7 @@ static bool bif_task_create_2(query *q)
 
 	cell *tmp2 = get_tmp_heap(q, 0);
 	tmp2->num_cells = tmp_heap_used(q);
-	tmp2->arity = p1->arity;
+	set_arity(tmp2, get_arity(p1));
 
 	if (is_cstring(tmp2)) {
 		share_cell(tmp2);

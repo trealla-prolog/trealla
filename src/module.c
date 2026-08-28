@@ -337,7 +337,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (b = get_builtin_term(m, c, &found, &evaluable),
 		!evaluable && found && b->iso) {
 		if (m->p->is_consulting)
-			fprintf(stderr, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
+			fprintf(stderr, "Error: permission error modifying %s/%u\n", C_STR(m, c), get_arity(c));
 
 		return NULL;
 	}
@@ -354,7 +354,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	pr->key = *c;
 	pr->key.tag = TAG_INTERNED;
 	pr->key.num_cells = 1;
-	pr->is_noindex = m->pl->noindex || !pr->key.arity;
+	pr->is_noindex = m->pl->noindex || !get_arity(&pr->key);
 	sl_app(m->index, &pr->key, pr);
 	return pr;
 }
@@ -422,7 +422,7 @@ bool find_goal_expansion(module *m, cell *c)
 		return true;
 
 	for (pi *g = m->gex_head; g; g = g->next) {
-		if ((g->key.val_off == c->val_off) && (g->key.arity == c->arity))
+		if ((g->key.val_off == c->val_off) && (get_arity(&g->key) == get_arity(c)))
 			return true;
 	}
 
@@ -437,7 +437,7 @@ bool find_goal_expansion(module *m, cell *c)
 bool find_goal_expansion_specific(module *m, cell *c)
 {
 	for (pi *g = m->gex_head; g; g = g->next) {
-		if ((g->key.val_off == c->val_off) && (g->key.arity == c->arity))
+		if ((g->key.val_off == c->val_off) && (get_arity(&g->key) == get_arity(c)))
 			return true;
 	}
 
@@ -499,10 +499,10 @@ static int predicate_cmpkey(const void *ptr1, const void *ptr2, const void *para
 	const cell *p1 = (const cell*)ptr1;
 	const cell *p2 = (const cell*)ptr2;
 
-	if (p1->arity < p2->arity)
+	if (get_arity(p1) < get_arity(p2))
 		return -1;
 
-	if (p1->arity > p2->arity)
+	if (get_arity(p1) > get_arity(p2))
 		return 1;
 
 	if (p1->val_off == p2->val_off)
@@ -600,8 +600,8 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 		}
 
 		return index_cmpkey_(p1, p2, param, l);
-	} else if (is_interned(p1) && !p1->arity) {
-		if (is_interned(p2) && !p2->arity) {
+	} else if (is_interned(p1) && !get_arity(p1)) {
+		if (is_interned(p2) && !get_arity(p2)) {
 			if (p1->val_off == p2->val_off)
 				return 0;
 
@@ -621,16 +621,16 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return -1;
 	} else if (is_compound(p1)) {
 		if (is_compound(p2)) {
-			if (p1->arity < p2->arity)
+			if (get_arity(p1) < get_arity(p2))
 				return -1;
 
-			if (p1->arity > p2->arity)
+			if (get_arity(p1) > get_arity(p2))
 				return 1;
 
 			if (p1->val_off != p2->val_off)
 				return strcmp(C_STR(m, p1), C_STR(m, p2));
 
-			int arity = p1->arity;
+			int arity = get_arity(p1);
 			p1++; p2++;
 
 			while (arity--) {
@@ -703,7 +703,7 @@ void index_remove_clause(predicate *pr, rule *r)
 		return;
 
 	cell *c = get_head(r->cl.cells);
-	cell *k1 = c->arity ? FIRST_ARG(c) : c;
+	cell *k1 = get_arity(c) ? FIRST_ARG(c) : c;
 	bool ground = !is_var(c) && (!is_compound(c) || is_ground(c));
 
 	if (pr->idx0 && ground)
@@ -719,7 +719,7 @@ static void purge_properties(predicate *pr)
 {
 	cell tmp;
 	make_atom(&tmp, new_atom(pr->m->pl, "$predicate_property"));
-	tmp.arity = 3;
+	set_arity(&tmp, 3);
 	predicate *pr2 = find_predicate(pr->m, &tmp);
 	if (!pr2) return;
 
@@ -731,7 +731,7 @@ static void purge_properties(predicate *pr)
 		cell *p1 = f + 1;
 		cell *p2 = p1 + p1->num_cells;
 
-		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off))
+		if ((get_arity(&pr->key) != get_arity(p2)) || (pr->key.val_off != p2->val_off))
 			continue;
 
 		r->dbgen_retracted = ++pr->m->pl->dbgen;
@@ -749,7 +749,7 @@ static void purge_properties(predicate *pr)
 		rule *save = r;
 		r = r->next;
 
-		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off))
+		if ((get_arity(&pr->key) != get_arity(p2)) || (pr->key.val_off != p2->val_off))
 			continue;
 
 		predicate_delink(pr2, save);
@@ -780,14 +780,14 @@ static bool property_matches(module *m, const rule *r, const char *name, unsigne
 	if (strcmp(C_STR(m, p2), name))
 		return false;
 
-	return p2->arity == arity;
+	return get_arity(p2) == arity;
 }
 
 void clear_property(module *m, const char *name, unsigned arity)
 {
 	cell tmp;
 	make_atom(&tmp, new_atom(m->pl, "$predicate_property"));
-	tmp.arity = 3;
+	set_arity(&tmp, 3);
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) return;
 
@@ -841,7 +841,7 @@ void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
 	ENSURE(tmp.val_off != ERR_IDX);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
@@ -858,7 +858,7 @@ void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
 	ENSURE(tmp.val_off != ERR_IDX);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
@@ -875,7 +875,7 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
 	ENSURE(tmp.val_off != ERR_IDX);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
@@ -889,12 +889,12 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 void set_meta_predicate_in_db(module *m, cell *c)
 {
 	const char *name = C_STR(m, c);
-	unsigned arity = c->arity;
+	unsigned arity = get_arity(c);
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
 	ENSURE(tmp.val_off != ERR_IDX);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
@@ -922,7 +922,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 
 static bool is_check_directive(const cell *c)
 {
-	if ((c->val_off == g_neck_s) && (c->arity == 1))
+	if ((c->val_off == g_neck_s) && (get_arity(c) == 1))
 		return true;
 
 	return false;
@@ -944,12 +944,12 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 		name = C_STR(cur_m, p1);
 		int cnt = 1;
 
-		while ((p1->arity == 2) && !strcmp(name, "/")) {
+		while ((get_arity(p1) == 2) && !strcmp(name, "/")) {
 			cnt++;
 			p1++;
 		}
 
-		while (cnt-- && is_interned(p1) && !p1->arity && (p1->val_off != g_nil_s)) {
+		while (cnt-- && is_interned(p1) && !get_arity(p1) && (p1->val_off != g_nil_s)) {
 			name = C_STR(cur_m, p1);
 			strcat(dstbuf, "/");
 			strcat(dstbuf, name);
@@ -1064,17 +1064,17 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 
 static bool do_import_predicate(module *cur_m, module *m, predicate *pr, cell *as)
 {
-	clear_property(cur_m, C_STR(m, &pr->key), pr->key.arity);
+	clear_property(cur_m, C_STR(m, &pr->key), get_arity(&pr->key));
 	predicate *pr2 = find_predicate(cur_m, as);
-	//if (pr2) printf("*** %s:%s/%u => %s\n", cur_m->name, C_STR(q,&pr2->key), pr2->key.arity, m->name);
+	//if (pr2) printf("*** %s:%s/%u => %s\n", cur_m->name, C_STR(q,&pr2->key), get_arity(&pr2->key), m->name);
 	if (!pr2) pr2 = create_predicate(cur_m, as, NULL);
 	pr2->alias = pr->alias ? pr->alias : pr;
 	char tmpbuf[1024];
 	snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
-	push_property(cur_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
+	push_property(cur_m, C_STR(m, &pr->key), get_arity(&pr->key), tmpbuf);
 
 	if (pr->is_dynamic)
-		push_property(cur_m, C_STR(m, as), as->arity, "dynamic");
+		push_property(cur_m, C_STR(m, as), get_arity(as), "dynamic");
 
 	if (!pr->meta_args)
 		return true;
@@ -1083,7 +1083,7 @@ static bool do_import_predicate(module *cur_m, module *m, predicate *pr, cell *a
 	SB_sprintf(pr, "meta_predicate(%s(", C_STR(m, as));
 	cell *key = pr->meta_args + 1;
 
-	for (unsigned i = 0; i < pr->key.arity; i++, key++) {
+	for (unsigned i = 0; i < get_arity(&pr->key); i++, key++) {
 		if (i != 0)
 			SB_strcat(pr, ",");
 
@@ -1095,7 +1095,7 @@ static bool do_import_predicate(module *cur_m, module *m, predicate *pr, cell *a
 	}
 
 	SB_strcat(pr, "))");
-	push_property(cur_m, C_STR(m, as), as->arity, SB_cstr(pr));
+	push_property(cur_m, C_STR(m, as), get_arity(as), SB_cstr(pr));
 	return true;
 }
 
@@ -1138,25 +1138,25 @@ bool do_use_module_2(module *cur_m, cell *c)
 	while (is_iso_list(p2)) {
 		cell *head = PROLOG_LIST_HEAD(p2);
 
-		if (is_interned(head) && (head->arity == 2)
+		if (is_interned(head) && (get_arity(head) == 2)
 			&& ((head->val_off == g_as_s) || (head->val_off == g_colon_s))) {
 			cell *lhs = head + 1;
 			cell *rhs = lhs + lhs->num_cells;
 
-			if (is_structure(lhs) && (lhs->arity == 2)
+			if (is_structure(lhs) && (get_arity(lhs) == 2)
 				&& (lhs->val_off == g_slash_s)
 				&& is_atom(rhs)) {
 				cell tmp = *(lhs+1);
-				tmp.arity = get_smalluint(lhs+2);
+				set_arity(&tmp, get_smalluint(lhs+2));
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				tmp.val_off = rhs->val_off;
 				do_import_predicate(cur_m, m, pr, &tmp);
-			} else if (is_structure(lhs) && (lhs->arity == 2)
+			} else if (is_structure(lhs) && (get_arity(lhs) == 2)
 				&& (lhs->val_off == g_slash_s)
-				&& is_structure(lhs) && (lhs->arity == rhs->arity)) {
+				&& is_structure(lhs) && (get_arity(lhs) == get_arity(rhs))) {
 				cell tmp = *(lhs+1);
-				tmp.arity = get_smalluint(lhs+2);
+				set_arity(&tmp, get_smalluint(lhs+2));
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				tmp.val_off = (rhs+1)->val_off;
@@ -1165,10 +1165,10 @@ bool do_use_module_2(module *cur_m, cell *c)
 		} else {
 			cell *lhs = head;
 
-			if (is_structure(lhs) && (lhs->arity == 2)
+			if (is_structure(lhs) && (get_arity(lhs) == 2)
 				&& (lhs->val_off == g_slash_s)) {
 				cell tmp = *(lhs+1);
-				tmp.arity = get_smalluint(lhs+2);
+				set_arity(&tmp, get_smalluint(lhs+2));
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				do_import_predicate(cur_m, m, pr, &pr->key);
@@ -1225,14 +1225,15 @@ bool do_use_foreign_module(module *m, cell *p)
 
 void convert_to_literal(module *m, cell *c)
 {
-	if (is_string(c))
-		c->arity = 0;
-
+	bool was_string = is_string(c);
 	pl_idx off = new_atom(m->pl, C_STR(m, c));
 	c->tag = TAG_INTERNED;
 	c->val_off = off;
 	c->match = NULL;
 	c->flags = 0;
+
+	if (was_string)
+		set_arity(c, 0);
 }
 
 predicate *find_functor(module *m, const char *name, unsigned arity)
@@ -1240,7 +1241,7 @@ predicate *find_functor(module *m, const char *name, unsigned arity)
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 	return find_predicate(m, &tmp);
 }
 
@@ -1628,7 +1629,7 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 		) {
 		if ((r->filename != pr->head->filename) || pr->is_reload) {
 			if (pr->head->filename)
-				fprintf(stderr, "Warning: overwriting '%s'/%u\n", C_STR(m, &pr->key), pr->key.arity);
+				fprintf(stderr, "Warning: overwriting '%s'/%u\n", C_STR(m, &pr->key), get_arity(&pr->key));
 
 			while (pr->head) {
 				rule *tmp = pr->head;
@@ -1657,7 +1658,7 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 	}
 
 	if (pr->alias && (m == m->pl->user_m)) {
-		fprintf(stderr, "Warning: overwriting %s:'%s'/%u\n", pr->m->name, C_STR(m, &pr->key), pr->key.arity);
+		fprintf(stderr, "Warning: overwriting %s:'%s'/%u\n", pr->m->name, C_STR(m, &pr->key), get_arity(&pr->key));
 		pr->meta_args = NULL;
 		pr->alias = NULL;
 	}
@@ -1709,7 +1710,7 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 	cell *body = cl->cells;
 	unsigned specifier;
 
-	if ((c->arity == 2)
+	if ((get_arity(c) == 2)
 		&& !GET_OP(c)
 		&& (c->val_off != g_braces_s)
 		&& search_op(m, C_STR(m, c), &specifier, false)) {
@@ -1740,7 +1741,7 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 
 			if (parent
 				&& (parent->key.val_off == c->val_off)
-				&& (parent->key.arity == c->arity)) {
+				&& (get_arity(&parent->key) == get_arity(c))) {
 				c->flags |= FLAG_INTERNED_RECURSIVE_CALL;
 			}
 	}
@@ -1771,13 +1772,13 @@ static void mark_tail_call(cell *c, predicate *parent)
 
 	if (parent
 		&& (parent->key.val_off == c->val_off)
-		&& (parent->key.arity == c->arity))
+		&& (get_arity(&parent->key) == get_arity(c)))
 		c->flags |= FLAG_INTERNED_RECURSIVE_CALL;
 }
 
 static void mark_tail_positions(cell *body, predicate *parent)
 {
-	if (!is_interned(body) || !body->arity) {
+	if (!is_interned(body) || !get_arity(body)) {
 		mark_tail_call(body, parent);
 		return;
 	}
@@ -1785,24 +1786,24 @@ static void mark_tail_positions(cell *body, predicate *parent)
 	cell *arg1 = body + 1;
 	cell *arg2 = arg1 + arg1->num_cells;
 
-	if ((body->val_off == g_conjunction_s) && (body->arity == 2)) {
+	if ((body->val_off == g_conjunction_s) && (get_arity(body) == 2)) {
 		mark_tail_positions(arg2, parent);				// (_ , Tail)
 		return;
 	}
 
-	if ((body->val_off == g_disjunction_s) && (body->arity == 2)) {
+	if ((body->val_off == g_disjunction_s) && (get_arity(body) == 2)) {
 		mark_tail_positions(arg1, parent);				// (Tail ; _)
 		mark_tail_positions(arg2, parent);				// (_ ; Tail)
 		return;
 	}
 
 	if (((body->val_off == g_if_then_s) || (body->val_off == g_soft_cut_s))
-		&& (body->arity == 2)) {
+		&& (get_arity(body) == 2)) {
 		mark_tail_positions(arg2, parent);				// (_ -> Tail)
 		return;
 	}
 
-	if ((body->val_off == g_if_s) && (body->arity == 3)) {
+	if ((body->val_off == g_if_s) && (get_arity(body) == 3)) {
 		cell *arg3 = arg2 + arg2->num_cells;
 		mark_tail_positions(arg2, parent);				// if(_, Tail, _)
 		mark_tail_positions(arg3, parent);				// if(_, _, Tail)
@@ -1896,7 +1897,7 @@ bool module_dump_term(module* m, cell *p1)
 				tmp->tag == TAG_BLOB ? "blob" :
 				"other"
 			),
-			tmp->num_cells, tmp->arity);
+			tmp->num_cells, get_arity(tmp));
 
 		if ((tmp->tag == TAG_INT) && !is_managed(tmp))
 			printf(", %lld", (long long)tmp->val_int);
@@ -1926,22 +1927,22 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 	if (!is_check_directive(c)) {
 		c = get_head(p1);
 
-		if ((c->val_off == g_neck_s) && (c->arity == 1)) {
+		if ((c->val_off == g_neck_s) && (get_arity(c) == 1)) {
 			if (consulting)
-				fprintf(stderr, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+				fprintf(stderr, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), get_arity(c));
 
 			return NULL;
 		}
 
 		// Remove module from head if present...
 
-		if ((p1->val_off == g_neck_s) && (c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
+		if ((p1->val_off == g_neck_s) && (c->val_off == g_colon_s) && (get_arity(c) == 2) && is_atom(FIRST_ARG(c))) {
 			const char *name = C_STR(m, FIRST_ARG(c));
 			module *tmp_m = find_module(m->pl, name), *save_m = m;
 
 			if (!tmp_m) {
 				if (consulting)
-					fprintf(stderr, "Error: existence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: existence error module %s:(%s)/%u\n", name, C_STR(m, c), get_arity(c));
 
 				return NULL;
 			} else
@@ -1961,18 +1962,18 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 
 			if (!is_callable(c) || is_iso_list(c)) {
 				if (consulting)
-					fprintf(stderr, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), get_arity(c));
 
 				return NULL;
 			}
 
-		} else if ((c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
+		} else if ((c->val_off == g_colon_s) && (get_arity(c) == 2) && is_atom(FIRST_ARG(c))) {
 			const char *name = C_STR(m, FIRST_ARG(c));
 			module *tmp_m = find_module(m->pl, name);
 
 			if (!tmp_m) {
 				if (consulting)
-					fprintf(stderr, "Error: extistence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: extistence error module %s:(%s)/%u\n", name, C_STR(m, c), get_arity(c));
 
 				return NULL;
 			} else
@@ -1980,7 +1981,7 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 
 			if (!is_callable(p1+2) || is_iso_list(p1+2)) {
 				if (consulting)
-					fprintf(stderr, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), get_arity(c));
 
 				return NULL;
 			}
@@ -2009,7 +2010,7 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 		pr = create_predicate(m, c, &created);
 
 		if (!pr && consulting)
-			fprintf(stderr, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+			fprintf(stderr, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), get_arity(c));
 
 		check_error(pr);
 
@@ -2017,20 +2018,20 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 			if (is_check_directive(p1))
 				pr->is_check_directive = true;
 
-			clear_property(m, C_STR(m, c), c->arity);
+			clear_property(m, C_STR(m, c), get_arity(c));
 
 			if (!consulting) {
-				push_property(m, C_STR(m, c), c->arity, "dynamic");
+				push_property(m, C_STR(m, c), get_arity(c), "dynamic");
 				pr->is_dynamic = true;
 			} else {
 				if (m->prebuilt)
-					push_property(m, C_STR(m, c), c->arity, "built_in");
+					push_property(m, C_STR(m, c), get_arity(c), "built_in");
 
-				push_property(m, C_STR(m, c), c->arity, "static");
+				push_property(m, C_STR(m, c), get_arity(c), "static");
 			}
 
 			if (consulting && m->make_public) {
-				push_property(m, C_STR(m, c), c->arity, "public");
+				push_property(m, C_STR(m, c), get_arity(c), "public");
 				pr->is_public = true;
 			}
 		}
@@ -2082,7 +2083,7 @@ void recheck_var_in_indexed_args(predicate *pr)
 		if (!ground)
 			pr->is_var_in_head = true;
 
-		if (!c->arity)
+		if (!get_arity(c))
 			return;
 
 		cell *arg1 = FIRST_ARG(c);
@@ -2131,7 +2132,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		// Pick the first later argument with no variable-headed clauses.
 		// A variable key cannot be ordered in the skiplist, so an index on
 		// that argument would force every lookup back to the clause walk.
-		for (unsigned n = 1; n < pr->key.arity; n++) {
+		for (unsigned n = 1; n < get_arity(&pr->key); n++) {
 			bool has_var = false;
 
 			for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
@@ -2162,10 +2163,10 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			else
 				sl_app(pr->idx0, c, cl2);
 
-			if (c->arity && is_var(FIRST_ARG(c)))
+			if (get_arity(c) && is_var(FIRST_ARG(c)))
 				pr->is_var_in_first_arg = true;
 
-			cell *k1 = c->arity ? FIRST_ARG(c) : c;
+			cell *k1 = get_arity(c) ? FIRST_ARG(c) : c;
 			sl_app(pr->idx1, k1, cl2);
 
 			if (pr->idx2)
@@ -2176,7 +2177,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	}
 
 	cell *c = get_head(r->cl.cells);
-	cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
+	cell *arg1 = get_arity(c) ? FIRST_ARG(c) : NULL;
 	cell *k1 = arg1 ? arg1 : c;
 	bool ground = !is_var(c) && (!is_compound(c) || is_ground(c));
 

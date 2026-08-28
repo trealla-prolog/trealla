@@ -80,7 +80,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 	list stack = {0};
 	vnode *n = TPL_malloc(sizeof(vnode));
 	if (!n) return;
-	n->arity = p1->arity;
+	n->arity = get_arity(p1);
 	n->p1 = p1 + 1;
 	n->p1_ctx = p1_ctx;
 	n->depth = depth;
@@ -136,7 +136,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 				return;
 			}
 
-			cn->arity = c->arity;
+			cn->arity = get_arity(c);
 			cn->p1 = c + 1;
 			cn->p1_ctx = c_ctx;
 			cn->depth = n->depth + 1;
@@ -196,7 +196,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 		}
 
 		bool any = false;
-		int arity = p1->arity;
+		int arity = get_arity(p1);
 		p1++;
 
 		while (arity--) {
@@ -267,7 +267,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 	if (!n)
 		return true;
 
-	n->arity = p1->arity;
+	n->arity = get_arity(p1);
 	n->p1 = p1 + 1;
 	n->p1_ctx = p1_ctx;
 	n->depth = depth;
@@ -318,7 +318,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 				return true;
 			}
 
-			cn->arity = c->arity;
+			cn->arity = get_arity(c);
 			cn->p1 = c + 1;
 			cn->p1_ctx = c_ctx;
 			// List spines do not consume depth (same as the old iterative

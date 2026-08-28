@@ -108,12 +108,12 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 // Derived type...
 
-#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
-#define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
+#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !get_arity(c))
+#define is_iso_list(c) (is_interned(c) && (get_arity(c) == 2) && ((c)->val_off == g_dot_s))
 #define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_INT_BIG))
 #define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_INT_BIG))
-#define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
-#define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
+#define is_boolean(c) ((is_interned(c) && !get_arity(c) && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
+#define is_atom(c) ((is_interned(c) && !get_arity(c)) || is_cstring(c))
 #define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
 #define is_codes(c) (is_string(c) && ((c)->flags & FLAG_CSTR_CODES))
 #define is_managed(c) ((c)->flags & FLAG_MANAGED)
@@ -121,7 +121,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
 #define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
 #define is_list(c) (is_iso_list(c) || is_string(c))
-#define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
+#define is_nil(c) (is_interned(c) && !get_arity(c) && ((c)->val_off == g_nil_s))
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
 #define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
 #define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
@@ -136,7 +136,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) ((c)->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
-#define is_compound(c) (is_interned(c) && (c)->arity)
+#define is_compound(c) (is_interned(c) && get_arity(c))
 #define is_structure(c) (is_compound(c) || is_string(c))
 #define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
 #define is_atomic(c) (is_atom(c) || is_number(c))
@@ -160,7 +160,8 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define get_smalluint(c) (c)->val_uint
 #define set_smalluint(c,v) (c)->val_uint = (v)
 #define get_voidptr(c) (c)->val_voidptr
-#define get_arity(c) (c)->arity
+#define get_arity(c) ((c)->arity)
+#define set_arity(c,v) ((c)->arity = (v))
 
 #define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
 #define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)

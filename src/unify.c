@@ -46,7 +46,7 @@ static int compare_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 	if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
 		return 0;
 
-	int arity = p1->arity;
+	int arity = get_arity(p1);
 	p1 = p1 + 1;
 	p2 = p2 + 1;
 
@@ -168,10 +168,10 @@ static int compare_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx 
 		return -1;
 	}
 
-	if (p1->arity < p2->arity)
+	if (get_arity(p1) < get_arity(p2))
 		return -1;
 
-	if (p1->arity > p2->arity)
+	if (get_arity(p1) > get_arity(p2))
 		return 1;
 
 	if ((is_string(p1) && is_iso_list(p2))
@@ -519,7 +519,7 @@ static bool unify_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_c
 
 static bool unify_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
 {
-	if (p1->arity != p2->arity)
+	if (get_arity(p1) != get_arity(p2))
 		return false;
 
 	if (p1->val_off != p2->val_off)
@@ -531,7 +531,7 @@ static bool unify_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	if (compound_pair_seen(q, p1, p1_ctx, p2, p2_ctx))
 		return true;
 
-	int arity = p1->arity;
+	int arity = get_arity(p1);
 	p1++; p2++;
 
 	while (arity--) {
@@ -595,7 +595,7 @@ static bool unify_interned(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 	if (is_iso_list(p1) && is_iso_list(p2))
 		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth);
 
-	if (p1->arity || p2->arity)
+	if (get_arity(p1) || get_arity(p2))
 		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
 	if (is_interned(p2))

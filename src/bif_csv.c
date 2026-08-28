@@ -249,7 +249,7 @@ bool bif_parse_csv_line_3(query *q)
 		cell *h = PROLOG_LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
-		if (is_compound(h) && (h->arity == 1)) {
+		if (is_compound(h) && (get_arity(h) == 1)) {
 			cell *c = h + 1;
 
 			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
@@ -304,7 +304,7 @@ bool bif_parse_csv_file_2(query *q)
 		cell *h = PROLOG_LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
-		if (is_compound(h) && (h->arity == 1)) {
+		if (is_compound(h) && (get_arity(h) == 1)) {
 			cell *c = h + 1;
 
 			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
@@ -480,7 +480,7 @@ bool bif_write_csv_file_3(query *q)
 		cell *h = PROLOG_LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
-		if (is_compound(h) && (h->arity == 1)) {
+		if (is_compound(h) && (get_arity(h) == 1)) {
 			cell *c = h + 1;
 
 			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))

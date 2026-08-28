@@ -117,7 +117,7 @@ static bool bif_nb_setarg_3(query *q)
 
 	unsigned arg_nbr = get_smalluint(p1);
 
-	if ((arg_nbr == 0) || (arg_nbr > p2->arity))
+	if ((arg_nbr == 0) || (arg_nbr > get_arity(p2)))
 		return false;
 
 	p2 = p2 + 1;
@@ -175,12 +175,12 @@ static bool bif_findnsols_4(query *q)
 	cell *p01 = NULL;
 
 	if (!q->retry) {
-		if (is_compound(p0) && (p0->arity == 1) && (p0->val_off == g_count_s))
+		if (is_compound(p0) && (get_arity(p0) == 1) && (p0->val_off == g_count_s))
 			p01 = deref(q, p0+1, p0_ctx);
 
 		if (is_smallint(p0)) {
 			nsols = get_smallint(p0);
-		} else if (is_compound(p0) && (p0->arity == 1) && (p0->val_off == g_count_s) && is_smallint(p01)) {
+		} else if (is_compound(p0) && (get_arity(p0) == 1) && (p0->val_off == g_count_s) && is_smallint(p01)) {
 			nsols = get_smallint(p01);
 		} else
 			return throw_error(q, p0, p0_ctx, "type_error", "integer");
@@ -586,7 +586,7 @@ static bool bif_iso_atom_chars_2(query *q)
 		cell tmp;
 		CHECKED(make_slice(q, &tmp, p2, 0, C_STRLEN(q, p2)));
 		tmp.flags &= ~FLAG_CSTR_STRING;
-		tmp.arity = 0;
+		set_arity(&tmp, 0);
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -632,7 +632,7 @@ static bool bif_iso_atom_chars_2(query *q)
 	if (is_string(p2) && is_var(p1)) {
 		cell tmp = *p2;
 		tmp.flags &= ~FLAG_CSTR_STRING;
-		tmp.arity = 0;
+		set_arity(&tmp, 0);
 		bool ok = unify(q, p1, p1_ctx, p2, q->st.cur_ctx);
 		return ok;
 	}
@@ -1843,7 +1843,7 @@ static bool bif_iso_arg_3(query *q)
 
 	unsigned arg_nbr = get_smalluint(p1);
 
-	if ((arg_nbr == 0) || (arg_nbr > p2->arity))
+	if ((arg_nbr == 0) || (arg_nbr > get_arity(p2)))
 		return false;
 
 	if (is_list(p2)) {
@@ -1911,10 +1911,10 @@ static bool bif_iso_univ_2(query *q)
 	if (is_var(p2)) {
 		cell tmp2 = *p1;
 		tmp2.num_cells = 1;
-		tmp2.arity = 0;
 		CLR_OP(&tmp2);
+		set_arity(&tmp2, 0);
 		allocate_list(q, &tmp2);
-		unsigned arity = p1->arity;
+		unsigned arity = get_arity(p1);
 		p1++;
 
 		while (arity--) {
@@ -1984,10 +1984,10 @@ static bool bif_iso_univ_2(query *q)
 		if (!is_interned(tmp2) && arity)
 			return throw_error(q, tmp2, q->st.cur_ctx, "type_error", "atom");
 
-		if (tmp2->arity && arity)
+		if (get_arity(tmp2) && arity)
 			return throw_error(q, tmp2, q->st.cur_ctx, "type_error", "atom");
 
-		if (tmp2->arity)
+		if (get_arity(tmp2))
 			return throw_error(q, tmp2, q->st.cur_ctx, "type_error", "atomic");
 
 		if (arity > MAX_ARITY)
@@ -1996,7 +1996,7 @@ static bool bif_iso_univ_2(query *q)
 		CHECKED(tmp = alloc_heap(q, num_cells));
 		dup_cells(tmp, tmp2, num_cells);
 		tmp->num_cells = num_cells;
-		tmp->arity = arity;
+		set_arity(tmp, arity);
 		bool found = false;
 
 		if (is_callable(tmp)) {
@@ -2029,14 +2029,13 @@ static bool bif_iso_univ_2(query *q)
 
 	if (is_string(p1)) {
 		make_atom(&tmp, g_dot_s);
-	} else if (is_cstring(p1) && !p1->arity) {
+	} else if (is_cstring(p1) && !get_arity(p1)) {
 		pl_idx off = new_atom(q->pl, C_STR(q, p1));
 		CHECKED(off != ERR_IDX);
 		make_atom(&tmp, off);
 	} else {
 		tmp = *p1;
 		tmp.num_cells = 1;
-		tmp.arity = 0;
 		tmp.flags = 0;
 
 		if (is_builtin(p1)) {
@@ -2045,10 +2044,11 @@ static bool bif_iso_univ_2(query *q)
 		}
 
 		CLR_OP(&tmp);
+		set_arity(&tmp, 0);
 	}
 
 	allocate_list(q, &tmp);
-	unsigned arity = p1->arity;
+	unsigned arity = get_arity(p1);
 	p1++;
 
 	while (arity--) {
@@ -2076,7 +2076,7 @@ static cell *do_term_variables(query *q, cell *p1, pl_ctx p1_ctx)
 
 		for (unsigned i = 0, done = 0; i < cnt; i++) {
 			make_atom(tmp+idx, g_dot_s);
-			tmp[idx].arity = 2;
+			set_arity(&tmp[idx], 2);
 			tmp[idx].num_cells = ((cnt-done)*2)+1;
 			idx++;
 			make_ref(tmp+idx, q->tabs[i].var_num, q->tabs[i].ctx);
@@ -2089,7 +2089,7 @@ static cell *do_term_variables(query *q, cell *p1, pl_ctx p1_ctx)
 		}
 
 		make_atom(tmp+idx++, g_nil_s);
-		tmp[0].arity = 2;
+		set_arity(&tmp[0], 2);
 		tmp[0].num_cells = idx;
 	} else
 		make_atom(tmp, g_nil_s);
@@ -2147,7 +2147,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_ctx p1_ctx)
 				continue;
 
 			make_atom(tmp+idx, g_dot_s);
-			tmp[idx].arity = 2;
+			set_arity(&tmp[idx], 2);
 			tmp[idx].num_cells = ((cnt2-done)*2)+1;
 			idx++;
 			make_ref(tmp+idx, q->tabs[i].var_num, q->tabs[i].ctx);
@@ -2156,7 +2156,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_ctx p1_ctx)
 		}
 
 		make_atom(tmp+idx++, g_nil_s);
-		tmp[0].arity = 2;
+		set_arity(&tmp[0], 2);
 		tmp[0].num_cells = idx;
 	} else
 		make_atom(tmp, g_nil_s);
@@ -2292,7 +2292,7 @@ static bool bif_iso_functor_3(query *q)
 		CHECKED(tmp);
 		*tmp = (cell){0};
 		tmp[0].tag = TAG_INTERNED;
-		tmp[0].arity = arity;
+		set_arity(&tmp[0], arity);
 		tmp[0].num_cells = 1 + arity;
 
 		if (!is_interned(p2)) {
@@ -2341,16 +2341,16 @@ static bool bif_iso_functor_3(query *q)
 	} else {
 		tmp = *p1;
 		tmp.num_cells = 1;
-		tmp.arity = 0;
 		tmp.flags = 0;
 		CLR_OP(&tmp);
+		set_arity(&tmp, 0);
 	}
 
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
 		return false;
 
 	GET_NEXT_ARG(p3,any);
-	make_uint(&tmp, p1->arity);
+	make_uint(&tmp, get_arity(p1));
 	return unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -2396,7 +2396,7 @@ static bool bif_iso_current_rule_1(query *q)
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(q->pl, functor);
-	tmp.arity = arity;
+	set_arity(&tmp, arity);
 
 	if (search_predicate(q->st.m, &tmp))
 		return true;
@@ -2428,7 +2428,7 @@ static bool search_functor(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 
 		cell tmpn, tmpa;
 		make_atom(&tmpn, pr->key.val_off);
-		make_int(&tmpa, pr->key.arity);
+		make_int(&tmpa, get_arity(&pr->key));
 
 		if (unify(q, p1, p1_ctx, &tmpn, q->st.cur_ctx)
 			&& unify(q, p2, p2_ctx, &tmpa, q->st.cur_ctx)) {
@@ -2473,7 +2473,7 @@ static bool bif_iso_current_predicate_1(query *q)
 		return ok && unify(q, p_pi, p_pi_ctx, tmp, q->st.cur_ctx);
 	}
 
-	if (p_pi->arity != 2)
+	if (get_arity(p_pi) != 2)
 		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	if (CMP_STRING_TO_CSTR(q, p_pi, "/"))
@@ -2499,7 +2499,7 @@ static bool bif_iso_current_predicate_1(query *q)
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = is_interned(p1) ? p1->val_off : new_atom(q->pl, C_STR(q, p1));
-	tmp.arity = get_smallint(p2);
+	set_arity(&tmp, get_smallint(p2));
 	predicate *pr;
 
 	if (q->st.m == q->pl->user_m)
@@ -2692,7 +2692,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		make_int(&tmp[2], v2);
 		make_int(&tmp[3], v3);
 		make_atom(&tmp[4], g_nil_s);
-		tmp[0].arity = 4;
+		set_arity(&tmp[0], 4);
 		tmp[0].num_cells = 5;
 		return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "version_git")) {
@@ -2813,7 +2813,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
 
-			if (!CMP_STRING_TO_CSTR(q, h, "max_depth") && (h->arity == 1)) {
+			if (!CMP_STRING_TO_CSTR(q, h, "max_depth") && (get_arity(h) == 1)) {
 				if (!is_integer(h1))
 					return answer_write_options_error(q, h);
 
@@ -2821,7 +2821,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 					return answer_write_options_error(q, h);
 
 				q->pl->def_max_depth = get_smallint(h1);
-			} else if (!CMP_STRING_TO_CSTR(q, h, "quoted") && (h->arity == 1)) {
+			} else if (!CMP_STRING_TO_CSTR(q, h, "quoted") && (get_arity(h) == 1)) {
 				if (!is_atom(h1))
 					return answer_write_options_error(q, h);
 
@@ -2831,7 +2831,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 					q->pl->def_quoted = false;
 				else
 					return answer_write_options_error(q, h);
-			} else if (!CMP_STRING_TO_CSTR(q, h, "double_quotes") && (h->arity == 1)) {
+			} else if (!CMP_STRING_TO_CSTR(q, h, "double_quotes") && (get_arity(h) == 1)) {
 				if (!is_atom(h1))
 					return answer_write_options_error(q, h);
 
@@ -3166,7 +3166,7 @@ static bool bif_module_info_2(query *q)
 		make_instr(tmp+0, g_slash_s, NULL, 2, 2);
 		SET_OP(tmp, OP_YFX);
 		make_atom(tmp+1, pr->key.val_off);
-		make_int(tmp+2, pr->key.arity);
+		make_int(tmp+2, get_arity(&pr->key));
 		append_list(q, tmp);
 	}
 
@@ -3183,7 +3183,7 @@ static bool bif_source_info_2(query *q)
 	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->val_off != g_slash_s)
@@ -3199,9 +3199,10 @@ static bool bif_source_info_2(query *q)
 	if (!is_smallint(a))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	cell key;
+	cell key = (cell){0};
+	key.tag = TAG_INTERNED;
 	key.val_off = f->val_off;
-	key.arity = get_smalluint(a);
+	set_arity(&key, get_smalluint(a));
 	predicate *pr = find_predicate(q->st.m, &key);
 
 	if (!pr || pr->is_dynamic)
@@ -3232,7 +3233,7 @@ static bool bif_help_1(query *q)
 	GET_FIRST_ARG(p1,any);
 	bool found = false, evaluable = false;
 
-	if (!p1->arity) {
+	if (!get_arity(p1)) {
 		if (!is_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
@@ -3259,7 +3260,7 @@ static bool bif_help_1(query *q)
 	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->val_off != g_slash_s)
@@ -3330,7 +3331,7 @@ static bool bif_help_2(query *q)
 	const char *pr = C_STR(q, p2);
 	char url[1024];
 
-	if (!p1->arity) {
+	if (!get_arity(p1)) {
 		if (!is_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
@@ -3352,7 +3353,7 @@ static bool bif_help_2(query *q)
 	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->val_off != g_slash_s)
@@ -3453,7 +3454,7 @@ static bool bif_module_help_2(query *q)
 	if (!m)
 		return false;
 
-	if (!p1->arity) {
+	if (!get_arity(p1)) {
 		if (!is_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
@@ -3478,7 +3479,7 @@ static bool bif_module_help_2(query *q)
 	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->val_off != g_slash_s)
@@ -3522,7 +3523,7 @@ static bool bif_module_help_3(query *q)
 	if (!m)
 		return false;
 
-	if (!p1->arity) {
+	if (!get_arity(p1)) {
 		if (!is_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
@@ -3547,7 +3548,7 @@ static bool bif_module_help_3(query *q)
 	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	if (p1->arity != 2)
+	if (get_arity(p1) != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->val_off != g_slash_s)
@@ -3643,7 +3644,7 @@ static bool do_profile(query *q)
 					continue;
 
 				fprintf(stderr, "'%s/%u',%llu,%llu,%llu\n",
-					C_STR(q, &pr->key), pr->key.arity,
+					C_STR(q, &pr->key), get_arity(&pr->key),
 					(unsigned long long)r->attempted, (unsigned long long)r->matched, (unsigned long long)r->tcos);
 			}
 		}
@@ -4023,7 +4024,7 @@ static bool bif_load_text_2(query *q)
 		cell *c = deref(q, h, p2_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_compound(c) && (c->arity == 1)) {
+		if (is_compound(c) && (get_arity(c) == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, c_ctx);
 
@@ -4114,7 +4115,7 @@ static bool bif_must_be_4(query *q)
 			return throw_error2(q, p1, p1_ctx, "instantiation_error", "ground", p3);
 	} else if (!strcmp(src, "compound") && !is_structure(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "compound", p3);
-	else if (is_compound(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
+	else if (is_compound(p2) && (get_arity(p2) == 1) && !strcmp(src, "list")) {
 		cell *c = p2+1;
 		c = deref(q, c, p2_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
@@ -4187,7 +4188,7 @@ static bool bif_must_be_4(query *q)
 	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1)) {
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 	} else if (!strcmp(src, "pair")) {
-		if (!is_compound(p1) || (p1->arity != 2))
+		if (!is_compound(p1) || (get_arity(p1) != 2))
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
 		if (p1->val_off != g_minus_s)
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
@@ -4259,7 +4260,7 @@ static bool do_must_be_2(query *q, cell *p2, pl_ctx p2_ctx, cell *p1, pl_ctx p1_
 	} else if (!strcmp(src, "compound")) {
 		if (!is_structure(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "compound");
-	} else if (is_compound(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
+	} else if (is_compound(p2) && (get_arity(p2) == 1) && !strcmp(src, "list")) {
 		cell *c = p2+1;
 		c = deref(q, c, p2_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
@@ -4303,7 +4304,7 @@ static bool do_must_be_2(query *q, cell *p2, pl_ctx p2_ctx, cell *p1, pl_ctx p1_
 	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1)) {
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 	} else if (!strcmp(src, "pair")) {
-		if (!is_compound(p1) || (p1->arity != 2))
+		if (!is_compound(p1) || (get_arity(p1) != 2))
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
 		if (p1->val_off != g_minus_s)
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
@@ -4366,7 +4367,7 @@ static bool bif_can_be_4(query *q)
 	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1)) {
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 	} else if (!strcmp(src, "pair")) {
-		if (!is_compound(p1) || (p1->arity != 2))
+		if (!is_compound(p1) || (get_arity(p1) != 2))
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
 		if (p1->val_off != g_minus_s)
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
@@ -4422,7 +4423,7 @@ static bool bif_can_be_2(query *q)
 	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1)) {
 		return throw_error(q, p1, p2_ctx, "domain_error", "not_less_than_zero");
 	} else if (!strcmp(src, "pair")) {
-		if (!is_compound(p1) || (p1->arity != 2))
+		if (!is_compound(p1) || (get_arity(p1) != 2))
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
 		if (p1->val_off != g_minus_s)
 			return throw_error(q, p1, p1_ctx, "type_error", "pair");
@@ -4523,7 +4524,7 @@ static bool bif_crypto_data_hash_3(query *q)
 		h = deref(q, h, p3_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
 
-		if (is_compound(h) && (h->arity == 1)) {
+		if (is_compound(h) && (get_arity(h) == 1)) {
 			cell *arg = h+1;
 			arg = deref(q, arg, h_ctx);
 			pl_ctx arg_ctx = q->latest_ctx;
@@ -5374,7 +5375,7 @@ static bool bif_sys_predicate_property_2(query *q)
 	cell tmp;
 	bool found = false, evaluable = false;
 
-	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	if ((p1->val_off == g_colon_s) && (get_arity(p1) == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -5566,11 +5567,11 @@ static bool bif_char_type_2(query *q)
 		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "whitespace"))
 		return is_space_utf8(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && !p2->arity)
+	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && !get_arity(p2))
 		return iswlower(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && !p2->arity)
+	else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && !get_arity(p2))
 		return iswupper(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && p2->arity) {
+	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && get_arity(p2)) {
 		cell *arg21 = deref(q, p2+1, p2_ctx);
 		pl_ctx arg21_ctx = q->latest_ctx;
 		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
@@ -5580,7 +5581,7 @@ static bool bif_char_type_2(query *q)
 		bool ok = unify(q, arg21, arg21_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
-	} else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && p2->arity) {
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && get_arity(p2)) {
 		cell *arg21 = deref(q, p2+1, p2_ctx);
 		pl_ctx arg21_ctx = q->latest_ctx;
 		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
@@ -6121,8 +6122,8 @@ static bool bif_sys_det_length_rundown_2(query *q)
 		l->tag = TAG_INTERNED;
 		l->val_off = g_dot_s;
 		l->num_cells = n-- * 2 + 1;
-		l->arity = 2;
 		l->flags = 0;
+		set_arity(l, 2);
 		l++;
 		make_ref(l, var_num++, q->st.cur_ctx);
 		l->flags |= FLAG_VAR_ANON | FLAG_VAR_VOID;
@@ -6827,7 +6828,7 @@ static void load_flags(query *q)
 {
 	cell tmp;
 	make_atom(&tmp, new_atom(q->pl, "$current_prolog_flag"));
-	tmp.arity = 2;
+	set_arity(&tmp, 2);
 
 	if (do_abolish(q, &tmp, &tmp, false) != true)
 		return;

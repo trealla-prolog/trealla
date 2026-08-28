@@ -402,7 +402,7 @@ static cell *dcg_deref(dcg_ctx *c, const cell *t, pl_ctx t_ctx, pl_ctx *out_ctx)
 
 static bool is_functor(const cell *t, pl_idx functor, unsigned arity)
 {
-	return is_interned(t) && (t->val_off == functor) && (t->arity == arity);
+	return is_interned(t) && (t->val_off == functor) && (get_arity(t) == arity);
 }
 
 static cell *nth_arg(const cell *t, unsigned n)
@@ -432,7 +432,7 @@ static bool dcg_is_constr(const cell *t)
 		return false;
 
 	const pl_idx f = t->val_off;
-	const unsigned a = t->arity;
+	const unsigned a = get_arity(t);
 
 	if ((a == 2) && ((f == g_conjunction_s) || (f == g_disjunction_s)
 		|| (f == g_bar_s) || (f == g_if_then_s)))
@@ -672,12 +672,12 @@ static dcg_rc xlate_nonterminal(dcg_ctx *c, const cell *nt, pl_ctx nt_ctx,
 		return DCG_ERROR;
 	}
 
-	unsigned at = emit_open(c, nt->val_off, nt->arity + 2);
+	unsigned at = emit_open(c, nt->val_off, get_arity(nt) + 2);
 
 	if (c->oom)
 		return DCG_ERROR;
 
-	for (unsigned i = 0; i < nt->arity; i++) {
+	for (unsigned i = 0; i < get_arity(nt); i++) {
 		pl_ctx a_ctx;
 		cell *a = dcg_deref(c, nth_arg(nt, i), nt_ctx, &a_ctx);
 
@@ -857,7 +857,7 @@ static dcg_rc xlate_body(dcg_ctx *c, const cell *b, pl_ctx b_ctx,
 	}
 
 	const pl_idx f = b->val_off;
-	const unsigned a = b->arity;
+	const unsigned a = get_arity(b);
 
 	// 4. (A, B) (7.14.3)
 
@@ -1013,12 +1013,12 @@ static void arena_resolve(dcg_ctx *c, query *q)
 
 		unsigned specifier;
 
-		if (!GET_OP(x) && search_op(q->st.m, C_STR(q, x), &specifier, x->arity == 1)) {
-			if ((x->arity == 2) && IS_INFIX(specifier))
+		if (!GET_OP(x) && search_op(q->st.m, C_STR(q, x), &specifier, get_arity(x) == 1)) {
+			if ((get_arity(x) == 2) && IS_INFIX(specifier))
 				SET_OP(x, specifier);
-			else if ((x->arity == 1) && IS_POSTFIX(specifier))
+			else if ((get_arity(x) == 1) && IS_POSTFIX(specifier))
 				SET_OP(x, specifier);
-			else if ((x->arity == 1) && IS_PREFIX(specifier))
+			else if ((get_arity(x) == 1) && IS_PREFIX(specifier))
 				SET_OP(x, specifier);
 		}
 	}

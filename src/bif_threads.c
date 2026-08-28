@@ -1164,7 +1164,7 @@ static bool bif_thread_create_3(query *q)
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
-			if (c->arity != 1)
+			if (get_arity(c) != 1)
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 			if (is_interned(name) && (name->val_off == g_true_s))
@@ -1665,7 +1665,7 @@ static bool do_thread_property_pin_both(query *q)
 
 	thread *t = find_thread_by_id(q->pl, n);
 
-	if (p2->arity != 1)
+	if (get_arity(p2) != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "thread_property");
 
 	cell *c = deref(q, p2, p2_ctx);
@@ -2014,7 +2014,7 @@ static bool do_message_queue_property_pin_both(query *q)
 
 	thread *t = find_thread_by_id(q->pl, n);
 
-	if (p2->arity != 1)
+	if (get_arity(p2) != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "queue_property");
 
 	cell *c = deref(q, p2, p2_ctx);
@@ -2329,7 +2329,7 @@ static bool do_mutex_property_pin_both(query *q)
 
 	thread *t = find_thread_by_id(q->pl, n);
 
-	if (p2->arity != 1)
+	if (get_arity(p2) != 1)
 		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
 
 	cell *c = deref(q, p2, p2_ctx);
