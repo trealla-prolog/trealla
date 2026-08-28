@@ -333,7 +333,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (created) *created = false;
 	bool found, evaluable;
 
-	if ((c->val_off == g_neck_s) || is_var(c) || (get_arity(c) > MAX_PREDICATE_ARITY))
+	if ((c->val_off == g_neck_s) || is_var(c) || (get_arity(c) > MAX_PROCEDURE_ARITY))
 		return NULL;
 
 	builtins *b;
@@ -843,7 +843,7 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 
 void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 {
-	if (arity > MAX_PREDICATE_ARITY) {
+	if (arity > MAX_PROCEDURE_ARITY) {
 		m->error = true;
 		return;
 	}
@@ -865,7 +865,7 @@ void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 
 void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 {
-	if (arity > MAX_PREDICATE_ARITY) {
+	if (arity > MAX_PROCEDURE_ARITY) {
 		m->error = true;
 		return;
 	}
@@ -887,7 +887,7 @@ void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 
 void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 {
-	if (arity > MAX_PREDICATE_ARITY) {
+	if (arity > MAX_PROCEDURE_ARITY) {
 		m->error = true;
 		return;
 	}
@@ -912,7 +912,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 	const char *name = C_STR(m, c);
 	unsigned arity = get_arity(c);
 
-	if (arity > MAX_PREDICATE_ARITY) {
+	if (arity > MAX_PROCEDURE_ARITY) {
 		m->error = true;
 		return;
 	}

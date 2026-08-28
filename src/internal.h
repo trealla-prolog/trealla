@@ -75,7 +75,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000
 #define MAX_ARITY UINT32_MAX
-#define MAX_PREDICATE_ARITY UINT8_MAX
+#define MAX_PROCEDURE_ARITY UINT8_MAX
 #define MAX_IF_DEPTH 256
 #define MAX_VARS 1024
 #define MAX_QUEUES 256

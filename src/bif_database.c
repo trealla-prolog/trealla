@@ -374,7 +374,7 @@ static bool bif_iso_abolish_1(query *q)
 	if (is_negative(p1_arity))
 		return throw_error(q, p1_arity, p1_ctx, "domain_error", "not_less_than_zero");
 
-	if (get_smallint(p1_arity) > MAX_PREDICATE_ARITY)
+	if (get_smallint(p1_arity) > MAX_PROCEDURE_ARITY)
 		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
 
 	bool found = false;
@@ -419,7 +419,7 @@ static bool bif_iso_asserta_1(query *q)
 
 	cell *db_head = get_db_head(head);
 
-	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PROCEDURE_ARITY))
 		return throw_error(q, db_head, q->st.cur_ctx, "representation_error", "max_arity");
 
 	bool found = false;
@@ -489,7 +489,7 @@ static bool do_assertz_1(query *q, bool consulting)
 
 	cell *db_head = get_db_head(head);
 
-	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PROCEDURE_ARITY))
 		return throw_error(q, db_head, q->st.cur_ctx, "representation_error", "max_arity");
 
 	bool found = false, evaluable = false;
@@ -563,7 +563,7 @@ static bool do_asserta_2(query *q)
 
 	cell *db_head = get_db_head(head);
 
-	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PROCEDURE_ARITY))
 		return throw_error(q, db_head, q->latest_ctx, "representation_error", "max_arity");
 
 	bool found = false;
@@ -669,7 +669,7 @@ static bool do_assertz_2(query *q)
 
 	cell *db_head = get_db_head(head);
 
-	if (is_callable(db_head) && (get_arity(db_head) > MAX_PREDICATE_ARITY))
+	if (is_callable(db_head) && (get_arity(db_head) > MAX_PROCEDURE_ARITY))
 		return throw_error(q, db_head, q->latest_ctx, "representation_error", "max_arity");
 
 	bool found = false;
@@ -843,7 +843,7 @@ static bool bif_abolish_2(query *q)
 	if (is_negative(p1_arity))
 		return throw_error(q, p1_arity, p1_ctx, "domain_error", "not_less_than_zero");
 
-	if (get_smallint(p1_arity) > MAX_PREDICATE_ARITY)
+	if (get_smallint(p1_arity) > MAX_PROCEDURE_ARITY)
 		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
 
 	bool force = false, tree = false;
