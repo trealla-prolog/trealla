@@ -1955,9 +1955,6 @@ static bool bif_iso_univ_2(query *q)
 			l = PROLOG_LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
-			if (arity == MAX_ARITY)
-				return throw_error(q, save_p2, p2_ctx, "representation_error", "max_arity");
-
 			arity++;
 		}
 
@@ -2273,8 +2270,8 @@ static bool bif_iso_functor_3(query *q)
 		if (is_negative(p3))
 			return throw_error(q, p3, p3_ctx, "domain_error", "not_less_than_zero");
 
-		if (is_bigint(p3) || ((uint64_t)get_smallint(p3) > MAX_ARITY))
-			return throw_error(q, p3, p3_ctx, "representation_error", "max_arity");
+		if (is_bigint(p3))
+			return throw_error(q, p3, p3_ctx, "resource_error", "memory");
 
 		if (!is_atom(p2) && is_positive(p3))
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
@@ -6858,7 +6855,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "verbose", q->pl->quiet?"false":"true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "max_arity", "unbounded");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(%s),double_quotes(%s)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth, q->pl->def_quoted?"true":"false", q->pl->def_double_quotes?"true":"false");

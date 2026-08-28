@@ -5127,19 +5127,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				break;
 			}
 
-			if (is_arg_processing) {
-				if (arity == MAX_ARITY) {
-					if (!p->do_read_term)
-						fprintf(stderr, "Error: max arity reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-					p->error_desc = "max_arity";
-					p->error_type = "representation_error";
-					p->error = true;
-					break;
-				}
-
+			if (is_arg_processing)
 				arity++;
-			}
 
 			if (is_consing && !SB_strcmp(p->token, "|")) {
 				p->was_consing = last_bar = true;
