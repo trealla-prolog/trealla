@@ -488,7 +488,11 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 		if (!is_ref(c))
 			continue;
 
-		c->flags |= FLAG_VAR_LOCAL;
+		// NB. do not stamp FLAG_VAR_LOCAL here: unify_var()'s occurs-check
+		// gate reads it to skip the cyclic-term scan, and this loop runs
+		// on every var copy_term produces, so it was silently disabling
+		// occurs-check on any goal run via copy_term (e.g. quads'
+		// call_nth), re issue #1135.
 
 		if (from && denotes_same(q, c, c->val_ctx, from_val, from_val_ctx, from_e)) {
 			c->var_num = to->var_num;
