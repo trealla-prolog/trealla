@@ -25,7 +25,7 @@ copy_variant :-
 database_limit :-
 	functor(T, a_long_functor_name, 256),
 	catch(assertz(T), E, true),
-	E = error(representation_error(max_arity),_).
+	E = error(representation_error(max_procedure_arity),_).
 
 syntax_error :-
 	catch(read(_), E, true),

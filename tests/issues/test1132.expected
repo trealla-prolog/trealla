@@ -1,0 +1,6 @@
+max_arity_flag_ok
+max_procedure_arity_flag_ok
+asserta_at_limit_ok
+asserta_over_limit_ok
+assertz_over_limit_ok
+abolish_over_limit_ok
