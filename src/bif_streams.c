@@ -6158,6 +6158,24 @@ static bool bif_sys_bread_3(query *q)
 				clearerr(str->fp_in);
 				return do_yield_on_stream(q, str, false);
 			}
+
+			// A non-task socket is non-blocking now (see bif_net.c), so a
+			// short, non-EOF read here is routinely just EAGAIN - nothing
+			// more arrived *yet* - not a real error. Without this, the
+			// loop above spins at full CPU re-issuing tpl_read() until
+			// data shows up, instead of waiting for it: this predicate
+			// backs library(http)'s Content-Length and chunked body
+			// reads, both of which pass a real positive Len and hit this
+			// path on every ordinary POST/PUT or chunked response.
+			if (ferror(str->fp) && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
+				clearerr(str->fp_in);
+
+				if (!tpl_wait_fd_readable(q, fileno(str->fp_in))) {
+					TPL_free(str->data);
+					str->data = NULL;
+					return throw_timeout(q);	// errno == EINTR
+				}
+			}
 		}
 
 		cell tmp;
