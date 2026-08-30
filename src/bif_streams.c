@@ -698,7 +698,13 @@ static bool do_stream_property(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p1, "end_of_stream") && is_stream(pstr)) {
 		bool at_end_of_file = false;
 
-		if (!str->at_end_of_file && (n > 2)) {
+		// A speculative tpl_getc() here would misreport a live, merely
+		// idle socket as at EOF: the fd is always non-blocking now (see
+		// bif_net.c), so "nothing pending yet" and "peer closed" both
+		// leave ferror() set with no data. add_stream_properties() above
+		// already excludes sockets from the equivalent peek for the same
+		// reason.
+		if (!str->at_end_of_file && (n > 2) && !str->is_socket) {
 			if (str->p) {
 				if (str->p->srcptr && *str->p->srcptr) {
 					int ch = get_char_utf8((const char**)&str->p->srcptr);
@@ -1694,9 +1700,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (!src && !str->p->srcptr && str->fp_in) {
-		bool ready = q->is_task || !str->p->is_socket || tpl_wait_fd_readable(q, fileno(str->fp_in));
-
-		if (!ready || str->p->no_fp || tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1) {
+		if (str->p->no_fp || tpl_getline(&str->p->save_line, &str->p->n_line, q, str) == -1) {
 			if (q->is_task && !feof(str->fp_in) && ferror(str->fp_in)) {
 				clearerr(str->fp_in);
 				return do_yield_on_stream(q, str, false);
@@ -1736,8 +1740,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				str->p->line_num++;
 
 			if (str->fp && (
-				(!q->is_task && str->p->is_socket && !tpl_wait_fd_readable(q, fileno(str->fp_in))) ||
-				str->p->no_fp || (tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1))) {
+				str->p->no_fp || (tpl_getline(&str->p->save_line, &str->p->n_line, q, str) == -1))) {
 				if (q->is_task && !feof(str->fp_in) && ferror(str->fp_in)) {
 					clearerr(str->fp_in);
 					return do_yield_on_stream(q, str, false);
@@ -2079,6 +2082,41 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 	bool ok = unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 	clear_clause(str->p->cl);
 	return ok;
+}
+
+struct retry_ctx_ { query *q; stream *str; };
+
+// Single-byte source for a non-task query reading a socket stream, which
+// is now always non-blocking (see bif_net.c) - so a plain tpl_getc() can
+// come back EOF/ferror on EAGAIN alone, with more data to come shortly.
+// Waits that out instead of taking it for real EOF or an error, and
+// instead of the caller ever blocking the OS thread inside fgetc() the
+// way a blocking-mode fd would. A task defers to its own existing
+// is_task/ferror check after the call, unchanged, so this returns
+// immediately without waiting when q->is_task. Passed to xgetc_utf8() as
+// its byte source (rather than tpl_getc directly) so a UTF-8 sequence
+// split across two reads gets the same treatment on every continuation
+// byte, not just the first.
+static int retry_getc(void *ctx0)
+{
+	struct retry_ctx_ *ctx = ctx0;
+	stream *str = ctx->str;
+	query *q = ctx->q;
+
+	for (;;) {
+		int ch = tpl_getc(str);
+
+		if ((ch != EOF) || q->is_task || feof(str->fp) || !ferror(str->fp) || (errno == EINTR))
+			return ch;
+
+		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			return ch;
+
+		clearerr(str->fp_in);
+
+		if (!tpl_wait_fd_readable(q, fileno(str->fp_in)))
+			return EOF;	// errno == EINTR, set by tpl_wait_fd_readable()
+	}
 }
 
 static bool bif_iso_read_term_2(query *q)
@@ -2889,7 +2927,8 @@ static bool bif_iso_get_char_1(query *q)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "system_error", strerror(errno));
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -2965,7 +3004,8 @@ static bool bif_iso_get_char_2(query *q)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "system_error", strerror(errno));
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3041,7 +3081,8 @@ static bool bif_iso_get_code_1(query *q)
 		fflush(str->fp_out);
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3120,7 +3161,8 @@ static bool bif_iso_get_code_2(query *q)
 		fflush(str->fp_out);
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3192,7 +3234,8 @@ static bool bif_iso_get_byte_1(query *q)
 		fflush(str->fp_out);
 	}
 
-	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : retry_getc(&ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3259,7 +3302,8 @@ static bool bif_iso_get_byte_2(query *q)
 		fflush(str->fp_out);
 	}
 
-	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : retry_getc(&ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3481,7 +3525,8 @@ static bool bif_iso_peek_char_1(query *q)
 	PEEK_UTF8_PENDING(q, str);
 	PEEK_BUFFERED_CHAR(q, str);
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3536,7 +3581,8 @@ static bool bif_iso_peek_char_2(query *q)
 	PEEK_UTF8_PENDING(q, str);
 	PEEK_BUFFERED_CHAR(q, str);
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3593,7 +3639,8 @@ static bool bif_iso_peek_code_1(query *q)
 	PEEK_UTF8_PENDING(q, str);
 	PEEK_BUFFERED_CHAR(q, str);
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3652,7 +3699,8 @@ static bool bif_iso_peek_code_2(query *q)
 	PEEK_UTF8_PENDING(q, str);
 	PEEK_BUFFERED_CHAR(q, str);
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(retry_getc, &ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3705,7 +3753,8 @@ static bool bif_iso_peek_byte_1(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : retry_getc(&ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -3759,7 +3808,8 @@ static bool bif_iso_peek_byte_2(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
+	struct retry_ctx_ ctx = { q, str };
+	int ch = str->ungetch ? str->ungetch : retry_getc(&ctx);
 
 	if (errno == EINTR) {
 		clearerr(str->fp_in);
@@ -4412,7 +4462,7 @@ static bool bif_read_line_to_string_2(query *q)
 		fflush(str->fp_out);
 	}
 
-	if (tpl_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, q, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -4470,7 +4520,7 @@ static bool bif_read_line_to_codes_2(query *q)
 		fflush(str->fp_out);
 	}
 
-	if (tpl_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, q, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -5066,7 +5116,7 @@ static bool bif_getlines_2(query *q)
 	size_t len = 0;
 	CHECKED(init_tmp_heap(q));
 
-	while (tpl_getline(&line, &len, str) != -1) {
+	while (tpl_getline(&line, &len, q, str) != -1) {
 		int len = strlen(line);
 
 		if (len && (line[len-1] == '\n')) {
@@ -5104,7 +5154,7 @@ static bool bif_getlines_3(query *q)
 	bool empty = get_empty(q, p2, p2_ctx);
 	CHECKED(init_tmp_heap(q));
 
-	while (tpl_getline(&line, &len, str) != -1) {
+	while (tpl_getline(&line, &len, q, str) != -1) {
 		int len = strlen(line);
 
 		if (empty) {
@@ -5321,8 +5371,19 @@ static bool bif_getline_1(query *q)
 		fflush(str->fp_out);
 	}
 
-	if (tpl_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, q, str) == -1) {
 		TPL_free(line);
+
+		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
+			clearerr(str->fp_in);
+			return do_yield_on_stream(q, str, false);
+		}
+
+		if (errno == EINTR) {
+			clearerr(str->fp_in);
+			return throw_timeout(q);
+		}
+
 		return false;
 	}
 
@@ -5365,7 +5426,7 @@ static bool bif_getline_2(query *q)
 		fflush(str->fp_out);
 	}
 
-	if (tpl_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, q, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -5413,7 +5474,7 @@ static bool bif_getline_3(query *q)
 		fflush(str->fp_out);
 	}
 
-	if (tpl_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, q, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {

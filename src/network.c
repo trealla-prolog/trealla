@@ -669,7 +669,7 @@ bool tpl_wait_fd_readable(query *q, int fd)
 }
 #endif
 
-int tpl_getline(char **lineptr, size_t *n, stream *str)
+int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 {
 	errno = 0;	// FIX: reset so a stale EINTR from an earlier call isn't misread as an interrupt
 #if USE_OPENSSL
@@ -729,14 +729,71 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 	if (str->is_socket && str->fp_out)
 		fflush(str->fp_out);
 
-	int ok = tpl_getline_fp(lineptr, n, str->fp_in);
+	// A task's own scheduler already retries via do_yield_on_stream() when
+	// its (already non-blocking, see bif_net.c) socket comes back EAGAIN -
+	// same as always, unchanged here.
+	if (q->is_task || !str->is_socket)
+		return tpl_getline_fp(lineptr, n, str->fp_in);
 
-	if (errno == EINTR) {
-		clearerr(str->fp_in);
-		ok = EOF;
+	// A non-task query's socket is non-blocking too now, so a mid-line
+	// EAGAIN is not EOF - tpl_getline_fp() has no way to tell the two
+	// apart and would silently return whatever was accumulated so far as
+	// though the line were complete. Accumulate byte-by-byte here instead
+	// so only a genuine EAGAIN waits (alarm/interrupt-aware, via
+	// tpl_wait_fd_readable()) rather than either corrupting the read or
+	// blocking the OS thread the way a blocking-mode fd's getc() would.
+	if (!*lineptr) {
+		*lineptr = TPL_malloc(*n = 128);
+		ENSURE(*lineptr);
 	}
 
-	return ok;
+	size_t pos = 0;
+
+	for (;;) {
+		int ch = tpl_getc(str);
+
+		if (ch != EOF) {
+			if ((pos + 1) >= *n) {
+				size_t new_size = *n + (*n >> 1);
+				char *new_ptr = TPL_realloc(*lineptr, new_size);
+
+				if (!new_ptr) {
+					errno = ENOMEM;
+					return -1;
+				}
+
+				*lineptr = new_ptr;
+				*n = new_size;
+			}
+
+			(*lineptr)[pos++] = (char)ch;
+
+			if (ch == '\n')
+				break;
+
+			continue;
+		}
+
+		if (errno == EINTR)
+			return -1;
+
+		if (feof(str->fp_in) || !ferror(str->fp_in))
+			break;
+
+		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			break;
+
+		clearerr(str->fp_in);
+
+		if (!tpl_wait_fd_readable(q, fileno(str->fp_in)))
+			return -1;	// errno == EINTR, set by tpl_wait_fd_readable()
+	}
+
+	if (!pos)
+		return -1;
+
+	(*lineptr)[pos] = '\0';
+	return (int)pos;
 }
 
 int tpl_close(stream *str)

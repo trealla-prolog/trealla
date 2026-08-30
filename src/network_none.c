@@ -132,8 +132,9 @@ size_t tpl_read(void *ptr, size_t len, stream *str)
 	return fread(ptr, 1, len, str->fp_in);
 }
 
-int tpl_getline(char **lineptr, size_t *n, stream *str)
+int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 {
+	(void) q;	// this build has no sockets, so nothing here is ever non-blocking
 #if TPL_FREESTANDING
 	if (str->fp_in == stdin) {
 		if (!lineptr || !n) {
