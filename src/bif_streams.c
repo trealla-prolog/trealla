@@ -4365,7 +4365,7 @@ static bool bif_edin_tab_1(query *q)
 static bool bif_edin_tab_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream_or_alias);
-	GET_FIRST_ARG(p1_tmp,any);
+	GET_NEXT_ARG(p1_tmp,any);
 	cell p1 = eval(q, p1_tmp);
 
 	if (!is_integer(&p1))
