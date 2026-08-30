@@ -531,23 +531,60 @@ trailing conjunct, are both well-formed descriptions.
 
 Unlike `unexpected`/`sto`/`...`/`ad_infinitum`, `maybe` is not stripped
 out by `drop_annotation/4` as a control annotation: it is itself part
-of what the answer asserts, checked rather than discarded. The check
-sits in `attempt_match/5`, right after `call_nth/2` binds the query's
-witness copy `W1` and before that binding is later thrown away by the
-enclosing `\+ \+` — the only point where the actual attribute state of
-the solve is still live:
+of what the answer asserts, checked rather than discarded.
+
+**First cut, and why it wasn't enough.** The check originally sat in
+`attempt_match/5`, right after `call_nth/2` binds the query's witness
+copy `W1`: `term_variables(W1, Vs)`, then `'$attributed_var'/1` of
+each. That covers `dif(X, Y), X = a` — `Y` is one of the query's own
+variables — but UWN's follow-up broke it:
 
 ```prolog
-( memberchk(maybe, Items) -> some_attributed(W1) ; true ),
+ffalse :- freeze(_, false).
+
+?- ffalse.
+   maybe.
+   true, unexpected.
 ```
 
-`some_attributed/1` walks `term_variables(W1, Vs)` and asks
-`'$attributed_var'/1` of each — the same primitive `library(atts)`
-already uses to test any variable for any attribute, so `maybe` needed
-no new C code, only wiring an existing check into the matcher. A
-negative case such as `?- X = 1. X = 1, maybe.` fails, since `X = 1`
-leaves nothing attributed.
+`freeze(X, Goal) :- put_atts(Fresh, frozen(Goal)), Fresh = X.` puts the
+attribute on `Fresh`, a variable local to `freeze/2` itself — `ffalse`
+has no variables at all, so the witness is `[]` and `some_attributed/1`
+never had anything to look at. Both alternatives above failed: `maybe`
+for the obvious reason, and `true, unexpected` because `solution([true])`
+matches vacuously against an empty witness regardless of what is
+pending, so asserting `true` as forbidden had nothing to reject either.
 
-Coverage: `tests/misc/quads.pl` (`maybe_1`, `maybe_2` pass; `maybe_3`
-is a deliberately-failing case, like the file's other negative
-examples) and `tests/issues/test1128.pl`.
+**Fix: track everything the query attributed, not just its own
+variables.** `library/builtins.pl` already has the right primitive —
+`call_residue_vars/2` marks the trail with `'$mark_start'/1`, runs the
+goal, and lists what got attributed since with `'$list_attributed'/2`,
+which is also how the toplevel itself finds what residual goals to
+print. `attempt_match/5` now marks before `call_nth/2` and checks that
+list instead of the witness:
+
+```prolog
+'$mark_start'(Mark),
+call_nth(M:Q1, N),
+( memberchk(maybe, Items) -> some_attributed(Mark) ; \+ some_attributed(Mark) ),
+```
+
+This finds `freeze/2`'s pending goal regardless of which variable it
+sits on, needing no new C code beyond what `call_residue_vars/2`
+already wired up.
+
+**The `\+` matters as much as the positive check.** An answer
+describes an answer *completely* (§6, issue #1067) — checking only
+what a description happens to mention would let `X = f(Y), Y = 1` be
+described by `X = f(Y)` alone. The same principle says the *absence*
+of `maybe` has to mean something too, or `true` and `maybe` describe
+the same answer and the second alternative above could never usefully
+assert `unexpected`. So a description without `maybe` now requires
+`\+ some_attributed(Mark)`: nothing pending, not merely nothing
+mentioned. No existing quad relied on the looser reading — none in the
+suite exercises `dif`/`clpz`/`freeze` outside the ones added for this
+issue — so tightening it broke nothing.
+
+Coverage: `tests/misc/quads.pl` (`maybe_1`, `maybe_2`, `maybe_4` pass;
+`maybe_3` is a deliberately-failing case, like the file's other
+negative examples) and `tests/issues/test1128.pl`.

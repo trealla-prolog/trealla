@@ -109,16 +109,25 @@
       ?- length(L, 999).
          L = [_A,_B,_C|...].
 
-  maybe marks that the answer leaves some variable of the query
-  attributed - a constraint (dif, clpz, or any other attribute module)
-  is still pending on it. It says only that one exists, not which:
+  maybe marks that the query left some variable attributed - a
+  constraint (dif, clpz, freeze, or any other attribute module) is
+  still pending, not resolved into an ordinary binding. It says only
+  that one exists, not which, or on what variable: a pending goal
+  inside the query that names none of its own variables is still a
+  maybe, as freeze/2 shows:
 
       ?- dif(X, Y), X = a.
          X = a, maybe.
 
+      ?- freeze(_, false).
+         maybe.
+
   Unlike unexpected/sto/... it is not stripped as a bare annotation:
   it is itself part of what the answer asserts, so 'maybe.' alone
-  (no bindings at all) is also a valid, checked description.
+  (no bindings at all) is also a valid, checked description. And since
+  an answer describes an answer *completely* (issue #1067), the
+  absence of maybe is itself an assertion - nothing is left pending -
+  so plain 'true' does not also describe the freeze/2 answer above.
 */
 
 :- module(quads, [run_quads/0, run_quads/1, run_quads_halt/0]).
@@ -786,8 +795,9 @@ output_matches(Expected, Cs) :-
 attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 	witness(Q, VNs, W),
 	copy_term(Q-W, Q1-W1),
+	'$mark_start'(Mark),
 	call_nth(M:Q1, N),
-	( memberchk(maybe, Items) -> some_attributed(W1) ; true ),
+	( memberchk(maybe, Items) -> some_attributed(Mark) ; \+ some_attributed(Mark) ),
 	copy_term(qd(Q,W,VNs,Items), qd(Q2,W2,VNs2,Items2)),
 	link_names(VNs2),
 	bound_in_query(Items2, Q2),
@@ -796,18 +806,27 @@ attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 attempt_match(M, Q, _, N, _) :-
 	call_nth(M:Q, N).
 
-% maybe (issue #1128) asserts that some variable the answer describes
-% is still attributed once the query has answered - a constraint (dif,
-% clpz, any attribute module) pending on it, not resolved into an
-% ordinary binding. It names no particular variable or module, only
-% that one exists, so it is checked on the witness as a whole rather
-% than threaded through the equation-by-equation match above.
+% maybe (issue #1128) asserts that the query left some variable
+% attributed - a constraint (dif, clpz, freeze, any attribute module)
+% still pending, not resolved into an ordinary binding. It names no
+% particular variable or module, only that one exists, so it is
+% checked against everything the query attributed rather than just the
+% witness: 'freeze(_, false)' pends on a variable local to freeze/2,
+% one the query never names and the witness never sees, yet it is
+% exactly a 'maybe' - the query is not really answered by plain 'true'
+% while that goal is still waiting to run. '$mark_start'/1 and
+% '$list_attributed'/2 are the same pair call_residue_vars/2 uses to
+% find attributed variables regardless of where a goal put them.
+%
+% An answer describes an answer *completely* (issue #1067), so the
+% absence of 'maybe' is itself an assertion: nothing is left pending.
+% 'freeze(_, false)' is therefore described by 'maybe' and by nothing
+% else - a bare 'true' does not also hold of it, any more than a wrong
+% binding would.
 
-some_attributed(W) :-
-	term_variables(W, Vs),
-	member(V, Vs),
-	'$attributed_var'(V),
-	!.
+some_attributed(Mark) :-
+	'$list_attributed'(Mark, Vs),
+	Vs \== [].
 
 % An answer substitution binds variables of the query, so a description
 % binding anything else does not describe an answer of it (issue #1077):

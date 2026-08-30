@@ -4,6 +4,7 @@
 % These are recorded at load time and interpreted by library(quads).
 
 :- use_module(library(dif)).
+:- use_module(library(freeze)).
 
 foo(bar).
 loop :- loop.
@@ -239,10 +240,12 @@ more_2 ?- member(X, [1,2,3]).
 more_3 ?- member(X, [1,2,3]).
    X = 9, ... .
 
-% maybe marks that some variable of the answer is still attributed - a
+% maybe marks that the query left some variable attributed - a
 % pending constraint of any kind, not resolved into an ordinary binding
 % - once the query has answered (issue #1128). It names no particular
-% variable or attribute module, only that one exists.
+% variable or attribute module, only that one exists - not even one of
+% the query's own, as maybe_4 shows: freeze/2's pending goal sits on a
+% variable local to it, never named by the query.
 
 maybe_1 ?- dif(X, Y), X = a.
    X = a, maybe.
@@ -254,6 +257,14 @@ maybe_2 ?- dif(X, Y).
 
 maybe_3 ?- X = 1.
    X = 1, maybe.
+
+% Since an answer describes an answer completely (issue #1067), the
+% absence of maybe is itself an assertion - nothing is left pending -
+% so a bare 'true' does not equally describe the answer to maybe_4.
+
+maybe_4 ?- freeze(_, false).
+   maybe.
+   true, unexpected.
 
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one
