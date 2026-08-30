@@ -377,6 +377,17 @@ void tpl_set_nonblocking(stream *str)
 #endif
 }
 
+// FIONBIO's flag lives on the open file description, not the individual
+// fd number, so this also covers a dup()'d str->fp_out - see
+// tpl_set_nonblocking()'s own call sites in bif_net.c.
+static void tpl_set_blocking(stream *str)
+{
+#if !defined(_WIN32) && !defined(__wasi__)
+	unsigned long flag = 0;
+	ioctl(fileno(str->fp_in), FIONBIO, &flag);
+#endif
+}
+
 void *tpl_enable_ssl(int fd, const char *hostname, bool is_server, int level, const char *certfile)
 {
 #if USE_OPENSSL
@@ -594,16 +605,16 @@ int tpl_getline_fp(char **lineptr, size_t *n, FILE *fp)
 }
 
 // Waits for fd in short, alarm-aware poll() slices instead of one
-// uninterruptible blocking read (real SIGALRM used to do this via EINTR
-// - see DESIGN-GUSTTO.md). Sets errno = EINTR and returns false on
-// timeout/interrupt; true means data is ready.
+// uninterruptible blocking read/write (real SIGALRM used to do this via
+// EINTR - see DESIGN-GUSTTO.md). Sets errno = EINTR and returns false on
+// timeout/interrupt; true means the fd is ready for the direction asked.
 
 #if defined(_WIN32)
 // select() rather than WSAPoll(): the fd here came from fileno() on a
 // stream fdopen()'d over a socket the way the rest of this file already
 // treats Windows sockets (see tpl_connect()/tpl_server()), and select()
 // needs no extra header beyond winsock2.h, already included above.
-bool tpl_wait_fd_readable(query *q, int fd)
+static bool tpl_wait_fd(query *q, int fd, bool for_write)
 {
 	if (fd < 0)
 		return true;
@@ -622,22 +633,27 @@ bool tpl_wait_fd_readable(query *q, int fd)
 		if (wait_ms > 250)
 			wait_ms = 250;
 
-		fd_set rfds;
-		FD_ZERO(&rfds);
-		FD_SET(sock, &rfds);
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(sock, &fds);
 
 		struct timeval tv;
 		tv.tv_sec = wait_ms / 1000;
 		tv.tv_usec = (wait_ms % 1000) * 1000;
 
-		int n = select(0, &rfds, NULL, NULL, &tv);	// nfds ignored on Windows
+		int n = for_write
+			? select(0, NULL, &fds, NULL, &tv)	// nfds ignored on Windows
+			: select(0, &fds, NULL, NULL, &tv);
 
 		if (n != 0)
-			return true;	// readable, or select() itself errored - let the real read report it
+			return true;	// ready, or select() itself errored - let the real call report it
 	}
 }
+
+bool tpl_wait_fd_readable(query *q, int fd) { return tpl_wait_fd(q, fd, false); }
+bool tpl_wait_fd_writable(query *q, int fd) { return tpl_wait_fd(q, fd, true); }
 #elif !defined(__wasi__)
-bool tpl_wait_fd_readable(query *q, int fd)
+static bool tpl_wait_fd(query *q, int fd, bool for_write)
 {
 	if (fd < 0)
 		return true;
@@ -654,22 +670,31 @@ bool tpl_wait_fd_readable(query *q, int fd)
 		if (wait_ms > 250)
 			wait_ms = 250;
 
-		struct pollfd pfd = { .fd = fd, .events = POLLIN };
+		struct pollfd pfd = { .fd = fd, .events = for_write ? POLLOUT : POLLIN };
 		int n = poll(&pfd, 1, wait_ms);
 
 		if (n != 0)
-			return true;	// readable, or poll() itself errored - let the real read report it
+			return true;	// ready, or poll() itself errored - let the real call report it
 	}
 }
+
+bool tpl_wait_fd_readable(query *q, int fd) { return tpl_wait_fd(q, fd, false); }
+bool tpl_wait_fd_writable(query *q, int fd) { return tpl_wait_fd(q, fd, true); }
 #else
 bool tpl_wait_fd_readable(query *q, int fd)
 {
 	(void) q; (void) fd;
 	return true;
 }
+
+bool tpl_wait_fd_writable(query *q, int fd)
+{
+	(void) q; (void) fd;
+	return true;
+}
 #endif
 
-int tpl_getline(char **lineptr, size_t *n, stream *str)
+int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 {
 	errno = 0;	// FIX: reset so a stale EINTR from an earlier call isn't misread as an interrupt
 #if USE_OPENSSL
@@ -729,14 +754,71 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 	if (str->is_socket && str->fp_out)
 		fflush(str->fp_out);
 
-	int ok = tpl_getline_fp(lineptr, n, str->fp_in);
+	// A task's own scheduler already retries via do_yield_on_stream() when
+	// its (already non-blocking, see bif_net.c) socket comes back EAGAIN -
+	// same as always, unchanged here.
+	if (q->is_task || !str->is_socket)
+		return tpl_getline_fp(lineptr, n, str->fp_in);
 
-	if (errno == EINTR) {
-		clearerr(str->fp_in);
-		ok = EOF;
+	// A non-task query's socket is non-blocking too now, so a mid-line
+	// EAGAIN is not EOF - tpl_getline_fp() has no way to tell the two
+	// apart and would silently return whatever was accumulated so far as
+	// though the line were complete. Accumulate byte-by-byte here instead
+	// so only a genuine EAGAIN waits (alarm/interrupt-aware, via
+	// tpl_wait_fd_readable()) rather than either corrupting the read or
+	// blocking the OS thread the way a blocking-mode fd's getc() would.
+	if (!*lineptr) {
+		*lineptr = TPL_malloc(*n = 128);
+		ENSURE(*lineptr);
 	}
 
-	return ok;
+	size_t pos = 0;
+
+	for (;;) {
+		int ch = tpl_getc(str);
+
+		if (ch != EOF) {
+			if ((pos + 1) >= *n) {
+				size_t new_size = *n + (*n >> 1);
+				char *new_ptr = TPL_realloc(*lineptr, new_size);
+
+				if (!new_ptr) {
+					errno = ENOMEM;
+					return -1;
+				}
+
+				*lineptr = new_ptr;
+				*n = new_size;
+			}
+
+			(*lineptr)[pos++] = (char)ch;
+
+			if (ch == '\n')
+				break;
+
+			continue;
+		}
+
+		if (errno == EINTR)
+			return -1;
+
+		if (feof(str->fp_in) || !ferror(str->fp_in))
+			break;
+
+		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
+			break;
+
+		clearerr(str->fp_in);
+
+		if (!tpl_wait_fd_readable(q, fileno(str->fp_in)))
+			return -1;	// errno == EINTR, set by tpl_wait_fd_readable()
+	}
+
+	if (!pos)
+		return -1;
+
+	(*lineptr)[pos] = '\0';
+	return (int)pos;
 }
 
 int tpl_close(stream *str)
@@ -757,6 +839,15 @@ int tpl_close(stream *str)
 
 	if (!str->is_memory && !str->is_popen) {
 		if (str->is_socket) {
+			// A non-blocking socket's fflush() can return early with
+			// whatever write_all() (bif_streams.c) left buffered in
+			// stdio still unsent, if the send buffer happens to be full
+			// at this exact moment - write_all() only guarantees every
+			// tpl_write() call succeeded, not that stdio's own buffer
+			// was ever actually drained to the kernel. This fd is going
+			// away regardless, so there is no cost to blocking here
+			// instead of dropping the tail of the stream.
+			tpl_set_blocking(str);
 			fflush(str->fp_out);
 #if !defined(_WIN32) && !defined(__wasi__)
 			shutdown(fileno(str->fp_in), SHUT_RD);

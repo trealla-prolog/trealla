@@ -692,8 +692,9 @@ struct stream_ {
 		};
 	};
 
+	char *wbuf;							// a task's parked write, see write_all()
 	unsigned timeout_ms;
-	size_t data_len, alloc_nbytes;
+	size_t data_len, alloc_nbytes, wbuf_len, wbuf_pos;
 	int ungetch, srclen, chan, idx, port;
 	unsigned rows, cols;
 	uint8_t level, eof_action;
