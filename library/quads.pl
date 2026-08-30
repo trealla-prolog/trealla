@@ -108,6 +108,17 @@
 
       ?- length(L, 999).
          L = [_A,_B,_C|...].
+
+  maybe marks that the answer leaves some variable of the query
+  attributed - a constraint (dif, clpz, or any other attribute module)
+  is still pending on it. It says only that one exists, not which:
+
+      ?- dif(X, Y), X = a.
+         X = a, maybe.
+
+  Unlike unexpected/sto/... it is not stripped as a bare annotation:
+  it is itself part of what the answer asserts, so 'maybe.' alone
+  (no bindings at all) is also a valid, checked description.
 */
 
 :- module(quads, [run_quads/0, run_quads/1, run_quads_halt/0]).
@@ -334,6 +345,7 @@ answer_atom(unexpected).
 answer_atom(inattendue).
 answer_atom(other_answer_sequence).
 answer_atom(waits).
+answer_atom(maybe).
 
 % Report the equation that rebinds, not the one it clashes with.
 
@@ -775,6 +787,7 @@ attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 	witness(Q, VNs, W),
 	copy_term(Q-W, Q1-W1),
 	call_nth(M:Q1, N),
+	( memberchk(maybe, Items) -> some_attributed(W1) ; true ),
 	copy_term(qd(Q,W,VNs,Items), qd(Q2,W2,VNs2,Items2)),
 	link_names(VNs2),
 	bound_in_query(Items2, Q2),
@@ -782,6 +795,19 @@ attempt_match(M, Q, VNs, N, solution(Items)) :- !,
 	ball_matches([], W2, W1).
 attempt_match(M, Q, _, N, _) :-
 	call_nth(M:Q, N).
+
+% maybe (issue #1128) asserts that some variable the answer describes
+% is still attributed once the query has answered - a constraint (dif,
+% clpz, any attribute module) pending on it, not resolved into an
+% ordinary binding. It names no particular variable or module, only
+% that one exists, so it is checked on the witness as a whole rather
+% than threaded through the equation-by-equation match above.
+
+some_attributed(W) :-
+	term_variables(W, Vs),
+	member(V, Vs),
+	'$attributed_var'(V),
+	!.
 
 % An answer substitution binds variables of the query, so a description
 % binding anything else does not describe an answer of it (issue #1077):

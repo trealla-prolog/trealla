@@ -505,3 +505,49 @@ Relatedly, `run_quads/1` records the failure count on every run, one
 over a module with no quads included. Leaving the previous count in the
 blackboard made `run_quads_halt/0` exit non-zero after reporting
 `quads: nothing to run.`
+
+## 13. `maybe` for pending constraints (issue #1128)
+
+CLP(R) answered `true`, `false`, or, for a non-linear equation it could
+not decide, `maybe` — the substitutions found so far still apply, but
+something is left unresolved. UWN asked for the same idea here:
+
+```prolog
+?- dif(X, Y), X = a.
+   X = a, maybe.
+```
+
+`maybe` says only that *some* variable the answer describes is still
+attributed once the query has answered — a constraint pending on it,
+of any attribute module (`dif`, `clpz`, or a user's own), not resolved
+into an ordinary binding. It does not say which variable or which
+module, matching the request that it work for any attribute, not just
+`dif`.
+
+Grammar-wise `maybe` joins the arity-0 atoms in `answer_description()`
+(`parser.c`) and `answer_atom/1` (`library/quads.pl`) next to `sto`,
+`unexpected`, and the rest — so `maybe.` alone, or `X = a, maybe.` as a
+trailing conjunct, are both well-formed descriptions.
+
+Unlike `unexpected`/`sto`/`...`/`ad_infinitum`, `maybe` is not stripped
+out by `drop_annotation/4` as a control annotation: it is itself part
+of what the answer asserts, checked rather than discarded. The check
+sits in `attempt_match/5`, right after `call_nth/2` binds the query's
+witness copy `W1` and before that binding is later thrown away by the
+enclosing `\+ \+` — the only point where the actual attribute state of
+the solve is still live:
+
+```prolog
+( memberchk(maybe, Items) -> some_attributed(W1) ; true ),
+```
+
+`some_attributed/1` walks `term_variables(W1, Vs)` and asks
+`'$attributed_var'/1` of each — the same primitive `library(atts)`
+already uses to test any variable for any attribute, so `maybe` needed
+no new C code, only wiring an existing check into the matcher. A
+negative case such as `?- X = 1. X = 1, maybe.` fails, since `X = 1`
+leaves nothing attributed.
+
+Coverage: `tests/misc/quads.pl` (`maybe_1`, `maybe_2` pass; `maybe_3`
+is a deliberately-failing case, like the file's other negative
+examples) and `tests/issues/test1128.pl`.

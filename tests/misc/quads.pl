@@ -3,6 +3,8 @@
 % Quads: queries using answer descriptions (issue #1063).
 % These are recorded at load time and interpreted by library(quads).
 
+:- use_module(library(dif)).
+
 foo(bar).
 loop :- loop.
 
@@ -236,6 +238,22 @@ more_2 ?- member(X, [1,2,3]).
 
 more_3 ?- member(X, [1,2,3]).
    X = 9, ... .
+
+% maybe marks that some variable of the answer is still attributed - a
+% pending constraint of any kind, not resolved into an ordinary binding
+% - once the query has answered (issue #1128). It names no particular
+% variable or attribute module, only that one exists.
+
+maybe_1 ?- dif(X, Y), X = a.
+   X = a, maybe.
+
+maybe_2 ?- dif(X, Y).
+   maybe.
+
+% deliberately failing: X = 1 leaves nothing attributed
+
+maybe_3 ?- X = 1.
+   X = 1, maybe.
 
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one

@@ -872,6 +872,7 @@ static enum answer_kind answer_description(parser *p, const cell *c, answer_vars
 			|| !strcmp(name, "unexpected")
 			|| !strcmp(name, "inattendue")
 			|| !strcmp(name, "other_answer_sequence")
+			|| !strcmp(name, "maybe")
 			|| !strcmp(name, "waits"))
 			? ANSWER_OK : ANSWER_NO;
 	}
