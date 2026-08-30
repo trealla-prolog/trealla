@@ -4227,6 +4227,21 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		return true;
 	}
 
+	// A closing quote's lookahead for '||' (below) found a single '|'
+	// instead. It cannot just leave that '|' unconsumed in the source
+	// for this call to re-scan, because finding out took an eat_space()
+	// that may have crossed a line - and with it, getline()'d over the
+	// buffer the '|' lived in (issue #1134). So it is handed back as
+	// its own token here instead, the way a genuine '||' already is
+	// above, rather than by rewinding a pointer that may be stale.
+
+	if (p->pending_bar) {
+		p->pending_bar = false;
+		p->is_op = true;
+		SB_strcpy(p->token, "|");
+		return true;
+	}
+
 	// Numbers...
 
 	const char *tmpptr = src;
@@ -4308,8 +4323,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 					// Check for double bar
 
-					bool multi_bar = false;
-					const char *save_src = src;
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 
@@ -4323,7 +4336,16 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 
 					if (*src != '|') {
-						src = (char*)save_src;
+						// Only a single '|', not '||': it belongs to
+						// whatever follows the string, not to it. Both
+						// eat_space() calls above may have crossed a
+						// line and getline()'d a new one into the same
+						// buffer, so the position before them can no
+						// longer be trusted as a rewind target (issue
+						// #1134) - hand the '|' back as its own token
+						// on the next call instead (see p->pending_bar
+						// at the top of this function).
+						p->pending_bar = true;
 						p->quote_char = 0;
 						break;
 					}
