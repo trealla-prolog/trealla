@@ -594,16 +594,16 @@ int tpl_getline_fp(char **lineptr, size_t *n, FILE *fp)
 }
 
 // Waits for fd in short, alarm-aware poll() slices instead of one
-// uninterruptible blocking read (real SIGALRM used to do this via EINTR
-// - see DESIGN-GUSTTO.md). Sets errno = EINTR and returns false on
-// timeout/interrupt; true means data is ready.
+// uninterruptible blocking read/write (real SIGALRM used to do this via
+// EINTR - see DESIGN-GUSTTO.md). Sets errno = EINTR and returns false on
+// timeout/interrupt; true means the fd is ready for the direction asked.
 
 #if defined(_WIN32)
 // select() rather than WSAPoll(): the fd here came from fileno() on a
 // stream fdopen()'d over a socket the way the rest of this file already
 // treats Windows sockets (see tpl_connect()/tpl_server()), and select()
 // needs no extra header beyond winsock2.h, already included above.
-bool tpl_wait_fd_readable(query *q, int fd)
+static bool tpl_wait_fd(query *q, int fd, bool for_write)
 {
 	if (fd < 0)
 		return true;
@@ -622,22 +622,27 @@ bool tpl_wait_fd_readable(query *q, int fd)
 		if (wait_ms > 250)
 			wait_ms = 250;
 
-		fd_set rfds;
-		FD_ZERO(&rfds);
-		FD_SET(sock, &rfds);
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(sock, &fds);
 
 		struct timeval tv;
 		tv.tv_sec = wait_ms / 1000;
 		tv.tv_usec = (wait_ms % 1000) * 1000;
 
-		int n = select(0, &rfds, NULL, NULL, &tv);	// nfds ignored on Windows
+		int n = for_write
+			? select(0, NULL, &fds, NULL, &tv)	// nfds ignored on Windows
+			: select(0, &fds, NULL, NULL, &tv);
 
 		if (n != 0)
-			return true;	// readable, or select() itself errored - let the real read report it
+			return true;	// ready, or select() itself errored - let the real call report it
 	}
 }
+
+bool tpl_wait_fd_readable(query *q, int fd) { return tpl_wait_fd(q, fd, false); }
+bool tpl_wait_fd_writable(query *q, int fd) { return tpl_wait_fd(q, fd, true); }
 #elif !defined(__wasi__)
-bool tpl_wait_fd_readable(query *q, int fd)
+static bool tpl_wait_fd(query *q, int fd, bool for_write)
 {
 	if (fd < 0)
 		return true;
@@ -654,15 +659,24 @@ bool tpl_wait_fd_readable(query *q, int fd)
 		if (wait_ms > 250)
 			wait_ms = 250;
 
-		struct pollfd pfd = { .fd = fd, .events = POLLIN };
+		struct pollfd pfd = { .fd = fd, .events = for_write ? POLLOUT : POLLIN };
 		int n = poll(&pfd, 1, wait_ms);
 
 		if (n != 0)
-			return true;	// readable, or poll() itself errored - let the real read report it
+			return true;	// ready, or poll() itself errored - let the real call report it
 	}
 }
+
+bool tpl_wait_fd_readable(query *q, int fd) { return tpl_wait_fd(q, fd, false); }
+bool tpl_wait_fd_writable(query *q, int fd) { return tpl_wait_fd(q, fd, true); }
 #else
 bool tpl_wait_fd_readable(query *q, int fd)
+{
+	(void) q; (void) fd;
+	return true;
+}
+
+bool tpl_wait_fd_writable(query *q, int fd)
 {
 	(void) q; (void) fd;
 	return true;

@@ -6282,15 +6282,45 @@ static bool bif_sys_bwrite_2(query *q)
 
 	while (len) {
 		size_t nbytes = tpl_write(src, len, str);
+		FILE *fp_wr = str->fp_out ? str->fp_out : str->fp;
 
 		if (!nbytes) {
-			if (feof(str->fp) || ferror(str->fp))
+			if (feof(fp_wr) || ferror(fp_wr)) {
+				// A non-task socket is non-blocking now (see bif_net.c),
+				// so a zero-progress write here is routinely just EAGAIN -
+				// the peer's receive window is full, not a real error.
+				// Wait for room instead of giving up outright. Task
+				// queries keep the old behaviour (TODO below, unchanged):
+				// do_yield_on_stream(..., true) already exists and polls
+				// POLLOUT (see bif_tasks.c), but wiring it in here needs
+				// this loop's partial progress to survive a yield/resume,
+				// which it does not track today.
+				//
+				// This checked str->fp (the read side, a different FILE*
+				// from what tpl_write() above actually writes through)
+				// before - see str->fp_out's own fdopen() in bif_net.c -
+				// so ferror() here was always false and this whole branch
+				// was dead. That went unnoticed while sockets stayed
+				// blocking for a non-task query: fwrite() simply waited
+				// inside the kernel instead of ever returning a false
+				// short count. Non-blocking exposed it as an infinite,
+				// silent, zero-progress spin instead.
+				if (!q->is_task && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
+					clearerr(fp_wr);
+
+					if (!tpl_wait_fd_writable(q, fileno(fp_wr)))
+						return false;	// errno == EINTR
+
+					continue;
+				}
+
 				return false; // can feof() happen on writing?
+			}
 		}
 
 		// TODO: make this yieldable
 
-		clearerr(str->fp_in);
+		clearerr(fp_wr);
 		len -= nbytes;
 		src += nbytes;
 	}

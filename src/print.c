@@ -2034,6 +2034,18 @@ static bool sb_flush(query *q, stream *str, FILE *fp)
 	while (len) {
 		size_t nbytes = str ? tpl_write(src, len, str) : fwrite(src, 1, len, fp);
 
+		if (!nbytes && str && !q->is_task && ((errno == EAGAIN) || (errno == EWOULDBLOCK)) && ferror(fp)) {
+			// A non-task socket is non-blocking now (see bif_net.c), so a
+			// zero-progress write here is routinely just EAGAIN - the
+			// peer's receive window is full, not a real error. Waiting
+			// for room is far cheaper than the alternative below, which
+			// closes the stream outright.
+			clearerr(fp);
+
+			if (tpl_wait_fd_writable(q, fileno(str->fp_out)))
+				continue;
+		}
+
 		if (ferror(fp)) {
 			SB_free(q->sb);
 

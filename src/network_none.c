@@ -241,3 +241,9 @@ bool tpl_wait_fd_readable(query *q, int fd)
 	(void)q; (void)fd;
 	return true;
 }
+
+bool tpl_wait_fd_writable(query *q, int fd)
+{
+	(void)q; (void)fd;
+	return true;
+}

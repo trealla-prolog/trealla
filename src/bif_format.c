@@ -925,9 +925,28 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 		while (len) {
 			size_t tmpbuf_free = tpl_write(tmpsrc, len, str);
+			FILE *fp_wr = str->fp_out ? str->fp_out : str->fp;
 
 			if (!tmpbuf_free) {
-				if (feof(str->fp) || ferror(str->fp)) {
+				if (feof(fp_wr) || ferror(fp_wr)) {
+					// A non-task socket is non-blocking now (see
+					// bif_net.c), so a zero-progress write here is
+					// routinely just EAGAIN - the peer's receive window
+					// is full, not a real error - and worth waiting out
+					// rather than raising. See the matching comment on
+					// bif_sys_bwrite_2() in bif_streams.c for why task
+					// queries are not covered by this yet, and for why
+					// this checks str->fp_out rather than str->fp (the
+					// read side - a different FILE* from what tpl_write()
+					// above actually writes through, so this was always
+					// dead before).
+					if (!q->is_task && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
+						clearerr(fp_wr);
+
+						if (tpl_wait_fd_writable(q, fileno(fp_wr)))
+							continue;
+					}
+
 					// An output error must raise, not print to stderr
 					// and fail silently...
 					TPL_free(tmpbuf);
@@ -935,7 +954,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				}
 			}
 
-			clearerr(str->fp);
+			clearerr(fp_wr);
 			len -= tmpbuf_free;
 			tmpsrc += tmpbuf_free;
 		}
@@ -973,9 +992,28 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 		while (len) {
 			size_t tmpbuf_free = tpl_write(tmpsrc, len, str);
+			FILE *fp_wr = str->fp_out ? str->fp_out : str->fp;
 
 			if (!tmpbuf_free) {
-				if (feof(str->fp) || ferror(str->fp)) {
+				if (feof(fp_wr) || ferror(fp_wr)) {
+					// A non-task socket is non-blocking now (see
+					// bif_net.c), so a zero-progress write here is
+					// routinely just EAGAIN - the peer's receive window
+					// is full, not a real error - and worth waiting out
+					// rather than raising. See the matching comment on
+					// bif_sys_bwrite_2() in bif_streams.c for why task
+					// queries are not covered by this yet, and for why
+					// this checks str->fp_out rather than str->fp (the
+					// read side - a different FILE* from what tpl_write()
+					// above actually writes through, so this was always
+					// dead before).
+					if (!q->is_task && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
+						clearerr(fp_wr);
+
+						if (tpl_wait_fd_writable(q, fileno(fp_wr)))
+							continue;
+					}
+
 					// An output error must raise, not print to stderr
 					// and fail silently...
 					TPL_free(tmpbuf);
@@ -983,7 +1021,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				}
 			}
 
-			clearerr(str->fp);
+			clearerr(fp_wr);
 			len -= tmpbuf_free;
 			tmpsrc += tmpbuf_free;
 		}
