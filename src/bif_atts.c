@@ -362,7 +362,13 @@ typedef struct {
 	slot e[];
 } bind_state;
 
-static void set_occurs(unsigned var_num, pl_ctx val_ctx, cell *c, pl_ctx c_ctx)
+// Mark a cyclically-bound variable's occurrences inside its own value,
+// so term_variables/2 in verify_attributes/3 skips the variable being
+// bound. The mark holds only for the hook: left on the heap cells it
+// hides that variable from every later term_variables/2, and a dif/2
+// that cannot see it posts no constraint at all (issue #1127).
+
+static void mark_occurs(unsigned var_num, pl_ctx val_ctx, cell *c, pl_ctx c_ctx, bool set)
 {
 	for (int num_cells = c->num_cells; num_cells--; c++) {
 		if (!is_var(c))
@@ -379,7 +385,10 @@ static void set_occurs(unsigned var_num, pl_ctx val_ctx, cell *c, pl_ctx c_ctx)
 		if (val_ctx != ctx)
 			continue;
 
-		c->flags |= FLAG_VAR_CYCLIC;
+		if (set)
+			c->flags |= FLAG_VAR_CYCLIC;
+		else
+			c->flags &= ~FLAG_VAR_CYCLIC;
 	}
 }
 
@@ -404,7 +413,7 @@ static bool bif_sys_undo_trail_2(query *q)
 		save->e[j].c = e->c;
 		cell *c = deref(q, &e->c, e->c.val_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
-		set_occurs(tr->var_num, tr->val_ctx, c, c_ctx);
+		mark_occurs(tr->var_num, tr->val_ctx, c, c_ctx, true);
 		cell lhs, rhs;
 		make_ref(&lhs, tr->var_num, tr->val_ctx);
 
@@ -442,6 +451,12 @@ static bool bif_sys_redo_trail_1(query * q)
 		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
 		e->c = save->e[j].c;
+
+		// Close the bracket '$undo_trail'/2 opened: the binding is back,
+		// so the occurs marks it set have done their job (issue #1127).
+
+		cell *c = deref(q, &e->c, e->c.val_ctx);
+		mark_occurs(tr->var_num, tr->val_ctx, c, q->latest_ctx, false);
 	}
 
 	return true;
