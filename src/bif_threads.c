@@ -1297,6 +1297,13 @@ static bool bif_thread_join_2(query *q)
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
+	// A blocking pthread_join() here would stall the whole scheduler
+	// thread, not just this task - poll t->is_finished instead (already
+	// used non-blockingly by thread_property/2's status(running) check)
+	// and only join once it is set, when the call returns at once.
+	if (q->is_task && !t->is_finished)
+		return do_yield(q, MSG_TASK_POLL_MS);
+
 	void *retval;
 
 	if (pthread_join((pthread_t)t->id, &retval)) {
@@ -2273,7 +2280,15 @@ static bool bif_mutex_lock_1(query *q)
 	if (!me)	// FIX: guard NULL self
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 
-	acquire_lock(&t->guard);
+	// A blocking acquire_lock() here would stall the whole scheduler
+	// thread, not just this task - try_lock() (mutex_trylock/1's own,
+	// non-blocking) and a poll retry instead.
+	if (q->is_task) {
+		if (!try_lock(&t->guard))
+			return do_yield(q, MSG_TASK_POLL_MS);
+	} else
+		acquire_lock(&t->guard);
+
 	t->locked_by = me->chan;
 	t->num_locks++;
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
