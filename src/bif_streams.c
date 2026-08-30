@@ -1459,21 +1459,46 @@ static bool bif_iso_at_end_of_stream_1(query *q)
 	return true;
 }
 
+// fflush()es str, throwing existence_error(...) on a real failure - but
+// not on a non-task socket's transient EAGAIN (its fd is non-blocking
+// now, see bif_net.c), which waits for room and retries instead. Without
+// this, flush_output/0,1 and nl/0,1 threw "stream gone" for a peer that
+// was simply slow to drain its receive buffer: fflush() failing here
+// always sets ferror(), and this file could not tell a full send buffer
+// apart from the stream having actually gone away.
+static bool flush_or_throw(query *q, stream *str)
+{
+	for (;;) {
+		int err = fflush(str->fp_out);
+
+		if ((err == EOF) && !str->is_socket)
+			return throw_stream_gone(q, str);
+
+		if (ferror(str->fp_out)) {
+			if (str->is_socket && !q->is_task && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
+				clearerr(str->fp_out);
+
+				if (!tpl_wait_fd_writable(q, fileno(str->fp_out)))
+					return throw_timeout(q);
+
+				continue;
+			}
+
+			clearerr(str->fp_out);
+			return throw_stream_gone(q, str);
+		}
+
+		return true;
+	}
+}
+
+static bool write_all(query *q, stream *str, const char *src, size_t len);
+
 static bool bif_iso_flush_output_0(query *q)
 {
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	int err = fflush(str->fp_out);
-
-	if ((err == EOF) && !str->is_socket)
-		return throw_stream_gone(q, str);
-
-	if (ferror(str->fp_out)) {
-		clearerr(str->fp_out);
-		return throw_stream_gone(q, str);
-	}
-
-	return true;
+	return flush_or_throw(q, str);
 }
 
 static bool bif_iso_flush_output_1(query *q)
@@ -1485,17 +1510,7 @@ static bool bif_iso_flush_output_1(query *q)
 	if (!strcmp(str->mode, "read"))
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "output,stream");
 
-	int err = fflush(str->fp_out);
-
-	if ((err == EOF) && !str->is_socket)
-		return throw_stream_gone(q, str);
-
-	if (ferror(str->fp_out)) {
-		clearerr(str->fp_out);
-		return throw_stream_gone(q, str);
-	}
-
-	return true;
+	return flush_or_throw(q, str);
 }
 
 static bool bif_iso_nl_0(query *q)
@@ -1506,18 +1521,10 @@ static bool bif_iso_nl_0(query *q)
 	if (str->binary)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "output,binary_stream");
 
-	tpl_write("\n", 1, str);
-	int err = fflush(str->fp_out);
-
-	if ((err == EOF) && !str->is_socket)
+	if (!write_all(q, str, "\n", 1))
 		return throw_stream_gone(q, str);
 
-	if (ferror(str->fp_out)) {
-		clearerr(str->fp_out);
-		return throw_stream_gone(q, str);
-	}
-
-	return true;
+	return flush_or_throw(q, str);
 }
 
 static bool bif_iso_nl_1(query *q)
@@ -1532,18 +1539,10 @@ static bool bif_iso_nl_1(query *q)
 	if (str->binary)
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "output,binary_stream");
 
-	tpl_write("\n", 1, str);
-	int err = fflush(str->fp_out);
-
-	if ((err == EOF) && !str->is_socket)
+	if (!write_all(q, str, "\n", 1))
 		return throw_stream_gone(q, str);
 
-	if (ferror(str->fp_out)) {
-		clearerr(str->fp_out);
-		return throw_stream_gone(q, str);
-	}
-
-	return true;
+	return flush_or_throw(q, str);
 }
 
 static bool bif_iso_read_1(query *q)
@@ -4344,11 +4343,12 @@ static bool bif_edin_tab_1(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 
-	for (int i = 0; i < get_smallint(&p1); i++)
-		tpl_write(" ", 1, str);
+	for (int i = 0; i < get_smallint(&p1); i++) {
+		if (!write_all(q, str, " ", 1))
+			return throw_stream_gone(q, str);
+	}
 
-	fflush(str->fp_out);
-	return true;
+	return flush_or_throw(q, str);
 }
 
 static bool bif_edin_tab_2(query *q)
@@ -4363,11 +4363,12 @@ static bool bif_edin_tab_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	for (int i = 0; i < get_smallint(&p1); i++)
-		tpl_write(" ", 1, str);
+	for (int i = 0; i < get_smallint(&p1); i++) {
+		if (!write_all(q, str, " ", 1))
+			return throw_stream_gone(q, str);
+	}
 
-	fflush(str->fp_out);
-	return true;
+	return flush_or_throw(q, str);
 }
 
 static bool bif_edin_seen_0(query *q)
@@ -6264,11 +6265,11 @@ static bool bif_sys_bflush_1(query *q)
 	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	fflush(str->fp_out);
+	bool ok = flush_or_throw(q, str);
 	TPL_free(str->data);
 	str->data = NULL;
 	str->data_len = 0;
-	return true;
+	return ok;
 }
 
 // Writes exactly `len` bytes to str, retrying past a partial write and -
