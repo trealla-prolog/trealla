@@ -1339,6 +1339,9 @@ bool stream_close(query *q, int n)
 	str->addr = NULL;
 	TPL_free(str->data);
 	str->data = NULL;
+	TPL_free(str->wbuf);
+	str->wbuf = NULL;
+	str->wbuf_len = str->wbuf_pos = 0;
 	str->at_end_of_file = true;
 	str->is_active = false;
 
@@ -4343,12 +4346,20 @@ static bool bif_edin_tab_1(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 
-	for (int i = 0; i < get_smallint(&p1); i++) {
-		if (!write_all(q, str, " ", 1))
-			return throw_stream_gone(q, str);
-	}
+	if (str->wbuf)
+		return write_all(q, str, NULL, 0);
 
-	return flush_or_throw(q, str);
+	int cnt = get_smallint(&p1);
+
+	if (cnt <= 0)
+		return true;
+
+	char *buf = TPL_malloc(cnt);
+	CHECKED(buf);
+	memset(buf, ' ', cnt);
+	bool ok = write_all(q, str, buf, cnt);
+	TPL_free(buf);
+	return ok ? flush_or_throw(q, str) : false;
 }
 
 static bool bif_edin_tab_2(query *q)
@@ -4363,12 +4374,20 @@ static bool bif_edin_tab_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	for (int i = 0; i < get_smallint(&p1); i++) {
-		if (!write_all(q, str, " ", 1))
-			return throw_stream_gone(q, str);
-	}
+	if (str->wbuf)
+		return write_all(q, str, NULL, 0);
 
-	return flush_or_throw(q, str);
+	int cnt = get_smallint(&p1);
+
+	if (cnt <= 0)
+		return true;
+
+	char *buf = TPL_malloc(cnt);
+	CHECKED(buf);
+	memset(buf, ' ', cnt);
+	bool ok = write_all(q, str, buf, cnt);
+	TPL_free(buf);
+	return ok ? flush_or_throw(q, str) : false;
 }
 
 static bool bif_edin_seen_0(query *q)
@@ -6272,52 +6291,71 @@ static bool bif_sys_bflush_1(query *q)
 	return ok;
 }
 
-// Writes exactly `len` bytes to str, retrying past a partial write and -
-// for a non-task query - waiting out real backpressure (EAGAIN) rather
-// than either silently dropping the unwritten remainder or busy-spinning.
-//
-// Task queries keep the old behaviour (TODO below, unchanged):
-// do_yield_on_stream(..., true) already exists and polls POLLOUT (see
-// bif_tasks.c), but wiring it in here needs this loop's partial progress
-// to survive a yield/resume, which it does not track today.
-//
-// The ferror()/feof() check below is on str->fp_out, not str->fp (the
-// read side - a different FILE* from what tpl_write() writes through, see
-// its own fdopen() in bif_net.c). Checking str->fp here used to make this
-// whole branch dead code, which went unnoticed while sockets stayed
-// blocking for a non-task query: fwrite() simply waited inside the kernel
-// instead of ever returning a false short count. Once non-blocking
-// exposed it, callers with no retry loop at all (see $put_chars/1,2
-// below) could silently truncate output, and bif_sys_bwrite_2's own loop
-// (which did retry, just never noticed backpressure) spun on tpl_write()
-// tens of millions of times instead of waiting for room.
+// Resuming a parked task re-runs this call from scratch with the
+// original arguments, so str->wbuf is the only record of progress.
+static void free_wbuf(stream *str)
+{
+	TPL_free(str->wbuf);
+	str->wbuf = NULL;
+	str->wbuf_len = str->wbuf_pos = 0;
+}
+
+// Writes len bytes of src to str, waiting out real backpressure (EAGAIN)
+// rather than dropping the remainder or busy-spinning. A resumed task
+// uses str->wbuf instead of src/len - an expensive-to-derive caller
+// should check str->wbuf first and skip that work too (see put_chars_2).
 static bool write_all(query *q, stream *str, const char *src, size_t len)
 {
+	if (str->wbuf) {
+		src = str->wbuf + str->wbuf_pos;
+		len = str->wbuf_len - str->wbuf_pos;
+	}
+
 	while (len) {
 		size_t nbytes = tpl_write(src, len, str);
 		FILE *fp_wr = str->fp_out ? str->fp_out : str->fp;
 
 		if (!nbytes) {
 			if (feof(fp_wr) || ferror(fp_wr)) {
-				if (!q->is_task && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
+				if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 					clearerr(fp_wr);
 
-					if (!tpl_wait_fd_writable(q, fileno(fp_wr)))
+					if (q->is_task) {
+						if (!str->wbuf) {
+							str->wbuf = TPL_malloc(len);
+							if (!str->wbuf)
+								return false;
+
+							memcpy(str->wbuf, src, len);
+							str->wbuf_len = len;
+							str->wbuf_pos = 0;
+						}
+
+						return do_yield_on_stream(q, str, true);
+					}
+
+					if (!tpl_wait_fd_writable(q, fileno(fp_wr))) {
+						free_wbuf(str);
 						return false;	// errno == EINTR
+					}
 
 					continue;
 				}
 
+				free_wbuf(str);
 				return false; // can feof() happen on writing?
 			}
 		}
 
-		// TODO: make this yieldable
-
 		clearerr(fp_wr);
 		len -= nbytes;
 		src += nbytes;
+
+		if (str->wbuf)
+			str->wbuf_pos = (size_t)(src - str->wbuf);
 	}
+
+	free_wbuf(str);
 
 	return true;
 }
@@ -6351,6 +6389,9 @@ static bool bif_sys_put_chars_1(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 
+	if (str->wbuf)
+		return write_all(q, str, NULL, 0);
+
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		size_t len = C_STRLEN(q, p1);
@@ -6374,6 +6415,9 @@ static bool bif_sys_put_chars_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,list_or_nil);
+
+	if (str->wbuf)
+		return write_all(q, str, NULL, 0);
 
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
