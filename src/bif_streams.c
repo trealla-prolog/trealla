@@ -4272,7 +4272,8 @@ static bool bif_edin_redo_1(query *q)
 
 	for (;;) {
 		str->did_getc = true;
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
+		struct retry_ctx_ ctx = { q, str };
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(retry_getc, &ctx);
 		str->ungetch = 0;
 
 		if (errno == EINTR) {
@@ -4310,7 +4311,8 @@ static bool bif_edin_redo_2(query *q)
 
 	for (;;) {
 		str->did_getc = true;
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(tpl_getc, str);
+		struct retry_ctx_ ctx = { q, str };
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8_lax(retry_getc, &ctx);
 		str->ungetch = 0;
 
 		if (errno == EINTR) {
