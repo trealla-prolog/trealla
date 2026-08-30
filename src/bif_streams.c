@@ -6271,40 +6271,33 @@ static bool bif_sys_bflush_1(query *q)
 	return true;
 }
 
-static bool bif_sys_bwrite_2(query *q)
+// Writes exactly `len` bytes to str, retrying past a partial write and -
+// for a non-task query - waiting out real backpressure (EAGAIN) rather
+// than either silently dropping the unwritten remainder or busy-spinning.
+//
+// Task queries keep the old behaviour (TODO below, unchanged):
+// do_yield_on_stream(..., true) already exists and polls POLLOUT (see
+// bif_tasks.c), but wiring it in here needs this loop's partial progress
+// to survive a yield/resume, which it does not track today.
+//
+// The ferror()/feof() check below is on str->fp_out, not str->fp (the
+// read side - a different FILE* from what tpl_write() writes through, see
+// its own fdopen() in bif_net.c). Checking str->fp here used to make this
+// whole branch dead code, which went unnoticed while sockets stayed
+// blocking for a non-task query: fwrite() simply waited inside the kernel
+// instead of ever returning a false short count. Once non-blocking
+// exposed it, callers with no retry loop at all (see $put_chars/1,2
+// below) could silently truncate output, and bif_sys_bwrite_2's own loop
+// (which did retry, just never noticed backpressure) spun on tpl_write()
+// tens of millions of times instead of waiting for room.
+static bool write_all(query *q, stream *str, const char *src, size_t len)
 {
-	GET_FIRST_ARG(pstr,stream_or_alias);
-	GET_NEXT_ARG(p1,atom);
-	int n = get_stream(q, pstr);
-	stream *str = &q->pl->streams[n];
-	const char *src = C_STR(q, p1);
-	size_t len = C_STRLEN(q, p1);
-
 	while (len) {
 		size_t nbytes = tpl_write(src, len, str);
 		FILE *fp_wr = str->fp_out ? str->fp_out : str->fp;
 
 		if (!nbytes) {
 			if (feof(fp_wr) || ferror(fp_wr)) {
-				// A non-task socket is non-blocking now (see bif_net.c),
-				// so a zero-progress write here is routinely just EAGAIN -
-				// the peer's receive window is full, not a real error.
-				// Wait for room instead of giving up outright. Task
-				// queries keep the old behaviour (TODO below, unchanged):
-				// do_yield_on_stream(..., true) already exists and polls
-				// POLLOUT (see bif_tasks.c), but wiring it in here needs
-				// this loop's partial progress to survive a yield/resume,
-				// which it does not track today.
-				//
-				// This checked str->fp (the read side, a different FILE*
-				// from what tpl_write() above actually writes through)
-				// before - see str->fp_out's own fdopen() in bif_net.c -
-				// so ferror() here was always false and this whole branch
-				// was dead. That went unnoticed while sockets stayed
-				// blocking for a non-task query: fwrite() simply waited
-				// inside the kernel instead of ever returning a false
-				// short count. Non-blocking exposed it as an infinite,
-				// silent, zero-progress spin instead.
 				if (!q->is_task && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {
 					clearerr(fp_wr);
 
@@ -6326,6 +6319,15 @@ static bool bif_sys_bwrite_2(query *q)
 	}
 
 	return true;
+}
+
+static bool bif_sys_bwrite_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream_or_alias);
+	GET_NEXT_ARG(p1,atom);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	return write_all(q, str, C_STR(q, p1), C_STRLEN(q, p1));
 }
 
 static bool bif_sys_readline_2(query *q)
@@ -6351,11 +6353,12 @@ static bool bif_sys_put_chars_1(query *q)
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		size_t len = C_STRLEN(q, p1);
-		tpl_write(src, len, str);
+		return write_all(q, str, src, len);
 	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
 		char *src = chars_list_to_string(q, p1, p1_ctx);
-		tpl_write(src, strlen(src), str);
+		bool ok = write_all(q, str, src, strlen(src));
 		TPL_free(src);
+		return ok;
 	} else if (is_nil(p1)) {
 		;
 	} else
@@ -6374,11 +6377,12 @@ static bool bif_sys_put_chars_2(query *q)
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		size_t len = C_STRLEN(q, p1);
-		tpl_write(src, len, str);
+		return write_all(q, str, src, len);
 	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
 		char *src = chars_list_to_string(q, p1, p1_ctx);
-		tpl_write(src, strlen(src), str);
+		bool ok = write_all(q, str, src, strlen(src));
 		TPL_free(src);
+		return ok;
 	} else if (is_nil(p1)) {
 		;
 	} else

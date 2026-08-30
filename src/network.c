@@ -377,6 +377,17 @@ void tpl_set_nonblocking(stream *str)
 #endif
 }
 
+// FIONBIO's flag lives on the open file description, not the individual
+// fd number, so this also covers a dup()'d str->fp_out - see
+// tpl_set_nonblocking()'s own call sites in bif_net.c.
+static void tpl_set_blocking(stream *str)
+{
+#if !defined(_WIN32) && !defined(__wasi__)
+	unsigned long flag = 0;
+	ioctl(fileno(str->fp_in), FIONBIO, &flag);
+#endif
+}
+
 void *tpl_enable_ssl(int fd, const char *hostname, bool is_server, int level, const char *certfile)
 {
 #if USE_OPENSSL
@@ -828,6 +839,15 @@ int tpl_close(stream *str)
 
 	if (!str->is_memory && !str->is_popen) {
 		if (str->is_socket) {
+			// A non-blocking socket's fflush() can return early with
+			// whatever write_all() (bif_streams.c) left buffered in
+			// stdio still unsent, if the send buffer happens to be full
+			// at this exact moment - write_all() only guarantees every
+			// tpl_write() call succeeded, not that stdio's own buffer
+			// was ever actually drained to the kernel. This fd is going
+			// away regardless, so there is no cost to blocking here
+			// instead of dropping the tail of the stream.
+			tpl_set_blocking(str);
 			fflush(str->fp_out);
 #if !defined(_WIN32) && !defined(__wasi__)
 			shutdown(fileno(str->fp_in), SHUT_RD);
