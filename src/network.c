@@ -46,12 +46,15 @@ static SSL_CTX *g_ctx = NULL;
 //#undef errno
 #endif
 //#define errno WSAGetLastError()
-#ifdef EWOULDBLOCK
-#undef EWOULDBLOCK
+#ifndef SHUT_RD
 #define SHUT_RD SD_RECEIVE
 #define SHUT_WR SD_SEND
 #endif
-//#define EWOULDBLOCK WSAEWOULDBLOCK
+// EWOULDBLOCK itself comes from internal.h (aliased to EAGAIN) - not
+// WSAEWOULDBLOCK, which is WSAGetLastError()'s error space, not errno's,
+// and errno can't be redefined to WSAGetLastError() either: this file
+// assigns to it directly (errno = 0, errno = EINTR, ...) in several
+// places, and that macro would not be an lvalue.
 #else
 #ifndef __wasi__
 #include <netdb.h>

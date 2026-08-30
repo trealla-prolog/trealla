@@ -67,6 +67,14 @@ typedef pl_atomic int64_t pl_refcnt;
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #endif
 
+// This MinGW target's errno.h has EAGAIN but not EWOULDBLOCK - on every
+// other platform here the two are either the same value or both defined,
+// so alias rather than special-case every errno==EAGAIN||EWOULDBLOCK check.
+#if defined(_WIN32) && !defined(EWOULDBLOCK)
+#include <errno.h>
+#define EWOULDBLOCK EAGAIN
+#endif
+
 // Sentinel Value
 #define ERR_IDX (~(pl_idx)0)
 #define IDX_MAX (ERR_IDX-1)
