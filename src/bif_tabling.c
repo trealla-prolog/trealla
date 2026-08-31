@@ -1272,6 +1272,22 @@ static bool bif_tbl_pop_scc_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+// '$tbl_scc_escaped' - semidet: the SCC being completed depends on an
+// outer one, so its tables are the parent's to complete, not ours.
+
+static bool bif_tbl_scc_escaped_0(query *q)
+{
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
+	(void)q;
+
+	if (!s->scc_depth)
+		return false;
+
+	return s->scc[s->scc_depth-1].dep_min != 0;
+}
+
 // '$tbl_mark_all_complete' - complete every table created since the
 // leader started (the library's "newly created table identifiers").
 
@@ -1516,6 +1532,7 @@ builtins g_tabling_bifs[] =
 	{"$tbl_leader", 0, bif_tbl_leader_0, "", false, false, BLAH},
 	{"$tbl_push_scc", 1, bif_tbl_push_scc_1, "+integer", false, false, BLAH},
 	{"$tbl_pop_scc", 1, bif_tbl_pop_scc_1, "-atom", false, false, BLAH},
+	{"$tbl_scc_escaped", 0, bif_tbl_scc_escaped_0, "", false, false, BLAH},
 	{"$tbl_mark_all_complete", 0, bif_tbl_mark_all_complete_0, "", false, false, BLAH},
 	{"$tbl_reset_incomplete", 0, bif_tbl_reset_incomplete_0, "", false, false, BLAH},
 	{"$tbl_note_exception", 0, bif_tbl_note_exception_0, "", false, false, BLAH},

@@ -4,6 +4,7 @@ call barrier: ok
 left recursion: ok
 mutual: ok
 cycle: ok
+scc merge: ok
 fib: ok
 variant answers: ok
 order independence: ok

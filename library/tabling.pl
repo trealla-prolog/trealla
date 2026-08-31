@@ -155,6 +155,13 @@ completion :-
 	   % recomputes instead.
 	   (  '$tbl_saw_exception' ->
 	      '$tbl_reset_incomplete'
+	   ;  '$tbl_scc_escaped' ->
+	      % This SCC depends on an outer one, so this fixpoint saw only
+	      % part of the answers. Leave the tables active for
+	      % '$tbl_pop_scc' to merge into the parent, which completes
+	      % them once it has seen the rest. Marking them complete here
+	      % caches a partial table permanently.
+	      true
 	   ;  '$tbl_mark_all_complete'
 	   )
 	).

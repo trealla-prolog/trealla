@@ -139,6 +139,31 @@ test_cycle :-
 	nl.
 
 % ---------------------------------------------------------------------
+% 6b. A cycle WITH answers, entered through the predicate that is not
+% the recursive one. p calls q; q calls back into p. Querying q/1
+% first opens q's SCC, nests p's SCC inside it, and p's SCC escapes
+% (it depends on q, the outer one) and is merged into q's rather than
+% completed on its own. If completion() marked p's table complete
+% before that merge/escape was checked, p's table would be cached
+% complete but empty - test_cycle above can't catch this because its
+% cycle has no answers at all, so an empty (wrongly-completed) table
+% looks identical to a correct one. Query order matters here: q first
+% is what exposes it.
+
+:- table pm/1, qm/1.
+
+pm(X) :- qm(X).
+pm(1).
+qm(X) :- pm(X).
+
+test_scc_merge :-
+	(	qm(1), pm(1) ->
+		write('scc merge: ok')
+	;	write('scc merge: FAILED')
+	),
+	nl.
+
+% ---------------------------------------------------------------------
 % 7. Memoization actually happens: an exponential fib is instant when
 % tabled (and the answer is right).
 
@@ -484,6 +509,7 @@ main :-
 	test_left_recursion,
 	test_mutual,
 	test_cycle,
+	test_scc_merge,
 	test_fib,
 	test_variant_answers,
 	test_order_independent,
