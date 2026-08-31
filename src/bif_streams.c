@@ -2569,10 +2569,7 @@ static bool bif_iso_write_term_2(query *q)
 	q->variable_names = vnames;
 	q->variable_names_ctx = vnames_ctx;
 
-	if (q->ignore_ops)
-		print_canonical_to_stream(q, str, p1, p1_ctx, 1);
-	else
-		print_term_to_stream(q, str, p1, p1_ctx, 1);
+	print_term_to_stream(q, str, p1, p1_ctx, 1);
 
 	clear_write_options(q);
 	return true;
@@ -2652,10 +2649,7 @@ static bool bif_iso_write_term_3(query *q)
 	q->variable_names = vnames;
 	q->variable_names_ctx = vnames_ctx;
 
-	if (q->ignore_ops)
-		print_canonical_to_stream(q, str, p1, p1_ctx, 1);
-	else
-		print_term_to_stream(q, str, p1, p1_ctx, 1);
+	print_term_to_stream(q, str, p1, p1_ctx, 1);
 
 	clear_write_options(q);
 	return true;
