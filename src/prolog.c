@@ -1108,8 +1108,11 @@ void pl_destroy(prolog *pl)
 					;
 				else if (str->is_map)
 					sl_destroy(str->keyval);
-				else if (str->is_engine)
+				else if (str->is_engine) {
 					query_destroy(str->engine);
+					free_detached_term(str->cur_yield);
+					str->cur_yield = NULL;
+				}
 				else if (str->fp && (i > 2)) {
 					fclose(str->fp_in);
 

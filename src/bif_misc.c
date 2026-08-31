@@ -338,6 +338,36 @@ static bool bif_map_close_1(query *q)
 	return bif_iso_close_1(q);
 }
 
+// An engine runs in its own query, with its own frames and slots, so a
+// term held on one side cannot be dereferenced against the other: its
+// variables name frames the peer never had, and reading them ran off the
+// end of the peer's slot array. Ship terms over the boundary the way
+// thread messages do - flatten to a detached image with the variables
+// renumbered from zero, then import that into the receiver.
+
+static cell *engine_detach_term(query *q, cell *c, pl_ctx c_ctx)
+{
+	c = deref(q, c, c_ctx);
+	c_ctx = q->latest_ctx;
+
+	if (!init_tmp_heap(q))
+		return NULL;
+
+	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
+
+	if (!tmp)
+		return NULL;
+
+	rebase_term(q, tmp, 0, false);
+	cell *img = TPL_malloc(sizeof(cell) * tmp->num_cells);
+
+	if (!img)
+		return NULL;
+
+	dup_cells(img, tmp, tmp->num_cells);
+	return img;
+}
+
 static bool bif_engine_create_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -455,7 +485,9 @@ static bool bif_engine_next_2(query *q)
 	}
 
 	if (str->cur_yield) {
-		cell *tmp = copy_term_to_heap(q, str->cur_yield, 0, false);
+		cell *tmp = import_term(q, str->cur_yield, q->st.cur_ctx);
+		CHECKED(tmp);
+		free_detached_term(str->cur_yield);
 		str->cur_yield = NULL;
 		return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 	}
@@ -471,7 +503,11 @@ static bool bif_engine_next_2(query *q)
 	if (!str->engine->st.cp)
 		return false;
 
-	cell *tmp = copy_term_to_heap(str->engine, str->pattern, 0, false);
+	cell *img = engine_detach_term(str->engine, str->pattern, 0);
+	CHECKED(img);
+	cell *tmp = import_term(q, img, q->st.cur_ctx);
+	free_detached_term(img);
+	CHECKED(tmp);
 	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 }
 
@@ -489,7 +525,9 @@ static bool bif_engine_yield_1(query *q)
 	else if (q->retry)
 		return true;
 
-	str->cur_yield = clone_term_to_heap(q, p1, p1_ctx);
+	free_detached_term(str->cur_yield);
+	str->cur_yield = engine_detach_term(q, p1, p1_ctx);
+	CHECKED(str->cur_yield);
 	return do_yield(q, 0);
 }
 
@@ -503,7 +541,9 @@ static bool bif_engine_post_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
 
-	str->cur_yield = clone_term_to_heap(q, p1, p1_ctx);
+	free_detached_term(str->cur_yield);
+	str->cur_yield = engine_detach_term(q, p1, p1_ctx);
+	CHECKED(str->cur_yield);
 	return true;
 }
 
@@ -519,7 +559,9 @@ static bool bif_engine_fetch_1(query *q)
 	if (!str->cur_yield)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "existence_error", "no_data");
 
-	cell *tmp = copy_term_to_heap(q, str->cur_yield, 0, false);
+	cell *tmp = import_term(q, str->cur_yield, q->st.cur_ctx);
+	CHECKED(tmp);
+	free_detached_term(str->cur_yield);
 	str->cur_yield = NULL;
 	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 }

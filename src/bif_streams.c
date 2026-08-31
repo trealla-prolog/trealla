@@ -1349,6 +1349,8 @@ bool stream_close(query *q, int n)
 		sl_destroy(str->keyval);
 	} else if (str->is_engine) {
 		query_destroy(str->engine);
+		free_detached_term(str->cur_yield);
+		str->cur_yield = NULL;
 	} else
 		ok = !tpl_close(str);
 

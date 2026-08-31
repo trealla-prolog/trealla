@@ -995,6 +995,17 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 	return dst;
 }
 
+// Release a detached term image built for import_term().
+
+void free_detached_term(cell *c)
+{
+	if (!c)
+		return;
+
+	unshare_cells(c, c->num_cells);
+	TPL_free(c);
+}
+
 cell *import_term(query *q, cell *c, pl_ctx c_ctx)
 {
 	cell *tmp = TPL_malloc(sizeof(cell) * c->num_cells);
