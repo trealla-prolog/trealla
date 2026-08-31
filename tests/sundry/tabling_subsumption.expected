@@ -5,6 +5,7 @@ floor fixpoint: ok
 zero markers: ok
 multi marker rejected: ok
 as option rejected: ok
+as incremental accepted: ok
 idempotent: ok
 restraint counts keys: ok
 restraint still fires: ok

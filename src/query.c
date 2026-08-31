@@ -664,6 +664,13 @@ static void enter_predicate(query *q, predicate *pr)
 	f->dbgen = q->pl->dbgen;
 	q->st.pr = pr;
 
+	// Incremental tabling (item 3). Once per CALL, not once per clause
+	// tried, and the bit is false for everything unless declared, so
+	// the null case is a test on a struct already in cache.
+
+	if (pr->is_incremental)
+		tbl_note_predicate_dep(q, pr);
+
 	if (pr->is_dynamic)
 		pr->refcnt++;
 }

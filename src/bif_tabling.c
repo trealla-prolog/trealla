@@ -627,6 +627,19 @@ typedef struct table_ {
 	tnode *leaf;
 	unsigned slot;			// index into tbl_state.slots (handle identity)
 
+	// Incremental tabling (item 3). deps is this table's dependency
+	// set, flushed here from its SCC on completion; completed_at is the
+	// pl->dbgen the table completed at. Validation is a PULL done by
+	// the owning thread at lookup, never a push from the asserting
+	// thread: tables are per-thread but the database is shared, so
+	// invalidating from the writer's side would mean touching another
+	// thread's tables.
+
+	struct tbl_dep_ *deps;
+	uint64_t completed_at;
+	bool is_incremental;
+	bool deps_incomplete;		// see tscc: recompute rather than trust
+
 	struct table_ *wl_next, *all_next, *fresh_next;
 } table;
 
@@ -646,10 +659,40 @@ typedef struct table_ {
 // after all: on pop its tables are merged into the parent (SCC merging)
 // and the parent finishes them.
 
+// Incremental tabling (item 3): one edge of a table's dependency set.
+// Predicates are keyed by (module, functor, arity) rather than held as
+// a raw predicate* - destroy_predicate() runs at module teardown, and
+// Phase 1 already paid once for raw pointers outliving their target.
+// A table edge names another table's slot+serial handle, validated the
+// same way every other handle is.
+
+typedef struct tbl_dep_ {
+	struct tbl_dep_ *next;
+	bool is_table;			// false = predicate edge, true = table edge
+
+	// predicate edge
+	module *m;
+	pl_idx functor;
+	unsigned arity;
+
+	// table edge
+	uint64_t handle;
+} tbl_dep;
+
 typedef struct {
 	unsigned id;
 	table *fresh_head;		// tables owned by this SCC
 	unsigned dep_min;		// smallest outer SCC id depended on (0 = none)
+
+	// Dependencies collected while THIS SCC is the one being completed.
+	// Attribution is per-SCC, not per-table: the SCC is already the
+	// unit of completion, so it is the natural unit of invalidation,
+	// and its push/pop bracket is the only one in the driver that is
+	// safe against backtracking (see DESIGN-tabling-phase2.md item 3).
+	// Flushed onto every table in fresh_head at mark_all_complete.
+
+	tbl_dep *deps;
+	bool deps_incomplete;		// a dep was lost to OOM; refuse to validate
 } tscc;
 
 // --- per-thread state ---
@@ -734,6 +777,79 @@ static unsigned tbl_scc_id(const tbl_state *s)
 	return s->scc_depth ? s->scc[s->scc_depth-1].id : 0;
 }
 
+// --- incremental tabling (item 3): dependency collection ---
+//
+// Non-allocating: enter_predicate() calls into here on every call to an
+// incremental predicate, and a program that never tables must not have
+// tabling state created underneath it.
+
+static tbl_state *tbl_peek(query *q)
+{
+	thread *self = q->thread_ptr ? q->thread_ptr : q->pl->main_thread;
+	return (tbl_state*)self->tabling_state;
+}
+
+static void tbl_deps_free(tbl_dep *d)
+{
+	while (d) {
+		tbl_dep *next = d->next;
+		TPL_free(d);
+		d = next;
+	}
+}
+
+// Dep sets are small (a table consults a handful of predicates), so a
+// linear dedup scan beats any index here.
+
+static void tbl_scc_add_dep(tscc *top, const tbl_dep *want)
+{
+	for (tbl_dep *d = top->deps; d; d = d->next) {
+		if (d->is_table != want->is_table)
+			continue;
+
+		if (want->is_table) {
+			if (d->handle == want->handle)
+				return;
+		} else if ((d->m == want->m) && (d->functor == want->functor)
+			&& (d->arity == want->arity))
+			return;
+	}
+
+	tbl_dep *d = TPL_calloc(1, sizeof(tbl_dep));
+
+	if (!d) {
+		// A dep we failed to record is a table that would later look
+		// valid when it is not. Mark the SCC so its tables refuse to
+		// validate at all and simply recompute - slow, but not wrong.
+
+		top->deps_incomplete = true;
+		return;
+	}
+
+	*d = *want;
+	d->next = top->deps;
+	top->deps = d;
+}
+
+// Called from enter_predicate() when pr->is_incremental. Attribution is
+// to the SCC currently being completed, which is correct for a resumed
+// continuation too - measured at 1157 checks / 0 mismatches, see the
+// design doc.
+
+void tbl_note_predicate_dep(query *q, predicate *pr)
+{
+	tbl_state *s = tbl_peek(q);
+
+	if (!s || !s->scc_depth)
+		return;
+
+	tbl_dep want = {0};
+	want.m = pr->m;
+	want.functor = pr->key.val_off;
+	want.arity = get_arity(&pr->key);
+	tbl_scc_add_dep(&s->scc[s->scc_depth-1], &want);
+}
+
 static pl_idx s_fresh, s_active, s_complete, s_min, s_max;
 
 static void tbl_intern_atoms(query *q)
@@ -795,6 +911,8 @@ static void tbl_enqueue(tbl_state *s, table *t)
 
 static void tbl_destroy(table *t)
 {
+	tbl_deps_free(t->deps);		// item 3
+	t->deps = NULL;
 	trie_free(t->answers);
 
 	for (tbl_ans *a = t->first_ans; a; ) {
@@ -877,6 +995,27 @@ static void make_tbl_handle(tbl_state *s, cell *tmp, const table *t)
 	tmp->flags |= FLAG_INT_TABLE;
 }
 
+// Same value, without a cell - item 3 stores it in a dependency edge so
+// a stale table edge is detected by the usual slot+serial validation
+// rather than by dereferencing freed memory.
+
+static uint64_t tbl_handle_value(const tbl_state *s, const table *t)
+{
+	return TBL_HANDLE(t->slot, s->slots[t->slot].serial);
+}
+
+static table *tbl_handle_from_value(tbl_state *s, uint64_t v)
+{
+	unsigned idx = (unsigned)(v & 0xffffffffu);
+	uint32_t ser = (uint32_t)(v >> 32);
+
+	if (!s || (idx >= s->nslots) || !s->slots[idx].t
+		|| (s->slots[idx].serial != ser))
+		return NULL;
+
+	return s->slots[idx].t;
+}
+
 static table *tbl_handle(tbl_state *s, cell *c)
 {
 	if (!s || !is_integer(c) || !(c->flags & FLAG_INT_TABLE))
@@ -934,6 +1073,107 @@ static void tbl_pin_answer_frame(query *q, const cell *tmp)
 
 // '$tbl_variant_table'(+Variant, -Handle, -Status)
 
+// --- item 3: validate-on-read ---
+//
+// Drop a completed incremental table back to FRESH when anything it
+// depends on has changed since it completed. Invalidation is a full
+// drop, NOT '$tbl_reset_incomplete' (which deliberately keeps answers):
+// with answer subsumption landed, leaf->value in the answer trie points
+// at live tbl_ans structs, so freeing answers without clearing the trie
+// would leave dangling pointers in the dedup path.
+
+static void tbl_drop_answers(table *t)
+{
+	trie_free(t->answers);
+	t->answers = NULL;
+
+	for (tbl_ans *a = t->first_ans; a; ) {
+		tbl_ans *next = a->next;
+		tbl_image_free(a->image);
+		TPL_free(a);
+		a = next;
+	}
+
+	t->first_ans = t->last_ans = t->unproc_ans = NULL;
+	t->update_head = t->update_tail = NULL;
+	t->n_answers = 0;
+	tbl_free_pending(t);
+}
+
+static bool tbl_deps_changed(query *q, tbl_state *s, table *t, unsigned depth)
+{
+	if (t->deps_incomplete)
+		return true;
+
+	// A cycle in the table graph (mutual recursion across SCCs) would
+	// otherwise recurse forever. Depth-capping is conservative in the
+	// safe direction: treat it as changed and recompute.
+
+	if (depth > 32)
+		return true;
+
+	for (tbl_dep *d = t->deps; d; d = d->next) {
+		if (!d->is_table) {
+			cell tmp = (cell){0};
+			tmp.tag = TAG_INTERNED;
+			tmp.val_off = d->functor;
+			set_arity(&tmp, d->arity);
+			predicate *pr = find_predicate(d->m, &tmp);
+
+			// Gone entirely (module unloaded, predicate abolished) is
+			// a change like any other.
+
+			if (!pr || (pr->last_modified > t->completed_at))
+				return true;
+		} else {
+			table *dep = tbl_handle_from_value(s, d->handle);
+
+			// Stale handle: the table it named has been reclaimed, so
+			// we cannot show it is still valid.
+
+			if (!dep)
+				return true;
+
+			if (dep->status != TBL_COMPLETE)
+				continue;
+
+			if (tbl_deps_changed(q, s, dep, depth+1))
+				return true;
+		}
+	}
+
+	return false;
+}
+
+static void tbl_revalidate(query *q, tbl_state *s, table *t)
+{
+	// Nothing in the database has changed since this table completed,
+	// so nothing it depends on can have. One comparison, and the common
+	// case never walks the dep list at all.
+
+	if (q->pl->dbgen == t->completed_at)
+		return;
+
+	if (!tbl_deps_changed(q, s, t, 0))
+		return;
+
+	tbl_drop_answers(t);
+
+	for (tbl_susp *sp = t->first_susp; sp; ) {
+		tbl_susp *next = sp->next;
+		tbl_image_free(sp->image);
+		TPL_free(sp);
+		sp = next;
+	}
+
+	t->first_susp = t->last_susp = t->unproc_susp = NULL;
+	tbl_deps_free(t->deps);
+	t->deps = NULL;
+	t->deps_incomplete = false;
+	t->in_wl = false;
+	t->status = TBL_FRESH;
+}
+
 static bool bif_tbl_variant_table_3(query *q)
 {
 	tbl_state *s = tbl(q);
@@ -984,6 +1224,28 @@ static bool bif_tbl_variant_table_3(query *q)
 		}
 	}
 
+	// Item 3, validate-on-read. A COMPLETE incremental table whose
+	// dependencies have moved on since it completed is dropped back to
+	// FRESH here, so the status returned below makes the caller
+	// recompute it. Done by the owning thread at lookup rather than by
+	// the asserting thread at write time - tables are per-thread, the
+	// database is not.
+
+	if ((t->status == TBL_COMPLETE) && t->is_incremental)
+		tbl_revalidate(q, s, t);
+
+	// Item 3, table->table edge: this lookup happens while some SCC is
+	// being completed, so that SCC's tables depend on this one. Handles
+	// the transitive case - A calls B, B reads q - without needing the
+	// walk to understand tabling at all.
+
+	if (s->scc_depth && (t->scc != tbl_scc_id(s))) {
+		tbl_dep want = {0};
+		want.is_table = true;
+		want.handle = tbl_handle_value(s, t);
+		tbl_scc_add_dep(&s->scc[s->scc_depth-1], &want);
+	}
+
 	cell tmp;
 	make_tbl_handle(s, &tmp, t);
 
@@ -1002,6 +1264,72 @@ static bool bif_tbl_variant_table_3(query *q)
 // Idempotent - setting it again on an already-configured table is a
 // harmless no-op in practice, since the driver only calls it on the
 // fresh->active transition.
+
+// '$tbl_set_pred_incremental'(+Name, +Arity) - mark a DYNAMIC predicate
+// as one whose changes invalidate tables. Backs incremental/1, which
+// is what ":- incremental q/1" runs (an unknown directive is executed
+// as an ordinary goal, so this needs no parser support - unlike
+// ":- dynamic q/1 as incremental", whose `as` lands in the parser's
+// predicate-indicator error path).
+
+static bool bif_tbl_set_pred_incremental_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,integer);
+
+	if (is_negative(p2) || is_bigint(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
+	unsigned arity = (unsigned)get_smallint(p2);
+
+	if (arity > MAX_PROCEDURE_ARITY)
+		return throw_error(q, p2, p2_ctx, "representation_error", "max_arity");
+
+	cell tmp = (cell){0};
+	tmp.tag = TAG_INTERNED;
+	tmp.val_off = p1->val_off;
+	set_arity(&tmp, arity);
+
+	// The module being CONSULTED, not q->st.m. This runs as a goal from
+	// incremental/1, which lives in module `tabling`, so q->st.m is
+	// `tabling` - resolving there missed the user's predicate entirely
+	// and silently created an empty one inside the library instead.
+	// pl->m is what the parser is loading into, which is what a
+	// directive means by an unqualified name (same answer
+	// set_dynamic_in_db gets from p->m).
+
+	module *m = q->pl->m ? q->pl->m : q->st.m;
+	predicate *pr = find_predicate(m, &tmp);
+
+	// Declared before any clause exists is the normal case (it follows
+	// a ":- dynamic q/1"), so create rather than complain.
+
+	if (!pr) pr = create_predicate(m, &tmp, NULL);
+
+	if (!pr)
+		return throw_error(q, p1, p1_ctx, "existence_error", "procedure");
+
+	pr->is_incremental = true;
+	return true;
+}
+
+// '$tbl_set_incremental'(+Handle) - mark a TABLE as incremental, ie.
+// worth collecting dependencies for and re-validating on lookup.
+
+static bool bif_tbl_set_incremental_1(query *q)
+{
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
+	GET_FIRST_ARG(p1,integer);
+	table *t = tbl_handle(s, p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
+
+	t->is_incremental = true;
+	return true;
+}
 
 static bool bif_tbl_set_subsumptive_3(query *q)
 {
@@ -1451,6 +1779,8 @@ static bool bif_tbl_push_scc_1(query *q)
 	top->id = s->scc_next_id++;
 	top->dep_min = 0;
 	top->fresh_head = t;
+	top->deps = NULL;			// item 3
+	top->deps_incomplete = false;
 	t->scc = top->id;
 	t->fresh_next = NULL;
 	s->in_use++;
@@ -1501,7 +1831,26 @@ static bool bif_tbl_pop_scc_1(query *q)
 			if (!parent->dep_min || (top->dep_min < parent->dep_min))
 				parent->dep_min = top->dep_min;
 		}
+
+		// Item 3: the tables went to the parent, so their dependencies
+		// must go with them - the parent completes them and will flush
+		// its dep set onto them.
+
+		for (tbl_dep *d = top->deps; d; ) {
+			tbl_dep *next = d->next;
+			tbl_scc_add_dep(parent, d);
+			TPL_free(d);
+			d = next;
+		}
+
+		if (top->deps_incomplete)
+			parent->deps_incomplete = true;
+
+		top->deps = NULL;
 	}
+
+	tbl_deps_free(top->deps);		// non-escaping: flushed at completion
+	top->deps = NULL;
 
 	top->fresh_head = NULL;
 	cell tmp;
@@ -1558,9 +1907,39 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 		}
 
 		t->first_susp = t->last_susp = t->unproc_susp = NULL;
+
+		// Item 3: flush the SCC's dependency set onto each table it
+		// completed. Only tables of incremental predicates keep it -
+		// for anything else the set is dead weight and the table is
+		// permanent as before.
+
+		if (t->is_incremental) {
+			tbl_deps_free(t->deps);
+			t->deps = NULL;
+			t->deps_incomplete = top->deps_incomplete;
+
+			for (tbl_dep *d = top->deps; d; d = d->next) {
+				tbl_dep *copy = TPL_calloc(1, sizeof(tbl_dep));
+
+				if (!copy) {
+					t->deps_incomplete = true;
+					break;
+				}
+
+				*copy = *d;
+				copy->next = t->deps;
+				t->deps = copy;
+			}
+
+			t->completed_at = q->pl->dbgen;
+		}
+
 		t = next;
 	}
 
+	tbl_deps_free(top->deps);
+	top->deps = NULL;
+	top->deps_incomplete = false;
 	top->fresh_head = NULL;
 	s->saw_exception = false;
 	return true;
@@ -1776,6 +2155,8 @@ builtins g_tabling_bifs[] =
 	{"$tbl_variant_table", 3, bif_tbl_variant_table_3, "+term,-integer,-atom", false, false, BLAH},
 	{"$tbl_set_status", 2, bif_tbl_set_status_2, "+integer,+atom", false, false, BLAH},
 	{"$tbl_set_subsumptive", 3, bif_tbl_set_subsumptive_3, "+integer,+integer,+atom", false, false, BLAH},
+	{"$tbl_set_pred_incremental", 2, bif_tbl_set_pred_incremental_2, "+atom,+integer", false, false, BLAH},
+	{"$tbl_set_incremental", 1, bif_tbl_set_incremental_1, "+integer", false, false, BLAH},
 	{"$tbl_add_answer", 2, bif_tbl_add_answer_2, "+integer,+term", false, false, BLAH},
 	{"$tbl_get_answer", 2, bif_tbl_get_answer_2, "+integer,?term", false, false, BLAH},
 	{"$tbl_add_suspension", 2, bif_tbl_add_suspension_2, "+integer,+term", false, false, BLAH},

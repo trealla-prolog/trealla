@@ -133,21 +133,34 @@ test_multi_marker_rejected :-
 	nl.
 
 % ---------------------------------------------------------------------
-% 5b. ":- table Spec as Option" must be REJECTED, not silently misread.
-% `p/1 as incremental` is a compound whose functor is `as`/2, so before
-% the guard above excluded that shape it matched the mode-spec clause -
+% 5b. ":- table Spec as Option" must not be silently MISREAD.
+% `p/1 as Opt` is a compound whose functor is `as`/2, so before the
+% guard above excluded that shape it matched the mode-spec clause -
 % tabling a predicate literally named `as`/2 and leaving p/1 UNTABLED,
 % with no diagnostic. Silently-untabled is the worst outcome here: the
 % program still runs, just without termination guarantees.
+%
+% `incremental` is supported (item 3); `shared` is item 4 and is not,
+% so it must still be refused rather than quietly accepted - taking an
+% option we do not implement would leave the caller believing their
+% tables are shared when they are not.
 
 test_as_option_rejected :-
 	(	catch(
-		  ( phrase(tabling:wrappers(as_opt/1 as incremental), _), fail ),
-		  error(domain_error(table_option, incremental), _),
+		  ( phrase(tabling:wrappers(as_opt/1 as shared), _), fail ),
+		  error(domain_error(table_option, shared), _),
 		  true
 		) ->
 		write('as option rejected: ok')
 	;	write('as option rejected: FAILED')
+	),
+	nl.
+
+test_as_incremental_accepted :-
+	(	catch(phrase(tabling:wrappers(as_inc/1 as incremental), Cs), _, fail),
+		Cs = [_|_] ->
+		write('as incremental accepted: ok')
+	;	write('as incremental accepted: FAILED')
 	),
 	nl.
 
@@ -217,6 +230,7 @@ main :-
 	test_zero_markers,
 	test_multi_marker_rejected,
 	test_as_option_rejected,
+	test_as_incremental_accepted,
 	test_idempotent,
 	test_restraint_counts_keys,
 	test_restraint_still_fires.

@@ -12,6 +12,7 @@
 
 :- module(tabling, [start_tabling/2,
 	abolish_all_tables/0, abolish_table/1,
+	incremental/1,
 	op(1150, fx, table)]).
 
 :- use_module(library(dcgs)).
@@ -19,6 +20,43 @@
 
 :- dynamic('$tabled'/1).
 :- dynamic('$tbl_subsumptive_spec'/4).
+:- dynamic('$tbl_incremental_spec'/2).
+
+% incremental(+Spec) - ":- incremental(q/1)" marks a DYNAMIC predicate
+% as one whose assert/retract invalidates the tables that consulted it.
+% `incremental` is not a known directive, so the loader runs it as an
+% ordinary goal and this needs no parser support (unlike SWI's
+% ":- dynamic q/1 as incremental", whose `as` lands in the parser's
+% predicate-indicator error path).
+%
+% Deliberately NOT a prefix operator, so the parens are required. At a
+% priority loose enough for ":- incremental q/1" it could no longer
+% appear as the right operand of `as` (xfx 700, max 699), which is
+% exactly where ":- table p/1 as incremental" needs it - and it would
+% make a common word an operator for every user of this library.
+%
+% Both halves must opt in: this one, and ":- table p/1 as incremental"
+% on the table side. A table only collects dependencies if it is
+% incremental, and only on predicates that are.
+
+incremental(Spec) :-
+	(  var(Spec) ->
+	   throw(error(instantiation_error, incremental/1))
+	;  incremental_(Spec)
+	).
+
+incremental_((A,B)) :- !,
+	incremental_(A),
+	incremental_(B).
+incremental_(Name//Arity) :-
+	atom(Name), integer(Arity), Arity >= 0, !,
+	Arity2 is Arity + 2,
+	incremental_(Name/Arity2).
+incremental_(Name/Arity) :-
+	atom(Name), integer(Arity), Arity >= 0, !,
+	'$tbl_set_pred_incremental'(Name, Arity).
+incremental_(Spec) :-
+	throw(error(type_error(predicate_indicator, Spec), incremental/1)).
 
 abolish_all_tables :-
 	'$tbl_abolish_all_tables'.
@@ -79,15 +117,19 @@ native_start_tabling(Wrapper, Worker) :-
 	% this is the FIRST call for this variant, the only time the table
 	% is still empty, so the lookup only ever happens once per table.
 	(  S == fresh ->
-	   apply_subsumption_spec(Wrapper, T)
+	   apply_table_specs(Wrapper, T)
 	;  true
 	),
 	start_tabling_(S, T, Wrapper, Worker).
 
-apply_subsumption_spec(Wrapper, T) :-
+apply_table_specs(Wrapper, T) :-
 	functor(Wrapper, Name, Arity),
 	(  '$tbl_subsumptive_spec'(Name, Arity, Pos, Op) ->
 	   '$tbl_set_subsumptive'(T, Pos, Op)
+	;  true
+	),
+	(  '$tbl_incremental_spec'(Name, Arity) ->
+	   '$tbl_set_incremental'(T)
 	;  true
 	).
 
@@ -220,19 +262,40 @@ wrappers(Name/Arity) -->
 	[ (Head :- tabling:start_tabling(Head, WrappedHead)),
 	  tabling:'$tabled'(Head) ].
 
-% ":- table Spec as Option" - the option syntax the design doc reserves
-% for incremental (item 3) and shared (item 4) tables. Neither exists
-% yet, so this REJECTS rather than supports: accepting it quietly would
-% leave the caller believing their tables are invalidated on
-% assert/retract when they are not, the same trap abolish_table/1
-% refuses above.
+% ":- table Spec as Option". `incremental` (item 3) is supported;
+% `shared` (item 4) is not yet, and anything unrecognised is rejected
+% loudly rather than accepted quietly - taking an option we do not
+% implement would leave the caller believing their tables are
+% invalidated when they are not, the same trap abolish_table/1 refuses
+% above.
 %
 % Must precede the mode-spec clause below. `p/1 as incremental` is a
 % compound whose functor is `as`/2, so that clause matched it - tabling
 % a predicate literally named `as`/2 and leaving p/1 untabled, silently.
 
+wrappers(Spec as incremental) --> !,
+	{ table_spec_name_arity(Spec, Name, Arity),
+	  (  '$tbl_incremental_spec'(Name, Arity) -> true
+	  ;  assertz(tabling:'$tbl_incremental_spec'(Name, Arity))
+	  ) },
+	wrappers(Spec).
 wrappers(_Spec as Option) -->
 	{ throw(error(domain_error(table_option, Option), (table)/1)) }.
+
+% The Name/Arity a table spec ultimately names, for the option clauses
+% above - they have to record the spec BEFORE handing off to the
+% clauses that actually build the wrapper.
+
+table_spec_name_arity(Name//Arity, Name, Arity2) :-
+	atom(Name), integer(Arity), Arity >= 0, !,
+	Arity2 is Arity + 2.
+table_spec_name_arity(Name/Arity, Name, Arity) :-
+	atom(Name), integer(Arity), Arity >= 0, !.
+table_spec_name_arity(Spec, Name, Arity) :-
+	compound(Spec), !,
+	functor(Spec, Name, Arity).
+table_spec_name_arity(Spec, _, _) :-
+	throw(error(type_error(predicate_indicator, Spec), (table)/1)).
 
 % Answer subsumption (item 2 - DESIGN-tabling-phase2.md): a mode spec
 % like path(_,_,min) - same functor/arity as the predicate itself, so

@@ -741,6 +741,7 @@ static void purge_properties(predicate *pr)
 			continue;
 
 		r->dbgen_retracted = ++pr->m->pl->dbgen;
+		pr2->last_modified = r->dbgen_retracted;	// incremental tabling (item 3)
 		pr2->cnt--;
 		index_remove_clause(pr2, r);
 	}
@@ -2081,6 +2082,7 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 	r->cl.num_allocated_cells = p1->num_cells;
 	r->cl.cidx = p1->num_cells+1;
 	r->dbgen_created = ++m->pl->dbgen;
+	pr->last_modified = r->dbgen_created;	// incremental tabling (item 3)
 	r->filename = m->filename;
 	r->owner = pr;
 	return r;
@@ -2327,6 +2329,7 @@ static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 		return false;
 
 	r->dbgen_retracted = ++m->pl->dbgen;
+	pr->last_modified = r->dbgen_retracted;	// incremental tabling (item 3)
 	r->filename = NULL;
 	pr->cnt--;
 	return true;

@@ -25,6 +25,10 @@ records what items 1 and 2 turned up:
   on the non-aggregated arguments, with the worklist re-pairing pass
   the section predicted; that pass is load-bearing and has a negative
   control.
+- **Item 3 (incremental tabling) — done**, to the v3 design below:
+  per-SCC attribution, validate-on-read, `:- incremental(q/1)` plus
+  `:- table p/1 as incremental`. The null case measured free (4M calls,
+  median 0.46s hook vs 0.465s without, interleaved).
 - **A Phase 1 soundness bug, found while starting item 1 and fixed
   first.** `completion/0` marked an *escaping* nested SCC's tables
   COMPLETE before `'$tbl_pop_scc'` discovered the escape, caching a
@@ -33,7 +37,22 @@ records what items 1 and 2 turned up:
   empty table is indistinguishable from a correct one. This is the
   concrete instance of v2's own warning about unexercised tests.
 
-Baseline: v3.2.0 plus that patch. Suite now 389 passed / 0 failed.
+**Two things item 3 only learned by building it:**
+
+- **Module resolution.** `'$tbl_set_pred_incremental'` first resolved
+  against `q->st.m`, which during `incremental/1` is `tabling` — the
+  *library's* module. It missed the user's predicate entirely and
+  silently created an empty one inside the library. The right module
+  for an unqualified name in a directive is `pl->m`, the one being
+  consulted, which is the same answer `set_dynamic_in_db` gets from
+  `p->m`.
+- **`incremental` must not be a prefix operator.** At a priority loose
+  enough for `:- incremental q/1` it can no longer be the right operand
+  of `as` (xfx 700, max 699), so it would break `:- table p/1 as
+  incremental` — and it would make a common word an operator for every
+  user of the library. Hence `:- incremental(q/1)` with parens.
+
+Baseline: v3.2.0 plus that patch. Suite now 390 passed / 0 failed.
 
 ---
 
@@ -43,8 +62,8 @@ Baseline: v3.2.0 plus that patch. Suite now 389 passed / 0 failed.
 |---|------|-------|------|------|--------|
 | 1 | Restraints | runaway answer *set* → `resource_error` | S | low | **done** |
 | 2 | Answer subsumption | aggregate at insert; bounded tables | M | medium | **done** |
-| 3 | Incremental tabling | tables survive assert/retract | L | medium | next |
-| 4 | Shared completed tables | threads stop recomputing | M | **high** | |
+| 3 | Incremental tabling | tables survive assert/retract | L | medium | **done** |
+| 4 | Shared completed tables | threads stop recomputing | M | **high** | next |
 | 5 | Trie-path reconstruction | drops per-answer images | M | medium | |
 | 6 | `tnot` / well-founded semantics | correct negation through recursion | XL | high | |
 
@@ -171,7 +190,7 @@ later, it needs a documented obligation on the user.
 
 ---
 
-## 3. Incremental tabling **[changed in v3 — substantially]**
+## 3. Incremental tabling **[changed in v3 — substantially; now IMPLEMENTED]**
 
 **What it gives.** Tables survive changes to the dynamic predicates
 they depend on, instead of the user calling `abolish_all_tables/0` and

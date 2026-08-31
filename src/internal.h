@@ -509,6 +509,16 @@ struct predicate_ {
 	bool is_var_in_idx2_arg:1;
 	bool is_iso:1;
 	bool is_dirty:1;
+
+	// Incremental tabling (item 3). is_incremental is opt-in via
+	// ":- incremental q/1" and is tested in enter_predicate() before
+	// any dependency work, so a program that never declares one pays
+	// a single already-cached bit test. last_modified is stamped from
+	// pl->dbgen on assert/retract; a table compares it against the
+	// generation it completed at to decide whether it is still valid.
+
+	bool is_incremental:1;
+	uint64_t last_modified;
 };
 
 #define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL
@@ -1209,6 +1219,7 @@ extern pl_idx g_quad_s, g_sys_quad_s;
 extern bool do_erase(module *m, const char *str);
 extern void tabling_destroy(prolog *pl);
 extern void tabling_destroy_thread(thread *t);
+extern void tbl_note_predicate_dep(query *q, predicate *pr);
 
 extern unsigned g_cpu_count;
 extern unsigned g_max_os_threads;
