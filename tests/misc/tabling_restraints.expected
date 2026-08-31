@@ -1,0 +1,5 @@
+defaults: ok
+answer count restraint: ok
+bounded table unaffected: ok
+answer size restraint: ok
+subgoal size restraint: ok

@@ -246,6 +246,15 @@ typedef struct {
 	tnode *first_node, *first_parent;
 	bool oom;
 	bool attvar;			// hit an attributed variable
+
+	// Restraints (item 1): max_size is a term-size budget in canonical
+	// key cells, 0 = unbounded. size counts every step regardless of
+	// hit/create, so a term that shares most of its path with an
+	// existing one still counts at its full size, not just what it
+	// added.
+
+	unsigned max_size, size;
+	bool restrained;
 } twalk;
 
 static void twalk_init(twalk *w, query *q, tnode **root, bool create)
@@ -286,6 +295,11 @@ static int twalk_var_num(twalk *w, pl_ctx ctx, unsigned var_num)
 
 static bool trie_step(twalk *w, const cell *key)
 {
+	if (w->max_size && (++w->size > w->max_size)) {
+		w->restrained = true;
+		return false;
+	}
+
 	tnode *parent = w->node;
 	tnode **slot = parent ? &parent->child : w->root;
 	thash *h = parent ? parent->index : NULL;
@@ -437,23 +451,26 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 
 static void trie_free(tnode *n);
 
-static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed, bool *attvar)
+static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed, bool *attvar, unsigned max_size, bool *restrained)
 {
 	twalk w;
 	twalk_init(&w, q, root, true);
+	w.max_size = max_size;
 	bool ok = trie_walk(&w, c, ctx);
 	tnode *leaf = w.node;
 	bool fresh = w.created_any;
 	if (attvar) *attvar = w.attvar;
+	if (restrained) *restrained = w.restrained;
 	twalk_done(&w);
 
 	if (!ok || !leaf) {
-		// The walk failed part-way - an attributed variable, a blob, or
-		// OOM - after possibly creating nodes for the arguments it did
-		// get through. Those are unreachable (never marked is_leaf) but
-		// they were never reclaimed either, so a program looping on a
-		// tabled call with an untabelable answer grew the trie on every
-		// throw. Discard what this walk added.
+		// The walk failed part-way - an attributed variable, a blob, a
+		// restraint breach, or OOM - after possibly creating nodes for
+		// the arguments it did get through. Those are unreachable
+		// (never marked is_leaf) but they were never reclaimed either,
+		// so a program looping on a tabled call with an untabelable
+		// answer grew the trie on every throw. Discard what this walk
+		// added.
 
 		if (w.first_node) {
 			*w.first_slot = w.first_node->sibling;
@@ -551,6 +568,7 @@ typedef struct table_ {
 	int status;
 	bool in_wl;
 	unsigned scc;			// owning SCC id (0 = none yet)
+	unsigned n_answers;		// count for max_answers_for_subgoal
 
 	// Identity of the call this table answers, so abolish_table/1 can
 	// find every variant of one predicate, and the trie leaf pointing
@@ -876,12 +894,16 @@ static bool bif_tbl_variant_table_3(query *q)
 	GET_NEXT_ARG(p3,any);
 
 	tbl_intern_atoms(q);
-	bool existed = false, attvar = false;
-	tnode *leaf = trie_insert_(q, &s->variants, p1, p1_ctx, &existed, &attvar);
+	bool existed = false, attvar = false, restrained = false;
+	tnode *leaf = trie_insert_(q, &s->variants, p1, p1_ctx, &existed, &attvar,
+		q->pl->tbl_max_subgoal_size, &restrained);
 
 	if (!leaf) {
 		if (attvar)
 			return throw_error(q, p1, p1_ctx, "type_error", "free_variable");
+
+		if (restrained)
+			return throw_error(q, p1, p1_ctx, "resource_error", "max_table_subgoal_size");
 
 		return throw_error(q, p1, p1_ctx, "representation_error", "tabled_call");
 	}
@@ -959,18 +981,35 @@ static bool bif_tbl_add_answer_2(query *q)
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
-	bool existed = false, attvar = false;
-	tnode *leaf = trie_insert_(q, &t->answers, p2, p2_ctx, &existed, &attvar);
+	bool existed = false, attvar = false, restrained = false;
+	tnode *leaf = trie_insert_(q, &t->answers, p2, p2_ctx, &existed, &attvar,
+		q->pl->tbl_max_answer_size, &restrained);
 
 	if (!leaf) {
 		if (attvar)
 			return throw_error(q, p2, p2_ctx, "type_error", "free_variable");
+
+		if (restrained)
+			return throw_error(q, p2, p2_ctx, "resource_error", "max_table_answer_size");
 
 		return throw_error(q, p2, p2_ctx, "representation_error", "tabled_answer");
 	}
 
 	if (existed)
 		return false;
+
+	// max_answers_for_subgoal: this answer is genuinely new (existed ==
+	// false), so it is the one that would push the table over the
+	// limit. The trie leaf stays marked is_leaf (see trie_insert_) - a
+	// re-derivation after the exception unwinds this table back to
+	// FRESH (run_scc's catch) hits the identical answer at the
+	// identical count and raises the same error again, which is the
+	// point: a breached table stays diagnostic, not silently partial.
+
+	if (q->pl->tbl_max_answers_for_subgoal && (t->n_answers >= q->pl->tbl_max_answers_for_subgoal))
+		return throw_error(q, p2, p2_ctx, "resource_error", "max_answers_for_subgoal");
+
+	t->n_answers++;
 
 	tbl_ans *a = TPL_calloc(1, sizeof(tbl_ans));
 	CHECKED(a);

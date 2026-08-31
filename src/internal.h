@@ -1173,6 +1173,10 @@ struct prolog_ {
 
 	pl_atomic bool is_multithreaded;
 	unsigned next_mod_id, def_max_depth, my_chan;
+
+	// Tabling restraints (SWI's flag names). 0 = infinite = unset.
+
+	unsigned tbl_max_answer_size, tbl_max_subgoal_size, tbl_max_answers_for_subgoal;
 	unsigned current_input, current_output, current_error, goal_expansions;
 	int8_t halt_code, opt, limit;
 	pl_refcnt rnd_first_time;
