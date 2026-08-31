@@ -208,18 +208,22 @@ atts_modules_([Att|Atts], Ms) :-
 process_modules_([], _, _, Goals, Goals).
 process_modules_([M|Ms], Var, Val, SoFar, Goals) :-
 	M:verify_attributes(Var, Val, NewGoals0),
-	modularize(NewGoals0, M, [], NewGoals),
+	modularize(NewGoals0, M, NewGoals),
 	append(SoFar, NewGoals, MoreGoals),
 	process_modules_(Ms, Var, Val, MoreGoals, Goals).
 
-modularize([], _, Goals, Goals).
-modularize([H|T], M, SoFar, Goals) :-
+% Goals run in the order verify_attributes/3 returned them, so build the
+% list head-first: the accumulator this used to prepend to reversed it.
+
+modularize([], _, []).
+modularize([H|T], M, [Goal|Goals]) :-
 	functor(H, F, _),
 	(F = ',' ->
-		modularize(T, M, [H|SoFar], Goals)
+		Goal = H
 	;
-		modularize(T, M, [M:H|SoFar], Goals)
-	).
+		Goal = M:H
+	),
+	modularize(T, M, Goals).
 
 term_attvars_([], VsIn, VsIn).
 term_attvars_([H|T], VsIn, VsOut) :-
