@@ -1339,8 +1339,10 @@ bool stream_close(query *q, int n)
 	str->addr = NULL;
 	TPL_free(str->data);
 	str->data = NULL;
+	str->data_owner = NULL;
 	TPL_free(str->wbuf);
 	str->wbuf = NULL;
+	str->wbuf_owner = NULL;
 	str->wbuf_len = str->wbuf_pos = 0;
 	str->at_end_of_file = true;
 	str->is_active = false;
@@ -1496,6 +1498,14 @@ static bool flush_or_throw(query *q, stream *str)
 }
 
 static bool write_all(query *q, stream *str, const char *src, size_t len);
+
+// A parked write belongs to the query that parked it, not to the stream
+// it is parked on. Another query writing the same stream meanwhile must
+// leave that buffer alone and send its own bytes - see write_all().
+static bool resuming_write(const query *q, const stream *str)
+{
+	return str->wbuf && (str->wbuf_owner == q);
+}
 
 static bool bif_iso_flush_output_0(query *q)
 {
@@ -4346,7 +4356,7 @@ static bool bif_edin_tab_1(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 
-	if (str->wbuf)
+	if (resuming_write(q, str))
 		return write_all(q, str, NULL, 0);
 
 	int cnt = get_smallint(&p1);
@@ -4374,7 +4384,7 @@ static bool bif_edin_tab_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (str->wbuf)
+	if (resuming_write(q, str))
 		return write_all(q, str, NULL, 0);
 
 	int cnt = get_smallint(&p1);
@@ -6141,6 +6151,18 @@ static bool bif_sys_bread_3(query *q)
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
+	// str->data holds a partial read across a task's yields below, so a
+	// second query arriving mid-read would append to - and mis-size - the
+	// first one's buffer: the `Want - data_len` remaining-length is
+	// unsigned, so a shorter second request underflows it into a huge
+	// read straight past the end of that buffer. Two readers on one
+	// stream have no coherent meaning anyway, so refuse rather than
+	// corrupt. Writers are different, and allowed - see write_all().
+	if (str->data && (str->data_owner != q))
+		return throw_error(q, pstr, pstr_ctx, "permission_error", "input,busy_stream");
+
+	str->data_owner = q;
+
 	if (is_integer(p1) && is_positive(p1)) {
 		if (!str->data) {
 			str->data = TPL_malloc(get_smallint(p1)+1);
@@ -6297,6 +6319,7 @@ static void free_wbuf(stream *str)
 {
 	TPL_free(str->wbuf);
 	str->wbuf = NULL;
+	str->wbuf_owner = NULL;
 	str->wbuf_len = str->wbuf_pos = 0;
 }
 
@@ -6306,7 +6329,9 @@ static void free_wbuf(stream *str)
 // should check str->wbuf first and skip that work too (see put_chars_2).
 static bool write_all(query *q, stream *str, const char *src, size_t len)
 {
-	if (str->wbuf) {
+	bool mine = resuming_write(q, str);
+
+	if (mine) {
 		src = str->wbuf + str->wbuf_pos;
 		len = str->wbuf_len - str->wbuf_pos;
 	}
@@ -6320,29 +6345,40 @@ static bool write_all(query *q, stream *str, const char *src, size_t len)
 				if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 					clearerr(fp_wr);
 
-					if (q->is_task) {
-						if (!str->wbuf) {
+					// Park only when this stream's parked write is ours,
+					// or there is none: a task writing a stream another
+					// task is already parked on can neither borrow that
+					// buffer nor overwrite it, so it waits inline below
+					// instead - rare, and correct.
+					if (q->is_task && (mine || !str->wbuf)) {
+						if (!mine) {
 							str->wbuf = TPL_malloc(len);
+
 							if (!str->wbuf)
 								return false;
 
 							memcpy(str->wbuf, src, len);
+							str->wbuf_owner = q;
 							str->wbuf_len = len;
 							str->wbuf_pos = 0;
 						}
 
+						// do_yield_on_stream() re-reads errno to decide
+						// whether it may park on POLLOUT, and the malloc
+						// above is allowed to have clobbered it.
+						errno = EAGAIN;
 						return do_yield_on_stream(q, str, true);
 					}
 
 					if (!tpl_wait_fd_writable(q, fileno(fp_wr))) {
-						free_wbuf(str);
+						if (mine) free_wbuf(str);
 						return false;	// errno == EINTR
 					}
 
 					continue;
 				}
 
-				free_wbuf(str);
+				if (mine) free_wbuf(str);
 				return false; // can feof() happen on writing?
 			}
 		}
@@ -6351,11 +6387,12 @@ static bool write_all(query *q, stream *str, const char *src, size_t len)
 		len -= nbytes;
 		src += nbytes;
 
-		if (str->wbuf)
+		if (mine)
 			str->wbuf_pos = (size_t)(src - str->wbuf);
 	}
 
-	free_wbuf(str);
+	if (mine)
+		free_wbuf(str);
 
 	return true;
 }
@@ -6389,7 +6426,7 @@ static bool bif_sys_put_chars_1(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 
-	if (str->wbuf)
+	if (resuming_write(q, str))
 		return write_all(q, str, NULL, 0);
 
 	if (is_cstring(p1)) {
@@ -6416,7 +6453,7 @@ static bool bif_sys_put_chars_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,list_or_nil);
 
-	if (str->wbuf)
+	if (resuming_write(q, str))
 		return write_all(q, str, NULL, 0);
 
 	if (is_cstring(p1)) {

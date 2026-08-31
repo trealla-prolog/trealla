@@ -759,9 +759,18 @@ int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 
 	// A task's own scheduler already retries via do_yield_on_stream() when
 	// its (already non-blocking, see bif_net.c) socket comes back EAGAIN -
-	// same as always, unchanged here.
-	if (q->is_task || !str->is_socket)
-		return tpl_getline_fp(lineptr, n, str->fp_in);
+	// same as always, unchanged here, EINTR included: an interrupted read
+	// reports failure rather than passing off a half-read line as whole.
+	if (q->is_task || !str->is_socket) {
+		int ok = tpl_getline_fp(lineptr, n, str->fp_in);
+
+		if (errno == EINTR) {
+			clearerr(str->fp_in);
+			ok = EOF;
+		}
+
+		return ok;
+	}
 
 	// A non-task query's socket is non-blocking too now, so a mid-line
 	// EAGAIN is not EOF - tpl_getline_fp() has no way to tell the two
@@ -782,7 +791,7 @@ int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 
 		if (ch != EOF) {
 			if ((pos + 1) >= *n) {
-				size_t new_size = *n + (*n >> 1);
+				size_t new_size = *n ? *n + (*n >> 1) : 128;
 				char *new_ptr = TPL_realloc(*lineptr, new_size);
 
 				if (!new_ptr) {

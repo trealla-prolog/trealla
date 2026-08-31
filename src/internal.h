@@ -701,6 +701,8 @@ struct stream_ {
 	};
 
 	char *wbuf;							// a task's parked write, see write_all()
+	const query *wbuf_owner;			// ... and whose it is
+	const query *data_owner;			// whose partial read str->data is
 	unsigned timeout_ms;
 	size_t data_len, alloc_nbytes, wbuf_len, wbuf_pos;
 	int ungetch, srclen, chan, idx, port;
