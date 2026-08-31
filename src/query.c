@@ -2279,8 +2279,16 @@ bool start(query *q)
 				continue;
 			}
 
+			// An unhandled throw has already drained every choicepoint,
+			// so there is no goal left to advance past. In an engine the
+			// bottom barrier then restores the instruction pointer it
+			// captured before the goal was installed - a NULL one, which
+			// proceed() dereferenced. MORE handles a NULL instr already.
+
 			if (q->did_throw) {
-				proceed(q);
+				if (q->st.instr)
+					proceed(q);
+
 				goto MORE;
 			}
 
@@ -2337,7 +2345,9 @@ bool start(query *q)
 			}
 
 			if (q->did_throw) {
-				proceed(q);
+				if (q->st.instr)
+					proceed(q);
+
 				goto MORE;
 			}
 

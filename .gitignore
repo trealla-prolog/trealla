@@ -3,6 +3,7 @@ library/actors/*.c
 stuff
 core
 tpl
+*.dSYM
 *.d
 *.db
 *.a

@@ -1,0 +1,10 @@
+   error(type_error(evaluable,foo/0),(+)/2).
+evaluable ok
+   error(type_error(atom,1),atom_length/2).
+type ok
+   error(existence_error(no_data,engine_fetch(_0)),engine_fetch/1).
+no_data ok
+   throw(boom).
+explicit ok
+   error(type_error(evaluable,bar/0),(+)/2).
+after_yield ok
