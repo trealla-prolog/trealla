@@ -281,7 +281,18 @@ int main(int ac, char *av[], char * envp[])
 	if (!no_res && !version)
 		pl_consult(pl, "~/.tplrc");
 
-	const char *goal = NULL;
+	// Every -g/-e/--goal used to overwrite the last one, so only the
+	// FINAL flag on the command line ever ran - documented ("only used
+	// once") rather than fixed. Accumulate instead, and run each in
+	// the order given, in the same position (after every file on the
+	// command line has been consulted) that the single goal ran in
+	// before. 16 is far more than any real invocation needs; past that
+	// an extra -g is more likely a mistake than a real request, so it
+	// is reported rather than silently dropped.
+
+#define MAX_GOALS 16
+	const char *goals[MAX_GOALS];
+	int n_goals = 0;
 
 	for (i = 1; i < ac; i++) {
 		if (!strcmp(av[i], "--"))
@@ -327,7 +338,15 @@ int main(int ac, char *av[], char * envp[])
 			do_lib = 0;
 		} else if (do_goal) {
 			do_goal = 0;
-			goal = av[i];
+
+			if (n_goals >= MAX_GOALS) {
+				fflush(stdout);
+				fprintf(stderr, "Error: too many -g goals (max %d)\n", MAX_GOALS);
+				pl_destroy(pl);
+				return 1;
+			}
+
+			goals[n_goals++] = av[i];
 		} else if (do_restore) {
 			restore_file = av[i];
 			do_restore = 0;
@@ -358,8 +377,8 @@ int main(int ac, char *av[], char * envp[])
 		}
 	}
 
-	if (goal) {
-		if (!pl_eval(pl, goal, false)) {
+	for (i = 0; i < n_goals; i++) {
+		if (!pl_eval(pl, goals[i], false)) {
 			int halt_code = get_halt_code(pl);
 			pl_destroy(pl);
 			return halt_code;
@@ -382,7 +401,7 @@ int main(int ac, char *av[], char * envp[])
 		fprintf(stdout, "  -f\t\t\t- ~/.tplrc not loaded\n");
 		fprintf(stdout, "  -l file\t\t- load file\n");
 		fprintf(stdout, "  file\t\t\t- load file\n");
-		fprintf(stdout, "  -g goal\t\t- query goal (only used once)\n");
+		fprintf(stdout, "  -g goal\t\t- query goal (may be repeated, up to %d, run in order)\n", MAX_GOALS);
 		fprintf(stdout, "  --library path\t- alt to TPL_LIBRARY_PATH env variable\n");
 		fprintf(stdout, "  -v, --version\t\t- print version info and exit\n");
 		fprintf(stdout, "  -h, --help\t\t- print help info and exit\n");
