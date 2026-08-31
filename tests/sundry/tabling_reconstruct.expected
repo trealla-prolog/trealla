@@ -1,0 +1,6 @@
+ground shapes: ok
+variable sharing: ok
+distinct vars: ok
+repeated var: ok
+subsumptive still exact: ok
+stable across reads: ok

@@ -33,6 +33,17 @@ records what items 1 and 2 turned up:
   slot index says which array a handle indexes. Measured 5 threads on
   one table: peak RSS **15.2 MB shared vs 32.1 MB private**; wall time
   indistinguishable at that size, so the win here is memory.
+- **Item 5 (trie-path reconstruction) — done.** The parent-pointer
+  question the section says to settle first was settled by measuring,
+  not arguing: 8 bytes per trie NODE against 24 per image CELL, and
+  trie nodes are shared between answers with common prefixes while
+  images never were. Measured A/B (parent pointers present in both, so
+  this isolates the image): 100k answers **132.3 MB → 113.7 MB**; 2k
+  50-element lists **51.2 MB → 45.8 MB**. The saving slightly exceeds
+  the raw image bytes because each image was also its own malloc.
+  Time cost is real but modest and only shows when reading dominates:
+  600k reconstructions ran **0.16s → 0.19s**, and ordinary
+  build-then-read workloads were indistinguishable.
 - **Item 3 (incremental tabling) — done**, to the v3 design below:
   per-SCC attribution, validate-on-read, `:- incremental(q/1)` plus
   `:- table p/1 as incremental`. The null case measured free (4M calls,
@@ -44,6 +55,15 @@ records what items 1 and 2 turned up:
   could not catch it: its cycle has no answers, so a wrongly-completed
   empty table is indistinguishable from a correct one. This is the
   concrete instance of v2's own warning about unexercised tests.
+
+**Item 5 hit the same kind of cross-item surprise as item 4**, and from
+item 2 again: a subsumptive table's trie *deliberately omits the
+aggregated argument* — that omission is precisely how answers collide
+and combine — so its path cannot reproduce the one value that matters.
+Subsumptive tables therefore keep their image; everything else drops
+it. Removing that carve-out does not degrade gracefully, it breaks
+subsumptive tables outright, which is how it was confirmed to be
+load-bearing rather than assumed.
 
 **Item 4 met one thing the doc could not have predicted:** item 3 had
 landed in between, and *invalidation mutates a completed table* (drops
@@ -76,7 +96,7 @@ until teardown.
   incremental` — and it would make a common word an operator for every
   user of the library. Hence `:- incremental(q/1)` with parens.
 
-Baseline: v3.2.0 plus that patch. Suite now 391 passed / 0 failed,
+Baseline: v3.2.0 plus that patch. Suite now 392 passed / 0 failed,
 clean under ASAN, and building warning-free under NOTHREADS (the WASI
 configuration) as well as with threads.
 
@@ -90,8 +110,8 @@ configuration) as well as with threads.
 | 2 | Answer subsumption | aggregate at insert; bounded tables | M | medium | **done** |
 | 3 | Incremental tabling | tables survive assert/retract | L | medium | **done** |
 | 4 | Shared completed tables | threads stop recomputing | M | **high** | **done** |
-| 5 | Trie-path reconstruction | drops per-answer images | M | medium | next |
-| 6 | `tnot` / well-founded semantics | correct negation through recursion | XL | high | |
+| 5 | Trie-path reconstruction | drops per-answer images | M | medium | **done** |
+| 6 | `tnot` / well-founded semantics | correct negation through recursion | XL | high | next |
 
 v1 had sharing second, on the grounds that it was "the single biggest
 win available". That was wrong on three counts: it has the most
@@ -449,7 +469,7 @@ prerequisite.
 
 ---
 
-## 5. Trie-path answer reconstruction
+## 5. Trie-path answer reconstruction **[now IMPLEMENTED]**
 
 **What it gives.** Every answer stores a full `cell *image` — a real
 second copy, `copy_term_to_tmp` then `TPL_malloc` then `dup_cells` — in

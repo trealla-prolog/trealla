@@ -26,6 +26,7 @@
 typedef struct tnode_ {
 	cell key;
 	struct tnode_ *child, *sibling;	// all children, insertion-linked
+	struct tnode_ *parent;		// item 5: reconstruction walks leaf->root
 	struct tnode_ *hnext;		// hash-bucket chain (when indexed)
 	struct thash_ *index;		// hash over THIS node's children, or NULL
 	unsigned nchildren;
@@ -343,6 +344,7 @@ static bool trie_step(twalk *w, const cell *key)
 	if (!n) { w->oom = true; return false; }
 	n->key = *key;
 	share_cell(&n->key);		// bigints/cstrings are refcounted
+	n->parent = parent;		// item 5
 	n->sibling = *slot;
 	*slot = n;
 	w->node = n;
@@ -566,7 +568,15 @@ static void trie_free(tnode *n)
 enum { TBL_FRESH=0, TBL_ACTIVE=1, TBL_COMPLETE=2 };
 
 typedef struct tbl_ans_ {
+	// Item 5: exactly one of these carries the answer. image is a full
+	// second copy of the term; leaf is its path in the answer trie,
+	// which exists either way, so reconstructing from it costs nothing
+	// extra in memory. image is kept only where the trie cannot answer:
+	// a SUBSUMPTIVE table omits the aggregated argument from the trie
+	// by construction (that is how answers collide and combine), so the
+	// path there is missing exactly the value that matters.
 	cell *image;
+	struct tnode_ *leaf;
 	struct tbl_ans_ *next;
 
 	// Answer subsumption (item 2). is_new: still in the table's
@@ -970,6 +980,86 @@ static cell *tbl_image(query *q, cell *c, pl_ctx ctx)
 	if (!val) return NULL;
 	dup_cells(val, tmp, tmp->num_cells);
 	return val;
+}
+
+// --- item 5: rebuild an answer from its path in the answer trie ---
+//
+// Every answer already has a path; the stored image was a second copy
+// of the same information. Reconstruction walks leaf->root (which is
+// why tnode carries a parent pointer), reverses, then re-emits the
+// canonical key sequence as a real term.
+//
+// The result is in IMAGE format - a detached, malloc'd cell array - so
+// every existing reader can go on calling import_term() on it and
+// nothing else has to understand tries. The caller frees it.
+
+static void tbl_emit_term(cell *out, unsigned *oi, tnode **path, unsigned *pi)
+{
+	unsigned start = (*oi)++;
+	const cell *k = &path[(*pi)++]->key;
+	out[start] = *k;
+	share_cell(&out[start]);
+	unsigned arity = is_interned(k) ? get_arity(k) : 0;
+
+	for (unsigned a = 0; a < arity; a++)
+		tbl_emit_term(out, oi, path, pi);
+
+	out[start].num_cells = *oi - start;
+}
+
+static cell *tbl_reconstruct(query *q, tnode *leaf)
+{
+	(void)q;
+	unsigned n = 0;
+
+	for (tnode *p = leaf; p; p = p->parent)
+		n++;
+
+	if (!n)
+		return NULL;
+
+	tnode **path = TPL_malloc(sizeof(tnode*) * n);
+
+	if (!path)
+		return NULL;
+
+	unsigned i = n;
+
+	for (tnode *p = leaf; p; p = p->parent)
+		path[--i] = p;
+
+	// One trie node emits exactly one cell, so the path length IS the
+	// cell count - no second pass needed to size the term.
+
+	cell *out = TPL_malloc(sizeof(cell) * n);
+
+	if (!out) {
+		TPL_free(path);
+		return NULL;
+	}
+
+	unsigned oi = 0, pi = 0;
+	tbl_emit_term(out, &oi, path, &pi);
+	TPL_free(path);
+	return out;
+}
+
+// The one place that knows which representation an answer uses.
+
+static cell *tbl_answer_term(query *q, const tbl_ans *a)
+{
+	if (a->image)
+		return import_term(q, a->image, q->st.cur_ctx);
+
+	cell *img = tbl_reconstruct(q, a->leaf);
+
+	if (!img)
+		return NULL;
+
+	cell *tmp = import_term(q, img, q->st.cur_ctx);
+	unshare_cells(img, img->num_cells);
+	TPL_free(img);
+	return tmp;
 }
 
 static void tbl_image_free(cell *c)
@@ -1773,7 +1863,7 @@ static bool bif_tbl_add_answer_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "callable");
 
 		tbl_ans *old = leaf->value;
-		cell *old_full = import_term(q, old->image, q->st.cur_ctx);
+		cell *old_full = tbl_answer_term(q, old);
 		CHECKED(old_full);
 		pl_ctx old_ctx;
 		cell *old_agg = tbl_nth_arg(q, old_full, q->st.cur_ctx, t->agg_pos, &old_ctx);
@@ -1828,8 +1918,17 @@ static bool bif_tbl_add_answer_2(query *q)
 
 	tbl_ans *a = TPL_calloc(1, sizeof(tbl_ans));
 	CHECKED(a);
-	a->image = tbl_image(q, p2, p2_ctx);
-	CHECKED(a->image);
+	a->leaf = leaf;
+
+	// Item 5: the trie path IS the answer, so no second copy - except
+	// for a subsumptive table, whose trie deliberately omits the
+	// aggregated argument and so cannot reproduce it.
+
+	if (t->agg_pos) {
+		a->image = tbl_image(q, p2, p2_ctx);
+		CHECKED(a->image);
+	}
+
 	a->is_new = true;
 
 	if (t->agg_pos)
@@ -1884,7 +1983,7 @@ static bool bif_tbl_get_answer_2(query *q)
 		CHECKED(push_choice(q));
 	}
 
-	cell *tmp = import_term(q, a->image, q->st.cur_ctx);
+	cell *tmp = tbl_answer_term(q, a);
 	CHECKED(tmp);
 	tbl_pin_answer_frame(q, tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
@@ -2052,7 +2151,7 @@ static bool bif_tbl_wkl_work_3(query *q)
 		CHECKED(push_choice(q));
 	}
 
-	cell *ta = import_term(q, p->a->image, q->st.cur_ctx);
+	cell *ta = tbl_answer_term(q, p->a);
 	CHECKED(ta);
 	tbl_pin_answer_frame(q, ta);
 
