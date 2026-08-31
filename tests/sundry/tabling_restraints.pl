@@ -4,11 +4,10 @@
 % OOM-killed - no message, no partial output, exit code 137 like any
 % other OOM. Restraints turn that into a diagnostic resource_error.
 %
-% This lives in tests/misc rather than tests/sundry because the misc
-% harness (run_misc.sh) fails a test on a non-zero exit status even
-% when stdout happens to match - the doc calls this out explicitly:
-% an output-only check passes on a killed process, so the exit code is
-% the thing that actually proves the fix.
+% tests/run.sh fails a test on a non-zero exit status even when stdout
+% happens to match - the doc calls this out explicitly: an output-only
+% check passes on a killed process, so the exit code is the thing that
+% actually proves the fix.
 
 :- use_module(library(tabling)).
 :- use_module(library(lists)).

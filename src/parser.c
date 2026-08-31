@@ -1786,10 +1786,15 @@ static bool directive_term(parser *p, cell *c)
 	if (!strcmp(dirname, "set_prolog_flag") && (get_arity(c) == 2)) {
 		cell *p2 = c + 2;
 
-		if (!is_interned(p2))
-			return true;
+		// The five flags below affect parsing itself (eg. double_quotes
+		// changes how the REST of this file reads), so they need to
+		// take effect right here rather than waiting for the directive
+		// to run as a goal. Their values are always atoms. Anything
+		// else - an unrecognized flag name, or a non-atom value like
+		// the tabling restraint flags' integers - has no parse-time
+		// meaning and falls through to the generic goal path below.
 
-		if (!strcmp(C_STR(p, p1), "double_quotes")) {
+		if (is_interned(p2) && !strcmp(C_STR(p, p1), "double_quotes")) {
 			if (!strcmp(C_STR(p, p2), "atom")) {
 				p->m->flags.double_quote_chars = p->m->flags.double_quote_codes = false;
 				p->m->flags.double_quote_atom = true;
@@ -1806,28 +1811,45 @@ static bool directive_term(parser *p, cell *c)
 				p->error = true;
 				return true;
 			}
-		} else if (!strcmp(C_STR(p, p1), "character_escapes")) {
+		} else if (is_interned(p2) && !strcmp(C_STR(p, p1), "character_escapes")) {
 			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
 				p->m->flags.character_escapes = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.character_escapes = false;
-		} else if (!strcmp(C_STR(p, p1), "occurs_check")) {
+		} else if (is_interned(p2) && !strcmp(C_STR(p, p1), "occurs_check")) {
 			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
 				p->m->flags.occurs_check = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.occurs_check = false;
-		} else if (!strcmp(C_STR(p, p1), "strict_iso")) {
+		} else if (is_interned(p2) && !strcmp(C_STR(p, p1), "strict_iso")) {
 			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
 				p->m->flags.strict_iso = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.strict_iso = false;
-		} else if (!strcmp(C_STR(p, p1), "empty_args")) {
+		} else if (is_interned(p2) && !strcmp(C_STR(p, p1), "empty_args")) {
 			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
 				p->m->flags.empty_args = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.empty_args = false;
 		} else {
-			//fprintf(stderr, "Warning: unknown flag: %s\n", C_STR(p, p1));
+			// Anything else - tabling, global_bb, the tabling restraint
+			// flags (integer-valued, so is_interned(p2) alone routes
+			// them here) - has no parse-time meaning. Run the directive
+			// as an ordinary goal instead of discarding it: without
+			// this a directive-form set_prolog_flag/2 for any flag not
+			// in the list above was a silent no-op, never forwarded to
+			// the runtime set_prolog_flag/2 that actually implements it.
+
+			bool raised = false;
+
+			if (!goal_run_reporting(p, c, &raised)
+				&& !p->internal && !p->do_read_term && !p->pl->quiet) {
+				fflush(stdout);
+				fprintf(stderr, "Warning: directive %s: %s/%u, %s:%d\n",
+					raised ? "raised an exception" : "failed",
+					dirname, (unsigned)get_arity(c),
+					get_loaded(p->m, p->m->filename), p->line_num);
+			}
 		}
 
 		p->flags = p->m->flags;
