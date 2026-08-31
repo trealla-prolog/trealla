@@ -1265,8 +1265,20 @@ static bool bif_iso_open_4(query *q)
 			set_arity(&tmp, 2);
 			tmp.val_str = addr;
 			tmp.str_len = len;
-		} else
+
+			// The stream owns this mapping and unmaps it at close. A
+			// slice carries no refcount, so nothing else can own it -
+			// which is why the mapping used to be retained for the life
+			// of the process. Ls must not outlive the stream; every
+			// in-tree caller already wraps the pair in
+			// setup_call_cleanup/3.
+
+			str->mmap_addr = addr;
+			str->mmap_len = len;
+		} else {
+			munmap(addr, len);
 			make_atom(&tmp, g_nil_s);
+		}
 
 		unify(q, mmap_var, mmap_ctx, &tmp, q->st.cur_ctx);
 	}
@@ -1287,6 +1299,18 @@ bool stream_close(query *q, int n)
 	stream *str = &q->pl->streams[n];
 	parser_destroy(str->p);
 	str->p = NULL;
+
+#if USE_MMAP
+	// Release the open/4 mmap(Ls) mapping. Nothing else can: a slice
+	// carries no refcount, so before this the mapping was retained for
+	// the life of the process (see docs/LEAK-mmap-slices-never-unmapped.md).
+
+	if (str->mmap_addr) {
+		munmap(str->mmap_addr, str->mmap_len);
+		str->mmap_addr = NULL;
+		str->mmap_len = 0;
+	}
+#endif
 
 	if ((str->fp == stdin)
 		|| (str->fp == stdout)

@@ -714,6 +714,15 @@ struct stream_ {
 	const query *wbuf_owner;			// ... and whose it is
 	const query *data_owner;			// whose partial read str->data is
 	unsigned timeout_ms;
+
+	// open/4's mmap(Ls) option maps the whole file. Nothing used to
+	// release it - munmap appeared nowhere in the tree - so every such
+	// open retained the file for the life of the process. The stream
+	// owns the mapping and unmaps it at close.
+
+	void *mmap_addr;
+	size_t mmap_len;
+
 	size_t data_len, alloc_nbytes, wbuf_len, wbuf_pos;
 	int ungetch, srclen, chan, idx, port;
 	unsigned rows, cols;

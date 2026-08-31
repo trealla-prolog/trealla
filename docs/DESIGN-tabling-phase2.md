@@ -96,9 +96,12 @@ until teardown.
   incremental` — and it would make a common word an operator for every
   user of the library. Hence `:- incremental(q/1)` with parens.
 
-Baseline: v3.2.0 plus that patch. Suite now 392 passed / 0 failed,
-clean under ASAN, and building warning-free under NOTHREADS (the WASI
-configuration) as well as with threads.
+Baseline: v3.2.0 plus that patch. Suite now 392 passed / 0 failed, and
+building warning-free under NOTHREADS (the WASI configuration) as well
+as with threads. ASAN is clean too, but read that narrowly: on macOS
+arm64 LeakSanitizer does not run, so those runs establish the absence
+of memory *errors* and say nothing about leaks — see the cross-cutting
+note below.
 
 ---
 
@@ -672,12 +675,30 @@ failure and the A/B came back byte-identical. The fix was fine; the
 test proved nothing. For each item below, check the test actually
 reaches the code before believing its result.
 
-**Leaks that are not ours.** The tabling suite reports ~53 KB under
-ASAN from a string-slice-on-backtrack issue that reproduces on a
-pristine checkout with no tabling module
-(`LEAK-string-slice-on-backtrack.md`). Do not chase it here, and do not
-accept "clean with tabling off" as evidence — the flag-off run of that
-test is exponential and dies on the timeout before ASAN reports.
+**Leaks that are not ours.** There is a real memory issue in this
+tree, and it has nothing to do with tabling: `open/4` with the
+`mmap(Ls)` option maps the whole file and *nothing ever unmaps it* —
+`munmap` appears nowhere in the source, and `unshare_cell_` has no
+slice branch. `phrase_from_file/[2,3]` uses that option, so any program
+DCG-parsing files in a loop retains every file it has read. Measured at
+one whole mapping retained per open, linear in file size. Written up in
+`LEAK-mmap-slices-never-unmapped.md`. Do not chase it here.
+
+The earlier note in this section described it as a
+"string-slice-on-backtrack" leak of ~53 KB, citing a
+`LEAK-string-slice-on-backtrack.md` that was never in the tree. All
+three parts were wrong: it is file-sized rather than 53 KB, it is not
+backtracking-specific (a straight-line open that closes its stream
+leaks just the same), and the mechanism is mmap rather than slicing.
+The conclusion it drew — not ours, don't chase it here — was right.
+
+**No leak checker on this machine will confirm any of that.**
+LeakSanitizer is unsupported on macOS arm64 (`detect_leaks is not
+supported on this platform`), so an ASAN run here checks memory
+*errors* only, and a clean one says nothing about leaks. macOS `leaks`
+does work, but tracks `malloc` and so misses the mmap case entirely —
+both tools came back clean on a run that was demonstrably retaining
+memory. RSS growth is the only signal that catches it.
 
 **Test-first is cheap here.** Every item has a failing test writable
 before implementation: the `as//0` divergence, a min-aggregated path
