@@ -15,7 +15,9 @@ reasoning about it. Two of v2's framings there were wrong: attribution
 is an SCC-level problem, not a continuation-level one, and invalidation
 must be validate-on-read rather than invalidate-on-write given that
 tables are per-thread. See **[changed in v3]** markers in that section.
-v3 also records what items 1 and 2 turned up:
+The one assumption SCC attribution rests on has since been measured
+(1157 checks, 0 mismatches) and is marked **[settled]** there. v3 also
+records what items 1 and 2 turned up:
 
 - **Item 1 (restraints) — done.** Three SWI-named flags, default
   `infinite`, `resource_error` on breach.
@@ -217,11 +219,29 @@ at all, and it makes the bracket safe for exactly the reason the
 This dissolves the v2 problem rather than solving it: at SCC
 granularity you never need to know which continuation you are inside.
 
-**Open question, to settle by instrumenting rather than reasoning.**
-Whether the `TT` in `dep(Ball, C, Wrapper, TT)` is always a table of
-the SCC currently being completed. It should be — a genuine cycle
-merges them — but the whole approach rests on it, so it wants a
-counter in `completion/0`, not an argument.
+**[settled] Is the `TT` in `dep(Ball, C, Wrapper, TT)` always a table
+of the SCC currently being completed?** Yes, as far as measurement
+goes. A temporary `'$tbl_dep_scc_check'/1` comparing `t->scc` against
+`tbl_scc_id(s)` where `completion/0` pulls each dep off the worklist:
+**1157 checks, 0 mismatches** — 1126 across `tabling.pl`,
+`tabling_subsumption.pl`, `tabling_restraints.pl` and
+`dcg_tabling.pl`, plus 31 from cases written to attack the merge path
+specifically (mutual recursion entered from the non-recursive side —
+the shape that exposed the Phase 1 premature-completion bug; a
+three-way cycle entered mid-chain; a cycle reached through `findall/3`,
+forcing nested SCC completion instead of suspension; left recursion
+over a cyclic graph entangled with a second table; and a re-run after
+`abolish_all_tables/0`). A full `make test` sweep also reported none.
+
+The check *counted* as well as compared, deliberately: the first run
+printed nothing at all, which reads as a clean result but was actually
+`tpl` honouring only the last `-g` and dropping the report goal. A
+diagnostic that cannot tell "0 mismatches" from "never ran" is not a
+diagnostic.
+
+This is evidence, not proof — it does not cover every possible program
+shape. If that margin matters, keep the comparison as a debug-build
+assertion rather than deleting it with the scaffolding.
 
 **[changed in v3] Table→table edges are also needed.** v2 lists only
 "which dynamic predicates a table consulted". If table A calls table B
