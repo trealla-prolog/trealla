@@ -115,14 +115,39 @@ test_zero_markers :-
 % recommends a single min/max first) and must raise a clear error
 % rather than silently picking one or misbehaving.
 
+% NB the `fail` inside the catch is load-bearing: catch(G,_,true)
+% succeeds when G merely SUCCEEDS as well as when it throws, so without
+% it this passes whether or not the error is actually raised - which is
+% exactly how the first version of this test (and the `as` one below)
+% passed against code that raised nothing at all.
+
 test_multi_marker_rejected :-
 	(	catch(
-		  phrase(tabling:wrappers(bad_multi(_,min,max)), _),
+		  ( phrase(tabling:wrappers(bad_multi(_,min,max)), _), fail ),
 		  error(domain_error(table_mode_spec, bad_multi(_,min,max)), _),
 		  true
 		) ->
 		write('multi marker rejected: ok')
 	;	write('multi marker rejected: FAILED')
+	),
+	nl.
+
+% ---------------------------------------------------------------------
+% 5b. ":- table Spec as Option" must be REJECTED, not silently misread.
+% `p/1 as incremental` is a compound whose functor is `as`/2, so before
+% the guard above excluded that shape it matched the mode-spec clause -
+% tabling a predicate literally named `as`/2 and leaving p/1 UNTABLED,
+% with no diagnostic. Silently-untabled is the worst outcome here: the
+% program still runs, just without termination guarantees.
+
+test_as_option_rejected :-
+	(	catch(
+		  ( phrase(tabling:wrappers(as_opt/1 as incremental), _), fail ),
+		  error(domain_error(table_option, incremental), _),
+		  true
+		) ->
+		write('as option rejected: ok')
+	;	write('as option rejected: FAILED')
 	),
 	nl.
 
@@ -191,6 +216,7 @@ main :-
 	test_floor_fixpoint,
 	test_zero_markers,
 	test_multi_marker_rejected,
+	test_as_option_rejected,
 	test_idempotent,
 	test_restraint_counts_keys,
 	test_restraint_still_fires.

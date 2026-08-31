@@ -220,14 +220,29 @@ wrappers(Name/Arity) -->
 	[ (Head :- tabling:start_tabling(Head, WrappedHead)),
 	  tabling:'$tabled'(Head) ].
 
+% ":- table Spec as Option" - the option syntax the design doc reserves
+% for incremental (item 3) and shared (item 4) tables. Neither exists
+% yet, so this REJECTS rather than supports: accepting it quietly would
+% leave the caller believing their tables are invalidated on
+% assert/retract when they are not, the same trap abolish_table/1
+% refuses above.
+%
+% Must precede the mode-spec clause below. `p/1 as incremental` is a
+% compound whose functor is `as`/2, so that clause matched it - tabling
+% a predicate literally named `as`/2 and leaving p/1 untabled, silently.
+
+wrappers(_Spec as Option) -->
+	{ throw(error(domain_error(table_option, Option), (table)/1)) }.
+
 % Answer subsumption (item 2 - DESIGN-tabling-phase2.md): a mode spec
 % like path(_,_,min) - same functor/arity as the predicate itself, so
 % it can never be confused with Name/Arity or Name//Arity above, which
 % require the OUTER functor to literally be '/' or '//'. Excluding
-% those two shapes here too means a malformed Name/Arity (eg. foo/bar,
-% Arity not an integer) still falls through to no clause matching at
-% all - today's behaviour - rather than being silently misread as a
-% mode spec for a predicate confusingly named '/'.
+% those shapes here too (and `as`/2, handled just above) means a
+% malformed Name/Arity (eg. foo/bar, Arity not an integer) still falls
+% through to no clause matching at all - today's behaviour - rather
+% than being silently misread as a mode spec for a predicate
+% confusingly named '/'.
 %
 % Exactly one argument may be `min` or `max` (aggregated); every other
 % argument, `_` by convention, is part of the dedup KEY. Recommended by
@@ -241,6 +256,7 @@ wrappers(Spec) -->
 	  functor(Spec, Name, Arity),
 	  \+ (Name == (/), Arity == 2),
 	  \+ (Name == (//), Arity == 2),
+	  \+ (Name == (as), Arity == 2),
 	  !,
 	  functor(Test, Name, Arity),
 	  ( '$tabled'(Test) -> true

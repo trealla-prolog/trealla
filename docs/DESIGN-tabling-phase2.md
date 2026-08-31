@@ -1,30 +1,50 @@
-# Tabling, Phase 2 — design (v2)
+# Tabling, Phase 2 — design (v3)
 
-Design only. No Trealla source is modified by this document.
+Design only for items 3–6. Items 1 and 2 have since been implemented;
+their sections are kept as written for the record, with the outcome
+noted below.
 
-**v2 folds in two things:** the self-review in
+**v2 folded in two things:** the self-review in
 `REVIEW-tabling-phase2.md`, and the effect of the Phase 1 review fixes
 now landed on v3.2.0 (`tabling-review-fixes-all.patch` — handle
 validation, iterative trie walks, best-effort indexing, failed-insert
-unwind). Sections marked **[changed in v2]** differ materially from v1;
-the rest is carried over.
+unwind). Sections marked **[changed in v2]** differ materially from v1.
 
-Baseline: v3.2.0 plus that patch. Suite 349 passed / 0 failed; the
-tabling suite is 17 checks including a four-thread concurrency test
-with a marker-count negative control.
+**v3 revises item 3 only**, from reading the code rather than
+reasoning about it. Two of v2's framings there were wrong: attribution
+is an SCC-level problem, not a continuation-level one, and invalidation
+must be validate-on-read rather than invalidate-on-write given that
+tables are per-thread. See **[changed in v3]** markers in that section.
+v3 also records what items 1 and 2 turned up:
+
+- **Item 1 (restraints) — done.** Three SWI-named flags, default
+  `infinite`, `resource_error` on breach.
+- **Item 2 (answer subsumption) — done.** `:- table p(_,_,min)`, keyed
+  on the non-aggregated arguments, with the worklist re-pairing pass
+  the section predicted; that pass is load-bearing and has a negative
+  control.
+- **A Phase 1 soundness bug, found while starting item 1 and fixed
+  first.** `completion/0` marked an *escaping* nested SCC's tables
+  COMPLETE before `'$tbl_pop_scc'` discovered the escape, caching a
+  partial (often empty) table permanently. The existing cycle test
+  could not catch it: its cycle has no answers, so a wrongly-completed
+  empty table is indistinguishable from a correct one. This is the
+  concrete instance of v2's own warning about unexercised tests.
+
+Baseline: v3.2.0 plus that patch. Suite now 389 passed / 0 failed.
 
 ---
 
 ## Order **[changed in v2]**
 
-| # | Item | Gives | Size | Risk |
-|---|------|-------|------|------|
-| 1 | Restraints | runaway answer *set* → `resource_error` | S | low |
-| 2 | Answer subsumption | aggregate at insert; bounded tables | M | medium |
-| 3 | Incremental tabling | tables survive assert/retract | L | medium |
-| 4 | Shared completed tables | threads stop recomputing | M | **high** |
-| 5 | Trie-path reconstruction | drops per-answer images | M | medium |
-| 6 | `tnot` / well-founded semantics | correct negation through recursion | XL | high |
+| # | Item | Gives | Size | Risk | Status |
+|---|------|-------|------|------|--------|
+| 1 | Restraints | runaway answer *set* → `resource_error` | S | low | **done** |
+| 2 | Answer subsumption | aggregate at insert; bounded tables | M | medium | **done** |
+| 3 | Incremental tabling | tables survive assert/retract | L | medium | next |
+| 4 | Shared completed tables | threads stop recomputing | M | **high** | |
+| 5 | Trie-path reconstruction | drops per-answer images | M | medium | |
+| 6 | `tnot` / well-founded semantics | correct negation through recursion | XL | high | |
 
 v1 had sharing second, on the grounds that it was "the single biggest
 win available". That was wrong on three counts: it has the most
@@ -149,7 +169,7 @@ later, it needs a documented obligation on the user.
 
 ---
 
-## 3. Incremental tabling
+## 3. Incremental tabling **[changed in v3 — substantially]**
 
 **What it gives.** Tables survive changes to the dynamic predicates
 they depend on, instead of the user calling `abolish_all_tables/0` and
@@ -160,21 +180,118 @@ consulted), invalidation on assert/retract, lazy re-evaluation on next
 call, and `:- table p/1 as incremental` / `:- dynamic q/1 as
 incremental`.
 
-**[changed in v2] The hard part is attribution, not the graph.** v1
-said "a hook in the clause-retrieval path" and left it there. The
+**[v2 said] The hard part is attribution, not the graph.** The
 difficulty is knowing *which table you are currently computing*, and it
 is not "the top of a stack": a suspended consumer resumes later via
 `delim/3`, running on behalf of a table that is not lexically current
 at that moment. The dependency must be attributed to the table the
-*continuation* belongs to. That needs designing before any hook is
-written.
+*continuation* belongs to.
+
+**[changed in v3] That framing is right about the problem and wrong
+about the granularity.** It leads an implementer to bracket `delim/3`
+— the one place that sees both the first run of a worker and every
+later resumption — with a push/pop "current table". **That bracket is
+unsound.** `activate/3` drives `delim/3` with a failure-driven loop
+(`delim(...), fail ; true`) and `reset/3` is nondeterministic; that is
+precisely how multiple answers are collected. A push/pop pair pops on
+the first solution and never re-pushes on redo, so every answer after
+the first is attributed to whatever happens to be on the stack. The
+symptom is a silently under-recorded dependency, i.e. a stale table —
+the worst available failure mode for this feature, and invisible to any
+test that only checks the first answer.
+
+**[changed in v3] Attribute per SCC, not per table.** Push/pop against
+the *existing* `'$tbl_push_scc'` / `'$tbl_pop_scc'` bracket. Everything
+between those two is deterministic on exit — `activate/3`'s loop drains
+and `completion/0` recurses to a fixpoint — which is why Phase 1 works
+at all, and it makes the bracket safe for exactly the reason the
+`delim/3` one is not. Three further points in its favour:
+
+- an SCC is already the unit of *completion*, so it is the natural unit
+  of *invalidation*;
+- over-invalidating within an SCC costs nothing real: mutually
+  recursive tables have to be recomputed together anyway;
+- `top->fresh_head` already *is* the list of tables to flush the
+  collected dependencies onto at `'$tbl_mark_all_complete'`.
+
+This dissolves the v2 problem rather than solving it: at SCC
+granularity you never need to know which continuation you are inside.
+
+**Open question, to settle by instrumenting rather than reasoning.**
+Whether the `TT` in `dep(Ball, C, Wrapper, TT)` is always a table of
+the SCC currently being completed. It should be — a genuine cycle
+merges them — but the whole approach rests on it, so it wants a
+counter in `completion/0`, not an argument.
+
+**[changed in v3] Table→table edges are also needed.** v2 lists only
+"which dynamic predicates a table consulted". If table A calls table B
+and B depends on `q`, then a change to `q` must invalidate A as well.
+Record the edge at `'$tbl_variant_table'` when a table is looked up
+while an SCC is active, and let a transitive walk handle the rest.
+
+**[changed in v3] Invalidate on read, not on write.** This is the
+constraint v2 missed entirely. `tbl_state` hangs off
+`thread->tabling_state` — tables are **per-thread** — while the
+database and `pl->dbgen` are shared. Eager invalidation from the
+asserting thread therefore means writing to another thread's tables:
+the same cross-thread hazard that makes item 4 "high risk", silently
+inherited by an item nobody would think to look at for it. Invert it:
+
+- `uint64_t last_modified` on `struct predicate_`, stamped
+  `++pl->dbgen` on assert/retract (the counter already exists and is
+  already bumped there);
+- each table stores its dependencies plus the generation it completed
+  at;
+- `'$tbl_variant_table'` re-validates on lookup, **in the owning
+  thread**. No cross-thread mutation anywhere.
+
+A single `pl->dbgen` equality check short-circuits the whole walk when
+nothing has changed since the table completed, which is the common
+case.
+
+**[changed in v3] Invalidation is abolish semantics, not
+`'$tbl_reset_incomplete'`.** That builtin deliberately *keeps* answers
+(`t->unproc_ans = t->first_ans`); invalidation needs a full drop. Now
+that item 2 has landed this is sharper than it looks: `leaf->value` in
+the answer trie points at live `tbl_ans` structs, so freeing answers
+without also clearing the trie leaves dangling pointers straight in the
+dedup path.
 
 **Risk.** The graph is straightforward; the hook is in a hot path
-everything uses. Measure `make test` wall time with no incremental
-predicates declared — the null case must be free. A flag on
-`struct predicate_` tested before any graph walk.
+everything uses. It belongs in `enter_predicate()` — once per *call*,
+not once per clause tried, and it already touches `pr` and writes
+`f->dbgen` — guarded by a bitfield test that is false for everything
+unless opted in. Measure `make test` wall time with no incremental
+predicates declared anyway; the null case must be free, and "should be"
+is not a measurement.
 
-**Size.** Large.
+**[changed in v3] Syntax.** `:- table p/1 as incremental` parses as
+`table(as(p/1, incremental))`. Item 2's mode-spec clause matches any
+compound that is not `/` or `//`, so it *swallowed* this: it tabled a
+predicate literally named `as`/2 and left `p/1` untabled with no
+diagnostic. Fixed ahead of this item (an `as`/2 clause ordered before
+the mode-spec clause, which now rejects unimplemented options loudly)
+— but it is worth noting as the shape of bug this directive syntax
+invites.
+
+The `:- dynamic q/1 as incremental` half is disproportionately
+expensive: `dynamic` is handled at *parse* time in C, walking a list
+that expects `/` or `//` shapes, and `as` lands in its
+predicate-indicator error path. Prefer a separate `:- incremental q/1.`
+directive handled entirely in `library(tabling)` by term expansion onto
+a builtin. Same expressiveness, no parser surgery.
+
+**[changed in v3] Do not store raw `predicate *`.** `destroy_predicate`
+runs only at module teardown and abolish merely sets `is_abolished`, so
+raw pointers *mostly* survive — but module unload is a live hazard, and
+Phase 1's review already paid for this exact lesson once when raw table
+pointers became `(serial, index)` slots. Key dependencies by (module,
+functor, arity), or reuse the slot pattern.
+
+**Size.** Large, but smaller than v2 implies: validate-on-read removes
+the cross-thread machinery, and SCC attribution removes the
+continuation-tracking machinery. The graph plumbing and the abolish
+semantics are still real work.
 
 ---
 
