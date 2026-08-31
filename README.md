@@ -25,7 +25,7 @@ and using a plain old Makefile.
 	Constraints: CLP(B) & CLP(Z)
 	Blackboarding primitives
 	Delimited continuations
-	Thread-local variant tabling
+	Tabling
 	Socket(s) library
 	...
 	Rational trees ##EXPERIMENTAL##
@@ -298,6 +298,73 @@ will gain greatly (*phrase_from_file/[2-3]* uses this).
 
 Both strings and atoms make use of low-overhead reflist-counted byte slices
 where appropriate.
+
+
+Tabling
+=======
+
+A predicate declared *:- table p/2* is memoized: each distinct call
+variant is computed once, its answers stored, and later calls read them
+back. That makes left-recursive definitions terminate where ordinary
+SLD resolution loops forever, and collapses exponential recomputation
+into lookup. Tables are keyed by *variant* — *p(X,Y)* and *p(A,B)*
+share one, *p(X,X)* does not — and are private to the thread that built
+them unless declared otherwise.
+
+```console
+	:- use_module(library(tabling)).
+	:- table path/2.
+
+	path(X,Y) :- path(X,Z), edge(Z,Y).		% left-recursive
+	path(X,Y) :- edge(X,Y).
+
+	edge(a,b). edge(b,c). edge(c,a).
+
+	?- findall(Y, path(a,Y), Ys).
+	Ys = [b,c,a]
+```
+
+Such a table is frozen once complete: it will not notice later changes
+to *edge/2*, and each thread builds its own. Declaring it *incremental*
+lifts the first restriction. Both halves opt in — the table, and each
+dynamic predicate it consults — after which an assert or retract
+invalidates the table and the next call recomputes it, rather than
+quietly serving stale answers.
+
+```console
+	:- use_module(library(tabling)).
+	:- dynamic(edge/2).
+	:- incremental(edge/2).
+	:- table path/2 as incremental.
+
+	path(X,Y) :- path(X,Z), edge(Z,Y).
+	path(X,Y) :- edge(X,Y).
+
+	edge(a,b). edge(b,c).
+
+	?- findall(Y, path(a,Y), Ys).
+	Ys = [b,c]
+	?- assertz(edge(c,d)), findall(Y, path(a,Y), Ys).
+	Ys = [b,c,d]
+```
+
+Two other declarations are available. A *mode-directed* spec such as
+*:- table cost(_,_,min)* aggregates at insert instead of storing every
+answer: the argument written as *min* or *max* is combined rather than
+distinguished, so the table keeps one best answer per key made from the
+remaining arguments — turning "all paths" into "shortest path" with no
+separate minimisation pass. And *:- table p/1 as shared* publishes a
+table once complete so other threads reuse it instead of each building
+their own. Shared and incremental are mutually exclusive: invalidation
+rewrites a table, which is exactly what publication promises never
+happens.
+
+Tables are dropped with *abolish_table/1* for one predicate or
+*abolish_all_tables/0* for all. *set_prolog_flag(tabling,false)* runs
+tabled predicates as plain calls, making an A/B comparison a one-liner.
+The flags *max_table_answer_size*, *max_table_subgoal_size* and
+*max_answers_for_subgoal* (all *infinite* by default) bound a runaway
+table with a *resource_error* instead of letting it exhaust memory.
 
 
 Non-standard predicates
@@ -594,7 +661,7 @@ Predicate reference
 `util/gen_reference.py` from `help/0` in the built binary, so it cannot
 drift from the build. Regenerate on release rather than editing by hand.
 
-Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#arithmetic) · [Streams & I/O](#streams--io) · [Formatting](#formatting) · [Database](#database) · [Maps](#maps) · [Attributed variables](#attributed-variables) · [Threads](#threads) · [Coroutining](#coroutining) · [Operating system](#operating-system) · [POSIX time](#posix-time) · [Regular expressions](#regular-expressions) · [CSV](#csv) · [Foreign function interface](#foreign-function-interface) · [library(arithmetic)](#libraryarithmetic) · [library(builtins)](#librarybuiltins) · [library(concurrent)](#libraryconcurrent) · [library(freeze)](#libraryfreeze) · [library(iso_ext)](#libraryisoext) · [library(lists)](#librarylists) · [library(sqlite3)](#librarysqlite3) · [library(tty)](#librarytty) · [Other](#other)
+Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#arithmetic) · [Streams & I/O](#streams--io) · [Formatting](#formatting) · [Database](#database) · [Maps & engines](#maps--engines) · [Attributed variables](#attributed-variables) · [Threads](#threads) · [Coroutining](#coroutining) · [Operating system](#operating-system) · [POSIX time](#posix-time) · [Regular expressions](#regular-expressions) · [CSV](#csv) · [Foreign function interface](#foreign-function-interface) · [library(arithmetic)](#libraryarithmetic) · [library(builtins)](#librarybuiltins) · [library(concurrent)](#libraryconcurrent) · [library(freeze)](#libraryfreeze) · [library(iso_ext)](#libraryisoext) · [library(lists)](#librarylists) · [library(sqlite3)](#librarysqlite3) · [library(tty)](#librarytty) · [Other](#other)
 
 ### Core & terms
 
@@ -977,7 +1044,7 @@ Jump to: [Core & terms](#core--terms) · [Control](#control) · [Arithmetic](#ar
 
 </details>
 
-### Maps
+### Maps & engines
 
 <details markdown="1">
 <summary>14 predicates</summary>
