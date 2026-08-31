@@ -1294,13 +1294,27 @@ static bool bif_thread_join_2(query *q)
 
 	thread *t = find_thread_by_id(q->pl, n);
 
+	// It can retire between get_thread()'s lookup and this one.
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
+
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
+
+	// A detached thread retires itself when it ends (see
+	// start_routine_thread_create), so there is nothing left to join and
+	// pthread_join() on one is undefined. It happened to fail into the
+	// same error below, which is why this read as working - but ASan
+	// rightly aborts on it instead. Refuse up front, and do not unwind:
+	// a detached thread owns its own cleanup.
+	if (t->is_detached)
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_joinable");
 
 	// A blocking pthread_join() here would stall the whole scheduler
 	// thread, not just this task - poll t->is_finished instead (already
 	// used non-blockingly by thread_property/2's status(running) check)
-	// and only join once it is set, when the call returns at once.
+	// and only join once it is set. That still waits out an at_exit goal,
+	// which runs after the flag is set, but not the thread's whole goal.
 	if (q->is_task && !t->is_finished)
 		return do_yield(q, MSG_TASK_POLL_MS);
 
