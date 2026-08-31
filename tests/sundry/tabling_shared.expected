@@ -1,0 +1,4 @@
+shared reuse: ok
+private not shared: ok
+shared term integrity: ok
+abolish reaches shared: ok

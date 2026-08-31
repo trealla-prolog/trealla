@@ -21,6 +21,7 @@
 :- dynamic('$tabled'/1).
 :- dynamic('$tbl_subsumptive_spec'/4).
 :- dynamic('$tbl_incremental_spec'/2).
+:- dynamic('$tbl_shared_spec'/2).
 
 % incremental(+Spec) - ":- incremental(q/1)" marks a DYNAMIC predicate
 % as one whose assert/retract invalidates the tables that consulted it.
@@ -130,6 +131,10 @@ apply_table_specs(Wrapper, T) :-
 	),
 	(  '$tbl_incremental_spec'(Name, Arity) ->
 	   '$tbl_set_incremental'(T)
+	;  true
+	),
+	(  '$tbl_shared_spec'(Name, Arity) ->
+	   '$tbl_set_shared'(T, Wrapper)
 	;  true
 	).
 
@@ -273,14 +278,39 @@ wrappers(Name/Arity) -->
 % compound whose functor is `as`/2, so that clause matched it - tabling
 % a predicate literally named `as`/2 and leaving p/1 untabled, silently.
 
-wrappers(Spec as incremental) --> !,
+wrappers(Spec as Options) --> !,
 	{ table_spec_name_arity(Spec, Name, Arity),
-	  (  '$tbl_incremental_spec'(Name, Arity) -> true
-	  ;  assertz(tabling:'$tbl_incremental_spec'(Name, Arity))
-	  ) },
+	  table_options_list(Options, Os),
+	  % Publication promises a completed table is never written again;
+	  % invalidation does exactly that. Together they would let one
+	  % thread free answers another is walking, so refuse rather than
+	  % offer a combination that is silently unsafe.
+	  (  memberchk(incremental, Os), memberchk(shared, Os) ->
+	     throw(error(domain_error(table_option, incremental_and_shared), (table)/1))
+	  ;  true
+	  ),
+	  forall(member(O, Os), table_option(O, Name, Arity)) },
 	wrappers(Spec).
-wrappers(_Spec as Option) -->
-	{ throw(error(domain_error(table_option, Option), (table)/1)) }.
+
+table_options_list(Options, Os) :-
+	(  var(Options) ->
+	   throw(error(instantiation_error, (table)/1))
+	;  comma_list_(Options, Os)
+	).
+
+comma_list_((A,B), [A|Rest]) :- !, comma_list_(B, Rest).
+comma_list_(A, [A]).
+
+table_option(incremental, Name, Arity) :- !,
+	(  '$tbl_incremental_spec'(Name, Arity) -> true
+	;  assertz(tabling:'$tbl_incremental_spec'(Name, Arity))
+	).
+table_option(shared, Name, Arity) :- !,
+	(  '$tbl_shared_spec'(Name, Arity) -> true
+	;  assertz(tabling:'$tbl_shared_spec'(Name, Arity))
+	).
+table_option(Option, _, _) :-
+	throw(error(domain_error(table_option, Option), (table)/1)).
 
 % The Name/Arity a table spec ultimately names, for the option clauses
 % above - they have to record the spec BEFORE handing off to the

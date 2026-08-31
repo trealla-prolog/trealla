@@ -140,19 +140,34 @@ test_multi_marker_rejected :-
 % with no diagnostic. Silently-untabled is the worst outcome here: the
 % program still runs, just without termination guarantees.
 %
-% `incremental` is supported (item 3); `shared` is item 4 and is not,
-% so it must still be refused rather than quietly accepted - taking an
-% option we do not implement would leave the caller believing their
-% tables are shared when they are not.
+% An UNRECOGNISED option must be refused rather than quietly accepted -
+% taking one we do not implement would leave the caller believing they
+% got a behaviour they did not. Deliberately a nonsense option rather
+% than a not-yet-built one: this check had to be rewritten twice as
+% `incremental` and then `shared` were implemented under it.
 
 test_as_option_rejected :-
 	(	catch(
-		  ( phrase(tabling:wrappers(as_opt/1 as shared), _), fail ),
-		  error(domain_error(table_option, shared), _),
+		  ( phrase(tabling:wrappers(as_opt/1 as no_such_option), _), fail ),
+		  error(domain_error(table_option, no_such_option), _),
 		  true
 		) ->
 		write('as option rejected: ok')
 	;	write('as option rejected: FAILED')
+	),
+	nl.
+
+% incremental+shared is refused: publication promises a completed table
+% is never written again, and invalidation writes to it.
+
+test_incremental_shared_refused :-
+	(	catch(
+		  ( phrase(tabling:wrappers(as_both/1 as (incremental,shared)), _), fail ),
+		  error(domain_error(table_option, incremental_and_shared), _),
+		  true
+		) ->
+		write('incremental+shared refused: ok')
+	;	write('incremental+shared refused: FAILED')
 	),
 	nl.
 
@@ -231,6 +246,7 @@ main :-
 	test_multi_marker_rejected,
 	test_as_option_rejected,
 	test_as_incremental_accepted,
+	test_incremental_shared_refused,
 	test_idempotent,
 	test_restraint_counts_keys,
 	test_restraint_still_fires.

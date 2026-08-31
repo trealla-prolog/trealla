@@ -25,6 +25,14 @@ records what items 1 and 2 turned up:
   on the non-aggregated arguments, with the worklist re-pairing pass
   the section predicted; that pass is load-bearing and has a negative
   control.
+- **Item 4 (shared completed tables) — done.** `:- table p/1 as
+  shared`. Handle question resolved in favour of a **shared slot
+  table**, not two-level handles: a two-level handle ties a published
+  table's lifetime to the producer thread's slot array, but the
+  producer may exit while readers still hold handles. Bit 31 of the
+  slot index says which array a handle indexes. Measured 5 threads on
+  one table: peak RSS **15.2 MB shared vs 32.1 MB private**; wall time
+  indistinguishable at that size, so the win here is memory.
 - **Item 3 (incremental tabling) — done**, to the v3 design below:
   per-SCC attribution, validate-on-read, `:- incremental(q/1)` plus
   `:- table p/1 as incremental`. The null case measured free (4M calls,
@@ -36,6 +44,22 @@ records what items 1 and 2 turned up:
   could not catch it: its cycle has no answers, so a wrongly-completed
   empty table is indistinguishable from a correct one. This is the
   concrete instance of v2's own warning about unexercised tests.
+
+**Item 4 met one thing the doc could not have predicted:** item 3 had
+landed in between, and *invalidation mutates a completed table* (drops
+answers, resets to FRESH) — the exact opposite of the immutability
+publication promises. `incremental` + `shared` together would let any
+reader thread free memory another is walking. It is refused at
+declaration time rather than supported unsafely.
+
+Its one real limitation, stated plainly: `abolish_all_tables/0`
+**retires** published tables (unpublishes them so the next call
+recomputes) but does not free them until `pl_destroy()`. Freeing under
+a live reader is the silent, intermittent use-after-free this design
+exists to avoid, and doing it earlier needs the generation-keyed
+deferred reclamation described below, which is not built. So abolish
+has correct semantics at the cost of holding the old table's memory
+until teardown.
 
 **Two things item 3 only learned by building it:**
 
@@ -52,7 +76,9 @@ records what items 1 and 2 turned up:
   incremental` — and it would make a common word an operator for every
   user of the library. Hence `:- incremental(q/1)` with parens.
 
-Baseline: v3.2.0 plus that patch. Suite now 390 passed / 0 failed.
+Baseline: v3.2.0 plus that patch. Suite now 391 passed / 0 failed,
+clean under ASAN, and building warning-free under NOTHREADS (the WASI
+configuration) as well as with threads.
 
 ---
 
@@ -63,8 +89,8 @@ Baseline: v3.2.0 plus that patch. Suite now 390 passed / 0 failed.
 | 1 | Restraints | runaway answer *set* → `resource_error` | S | low | **done** |
 | 2 | Answer subsumption | aggregate at insert; bounded tables | M | medium | **done** |
 | 3 | Incremental tabling | tables survive assert/retract | L | medium | **done** |
-| 4 | Shared completed tables | threads stop recomputing | M | **high** | next |
-| 5 | Trie-path reconstruction | drops per-answer images | M | medium | |
+| 4 | Shared completed tables | threads stop recomputing | M | **high** | **done** |
+| 5 | Trie-path reconstruction | drops per-answer images | M | medium | next |
 | 6 | `tnot` / well-founded semantics | correct negation through recursion | XL | high | |
 
 v1 had sharing second, on the grounds that it was "the single biggest
@@ -334,7 +360,7 @@ semantics are still real work.
 
 ---
 
-## 4. Shared completed tables **[changed in v2 — substantially]**
+## 4. Shared completed tables **[changed in v2 — substantially; now IMPLEMENTED]**
 
 **What it gives.** N threads tabling the same predicate currently do N
 times the work.

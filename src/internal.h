@@ -1208,6 +1208,14 @@ struct prolog_ {
 	bool global_bb:1;
 	bool tabling:1;			// tabling flag: enabled by default
 
+	// Shared completed tables (item 4). Lazily created; opaque here
+	// because the table/trie types are private to bif_tabling.c.
+	// Guarded by its own lock - publication and lookup are short and
+	// contain no user code, which is what makes a mutex sound there
+	// and unsound around completion/0.
+
+	void *tbl_shared;
+
 };
 
 extern pl_idx g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;

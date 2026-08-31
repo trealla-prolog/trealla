@@ -640,6 +640,21 @@ typedef struct table_ {
 	bool is_incremental;
 	bool deps_incomplete;		// see tscc: recompute rather than trust
 
+	// Shared completed tables (item 4). wants_shared is the ":- table
+	// p/1 as shared" declaration; is_shared means ownership has
+	// actually transferred to the registry, which only happens on a
+	// clean completion. Until then the table is private and mutable
+	// like any other.
+
+	bool wants_shared;
+	bool is_shared;
+
+	// The call variant, needed to key the shared trie at publication -
+	// by then the original call is long gone. Stored ONLY for tables
+	// that declared "as shared", so a normal table pays nothing.
+
+	cell *key_image;
+
 	struct table_ *wl_next, *all_next, *fresh_next;
 } table;
 
@@ -777,6 +792,84 @@ static unsigned tbl_scc_id(const tbl_state *s)
 	return s->scc_depth ? s->scc[s->scc_depth-1].id : 0;
 }
 
+// --- shared completed tables (item 4) ---
+//
+// Threads tabling the same predicate each recompute it. A table
+// declared ":- table p/1 as shared" is still BUILT privately, with no
+// locking, exactly as before - the leader's critical section spans
+// completion/0, a Prolog loop running arbitrary user code, and no lock
+// survives that. It is only PUBLISHED once complete, and a completed
+// table is immutable.
+//
+// The locking has to be stated precisely or it is a data race:
+//
+//   - the table is fully built and never written again BEFORE
+//     publication;
+//   - publication happens under the registry mutex;
+//   - LOOKUP ALSO happens under that mutex - it is the acquire against
+//     the publisher's release that makes the contents visible;
+//   - only after lookup returns does the reader touch the table, and
+//     by then it is immutable.
+//
+// Not "read without a lock" - one short lock to find it, then no lock
+// to use it. Reading an answer bumps refcounts on shared subcells, but
+// pl_refcnt is _Atomic under USE_THREADS, so that is safe.
+
+typedef struct {
+	lock guard;
+	tnode *variants;			// shared variant trie
+	struct { table *t; uint32_t serial; } *slots;
+	unsigned nslots, slots_cap;
+	table *all;				// every published table, for teardown
+	bool inited;
+} tbl_shared;
+
+// Bit 31 of the slot index says which array a handle indexes. Nobody
+// has 2^31 tables, and it keeps a handle a single integer across the
+// Prolog boundary as before.
+
+#define TBL_SHARED_BIT 0x80000000u
+
+// Non-creating: resolvers run on every handle and must not conjure a
+// registry for a program that never shares anything.
+
+static tbl_shared *tbl_shared_peek(query *q)
+{
+	return (tbl_shared*)q->pl->tbl_shared;
+}
+
+#if USE_THREADS
+static tbl_shared *tbl_shared_get(query *q)
+{
+	tbl_shared *sh = (tbl_shared*)q->pl->tbl_shared;
+
+	if (!sh) {
+		acquire_lock(&q->pl->guard);
+		sh = (tbl_shared*)q->pl->tbl_shared;
+
+		if (!sh) {
+			sh = TPL_calloc(1, sizeof(tbl_shared));
+
+			if (sh) {
+				init_lock(&sh->guard);
+				sh->inited = true;
+				pl_publish_barrier();
+				q->pl->tbl_shared = sh;
+			}
+		}
+
+		release_lock(&q->pl->guard);
+	}
+
+	return sh;
+}
+#else
+// NOTHREADS is the WASI configuration, which is what embedders ship.
+// Sharing is meaningless with one thread, so it compiles out and
+// "as shared" simply leaves the table private.
+static tbl_shared *tbl_shared_get(query *q) { (void)q; return NULL; }
+#endif
+
 // --- incremental tabling (item 3): dependency collection ---
 //
 // Non-allocating: enter_predicate() calls into here on every call to an
@@ -913,6 +1006,8 @@ static void tbl_destroy(table *t)
 {
 	tbl_deps_free(t->deps);		// item 3
 	t->deps = NULL;
+	tbl_image_free(t->key_image);	// item 4
+	t->key_image = NULL;
 	trie_free(t->answers);
 
 	for (tbl_ans *a = t->first_ans; a; ) {
@@ -980,6 +1075,42 @@ static bool tbl_slot_alloc(tbl_state *s, table *t)
 	return true;
 }
 
+#if USE_THREADS
+// Caller holds sh->guard.
+
+static bool tbl_shared_slot_alloc(tbl_shared *sh, table *t)
+{
+	for (unsigned i = 0; i < sh->nslots; i++) {
+		if (!sh->slots[i].t) {
+			sh->slots[i].t = t;
+			t->slot = i;
+			return true;
+		}
+	}
+
+	if (sh->nslots >= sh->slots_cap) {
+		unsigned cap = sh->slots_cap ? sh->slots_cap * 2 : 16;
+
+		// Bit 31 of the index is the shared flag, so the array can
+		// never legitimately reach it.
+
+		if (cap >= TBL_SHARED_BIT) return false;
+
+		void *tmp = TPL_realloc(sh->slots, sizeof(*sh->slots) * cap);
+		if (!tmp) return false;
+		sh->slots = tmp;
+		memset(&sh->slots[sh->slots_cap], 0,
+			sizeof(*sh->slots) * (cap - sh->slots_cap));
+		sh->slots_cap = cap;
+	}
+
+	sh->slots[sh->nslots].t = t;
+	sh->slots[sh->nslots].serial = 1;
+	t->slot = sh->nslots++;
+	return true;
+}
+#endif
+
 static void tbl_slot_release(tbl_state *s, const table *t)
 {
 	if (!s->slots || (t->slot >= s->nslots) || (s->slots[t->slot].t != t))
@@ -989,48 +1120,77 @@ static void tbl_slot_release(tbl_state *s, const table *t)
 	s->slots[t->slot].serial++;		// invalidates outstanding handles
 }
 
-static void make_tbl_handle(tbl_state *s, cell *tmp, const table *t)
+// A published table's slot lives in the shared registry, so its handle
+// carries TBL_SHARED_BIT and every resolver routes on it. t->is_shared
+// is set only once ownership has actually transferred.
+
+static void make_tbl_handle_(tbl_state *s, tbl_shared *sh, cell *tmp, const table *t)
 {
-	make_uint(tmp, TBL_HANDLE(t->slot, s->slots[t->slot].serial));
+	if (t->is_shared && sh)
+		make_uint(tmp, TBL_HANDLE(t->slot | TBL_SHARED_BIT, sh->slots[t->slot].serial));
+	else
+		make_uint(tmp, TBL_HANDLE(t->slot, s->slots[t->slot].serial));
+
 	tmp->flags |= FLAG_INT_TABLE;
 }
+
+#define make_tbl_handle(s, tmp, t) make_tbl_handle_((s), tbl_shared_peek(q), (tmp), (t))
 
 // Same value, without a cell - item 3 stores it in a dependency edge so
 // a stale table edge is detected by the usual slot+serial validation
 // rather than by dereferencing freed memory.
 
-static uint64_t tbl_handle_value(const tbl_state *s, const table *t)
+static uint64_t tbl_handle_value_(const tbl_state *s, const tbl_shared *sh, const table *t)
 {
+	if (t->is_shared && sh)
+		return TBL_HANDLE(t->slot | TBL_SHARED_BIT, sh->slots[t->slot].serial);
+
 	return TBL_HANDLE(t->slot, s->slots[t->slot].serial);
 }
 
-static table *tbl_handle_from_value(tbl_state *s, uint64_t v)
+#define tbl_handle_value(s, t) tbl_handle_value_((s), tbl_shared_peek(q), (t))
+
+// Resolve a raw handle value. The shared half takes the registry lock:
+// that acquire is what pairs with the publisher's release and makes the
+// table's contents visible to this thread. The table is immutable by
+// then, so nothing is held once the lookup returns.
+
+static table *tbl_resolve(tbl_state *s, tbl_shared *sh, uint64_t v)
 {
-	unsigned idx = (unsigned)(v & 0xffffffffu);
+	unsigned raw = (unsigned)(v & 0xffffffffu);
 	uint32_t ser = (uint32_t)(v >> 32);
 
-	if (!s || (idx >= s->nslots) || !s->slots[idx].t
-		|| (s->slots[idx].serial != ser))
+	if (raw & TBL_SHARED_BIT) {
+		unsigned idx = raw & ~TBL_SHARED_BIT;
+
+		if (!sh)
+			return NULL;
+
+		acquire_lock(&sh->guard);
+		table *t = ((idx < sh->nslots) && sh->slots[idx].t
+			&& (sh->slots[idx].serial == ser)) ? sh->slots[idx].t : NULL;
+		release_lock(&sh->guard);
+		return t;
+	}
+
+	if (!s || (raw >= s->nslots) || !s->slots[raw].t
+		|| (s->slots[raw].serial != ser))
 		return NULL;
 
-	return s->slots[idx].t;
+	return s->slots[raw].t;
 }
 
-static table *tbl_handle(tbl_state *s, cell *c)
+#define tbl_handle_from_value(s, v) tbl_resolve((s), tbl_shared_peek(q), (v))
+
+static table *tbl_handle_(tbl_state *s, tbl_shared *sh, cell *c)
 {
-	if (!s || !is_integer(c) || !(c->flags & FLAG_INT_TABLE))
+	if (!is_integer(c) || !(c->flags & FLAG_INT_TABLE))
 		return NULL;
 
-	pl_uint v = c->val_uint;
-	unsigned idx = (unsigned)(v & 0xffffffffu);
-	uint32_t ser = (uint32_t)(v >> 32);
-
-	if ((idx >= s->nslots) || !s->slots[idx].t
-		|| (s->slots[idx].serial != ser))
-		return NULL;
-
-	return s->slots[idx].t;
+	return tbl_resolve(s, sh, c->val_uint);
 }
+
+#define tbl_handle(s, c) tbl_handle_((s), tbl_shared_peek(q), (c))
 
 // Does this term image contain variables? Imported answers that are
 // ground need no frame protection (see tbl_pin_answer_frame below), and
@@ -1072,6 +1232,111 @@ static void tbl_pin_answer_frame(query *q, const cell *tmp)
 }
 
 // '$tbl_variant_table'(+Variant, -Handle, -Status)
+
+// --- item 4: publication ---
+//
+// Transfer ownership of a completed table from the building thread to
+// the shared registry. Everything before this point was thread-private
+// and unlocked; from here the table is immutable and visible to all.
+//
+// Ownership TRANSFERS rather than being copied: the table leaves the
+// thread's all_tables list and its private slot is released, so the
+// builder afterwards reaches it through the shared path like any other
+// thread. Two threads publishing the same variant race, and the loser
+// simply keeps its private copy - correct, just not shared.
+
+#if USE_THREADS
+static void tbl_publish(query *q, tbl_state *s, table *t)
+{
+	tbl_shared *sh = tbl_shared_get(q);
+
+	if (!sh)
+		return;
+
+	acquire_lock(&sh->guard);
+
+	// Someone else got there first with this variant.
+
+	// The stored image is detached, so bring it back onto the heap
+	// before walking it - trie_insert_ derefs against a live context.
+
+	cell *key = import_term(q, t->key_image, q->st.cur_ctx);
+
+	if (!key) {
+		release_lock(&sh->guard);
+		return;
+	}
+
+	bool existed = false, attvar = false, restrained = false;
+	tnode *leaf = trie_insert_(q, &sh->variants, key, q->st.cur_ctx,
+		&existed, &attvar, 0, &restrained, 0);
+
+	if (!leaf || leaf->value) {
+		release_lock(&sh->guard);
+		return;
+	}
+
+	if (!tbl_shared_slot_alloc(sh, t)) {
+		release_lock(&sh->guard);
+		return;
+	}
+
+	// Unlink from the private side. The private slot must be released
+	// AFTER the shared one is taken, so t->slot is never ambiguous.
+
+	for (table **pp = &s->all_tables; *pp; pp = &(*pp)->all_next) {
+		if (*pp == t) { *pp = t->all_next; break; }
+	}
+
+	if (t->leaf)
+		t->leaf->value = NULL;		// private variant trie forgets it
+
+	t->leaf = leaf;
+	leaf->value = t;
+	t->all_next = sh->all;
+	sh->all = t;
+	t->is_shared = true;
+
+	// Everything above must be visible before any reader can find it.
+	// The release paired with each reader's acquire on this same lock.
+
+	pl_publish_barrier();
+	release_lock(&sh->guard);
+}
+// Reader side. Look the variant up in the shared registry BEFORE
+// building anything privately. The lock is held only across the trie
+// walk; the table it returns is immutable, so nothing is held while it
+// is used.
+
+static table *tbl_shared_lookup(query *q, cell *c, pl_ctx c_ctx)
+{
+	tbl_shared *sh = tbl_shared_peek(q);
+
+	if (!sh || !sh->variants)
+		return NULL;
+
+	acquire_lock(&sh->guard);
+	twalk w;
+	twalk_init(&w, q, &sh->variants, false);
+	bool ok = trie_walk(&w, c, c_ctx);
+	tnode *leaf = w.node;
+	twalk_done(&w);
+	table *t = (ok && leaf && leaf->is_leaf) ? leaf->value : NULL;
+	release_lock(&sh->guard);
+	return t;
+}
+#else
+static void tbl_publish(query *q, tbl_state *s, table *t)
+{
+	(void)q; (void)s; (void)t;
+}
+
+static table *tbl_shared_lookup(query *q, cell *c, pl_ctx c_ctx)
+{
+	(void)q; (void)c; (void)c_ctx;
+	return NULL;
+}
+#endif
 
 // --- item 3: validate-on-read ---
 //
@@ -1151,7 +1416,7 @@ static void tbl_revalidate(query *q, tbl_state *s, table *t)
 	// so nothing it depends on can have. One comparison, and the common
 	// case never walks the dep list at all.
 
-	if (q->pl->dbgen == t->completed_at)
+	if ((uint64_t)q->pl->dbgen == t->completed_at)
 		return;
 
 	if (!tbl_deps_changed(q, s, t, 0))
@@ -1184,6 +1449,27 @@ static bool bif_tbl_variant_table_3(query *q)
 	GET_NEXT_ARG(p3,any);
 
 	tbl_intern_atoms(q);
+
+	// Item 4: a published table answers this variant already. Take it
+	// before building anything privately - that saving IS the feature.
+	// The lock is dropped inside the lookup; what comes back is
+	// immutable, so it is safe to hold across the unifications below.
+
+	{
+		table *sht = tbl_shared_lookup(q, p1, p1_ctx);
+
+		if (sht) {
+			cell tmp;
+			make_tbl_handle(s, &tmp, sht);
+
+			if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
+				return false;
+
+			make_atom(&tmp, s_complete);
+			return unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
+		}
+	}
+
 	bool existed = false, attvar = false, restrained = false;
 	tnode *leaf = trie_insert_(q, &s->variants, p1, p1_ctx, &existed, &attvar,
 		q->pl->tbl_max_subgoal_size, &restrained, 0);
@@ -1315,6 +1601,40 @@ static bool bif_tbl_set_pred_incremental_2(query *q)
 
 // '$tbl_set_incremental'(+Handle) - mark a TABLE as incremental, ie.
 // worth collecting dependencies for and re-validating on lookup.
+
+// '$tbl_set_shared'(+Handle, +Variant) - declare this table publishable
+// once complete. Takes the call term because publication happens at
+// completion, long after the original call is gone, and the shared
+// registry's trie has to be keyed on it.
+
+static bool bif_tbl_set_shared_2(query *q)
+{
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,any);
+	table *t = tbl_handle(s, p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
+
+	// Invalidation MUTATES a completed table (drops answers, resets to
+	// FRESH), which is exactly what publication promises never happens.
+	// Allowing both would let any reader free memory another thread is
+	// walking - silent and intermittent. Refuse instead.
+
+	if (t->is_incremental)
+		return throw_error(q, p1, p1_ctx, "domain_error", "shared_incremental_table");
+
+	if (!t->key_image) {
+		t->key_image = tbl_image(q, p2, p2_ctx);
+		CHECKED(t->key_image);
+	}
+
+	t->wants_shared = true;
+	return true;
+}
 
 static bool bif_tbl_set_incremental_1(query *q)
 {
@@ -1931,8 +2251,17 @@ static bool bif_tbl_mark_all_complete_0(query *q)
 				t->deps = copy;
 			}
 
-			t->completed_at = q->pl->dbgen;
+			t->completed_at = (uint64_t)q->pl->dbgen;
 		}
+
+		// Item 4: publish. The table is complete and will never be
+		// written again, so hand it to the registry. Only a CLEAN
+		// completion qualifies - saw_exception is checked by the
+		// caller, and an incremental table is refused at declaration
+		// time because invalidation would mutate it under readers.
+
+		if (t->wants_shared && !t->is_shared)
+			tbl_publish(q, s, t);
 
 		t = next;
 	}
@@ -2024,6 +2353,52 @@ static bool bif_tbl_reset_incomplete_0(query *q)
 // Drop every table. Shared by abolish_all_tables/0 and by
 // tabling_destroy() at instance teardown.
 
+// Item 4: retire every published table. It is NOT freed - another
+// thread may be reading one right now, and freeing under a live reader
+// is the silent, intermittent use-after-free this whole design exists
+// to avoid. Instead it is unpublished: dropped from the shared variant
+// trie so the next call misses and recomputes, and its slot serial
+// bumped so outstanding handles stop validating. The memory is
+// reclaimed at pl_destroy(), when every thread is provably done.
+//
+// So abolish gets correct SEMANTICS at the cost of holding the old
+// table's memory until teardown. Freeing it earlier needs the
+// generation-keyed deferred reclamation the design doc describes,
+// which is not built.
+
+static void tbl_shared_retire_all(query *q)
+{
+	tbl_shared *sh = tbl_shared_peek(q);
+
+	if (!sh)
+		return;
+
+#if USE_THREADS
+	acquire_lock(&sh->guard);
+#endif
+
+	for (table *t = sh->all; t; t = t->all_next) {
+		if (!t->is_shared)
+			continue;
+
+		if (t->leaf) {
+			t->leaf->value = NULL;
+			t->leaf = NULL;
+		}
+
+		if (t->slot < sh->nslots && sh->slots[t->slot].t == t) {
+			sh->slots[t->slot].t = NULL;
+			sh->slots[t->slot].serial++;
+		}
+
+		t->is_shared = false;		// retired; awaiting teardown
+	}
+
+#if USE_THREADS
+	release_lock(&sh->guard);
+#endif
+}
+
 static void tbl_clear_all(tbl_state *s)
 {
 	for (table *t = s->all_tables; t; ) {
@@ -2076,6 +2451,29 @@ void tabling_destroy(prolog *pl)
 
 	for (thread *t = pl->free_head; t; t = t->free_next)
 		tabling_destroy_thread(t);
+
+	// Item 4: published tables outlive the thread that built them, so
+	// they are reclaimed here rather than with any thread's state.
+	// Every thread is done by now, which is what makes it safe to free
+	// them without the deferred-reclamation dance a live abolish needs.
+
+	tbl_shared *sh = (tbl_shared*)pl->tbl_shared;
+
+	if (sh) {
+		for (table *t = sh->all; t; ) {
+			table *next = t->all_next;
+			tbl_destroy(t);
+			t = next;
+		}
+
+		trie_free(sh->variants);
+		TPL_free(sh->slots);
+#if USE_THREADS
+		if (sh->inited) deinit_lock(&sh->guard);
+#endif
+		TPL_free(sh);
+		pl->tbl_shared = NULL;
+	}
 }
 
 // abolish_table/1: drop every variant of ONE predicate. Without this the
@@ -2147,6 +2545,7 @@ static bool bif_tbl_abolish_all_tables_0(query *q)
 
 	s->generation++;
 	tbl_clear_all(s);
+	tbl_shared_retire_all(q);	// item 4
 	return true;
 }
 
@@ -2157,6 +2556,7 @@ builtins g_tabling_bifs[] =
 	{"$tbl_set_subsumptive", 3, bif_tbl_set_subsumptive_3, "+integer,+integer,+atom", false, false, BLAH},
 	{"$tbl_set_pred_incremental", 2, bif_tbl_set_pred_incremental_2, "+atom,+integer", false, false, BLAH},
 	{"$tbl_set_incremental", 1, bif_tbl_set_incremental_1, "+integer", false, false, BLAH},
+	{"$tbl_set_shared", 2, bif_tbl_set_shared_2, "+integer,+term", false, false, BLAH},
 	{"$tbl_add_answer", 2, bif_tbl_add_answer_2, "+integer,+term", false, false, BLAH},
 	{"$tbl_get_answer", 2, bif_tbl_get_answer_2, "+integer,?term", false, false, BLAH},
 	{"$tbl_add_suspension", 2, bif_tbl_add_suspension_2, "+integer,+term", false, false, BLAH},
