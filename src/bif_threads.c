@@ -1727,9 +1727,21 @@ static bool do_thread_property_pin_both(query *q)
 			return unify(q, c, c_ctx, tmp, q->st.cur_ctx);
 		}
 
+		// thread_exit/1 stores its argument already wrapped as
+		// exited/1, so hand that back whole - this reported a bare
+		// `false` for it. And a goal that merely failed is is_failed,
+		// not exit_code, which made it report `true`; thread_join/2 has
+		// always read the right flag, so the two disagreed.
+		if (t->exit_code) {
+			cell *tmp = alloc_heap(q, 1+t->exit_code->num_cells);
+			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, t->exit_code->num_cells);
+			dup_cells(tmp+1, t->exit_code, t->exit_code->num_cells);
+			return unify(q, c, c_ctx, tmp, q->st.cur_ctx);
+		}
+
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
-		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
+		make_atom(tmp+1, t->is_failed?g_false_s:g_true_s);
 		return unify(q, c, c_ctx, tmp, q->st.cur_ctx);
 	} else
 		return throw_error(q, p2, p2_ctx, "domain_error", "thread_property");
@@ -1821,9 +1833,21 @@ static bool do_thread_property_pin_id(query *q)
 			return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 		}
 
+		// thread_exit/1 stores its argument already wrapped as
+		// exited/1, so hand that back whole - this reported a bare
+		// `false` for it. And a goal that merely failed is is_failed,
+		// not exit_code, which made it report `true`; thread_join/2 has
+		// always read the right flag, so the two disagreed.
+		if (t->exit_code) {
+			cell *tmp = alloc_heap(q, 1+t->exit_code->num_cells);
+			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, t->exit_code->num_cells);
+			dup_cells(tmp+1, t->exit_code, t->exit_code->num_cells);
+			return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
+		}
+
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
-		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
+		make_atom(tmp+1, t->is_failed?g_false_s:g_true_s);
 		return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 	}
 }
