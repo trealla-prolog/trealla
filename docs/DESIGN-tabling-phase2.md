@@ -541,6 +541,104 @@ throughout. Do not start until 1–3 have shipped and settled.
 
 ---
 
+## Where these features exist elsewhere
+
+Phase 2's six items are not novel; they are the feature set the mature
+tabling implementations already carry. Useful both as a specification
+to check against and as a reminder of what "done" looks like.
+
+| # | Item | XSB | SWI | YAP | B-Prolog / Picat |
+|---|------|-----|-----|-----|------------------|
+| 1 | Restraints | yes (call/answer abstraction) | yes — this doc borrows its flag names | no | no |
+| 2 | Answer subsumption | yes (lattice + min/max) | yes (mode-directed) | yes (mode-directed) | **originated it** — `:- table path(+,+,min)` |
+| 3 | Incremental | yes | yes | yes | no |
+| 4 | Shared completed tables | yes (private vs shared) | yes (`as shared`) | yes (OPTYap) | no |
+| 5 | Trie-path reconstruction | yes — tries *are* the answer store | yes | yes | n/a (linear tabling, no SLG tries) |
+| 6 | `tnot` / WFS | the reference implementation | yes | partial | no |
+
+Systems at Phase 1's level — variant tabling, least model, none of the
+above — are **Scryer** (a port of Desouter's delimited-continuation
+library, the same starting point SWI had) and **Ciao**. SICStus, GNU
+Prolog and ECLiPSe have no tabling at all.
+
+Two things worth taking from the right-hand columns. Item 5 is the odd
+one out: XSB, SWI and YAP all reconstruct answers from the trie and
+none keeps a second full image, so Trealla's per-answer image was the
+outlier rather than the norm. And B-Prolog reached items 2 and 5's
+equivalents without ever doing item 6, so this doc's ordering — WFS
+last — has precedent.
+
+---
+
+## Benchmarks
+
+Measured against SWI-Prolog 10.1.14 and XSB on the same machine, three
+interleaved runs each (this host drifts; alternating avoids order
+bias). All three engines returned identical answers on every workload —
+worth stating, since a fast wrong answer is not a benchmark.
+
+Startup baselines, subtracted where noted: Trealla 0.03s / 8.4 MB, SWI
+0.01s / 13.9 MB, XSB 0.04s / 13.0 MB.
+
+| workload | Trealla | SWI | XSB |
+|----------|---------|-----|-----|
+| **tc** — left-recursive closure, 90k answers | 0.15s / 49 MB | 0.08s / 35 MB | 0.06s / 23 MB |
+| **bigans** — 100k answers, enumerated 6x | 0.25s / 374 MB | 0.09s / 87 MB | 0.09s / 49 MB |
+| **variants** — 200k distinct subgoals | 5.2s / 1219 MB | 0.74s / 758 MB | 0.08s / 139 MB |
+
+Trealla is ~2x SWI on the classic closure benchmark. `variants` is the
+outlier at 7x SWI and 65x XSB, so it was decomposed rather than left as
+a number.
+
+**Per-table cost is not the problem.** Running the same 50k distinct
+tables *flat* (each completing before the next) against *nested* (each
+a fresh variant called from inside the previous) separates the two
+costs:
+
+| engine | bytes/table | bytes/nesting level |
+|--------|-------------|---------------------|
+| Trealla | 816 | **6100** |
+| SWI | 858 | 3074 |
+| XSB | 363 | 247 |
+
+Trealla's per-table footprint is slightly *better* than SWI's. The
+whole gap is per-nesting-level, where it is 2x SWI and 25x XSB. Time
+behaves the same way: flat and nested cost Trealla the same (0.43s vs
+0.45s), so the expense is table *creation*, not the fixpoint.
+
+**It is the tabling driver, not general memory behaviour.** The same
+50k-deep recursion with no tabling at all costs Trealla 22.9 MB (~300
+bytes/level) against SWI's 31.9 MB — competitive, and better in
+absolute terms. Tabling multiplies Trealla's per-level cost ~20x (300 →
+6100) where SWI's goes ~8x and XSB's ~6x. So this is not a failure to
+reclaim frames in deep recursion; it is what `run_scc` → `catch/3` →
+`activate` → `delim` → `catch/3` → `reset/3` costs once per nested
+table. XSB pays 247 bytes because its SLG-WAM has no Prolog-level
+driver at all.
+
+That is the number to attack if this workload matters: fewer frames
+per nesting level in `library(tabling)`, not the C data structures.
+
+**Phase 2's own cost.** Against the pre-phase-2 baseline, after the fix
+below: answer-heavy workloads got *cheaper* (tc 54.7 → 49.2 MB, bigans
+390 → 374 MB, from item 5 dropping images), table-heavy workloads are
+level (nested 312.4 → 313.9 MB, variants 1222 → 1219 MB). Time is
+within noise except bigans at +9%, which is item 5's reconstruction
+cost and was measured in isolation at the same figure.
+
+**One regression found and fixed by this exercise.** Phase 2 initially
+cost +15% peak RSS on nesting-heavy workloads (nested 312 → 359 MB).
+Struct growth did not explain it — per-table cost had gone *down*. It
+was a single Prolog-level call: `apply_table_specs/2`, added to the
+driver's per-fresh-table path, costing ~1 KB of frames per nesting
+level. Stubbing it out returned exactly the baseline figure, which is
+how it was confirmed rather than guessed. It is now guarded by
+`'$tbl_has_specs'`, a C-side flag set the first time any spec is
+declared, so the majority of programs — which declare none — skip it
+entirely.
+
+---
+
 ## Explicitly not doing
 
 - **GMP.** Declined in Phase 1, still declined.

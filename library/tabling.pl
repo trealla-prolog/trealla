@@ -117,7 +117,14 @@ native_start_tabling(Wrapper, Worker) :-
 	% installed before anything can be added to it - S == fresh means
 	% this is the FIRST call for this variant, the only time the table
 	% is still empty, so the lookup only ever happens once per table.
-	(  S == fresh ->
+	%
+	% '$tbl_has_specs' guards it because this sits on the driver's
+	% per-table path: in deeply nested tabling (a fresh variant called
+	% from inside another) the apply_table_specs/2 frame cost ~1 KB per
+	% nesting level, measured as a 15% peak-RSS regression on a
+	% 50k-deep benchmark. Most programs declare no specs at all, so the
+	% flag turns that into one builtin call.
+	(  S == fresh, '$tbl_has_specs' ->
 	   apply_table_specs(Wrapper, T)
 	;  true
 	),
@@ -303,11 +310,13 @@ comma_list_(A, [A]).
 
 table_option(incremental, Name, Arity) :- !,
 	(  '$tbl_incremental_spec'(Name, Arity) -> true
-	;  assertz(tabling:'$tbl_incremental_spec'(Name, Arity))
+	;  assertz(tabling:'$tbl_incremental_spec'(Name, Arity)),
+	   '$tbl_specs_declared'
 	).
 table_option(shared, Name, Arity) :- !,
 	(  '$tbl_shared_spec'(Name, Arity) -> true
-	;  assertz(tabling:'$tbl_shared_spec'(Name, Arity))
+	;  assertz(tabling:'$tbl_shared_spec'(Name, Arity)),
+	   '$tbl_specs_declared'
 	).
 table_option(Option, _, _) :-
 	throw(error(domain_error(table_option, Option), (table)/1)).
@@ -364,7 +373,8 @@ wrappers(Spec) -->
 	         % goal as Worker - the other way round from what those
 	         % variable names might suggest - and apply_subsumption_spec
 	         % below looks it up by functor(Wrapper, ...).
-	         assertz(tabling:'$tbl_subsumptive_spec'(Name, Arity, Pos, Op))
+	         assertz(tabling:'$tbl_subsumptive_spec'(Name, Arity, Pos, Op)),
+	         '$tbl_specs_declared'
 	    ; throw(error(domain_error(table_mode_spec, Spec), (table)/1))
 	    )
 	  ) },

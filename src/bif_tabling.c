@@ -1741,6 +1741,19 @@ static bool bif_tbl_set_incremental_1(query *q)
 	return true;
 }
 
+// '$tbl_specs_declared' / '$tbl_has_specs' - see prolog.tbl_any_specs.
+
+static bool bif_tbl_specs_declared_0(query *q)
+{
+	q->pl->tbl_any_specs = true;
+	return true;
+}
+
+static bool bif_tbl_has_specs_0(query *q)
+{
+	return q->pl->tbl_any_specs;
+}
+
 static bool bif_tbl_set_subsumptive_3(query *q)
 {
 	tbl_state *s = tbl(q);
@@ -2656,6 +2669,8 @@ builtins g_tabling_bifs[] =
 	{"$tbl_set_pred_incremental", 2, bif_tbl_set_pred_incremental_2, "+atom,+integer", false, false, BLAH},
 	{"$tbl_set_incremental", 1, bif_tbl_set_incremental_1, "+integer", false, false, BLAH},
 	{"$tbl_set_shared", 2, bif_tbl_set_shared_2, "+integer,+term", false, false, BLAH},
+	{"$tbl_specs_declared", 0, bif_tbl_specs_declared_0, "", false, false, BLAH},
+	{"$tbl_has_specs", 0, bif_tbl_has_specs_0, "", false, false, BLAH},
 	{"$tbl_add_answer", 2, bif_tbl_add_answer_2, "+integer,+term", false, false, BLAH},
 	{"$tbl_get_answer", 2, bif_tbl_get_answer_2, "+integer,?term", false, false, BLAH},
 	{"$tbl_add_suspension", 2, bif_tbl_add_suspension_2, "+integer,+term", false, false, BLAH},

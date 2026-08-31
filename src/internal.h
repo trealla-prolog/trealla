@@ -1216,6 +1216,14 @@ struct prolog_ {
 
 	void *tbl_shared;
 
+	// Set the first time any ":- table ... as ..." / mode spec is
+	// declared. The tabling driver consults it once per FRESH table, so
+	// a program that declares none skips the lookup entirely - which is
+	// most of them, and the cost showed up as ~1 KB of Prolog frames
+	// per nesting level in deeply recursive tabling.
+
+	bool tbl_any_specs;
+
 };
 
 extern pl_idx g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
