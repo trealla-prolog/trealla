@@ -255,6 +255,19 @@ typedef struct {
 
 	unsigned max_size, size;
 	bool restrained;
+
+	// Answer subsumption (item 2): skip_arg is the 1-based position of
+	// the aggregated argument in the OUTERMOST functor, 0 = none. Its
+	// cells are never walked, so the trie encodes only the "key"
+	// arguments - two answers agreeing on those collide regardless of
+	// what they carry at skip_arg. at_top marks "still processing the
+	// outermost functor's direct arguments"; it is cleared the moment
+	// that functor's own key step is taken, so skip_arg can never
+	// apply inside a nested subterm (a mode spec only ever names a
+	// top-level argument).
+
+	unsigned skip_arg;
+	bool at_top;
 } twalk;
 
 static void twalk_init(twalk *w, query *q, tnode **root, bool create)
@@ -263,6 +276,7 @@ static void twalk_init(twalk *w, query *q, tnode **root, bool create)
 	w->q = q;
 	w->root = root;
 	w->create = create;
+	w->at_top = true;
 }
 
 static void twalk_done(twalk *w)
@@ -411,6 +425,9 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 		key.flags = 0;			// strip OP etc annotations
 		key.match = NULL;
 
+		bool top = w->at_top;
+		w->at_top = false;
+
 		if (!trie_step(w, &key))
 			return false;
 
@@ -421,11 +438,16 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 		const unsigned last = get_arity(c) - 1;	// arity >= 1, checked above
 
 		for (unsigned i = 0; i < last; i++) {
-			if (!trie_walk(w, arg, ctx))
-				return false;
+			if (!(top && ((i+1) == w->skip_arg))) {
+				if (!trie_walk(w, arg, ctx))
+					return false;
+			}
 
 			arg += arg->num_cells;
 		}
+
+		if (top && ((last+1) == w->skip_arg))
+			return true;		// last argument is the skipped one
 
 		c = arg;				// last argument: loop, don't recurse
 		continue;
@@ -451,11 +473,12 @@ static bool trie_walk(twalk *w, cell *c, pl_ctx ctx)
 
 static void trie_free(tnode *n);
 
-static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed, bool *attvar, unsigned max_size, bool *restrained)
+static tnode *trie_insert_(query *q, tnode **root, cell *c, pl_ctx ctx, bool *existed, bool *attvar, unsigned max_size, bool *restrained, unsigned skip_arg)
 {
 	twalk w;
 	twalk_init(&w, q, root, true);
 	w.max_size = max_size;
+	w.skip_arg = skip_arg;
 	bool ok = trie_walk(&w, c, ctx);
 	tnode *leaf = w.node;
 	bool fresh = w.created_any;
@@ -545,6 +568,20 @@ enum { TBL_FRESH=0, TBL_ACTIVE=1, TBL_COMPLETE=2 };
 typedef struct tbl_ans_ {
 	cell *image;
 	struct tbl_ans_ *next;
+
+	// Answer subsumption (item 2). is_new: still in the table's
+	// unproc_ans segment, not yet drained by '$tbl_pop_worklist' - an
+	// update arriving before that first drain needs no special
+	// handling, the normal (new answers x all suspensions) pass
+	// already covers it. in_update_queue/update_next: once drained
+	// (is_new false), an in-place value update is queued here instead,
+	// so pop_worklist can re-pair this SAME node against every current
+	// suspension - a consumer that already read the old value must see
+	// the new one.
+
+	bool is_new;
+	bool in_update_queue;
+	struct tbl_ans_ *update_next;
 } tbl_ans;
 
 typedef struct tbl_susp_ {
@@ -569,6 +606,17 @@ typedef struct table_ {
 	bool in_wl;
 	unsigned scc;			// owning SCC id (0 = none yet)
 	unsigned n_answers;		// count for max_answers_for_subgoal
+
+	// Answer subsumption (item 2): ":- table path(_,_,min)". agg_pos is
+	// the 1-based position of the aggregated argument, 0 = not
+	// subsumptive (the common case - every field below is unused then).
+	// agg_max: false = min, true = max, both over standard order.
+	// update_head/tail: answers whose VALUE changed in place since the
+	// last drain, queued for re-pairing - see tbl_ans_.
+
+	unsigned agg_pos;
+	bool agg_max;
+	tbl_ans *update_head, *update_tail;
 
 	// Identity of the call this table answers, so abolish_table/1 can
 	// find every variant of one predicate, and the trie leaf pointing
@@ -686,7 +734,7 @@ static unsigned tbl_scc_id(const tbl_state *s)
 	return s->scc_depth ? s->scc[s->scc_depth-1].id : 0;
 }
 
-static pl_idx s_fresh, s_active, s_complete;
+static pl_idx s_fresh, s_active, s_complete, s_min, s_max;
 
 static void tbl_intern_atoms(query *q)
 {
@@ -694,6 +742,8 @@ static void tbl_intern_atoms(query *q)
 		s_fresh = new_atom(q->pl, "fresh");
 		s_active = new_atom(q->pl, "active");
 		s_complete = new_atom(q->pl, "complete");
+		s_min = new_atom(q->pl, "min");
+		s_max = new_atom(q->pl, "max");
 	}
 }
 
@@ -896,7 +946,7 @@ static bool bif_tbl_variant_table_3(query *q)
 	tbl_intern_atoms(q);
 	bool existed = false, attvar = false, restrained = false;
 	tnode *leaf = trie_insert_(q, &s->variants, p1, p1_ctx, &existed, &attvar,
-		q->pl->tbl_max_subgoal_size, &restrained);
+		q->pl->tbl_max_subgoal_size, &restrained, 0);
 
 	if (!leaf) {
 		if (attvar)
@@ -945,6 +995,63 @@ static bool bif_tbl_variant_table_3(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 }
 
+// '$tbl_set_subsumptive'(+Handle, +Pos, +Op) - declares this table
+// mode-directed: Pos (1-based) is the aggregated argument, Op is `min`
+// or `max`. Called once, right after a FRESH table is created, by the
+// driver looking up the predicate's ":- table Name(...)" mode spec.
+// Idempotent - setting it again on an already-configured table is a
+// harmless no-op in practice, since the driver only calls it on the
+// fresh->active transition.
+
+static bool bif_tbl_set_subsumptive_3(query *q)
+{
+	tbl_state *s = tbl(q);
+	CHECKED(s);
+
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p3,atom);
+	table *t = tbl_handle(s, p1);
+
+	if (!t)
+		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
+
+	if (is_negative(p2) || !get_smallint(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
+	tbl_intern_atoms(q);
+
+	if (p3->val_off == s_min) t->agg_max = false;
+	else if (p3->val_off == s_max) t->agg_max = true;
+	else return throw_error(q, p3, p3_ctx, "domain_error", "table_mode");
+
+	t->agg_pos = (unsigned)get_smallint(p2);
+	return true;
+}
+
+// Live-or-imported term, walk to the Nth (1-based) argument. Used both
+// on the new answer (still live in the query) and on a stored answer's
+// detached image (import_term'd into the query first) - same shape
+// either way once the caller has a cell+ctx pair.
+
+static cell *tbl_nth_arg(query *q, cell *c, pl_ctx ctx, unsigned n, pl_ctx *out_ctx)
+{
+	c = deref(q, c, ctx);
+	ctx = q->latest_ctx;
+
+	if (!is_structure(c) || !n || (n > get_arity(c)))
+		return NULL;
+
+	cell *arg = c + 1;
+
+	for (unsigned i = 1; i < n; i++)
+		arg += arg->num_cells;
+
+	arg = deref(q, arg, ctx);
+	*out_ctx = q->latest_ctx;
+	return arg;
+}
+
 // '$tbl_set_status'(+Handle, +Status)
 
 static bool bif_tbl_set_status_2(query *q)
@@ -981,9 +1088,16 @@ static bool bif_tbl_add_answer_2(query *q)
 
 	if (!t)
 		return throw_error(q, p1, p1_ctx, "type_error", "table_handle");
+
+	// Answer subsumption (item 2): t->agg_pos != 0 means the answer
+	// trie is keyed on every argument EXCEPT agg_pos (trie_insert_'s
+	// skip_arg), so two answers agreeing on the rest collide - existed
+	// then means "this key already has a stored value", not "duplicate
+	// answer", and is handled below instead of the plain dedup return.
+
 	bool existed = false, attvar = false, restrained = false;
 	tnode *leaf = trie_insert_(q, &t->answers, p2, p2_ctx, &existed, &attvar,
-		q->pl->tbl_max_answer_size, &restrained);
+		q->pl->tbl_max_answer_size, &restrained, t->agg_pos);
 
 	if (!leaf) {
 		if (attvar)
@@ -995,8 +1109,57 @@ static bool bif_tbl_add_answer_2(query *q)
 		return throw_error(q, p2, p2_ctx, "representation_error", "tabled_answer");
 	}
 
-	if (existed)
+	if (existed && !t->agg_pos)
 		return false;
+
+	if (existed) {
+		// Subsumptive and this key has a stored answer already: compare
+		// the new value at agg_pos against the stored one and replace
+		// only if it is better. A rejected (dominated) answer is exactly
+		// like a plain duplicate - nothing changes, fail.
+
+		pl_ctx new_ctx;
+		cell *new_agg = tbl_nth_arg(q, p2, p2_ctx, t->agg_pos, &new_ctx);
+
+		if (!new_agg)
+			return throw_error(q, p2, p2_ctx, "type_error", "callable");
+
+		tbl_ans *old = leaf->value;
+		cell *old_full = import_term(q, old->image, q->st.cur_ctx);
+		CHECKED(old_full);
+		pl_ctx old_ctx;
+		cell *old_agg = tbl_nth_arg(q, old_full, q->st.cur_ctx, t->agg_pos, &old_ctx);
+		if (!old_agg) return throw_error(q, p2, p2_ctx, "type_error", "callable");
+
+		int c = compare(q, new_agg, new_ctx, old_agg, old_ctx);
+		bool better = t->agg_max ? (c > 0) : (c < 0);
+
+		if (!better)
+			return false;
+
+		cell *new_image = tbl_image(q, p2, p2_ctx);
+		CHECKED(new_image);
+		tbl_image_free(old->image);
+		old->image = new_image;
+
+		// Already covered by the (new answers x all suspensions) pass
+		// this cycle - queueing it too would just re-pair it twice.
+
+		if (!old->is_new && !old->in_update_queue) {
+			old->in_update_queue = true;
+			old->update_next = NULL;
+
+			if (t->update_tail) t->update_tail->update_next = old;
+			else t->update_head = old;
+
+			t->update_tail = old;
+		}
+
+		if (t->first_susp)
+			tbl_enqueue(s, t);
+
+		return true;
+	}
 
 	// max_answers_for_subgoal: this answer is genuinely new (existed ==
 	// false), so it is the one that would push the table over the
@@ -1005,6 +1168,10 @@ static bool bif_tbl_add_answer_2(query *q)
 	// FRESH (run_scc's catch) hits the identical answer at the
 	// identical count and raises the same error again, which is the
 	// point: a breached table stays diagnostic, not silently partial.
+	//
+	// For a subsumptive table this bounds the number of DISTINCT KEYS,
+	// not raw answers - an update to an existing key never reaches
+	// here, matching "subsumption bounds tables from the other side".
 
 	if (q->pl->tbl_max_answers_for_subgoal && (t->n_answers >= q->pl->tbl_max_answers_for_subgoal))
 		return throw_error(q, p2, p2_ctx, "resource_error", "max_answers_for_subgoal");
@@ -1015,6 +1182,10 @@ static bool bif_tbl_add_answer_2(query *q)
 	CHECKED(a);
 	a->image = tbl_image(q, p2, p2_ctx);
 	CHECKED(a->image);
+	a->is_new = true;
+
+	if (t->agg_pos)
+		leaf->value = a;
 
 	if (t->last_ans) t->last_ans->next = a; else t->first_ans = a;
 	t->last_ans = a;
@@ -1146,9 +1317,13 @@ static bool bif_tbl_pop_worklist_1(query *q)
 	tbl_free_pending(t);
 	tbl_pair **tail = &t->pending;
 
-	// (new answers x all suspensions)
+	// (new answers x all suspensions) - also the point where a node
+	// stops being "new": from here on, a subsumption update to it must
+	// go through the update queue below to be seen again.
 
 	for (tbl_ans *a = t->unproc_ans; a; a = a->next) {
+		a->is_new = false;
+
 		for (tbl_susp *sp = t->first_susp; sp; sp = sp->next) {
 			tbl_pair *p = TPL_malloc(sizeof(tbl_pair));
 			CHECKED(p);
@@ -1160,14 +1335,37 @@ static bool bif_tbl_pop_worklist_1(query *q)
 	// (old answers x new suspensions); old = before unproc_ans
 
 	for (tbl_ans *a = t->first_ans; a && a != t->unproc_ans; a = a->next) {
-		for (tbl_susp *s = t->unproc_susp; s; s = s->next) {
+		for (tbl_susp *sp = t->unproc_susp; sp; sp = sp->next) {
 			tbl_pair *p = TPL_malloc(sizeof(tbl_pair));
 			CHECKED(p);
-			p->a = a; p->s = s; p->next = NULL;
+			p->a = a; p->s = sp; p->next = NULL;
 			*tail = p; tail = &p->next;
 		}
 	}
 
+	// (updated answers x all suspensions) - answer subsumption (item
+	// 2): a value updated in place (not a brand-new key, see
+	// bif_tbl_add_answer_2) must be re-delivered to every CURRENT
+	// suspension, including ones already paired with the stale value -
+	// append-only pairing above would silently leave them with it.
+
+	for (tbl_ans *a = t->update_head; a; a = a->update_next) {
+		for (tbl_susp *sp = t->first_susp; sp; sp = sp->next) {
+			tbl_pair *p = TPL_malloc(sizeof(tbl_pair));
+			CHECKED(p);
+			p->a = a; p->s = sp; p->next = NULL;
+			*tail = p; tail = &p->next;
+		}
+	}
+
+	for (tbl_ans *a = t->update_head; a; ) {
+		tbl_ans *next = a->update_next;
+		a->in_update_queue = false;
+		a->update_next = NULL;
+		a = next;
+	}
+
+	t->update_head = t->update_tail = NULL;
 	t->unproc_ans = NULL;
 	t->unproc_susp = NULL;
 
@@ -1419,6 +1617,20 @@ static bool bif_tbl_reset_incomplete_0(query *q)
 			t->first_susp = t->last_susp = t->unproc_susp = NULL;
 			t->unproc_ans = t->first_ans;
 			t->in_wl = false;
+
+			// Recomputation restarts from scratch, so every existing
+			// answer is "new" again for pairing purposes (matches
+			// unproc_ans above) - and any pending subsumption update is
+			// moot, since the recompute will re-derive and re-queue
+			// whatever still needs it.
+
+			for (tbl_ans *a = t->first_ans; a; a = a->next) {
+				a->is_new = true;
+				a->in_update_queue = false;
+				a->update_next = NULL;
+			}
+
+			t->update_head = t->update_tail = NULL;
 		}
 
 		t->fresh_next = NULL;
@@ -1563,6 +1775,7 @@ builtins g_tabling_bifs[] =
 {
 	{"$tbl_variant_table", 3, bif_tbl_variant_table_3, "+term,-integer,-atom", false, false, BLAH},
 	{"$tbl_set_status", 2, bif_tbl_set_status_2, "+integer,+atom", false, false, BLAH},
+	{"$tbl_set_subsumptive", 3, bif_tbl_set_subsumptive_3, "+integer,+integer,+atom", false, false, BLAH},
 	{"$tbl_add_answer", 2, bif_tbl_add_answer_2, "+integer,+term", false, false, BLAH},
 	{"$tbl_get_answer", 2, bif_tbl_get_answer_2, "+integer,?term", false, false, BLAH},
 	{"$tbl_add_suspension", 2, bif_tbl_add_suspension_2, "+integer,+term", false, false, BLAH},

@@ -1,0 +1,9 @@
+min shortest path: ok
+cyclic min: ok
+max: ok
+floor fixpoint: ok
+zero markers: ok
+multi marker rejected: ok
+idempotent: ok
+restraint counts keys: ok
+restraint still fires: ok

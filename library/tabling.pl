@@ -18,6 +18,7 @@
 :- use_module(library(lists)).
 
 :- dynamic('$tabled'/1).
+:- dynamic('$tbl_subsumptive_spec'/4).
 
 abolish_all_tables :-
 	'$tbl_abolish_all_tables'.
@@ -73,7 +74,22 @@ start_tabling(Wrapper, Worker) :-
 
 native_start_tabling(Wrapper, Worker) :-
 	'$tbl_variant_table'(Wrapper, T, S),
+	% A fresh table needs its mode spec (":- table path(_,_,min)")
+	% installed before anything can be added to it - S == fresh means
+	% this is the FIRST call for this variant, the only time the table
+	% is still empty, so the lookup only ever happens once per table.
+	(  S == fresh ->
+	   apply_subsumption_spec(Wrapper, T)
+	;  true
+	),
 	start_tabling_(S, T, Wrapper, Worker).
+
+apply_subsumption_spec(Wrapper, T) :-
+	functor(Wrapper, Name, Arity),
+	(  '$tbl_subsumptive_spec'(Name, Arity, Pos, Op) ->
+	   '$tbl_set_subsumptive'(T, Pos, Op)
+	;  true
+	).
 
 start_tabling_(complete, T, Wrapper, _Worker) :-
 	'$tbl_get_answer'(T, Wrapper).
@@ -203,6 +219,56 @@ wrappers(Name/Arity) -->
 	% the rename rule would rewrite the wrapper's own head.
 	[ (Head :- tabling:start_tabling(Head, WrappedHead)),
 	  tabling:'$tabled'(Head) ].
+
+% Answer subsumption (item 2 - DESIGN-tabling-phase2.md): a mode spec
+% like path(_,_,min) - same functor/arity as the predicate itself, so
+% it can never be confused with Name/Arity or Name//Arity above, which
+% require the OUTER functor to literally be '/' or '//'. Excluding
+% those two shapes here too means a malformed Name/Arity (eg. foo/bar,
+% Arity not an integer) still falls through to no clause matching at
+% all - today's behaviour - rather than being silently misread as a
+% mode spec for a predicate confusingly named '/'.
+%
+% Exactly one argument may be `min` or `max` (aggregated); every other
+% argument, `_` by convention, is part of the dedup KEY. Recommended by
+% the design doc as the first cut: monotone, so the fixpoint argument
+% stays simple - a general user-supplied lattice is not attempted.
+% Zero markers (eg. path(_,_,_), pure documentation of arity) degrades
+% to plain tabling, matching SWI's leniency.
+
+wrappers(Spec) -->
+	{ compound(Spec),
+	  functor(Spec, Name, Arity),
+	  \+ (Name == (/), Arity == 2),
+	  \+ (Name == (//), Arity == 2),
+	  !,
+	  functor(Test, Name, Arity),
+	  ( '$tabled'(Test) -> true
+	  ; Spec =.. [Name|SpecArgs],
+	    agg_positions(SpecArgs, 1, AggPositions),
+	    ( AggPositions = [] ->
+	         true
+	    ; AggPositions = [Pos-Op] ->
+	         % Keyed on the ORIGINAL Name/Arity, not the renamed
+	         % 'Name tabled' wrapper: start_tabling(Head, WrappedHead)
+	         % passes the user-facing Head as Wrapper and the renamed
+	         % goal as Worker - the other way round from what those
+	         % variable names might suggest - and apply_subsumption_spec
+	         % below looks it up by functor(Wrapper, ...).
+	         assertz(tabling:'$tbl_subsumptive_spec'(Name, Arity, Pos, Op))
+	    ; throw(error(domain_error(table_mode_spec, Spec), (table)/1))
+	    )
+	  ) },
+	wrappers(Name/Arity).
+
+agg_positions([], _, []).
+agg_positions([A|As], I, Positions) :-
+	I1 is I + 1,
+	(  A == min -> Positions = [I-min|Rest]
+	;  A == max -> Positions = [I-max|Rest]
+	;  Positions = Rest
+	),
+	agg_positions(As, I1, Rest).
 
 % Active from here on - keep these clauses LAST.
 
