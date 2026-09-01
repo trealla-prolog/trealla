@@ -1102,10 +1102,6 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 		q->cycle_error = false;
 		if (parens) { emit(q, ")"); }
-		bool possible_chars = false;
-
-		if (is_interned(head) && (C_STRLEN_UTF8(head) == 1) && q->double_quotes)
-			possible_chars = true;
 
 		cell *tail = c + 1; tail += tail->num_cells;
 		pl_ctx tail_ctx = c_ctx;
@@ -1152,7 +1148,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				print_term_dispatch(q, tail, tail_ctx, running, true, depth+1, visited);
 			}
 		} else if (q->st.m->flags.double_quote_chars && running
-			&& !q->ignore_ops && possible_chars
+			&& !q->ignore_ops && q->double_quotes
 			&& (scan_is_chars_list2(q, tail, tail_ctx, false, &has_vars, &is_partial, NULL) > 0)
 			&& !is_partial)
 			{
