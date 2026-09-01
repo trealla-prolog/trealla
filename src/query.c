@@ -799,15 +799,23 @@ static void trim_trail(query *q, bool reused)
 		if (tr->val_ctx != q->st.cur_ctx)
 			break;
 
+		// The trail is the only record that can release a refcounted
+		// binding once sp comes back down: drop the entry and nothing
+		// unshares the slot, so try_me() later zeroes it and the
+		// reference is orphaned. Keep it for any managed binding, not
+		// just one in a no_recov frame.
+		//
+		// Not in the reused case: reuse_frame() has already moved the
+		// slot down into the reused frame without clearing the old one,
+		// so undoing through its trail entry would unshare a stale
+		// duplicate and take the refcount too low.
+
 		if (!reused) {
 			const frame *f = GET_FRAME(tr->val_ctx);
+			const slot *e = get_slot(q, f, tr->var_num);
 
-			if (f->no_recov) {
-				const slot *e = get_slot(q, f, tr->var_num);
-
-				if (is_managed(&e->c))
-					break;
-			}
+			if (is_managed(&e->c))
+				break;
 		}
 
 		pop_trail(q);
