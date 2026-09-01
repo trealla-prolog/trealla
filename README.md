@@ -88,6 +88,13 @@ file.
 Building
 ========
 
+macOS users can skip building from source via Homebrew:
+
+	brew tap trealla-prolog/trealla
+	brew install trealla
+
+To build from source instead...
+
 Written in plain-old C99.
 
 	git clone https://github.com/trealla-prolog/trealla.git

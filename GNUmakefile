@@ -34,8 +34,25 @@ QEMU_RISCV_LDFLAGS = --oslib=semihost \
 # https://github.com/trealla-prolog/trealla/issues/1123
 HOST_CC := $(CC)
 
-GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
-GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
+# A source export with no .git directory (a GitHub release tarball, a
+# distro's source package, ...) can't run `git describe`, so fall back
+# to the version git-archive stamps into .tarball-version via the
+# export-subst attribute in .gitattributes. If that substitution never
+# ran either - the file still holds its literal $Format placeholder, or
+# is missing entirely - settle for "unknown" rather than an empty
+# -DVERSION.
+GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags 2>/dev/null)
+ifeq ($(GIT_VERSION),)
+TARBALL_VERSION := $(shell sed -n '1p' .tarball-version 2>/dev/null)
+ifeq ($(TARBALL_VERSION),)
+GIT_VERSION := unknown
+else ifneq ($(filter $$Format%,$(TARBALL_VERSION)),)
+GIT_VERSION := unknown
+else
+GIT_VERSION := $(TARBALL_VERSION)
+endif
+endif
+GIT_VERSION := "$(GIT_VERSION)"
 COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
 CFLAGS = -MMD -MP -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
