@@ -18,13 +18,19 @@ cat >$TMPPL <<'EOF'
 p1(S) :- T = [1,2|T], S = [9|T].
 p2(S) :- T = "abcdef"||T, S = [z|T].
 p3(S,U) :- T = [1,2|T], S = [9|T], U = [5|T].
+p4(S) :- T = a(b(c(d(e(f(T)))))), S = z(T).
+p5(S) :- T = f(T), S = z(T).
 EOF
 
 $TPL -q $TMPPL <<'EOF'
 p1(S).
 p2(S).
 p3(S,U).
+p4(S).
+p5(S).
 S = [9|S].
+S = f(S).
+T = f(T), S = z(T).
 S = "ab"||S.
 T = [1,2|T], S = [9|T].
 member(X,X), !.
