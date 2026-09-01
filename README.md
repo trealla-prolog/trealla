@@ -91,7 +91,10 @@ Building
 macOS users can skip building from source via Homebrew:
 
 	brew tap trealla-prolog/trealla
+	brew trust trealla-prolog/trealla
 	brew install trealla
+
+(`brew trust` is needed the first time you install from a new third-party tap.)
 
 To build from source instead...
 
