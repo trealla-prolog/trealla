@@ -15,6 +15,7 @@ extern const char *tpl_servername(stream *str);
 extern size_t tpl_read(void *ptr, size_t len, stream *str);
 extern int tpl_getline(char **lineptr, size_t *n, query *q, stream *str);
 extern int tpl_getline_fp(char **lineptr, size_t *n, FILE *fp);
+extern int tpl_getline_nb(char **lineptr, size_t *n, query *q, FILE *fp, FILE *fp_flush);
 extern int tpl_getc(stream *str);
 extern size_t tpl_write(const void *ptr, size_t nbytes, stream *str);
 extern int tpl_close(stream *str);

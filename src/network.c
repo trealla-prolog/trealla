@@ -775,10 +775,22 @@ int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 	// A non-task query's socket is non-blocking too now, so a mid-line
 	// EAGAIN is not EOF - tpl_getline_fp() has no way to tell the two
 	// apart and would silently return whatever was accumulated so far as
-	// though the line were complete. Accumulate byte-by-byte here instead
+	// though the line were complete. Accumulate byte-by-byte instead
 	// so only a genuine EAGAIN waits (alarm/interrupt-aware, via
 	// tpl_wait_fd_readable()) rather than either corrupting the read or
 	// blocking the OS thread the way a blocking-mode fd's getc() would.
+	return tpl_getline_nb(lineptr, n, q, str->fp_in, str->fp_out);
+}
+
+// The EAGAIN-aware line read above, over a plain FILE* so the tokenizer
+// can use it too: once a term crosses the end of the first line, every
+// further line of it comes from the parser's own getline_interruptible()
+// (parser.c) rather than from here, and that path must not mistake a
+// mid-line EAGAIN for end of line either. fp_flush is the write side to
+// push before each read attempt, as tpl_getc() does, or NULL for none.
+
+int tpl_getline_nb(char **lineptr, size_t *n, query *q, FILE *fp, FILE *fp_flush)
+{
 	if (!*lineptr) {
 		*lineptr = TPL_malloc(*n = 128);
 		ENSURE(*lineptr);
@@ -787,7 +799,17 @@ int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 	size_t pos = 0;
 
 	for (;;) {
-		int ch = tpl_getc(str);
+		errno = 0;
+
+		if (fp_flush)
+			fflush(fp_flush);
+
+		int ch = fgetc(fp);
+
+		if (errno == EINTR) {
+			clearerr(fp);
+			ch = EOF;
+		}
 
 		if (ch != EOF) {
 			if ((pos + 1) >= *n) {
@@ -814,15 +836,15 @@ int tpl_getline(char **lineptr, size_t *n, query *q, stream *str)
 		if (errno == EINTR)
 			return -1;
 
-		if (feof(str->fp_in) || !ferror(str->fp_in))
+		if (feof(fp) || !ferror(fp))
 			break;
 
 		if ((errno != EAGAIN) && (errno != EWOULDBLOCK))
 			break;
 
-		clearerr(str->fp_in);
+		clearerr(fp);
 
-		if (!tpl_wait_fd_readable(q, fileno(str->fp_in)))
+		if (!tpl_wait_fd_readable(q, fileno(fp)))
 			return -1;	// errno == EINTR, set by tpl_wait_fd_readable()
 	}
 
