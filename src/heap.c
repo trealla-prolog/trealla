@@ -761,6 +761,11 @@ static void close_clone_cycles(query *q, cell *tmp2)
 			add_trail(q, q->st.cur_ctx, var_num, NULL);
 		}
 
+		// Every other sl_first() in the tree is paired with sl_done() to
+		// return the iterator to the skiplist's pool; this was the one
+		// site that dropped it instead, leaking sizeof(sliter) on every
+		// copy_term/2 (etc.) of a term with an interior cycle.
+		sl_done(iter);
 		sl_destroy(q->clone_defs);
 		q->clone_defs = NULL;
 	}
