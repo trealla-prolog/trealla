@@ -147,16 +147,24 @@ Optionally...
 
 and there should be no errors.
 
-Further to test with `valgrind` (on Linux):
-
-	make clean && make debug && make valgrind
-
-or  more thoroughly (on MacOS):
+Further, to check for memory errors (out-of-bounds, use-after-free,
+null-pointer):
 
 	make clean && make sanitize && make test
 
-Should ideally show no memory out-of-bounds, null-pointer, use after
-free or memory leaks (there may a few spurious errors).
+Should ideally show none (there may a few spurious errors). Note this
+does not check for leaks on macOS - AddressSanitizer's LeakSanitizer
+is Linux-only.
+
+To check for leaks, on either platform:
+
+	make clean && make leakcheck && make leaks
+
+`make leaks` picks the right tool for the platform it's run on:
+`valgrind` on Linux, macOS's own `leaks` command elsewhere (valgrind
+has no current Apple Silicon support). Either way it needs the
+`leakcheck` build, not `debug` or `sanitize` - neither tool can inspect
+a sanitizer-instrumented binary.
 
 
 On macOS:

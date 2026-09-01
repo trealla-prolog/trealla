@@ -545,6 +545,11 @@ profile:
 debug:
 	$(MAKE) 'OPT=$(OPT) -fsanitize=address -O0 -g -DDEBUG'
 
+# No sanitizer: macOS's `leaks` tool refuses to inspect an ASan binary
+# at all. Build this, then: leaks --atExit -- ./tpl -q -f -g halt file.pl
+leakcheck:
+	$(MAKE) 'OPT=$(OPT) -O0 -g -DDEBUG'
+
 sanitize:
 	$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,integer,address -O0 -g -DDEBUG'
 
@@ -702,6 +707,17 @@ slow:
 
 valgrind:
 	./tests/run_valgrind.sh
+
+# Same leak-check contract, whichever tool the platform actually has:
+# valgrind everywhere valgrind runs, macOS's own `leaks` where it doesn't
+# (no Apple Silicon support in any current valgrind release). Build
+# with `make leakcheck` first - neither tool can see through ASan.
+leaks:
+ifeq ($(UNAME_S), Darwin)
+	./tests/run_leaks.sh
+else
+	./tests/run_valgrind.sh
+endif
 
 clean:
 	rm -f tpl tpl.aarch64.elf tpl.com.dbg tpl.wasm $(LIBTREALLA) \
