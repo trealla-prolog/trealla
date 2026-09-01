@@ -680,14 +680,32 @@ tree, and it has nothing to do with tabling: `open/4` with the
 `mmap(Ls)` option maps the whole file and *nothing ever unmaps it* —
 `munmap` appears nowhere in the source, and `unshare_cell_` has no
 slice branch. `phrase_from_file/[2,3]` uses that option, so any program
-DCG-parsing files in a loop retains every file it has read. Measured at
-one whole mapping retained per open, linear in file size. Written up in
-`LEAK-mmap-slices-never-unmapped.md`. Do not chase it here.
+DCG-parsing files in a loop retains every file it has read. Do not
+chase it here.
+
+Reproduce it with a 256 KB file — peak RSS went 9.1 MB (1 open) to
+58.9 MB (200 opens), one whole mapping retained each time, linear in
+file size:
+
+    walk([]).
+    walk([_|T]) :- walk(T).
+    once(F) :- open(F, read, S, [mmap(Ls)]), walk(Ls), close(S).
+    run(N) :- ( between(1,N,_), once('some-256k-file'), fail ; true ).
+
+A fix was prototyped and then dropped, so save the rediscovery: the
+raw slice (`FLAG_CSTR_SLICE`, `val_str`/`str_len`) exists only to carry
+this one mapping and has ~11 references in the tree, so having `open/4`
+copy into an ordinary refcounted string deletes the representation, the
+leak and the lifetime question together. It works — flat RSS, suite
+green, and `Ls` may then safely outlive its stream — but it also made
+walking the resulting list cost roughly 32 bytes per input byte, which
+was never explained. That number is the blocker, not the fix.
 
 The earlier note in this section described it as a
 "string-slice-on-backtrack" leak of ~53 KB, citing a
-`LEAK-string-slice-on-backtrack.md` that was never in the tree. All
-three parts were wrong: it is file-sized rather than 53 KB, it is not
+`LEAK-string-slice-on-backtrack.md` that was never in the tree — which
+is why the mechanism is spelled out above rather than cited. All three
+parts were wrong: it is file-sized rather than 53 KB, it is not
 backtracking-specific (a straight-line open that closes its stream
 leaks just the same), and the mechanism is mmap rather than slicing.
 The conclusion it drew — not ours, don't chase it here — was right.
