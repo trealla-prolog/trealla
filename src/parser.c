@@ -5632,8 +5632,12 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 			break;
 	}
 
+	// No fflush() here: streams[0] is stdin, and flushing an input stream
+	// is undefined. glibc and the BSDs ignore it, but musl, MSVCRT and
+	// Solaris libc discard the buffered input - which is the rest of a
+	// piped query stream, so only the first query ever ran there.
+
 	stream *str = &p->pl->streams[0];
-	fflush(str->fp);
 	TPL_free(str->data);
 	str->data = NULL;
 	str->data_len = 0;
