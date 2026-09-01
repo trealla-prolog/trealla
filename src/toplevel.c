@@ -374,6 +374,7 @@ void dump_vars(query *q, bool partial)
 	const frame *f = GET_FRAME(0);
 	q->is_dump_vars = true;
 	q->tab_idx = 0;
+	q->num_cycle_vars = 0;
 	clear_write_options(q);
 
 	for (unsigned i = 0; i < p->num_vars; i++) {
@@ -499,6 +500,8 @@ void dump_vars(query *q, bool partial)
 		q->parens = parens;
 		q->dump_var_num = i;
 		q->numbervars = true;
+		q->dump_var_cell = c;
+		q->dump_var_cell_ctx = c_ctx;
 		e->vgen = ++q->vgen;
 
 		print_term(q, stdout, c, c_ctx, 1);
@@ -507,6 +510,40 @@ void dump_vars(query *q, bool partial)
 		if (q->last_thing == WAS_SYMBOL) want_space = true;
 		if (q->did_quote) want_space = false;
 		any = true;
+	}
+
+	// A cyclic answer whose cycle starts below the reported variable
+	// closed the loop on a name of its own (issue #1138); give each one
+	// its equation, so S = "zabcdef"||_S1 says which string _S1 is.
+	// Printing an equation can meet a further cycle entry, so walk by
+	// index rather than caching the count.
+
+	for (unsigned i = 0; i < q->num_cycle_vars; i++) {
+		const frame *cf = GET_FRAME(q->cycle_vars[i].ctx);
+		slot *ce = get_slot(q, cf, q->cycle_vars[i].var_num);
+		cell *cc = deref(q, &ce->c, ce->c.val_ctx);
+		pl_ctx cc_ctx = q->latest_ctx;
+
+		if (any)
+			fprintf(stdout, ", ");
+		else if (!q->is_redo || q->is_input)
+			fprintf(stdout, "   ");
+		else
+			fprintf(stdout, " ");
+
+		char nbuf[256];
+		fprintf(stdout, "%s = ", cycle_slot_name(q, i + 1, nbuf));
+		q->max_depth = q->pl->def_max_depth;
+		q->double_quotes = q->pl->def_double_quotes;
+		q->quoted = q->pl->def_quoted ? 1 : 0;
+		q->parens = false;
+		q->numbervars = true;
+		q->dump_var_cell = cc;
+		q->dump_var_cell_ctx = cc_ctx;
+		ce->vgen = ++q->vgen;
+		print_term(q, stdout, cc, cc_ctx, 1);
+		any = true;
+		want_space = false;
 	}
 
 	bool any_atts = /*any &&*/ p->num_vars && any_attributed(q);

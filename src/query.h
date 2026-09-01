@@ -76,6 +76,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract);
 bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **body, enum clause_type retract);
 void call_attrs(query *q, cell *attrs);
 bool check_redo(query *q);
+const char *cycle_slot_name(query *q, unsigned n, char tmpbuf[256]);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
 bool has_expired_alarm(query *q);

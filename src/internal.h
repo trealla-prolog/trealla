@@ -89,6 +89,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_QUEUES 256
 #define MAX_MODULES 1024
 #define MAX_IGNORES (1024*8)
+#define MAX_CYCLE_VARS 64		// named cycle entries in one answer, see cycle_vars
 #define MAX_TABS 64000
 #define MAX_STREAMS 1024
 // No longer a cap: threads, message queues and mutexes are allocated
@@ -932,6 +933,21 @@ struct query_ {
 	run_state st;
 	stringbuf sb_buf;
 	bool ignores[MAX_IGNORES];
+
+	// Cycle-entry variables met while dumping an answer (issue #1138).
+	// A cyclic term whose cycle starts below the reported variable needs
+	// a name of its own for the loop to close on: S = "zabcdef"||_S1 with
+	// _S1 = "abcdef"||_S1, not S = "zabcdef"||S, which says something
+	// else. Shared so two answers over one cycle name it once.
+
+	struct { uint32_t var_num; pl_ctx ctx; } cycle_vars[MAX_CYCLE_VARS];
+	unsigned num_cycle_vars;
+
+	// The term being dumped. A spine leading back to it closes the loop
+	// there, so the walk stops rather than going round once more.
+	const cell *dump_var_cell;
+	pl_ctx dump_var_cell_ctx;
+
 	uint64_t total_goals, total_backtracks, total_retries, total_matches, total_inferences;
 	uint64_t total_tcos, total_recovs, total_matched, total_no_recovs;
 	uint64_t step, qid, tmo_msecs, chgen, cycle_error;

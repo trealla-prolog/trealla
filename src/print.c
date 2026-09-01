@@ -635,12 +635,138 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 #endif
 }
 
+// A cyclic term whose cycle begins below the variable being reported
+// cannot close on that variable: S = [z|T], T = "abcdef"||T is not
+// S = "zabcdef"||S, which repeats the z. The entry needs a name of its
+// own, so register it here and emit _S1, _S2, ... for it; dump_vars()
+// then prints an equation for each. Two answers sharing one cycle find
+// it already registered and so share the name (issue #1138).
+
+// The reported variable standing for this very term, if any. A cycle
+// closing on it is named by it - X in X = [X|_A], or T when the query
+// itself mentions T - rather than by a name we invent (issue #1138).
+
+static const char *reported_var_of(query *q, const cell *c, pl_ctx c_ctx)
+{
+	if (!q->top)
+		return NULL;
+
+	const frame *f0 = GET_FRAME(0);
+
+	for (unsigned i = 0; i < q->top->num_vars; i++) {
+		slot *e0 = get_slot(q, f0, i);
+
+		if (is_empty(&e0->c))
+			continue;
+
+		cell *v = deref(q, &e0->c, 0);
+
+		if ((v != c) || (q->latest_ctx != c_ctx))
+			continue;
+
+		const char *name = GET_POOL(q, q->top->vartab.off[i]);
+
+		if (name && name[0] && strcmp(name, "_") && strcmp(name, "__G_"))
+			return name;
+	}
+
+	return NULL;
+}
+
+static unsigned find_cycle_slot(query *q, uint32_t var_num, pl_ctx ctx)
+{
+	if (!q->is_dump_vars)
+		return 0;
+
+	for (unsigned i = 0; i < q->num_cycle_vars; i++) {
+		if ((q->cycle_vars[i].var_num == var_num)
+			&& (q->cycle_vars[i].ctx == ctx))
+			return i + 1;
+	}
+
+	return 0;
+}
+
+static unsigned name_cycle_slot(query *q, uint32_t var_num, pl_ctx ctx)
+{
+	unsigned n = find_cycle_slot(q, var_num, ctx);
+
+	if (n || !q->is_dump_vars || (q->num_cycle_vars >= MAX_CYCLE_VARS))
+		return n;
+
+	q->cycle_vars[q->num_cycle_vars].var_num = var_num;
+	q->cycle_vars[q->num_cycle_vars].ctx = ctx;
+	return ++q->num_cycle_vars;
+}
+
+// Name of the n'th cycle entry (1-based). Drawn from the same generated
+// -name space as every other unnamed variable in the answer, so it reads
+// as _A, _B like the rest and cannot collide with a source name.
+// get_slot_name() keys on the slot, so every occurrence of one entry -
+// and every answer sharing it - gets the same name.
+
+const char *cycle_slot_name(query *q, unsigned n, char tmpbuf[256])
+{
+	const frame *f = GET_FRAME(q->cycle_vars[n-1].ctx);
+	pl_idx slot_nbr = (pl_idx)get_actual_slot_num(q, f, q->cycle_vars[n-1].var_num);
+	return get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf);
+}
+
+static void emit_cycle_slot(query *q, unsigned n)
+{
+	char tmpbuf[256];
+	emit(q, cycle_slot_name(q, n, tmpbuf));
+	q->last_thing = WAS_OTHER;
+}
+
+static unsigned find_cycle_var(query *q, const cell *c, pl_ctx c_ctx)
+{
+	if (!is_var(c))
+		return 0;
+
+	return find_cycle_slot(q, c->var_num, is_ref(c) ? c->val_ctx : c_ctx);
+}
+
+// Emit the name of the cycle entry c, registering it if new. False when
+// there is no such name to give, leaving the caller its old behaviour.
+
+static bool emit_cycle_var(query *q, const cell *c, pl_ctx c_ctx)
+{
+	if (!q->is_dump_vars || !is_var(c))
+		return false;
+
+	unsigned n = name_cycle_slot(q, c->var_num, is_ref(c) ? c->val_ctx : c_ctx);
+
+	if (!n)
+		return false;
+
+	emit_cycle_slot(q, n);
+	return true;
+}
+
 // True when c is a top-level query var in the unreified spine — a
 // rightslicing cut-point. Named vars print as themselves; anons as `_`.
 static bool is_dump_spine_var(query *q, cell *c, pl_ctx c_ctx)
 {
 	if (!q->is_dump_vars || !is_var(c))
 		return false;
+
+	// A cycle entry already named is a cut-point too, so its own
+	// equation stops at it rather than going round again (#1138).
+	if (find_cycle_var(q, c, c_ctx))
+		return true;
+
+	// So is a tail that leads straight back to the term being dumped:
+	// the loop closes here, and walking on would go round it once more
+	// before saying so. is_cyclic_term() cannot be used to spot this -
+	// it bumps q->vgen, which is the very counter this walk's own cycle
+	// marks are compared against, and wiping those hangs the printer.
+	if (q->dump_var_cell) {
+		cell *d = deref(q, c, c_ctx);
+
+		if ((d == q->dump_var_cell) && (q->latest_ctx == q->dump_var_cell_ctx))
+			return true;
+	}
 
 	pl_ctx ctx = is_ref(c) ? c->val_ctx : c_ctx;
 
@@ -772,6 +898,28 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	c_ctx = q->latest_ctx;
 
 	if (q->do_dump_vars && is_cyclic_term(q, c, c_ctx)) {
+		// Where the loop closes. On the variable being dumped it prints
+		// as that variable (X = [X|_A]); anywhere else naming it after
+		// that one would turn S = [9|T], T = [1,2|T] into S = [9,1,2|S],
+		// a different term - so the entry gets a name of its own and
+		// dump_vars() defines it (issue #1138).
+		// A reported variable standing for this very term already names
+		// it; only invent a name when none does.
+		const char *name = reported_var_of(q, c, c_ctx);
+
+		if (name) {
+			emit(q, name);
+			q->last_thing = WAS_OTHER;
+			return true;
+		}
+
+		unsigned n = name_cycle_slot(q, c_vn, c_root_ctx);
+
+		if (n) {
+			emit_cycle_slot(q, n);
+			return true;
+		}
+
 		emit(q, GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
 		return true;
 	}
@@ -886,8 +1034,11 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				emit(q, "|");
 
 				if (!cycle_link || !q->do_dump_vars
-					|| !dump_variable(q, cycle_link, cycle_link_ctx, running))
-					emit(q, "...");
+					|| !dump_variable(q, cycle_link, cycle_link_ctx, running)) {
+					if (!cycle_link
+						|| !emit_cycle_var(q, cycle_link, cycle_link_ctx))
+						emit(q, "...");
+				}
 
 				emit(q, "]");
 				q->last_thing = WAS_OTHER;
@@ -922,6 +1073,9 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 		if (has_visited(visited, head, head_ctx)
 			|| ((head == save_c) && (head_ctx == save_c_ctx))) {
+			// A cycle through the head closes on the variable being
+			// dumped (X = [X|_A]), unlike one along the spine - see
+			// the tail case below and issue #1138.
 			if (!q->do_dump_vars
 				|| !dump_variable(q, save_head, save_head_ctx, running)) {
 				if ((q->portray_vars || q->do_dump_vars) && ((unsigned)q->dump_var_num != (unsigned)-1))
@@ -971,6 +1125,13 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 						print_variable(q, save_tail, save_tail_ctx, running);
 				} else
 					emit(q, GET_POOL(q, q->top->vartab.off[v.var_num]));
+			} else if (q->is_dump_vars && q->do_dump_vars
+				&& dump_variable(q, save_tail, save_tail_ctx, running)) {
+				// A reported variable closes the loop under its own name
+			} else if (emit_cycle_var(q, save_tail, save_tail_ctx)) {
+				// The spine loops back here: name the entry rather than
+				// give up with '...' (issue #1138). Only when dumping an
+				// answer - write_term/2 keeps its ellipsis.
 			} else {
 				emit(q, "...");
 			}
@@ -1232,8 +1393,21 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 			bool is_cyclic = has_visited(visited, tmp, tmp_ctx);
 
 			if (q->is_dump_vars && is_cyclic) {
+				// Where the cycle closes. '...' was the only answer for
+				// an entry no query variable named, which reads as a
+				// depth elision even when no max_depth is set (issue
+				// #1138) - name it instead, as the list spine does.
+				// has_visited() already established the cycle, so no
+				// is_cyclic_term() call here: it bumps q->vgen, which
+				// an enclosing list walk is using to spot its own.
+				const char *nm;
+
 				if (c_ctx == 0) {
 					emit(q, GET_POOL(q, q->top->vartab.off[c->var_num]));
+				} else if ((nm = reported_var_of(q, tmp, tmp_ctx)) != NULL) {
+					emit(q, nm);
+				} else if (emit_cycle_var(q, c, c_ctx)) {
+					;
 				} else {
 					emit(q, "...");
 				}
@@ -1710,6 +1884,8 @@ static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, uns
 	bool any = false, done = false;
 	cell *cut_var = NULL;
 	pl_ctx cut_var_ctx = 0;
+	cell *cycle_entry = NULL;		// the node the spine loops back to
+	pl_ctx cycle_entry_ctx = 0;
 
 	// Fresh visit gen so marks left by scan_is_chars_list2 do not
 	// make the print walk think it has already hit a cycle (#890).
@@ -1763,10 +1939,17 @@ static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, uns
 		both = 0;
 		any = false;
 
+		// Keep the undereferenced tail: if it turns out to close the
+		// cycle it is the node to name, not the term it derefs to.
+		cell *entry = l;
+		pl_ctx entry_ctx = l_ctx;
+
 		if (running) DEREF_VAR(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both) {
 			q->cycle_error = true;
+			cycle_entry = entry;
+			cycle_entry_ctx = entry_ctx;
 			break;
 		}
 	}
@@ -1776,13 +1959,25 @@ static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, uns
 	if (is_partial && !done) {
 		emit(q, "||");
 		if (cut_var) {
-			if (is_anon(cut_var)) {
+			if (find_cycle_var(q, cut_var, cut_var_ctx)) {
+				emit_cycle_var(q, cut_var, cut_var_ctx);
+			} else if (is_anon(cut_var)) {
 				emit(q, "_");
 			} else if (!dump_variable(q, cut_var, cut_var_ctx, 0)) {
 				print_variable(q, cut_var, cut_var_ctx, 0);
 			}
 		} else if (q->cycle_error) {
-			if (!dump_variable(q, v?v:c, c_ctx, !v))
+			// The loop closes on cycle_entry, which is the reported
+			// variable only when the cycle starts at the very top; any
+			// prefix before it makes closing on the root a different
+			// term (issue #1138). Prefer that variable's own name and
+			// only name the entry separately when it has none.
+			if (cycle_entry
+				&& dump_variable(q, cycle_entry, cycle_entry_ctx, running))
+				;
+			else if (emit_cycle_var(q, cycle_entry, cycle_entry_ctx))
+				;
+			else if (!dump_variable(q, v?v:c, c_ctx, !v))
 				print_variable(q, v?v:c, c_ctx, !v);
 		} else {
 			if (is_op(l)) {
