@@ -1247,7 +1247,10 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 					//if (!dump_variable(q, c, c_ctx, running))
 					//	print_variable(q, c, c_ctx, running);
 					emit(q, "...");
-				} else if (is_var(c)) {
+				} else if (is_var(c) && q->top && (c->var_num < q->top->num_vars)) {
+					// Guard the vartab the way the other lookups do: a
+					// thread or engine query has no parser at all, so
+					// this read ran off a NULL q->top and crashed.
 					emit(q, GET_POOL(q, q->top->vartab.off[c->var_num]));
 				} else {
 					emit(q, "...");
