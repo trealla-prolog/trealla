@@ -31,6 +31,10 @@ To boot the same image under QEMU and check it against the acceptance markers:
 make rpi4-smoke
 ```
 
+That needs a QEMU with the `raspi4b` machine, which arrived in QEMU 9.0 — the
+target checks and says so rather than failing obscurely. Ubuntu 24.04 still
+ships 8.2, which is why the CI job runs in a Debian trixie container.
+
 ## Running on hardware
 
 Copy `kernel8.img` to the boot partition of an otherwise ordinary Raspberry Pi

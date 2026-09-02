@@ -553,7 +553,7 @@ rpi4:
 
 rpi4-smoke:
 	@$(QEMU_RPI4) -M help | grep -q '^raspi4b ' || { \
-		echo "$(QEMU_RPI4) has no raspi4b machine"; exit 1; \
+		echo "$(QEMU_RPI4) has no raspi4b machine (needs QEMU 9.0 or newer)"; exit 1; \
 	}
 	$(MAKE) 'RPI4_CFLAGS=$(RPI4_CFLAGS) -DRPI4_SEMIHOSTING=1' rpi4
 	$(PYTHON) util/rpi4_smoke.py $(QEMU_RPI4) $(RPI4_ELF) $(RPI4_SIZE)

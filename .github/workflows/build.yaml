@@ -40,17 +40,22 @@
     freestanding-rpi4:
       name: Freestanding Raspberry Pi 4
       runs-on: ubuntu-24.04
+      # QEMU grew its raspi4b machine in 9.0 and ubuntu-24.04 ships 8.2, so
+      # the boot test runs in a Debian trixie container for its QEMU 10.
+      container: debian:trixie
       timeout-minutes: 20
       env:
         ARM_TOOLCHAIN: arm-gnu-toolchain-15.2.rel1-x86_64-aarch64-none-elf
       steps:
+        - name: Install build and boot tools
+          run: |
+            apt-get update
+            apt-get install -y --no-install-recommends \
+              build-essential ca-certificates curl git python3 qemu-system-arm \
+              xz-utils
         - uses: actions/checkout@v4
           with:
             fetch-depth: 0
-        - name: Install QEMU
-          run: |
-            sudo apt-get update
-            sudo apt-get install qemu-system-arm
         - name: Install AArch64 bare-metal toolchain
           run: |
             curl -fsSL -o toolchain.tar.xz \
