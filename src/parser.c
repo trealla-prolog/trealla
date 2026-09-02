@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <fenv.h>
 #include <float.h>
+#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -3923,16 +3924,21 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	read_integer(p, &v2, 10, &s);
 
+	// An overflowing float is syntactically fine, it just exceeds an
+	// implementation defined limit, so 8.12.2 f applies and not
+	// 8.16.7.3 e (issue #1140).
+
 	if (p->flags.json && s && ((*s == 'e') || (*s == 'E')) && isdigit((unsigned char)s[1])) {
 		p->v.tag = TAG_FLOAT;
 		errno = 0;
 		pl_flt v = strtod(tmpptr, &tmpptr);
 
-		if ((int)v && (errno == ERANGE)) {
+		if (isinf(v) && (errno == ERANGE)) {
 			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, float op %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: float overflow, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			p->error_desc = "float_overflow";
+			p->error_desc = "max_float";
+			p->error_type = "representation_error";
 			p->error = true;
 			return false;
 		}
@@ -3951,11 +3957,12 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		errno = 0;
 		pl_flt v = strtod(tmpptr, &tmpptr);
 
-		if ((int)v && (errno == ERANGE)) {
+		if (isinf(v) && (errno == ERANGE)) {
 			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, float op %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: float overflow, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			p->error_desc = "float_overflow";
+			p->error_desc = "max_float";
+			p->error_type = "representation_error";
 			p->error = true;
 			return false;
 		}
