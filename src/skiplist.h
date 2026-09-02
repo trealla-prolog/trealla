@@ -18,9 +18,9 @@ bool sl_app(skiplist *l, const void *k, const void *v);		// at tail
 bool sl_rem(skiplist *l, const void *k, const void *v);
 bool sl_del(skiplist *l, const void *k);
 
-void sl_set_wild_card(skiplist *l);
+void sl_set_wild_card(void *ctx);
 void sl_set_tmp(skiplist *l);
-bool sl_is_find(skiplist *l);
+bool sl_is_find(void *ctx);
 
 sliter *sl_find_key(skiplist *l, const void *k);
 bool sl_next_key(sliter *i, void **v);

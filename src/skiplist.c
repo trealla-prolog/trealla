@@ -43,11 +43,15 @@ struct slnode_ {
 	slnode_t *forward[];
 };
 
+// Traversal state: one per lookup, never shared between them.
+typedef struct { bool wild_card, is_find; } slctx;
+
 struct sliter_ {
 	sliter *next;
 	skiplist *l;
 	slnode_t *p;
 	void *key;
+	slctx ctx;
 };
 
 struct skiplist_ {
@@ -61,7 +65,7 @@ struct skiplist_ {
 	lock guard;
 	int level;
 	unsigned seed;
-	bool is_tmp_list, wild_card, is_find, is_destroyed;
+	bool is_tmp_list, is_destroyed;
 };
 
 #define MAX_LEVELS 16
@@ -175,8 +179,8 @@ void sl_destroy(skiplist *l)
 	TPL_free(l);
 }
 
-void sl_set_wild_card(skiplist *l) { if (l) l->wild_card = true; }
-bool sl_is_find(skiplist *l) { return l ? l->is_find : true; }
+void sl_set_wild_card(void *ctx) { if (ctx) ((slctx*)ctx)->wild_card = true; }
+bool sl_is_find(void *ctx) { return ctx ? ((slctx*)ctx)->is_find : true; }
 size_t sl_count(const skiplist *l) { return l ? l->count : 0; }
 void sl_set_tmp(skiplist *l) { l->is_tmp_list = true; }
 
@@ -218,16 +222,17 @@ bool sl_get(skiplist *l, const void *key, const void **val)
 		return false;
 
 	slnode_t *p = l->header, *q = NULL;
+	slctx ctx = {false, true};
 
 	for (int k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, &ctx) < 0))
 			p = q;
 	}
 
 	if (!(q = p->forward[0]))
 		return false;
 
-	if (l->cmpkey(q->key, key, l->p, l) != 0)
+	if (l->cmpkey(q->key, key, l->p, &ctx) != 0)
 		return false;
 
 	if (val)
@@ -242,10 +247,11 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 		return false;
 
 	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
+	slctx ctx = {false, true};
 	int k;
 
 	for (k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, &ctx) < 0))
 			p = q;
 
 		update[k] = p;
@@ -284,10 +290,11 @@ bool sl_app(skiplist *l, const void *key, const void *val)
 		return false;
 
 	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
+	slctx ctx = {false, true};
 	int k;
 
 	for (k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) <= 0))
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, &ctx) <= 0))
 			p = q;
 
 		update[k] = p;
@@ -326,6 +333,7 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 		return false;
 
 	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
+	slctx ctx = {false, true};
 	int k;
 
 	// Descend on a STRICT less-than so update[] lands on the last node
@@ -343,7 +351,7 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 	// cells they borrow for a key.
 
 	for (k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, &ctx) < 0))
 			p = q;
 
 		update[k] = p;
@@ -356,7 +364,7 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 
 	slnode_t *t = update[0]->forward[0];
 
-	while (t && (l->cmpkey(t->key, key, l->p, l) == 0) && (t->val != val)) {
+	while (t && (l->cmpkey(t->key, key, l->p, &ctx) == 0) && (t->val != val)) {
 		for (k = 0; k < l->level; k++) {
 			if (update[k]->forward[k] == t)
 				update[k] = t;
@@ -365,7 +373,7 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 		t = t->forward[0];
 	}
 
-	if (!t || (l->cmpkey(t->key, key, l->p, l) != 0) || (t->val != val))
+	if (!t || (l->cmpkey(t->key, key, l->p, &ctx) != 0) || (t->val != val))
 		return false;
 
 	if (l->delkey)
@@ -393,10 +401,11 @@ bool sl_del(skiplist *l, const void *key)
 		return false;
 
 	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
+	slctx ctx = {false, true};
 	int k;
 
 	for (k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, &ctx) < 0))
 			p = q;
 
 		update[k] = p;
@@ -405,7 +414,7 @@ bool sl_del(skiplist *l, const void *key)
 	if (!(q = p->forward[0]))
 		return false;
 
-	if (l->cmpkey(q->key, key, l->p, l) != 0)
+	if (l->cmpkey(q->key, key, l->p, &ctx) != 0)
 		return false;
 
 	if (l->delkey)
@@ -439,7 +448,6 @@ sliter *sl_first(skiplist *l)
 		return NULL;
 
 	sliter *iter;
-	l->wild_card = false;
 
 	if (l->is_tmp_list)
 		iter = &l->tmp_iter;
@@ -508,11 +516,10 @@ sliter *sl_find_key(skiplist *l, const void *key)
 		return NULL;
 
 	slnode_t *p = l->header, *q = NULL;
-	l->wild_card = false;
-	l->is_find = true;
+	slctx ctx = {false, true};
 
 	for (int k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, &ctx) < 0))
 			p = q;
 	}
 
@@ -548,15 +555,15 @@ bool sl_next_key(sliter *iter, void **val)
 	if (!iter)
 		return false;
 
-	iter->l->is_find = false;
+	iter->ctx.is_find = false;
 
 	if (!iter->p)
 		return false;
 
-	iter->l->wild_card = false;
-	int ok = iter->l->cmpkey(iter->p->key, iter->key, iter->l->p, iter->l);
+	iter->ctx.wild_card = false;
+	int ok = iter->l->cmpkey(iter->p->key, iter->key, iter->l->p, &iter->ctx);
 
-	if (!iter->l->wild_card && (ok != 0))
+	if (!iter->ctx.wild_card && (ok != 0))
 		return false;
 
 	if (val)
