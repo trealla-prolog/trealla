@@ -543,6 +543,13 @@ static void g_destroy()
 	sl_destroy(g_symtab);
 	TPL_free(g_global_atoms);
 	TPL_free(g_tpl_lib);
+
+	// A later pl_create() checks these, so leaving them dangling made
+	// create/destroy/create read freed memory.
+
+	g_symtab = NULL;
+	g_global_atoms = NULL;
+	g_tpl_lib = NULL;
 	deinit_lock(&g_symtab_guard);
 }
 

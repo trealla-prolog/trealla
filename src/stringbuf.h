@@ -11,6 +11,7 @@ typedef struct {
 	char tmpbuf[SB_LEN];	// No allocs if less than this
 	char *buf, *dst;
 	size_t buf_size;
+	bool oom;				// A try-append hit a failed allocation
 } stringbuf;
 
 static inline bool sb_try_grow(stringbuf *sb, size_t len)
@@ -20,16 +21,20 @@ static inline bool sb_try_grow(stringbuf *sb, size_t len)
 	if (len < (sb->buf_size - offset))
 		return true;
 
-	if (len > ((size_t)-1 - sb->buf_size - 1024))
+	if (len > ((size_t)-1 - sb->buf_size - 1024)) {
+		sb->oom = true;
 		return false;
+	}
 
 	size_t new_size = sb->buf_size + len + 1024;
 	char *buf = sb->buf == sb->tmpbuf
 		? TPL_malloc(new_size)
 		: TPL_realloc(sb->buf, new_size);
 
-	if (!buf)
+	if (!buf) {
+		sb->oom = true;
 		return false;
+	}
 
 	if (sb->buf == sb->tmpbuf)
 		memcpy(buf, sb->tmpbuf, offset+1);
@@ -51,6 +56,19 @@ static inline bool sb_try_strcatn(stringbuf *sb, const char *src, size_t len)
 	return true;
 }
 
+static inline bool sb_try_strcat(stringbuf *sb, const char *src)
+{
+	return sb_try_strcatn(sb, src, strlen(src));
+}
+
+// Step back over the last byte written. Never grows, so never fails.
+
+static inline void sb_unget(stringbuf *sb)
+{
+	if (sb->dst != sb->buf)
+		*--sb->dst = '\0';
+}
+
 static inline bool sb_try_putchar(stringbuf *sb, int ch)
 {
 	if (!sb_try_grow(sb, MAX_BYTES_PER_CODEPOINT+1))
@@ -67,6 +85,7 @@ static inline bool sb_try_putchar(stringbuf *sb, int ch)
 	pr##_buf.buf_size = sizeof(pr##_buf.tmpbuf);				\
 	pr##_buf.buf = pr##_buf.tmpbuf;								\
 	pr##_buf.dst = pr##_buf.buf;								\
+	pr##_buf.oom = false;										\
 	if (pr##_buf.buf) pr##_buf.dst[0] = '\0';					\
 }
 
@@ -75,6 +94,7 @@ static inline bool sb_try_putchar(stringbuf *sb, int ch)
 	pr##_buf.buf = TPL_malloc((len)+1024+1);								\
 	ENSURE(pr##_buf.buf);										\
 	pr##_buf.dst = pr##_buf.buf;								\
+	pr##_buf.oom = false;										\
 	*pr##_buf.dst = '\0';
 
 #define SB_check(pr,len) {												\
@@ -193,6 +213,9 @@ static inline bool sb_try_putchar(stringbuf *sb, int ch)
 }
 
 #define SB_try_strcatn(pr,s,len) sb_try_strcatn(&pr##_buf, s, len)
+#define SB_try_strcat(pr,s) sb_try_strcat(&pr##_buf, s)
+#define SB_unget(pr) sb_unget(&pr##_buf)
+#define SB_oom(pr) (pr##_buf.oom)
 #define SB_try_putchar(pr,ch) sb_try_putchar(&pr##_buf, ch)
 
 #define SB_cstr(pr) (const char*) pr##_buf.buf ? pr##_buf.buf : ""

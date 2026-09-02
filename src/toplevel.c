@@ -365,6 +365,18 @@ bool query_redo(query *q)
 	return start(q);
 }
 
+// Leave an answer half-written, after a print that threw.
+
+static void end_dump(query *q)
+{
+	fprintf(stdout, "\n");
+	fflush(stdout);
+	q->is_dump_vars = q->is_input = false;
+	q->pl->did_dump_vars = true;
+	clear_write_options(q);
+	clear_results();
+}
+
 void dump_vars(query *q, bool partial)
 {
 	if (q->in_attvar_print)
@@ -504,7 +516,13 @@ void dump_vars(query *q, bool partial)
 		q->dump_var_cell_ctx = c_ctx;
 		e->vgen = ++q->vgen;
 
-		print_term(q, stdout, c, c_ctx, 1);
+		// An answer too big to print throws (issue #801): stop here
+		// rather than carry on with half a binding written.
+
+		if (!print_term(q, stdout, c, c_ctx, 1)) {
+			end_dump(q);
+			return;
+		}
 
 		if (parens) fputc(')', stdout);
 		if (q->last_thing == WAS_SYMBOL) want_space = true;
@@ -541,7 +559,12 @@ void dump_vars(query *q, bool partial)
 		q->dump_var_cell = cc;
 		q->dump_var_cell_ctx = cc_ctx;
 		ce->vgen = ++q->vgen;
-		print_term(q, stdout, cc, cc_ctx, 1);
+
+		if (!print_term(q, stdout, cc, cc_ctx, 1)) {
+			end_dump(q);
+			return;
+		}
+
 		any = true;
 		want_space = false;
 	}

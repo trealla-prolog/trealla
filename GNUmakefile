@@ -400,7 +400,7 @@ ifndef NOLIB
 LIBTREALLA = libtrealla.a
 
 ifndef WIN
-SAMPLES += samples/embed samples/allocator
+SAMPLES += samples/embed samples/allocator samples/oom
 endif
 
 ifdef FREESTANDING
@@ -465,6 +465,9 @@ samples/embed: samples/embed.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
 samples/allocator: samples/allocator.c $(LIBTREALLA)
+	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
+
+samples/oom: samples/oom.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
 samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA) $(PLATFORM_OBJ)
@@ -633,6 +636,7 @@ raylib:
 
 test:
 	@if test -x samples/allocator; then ./samples/allocator; fi
+	@if test -x samples/oom; then ./samples/oom; fi
 	./tests/run.sh
 
 misc:
@@ -726,11 +730,11 @@ clean:
 		src/platform/*.d library/*.d *.d \
 		library/*.o library/*.c library/actors/*.o library/actors/*.c library/actors/*.d \
 		*.o program.c samples/*.o samples/*.so \
-		samples/embed samples/allocator samples/freestanding samples/*.d samples/embed_demo.pl \
+		samples/embed samples/allocator samples/oom samples/oom.tmp samples/freestanding samples/*.d samples/embed_demo.pl \
 		janus_trealla.so tmp.janus.out tmp.janus.diff \
 		vgcore.* *.core core core.* *.exe gmon.* \
 		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
 	rm -f ports/template/*.o ports/template/*.d
-	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/freestanding.dSYM
+	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/oom.dSYM samples/freestanding.dSYM
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

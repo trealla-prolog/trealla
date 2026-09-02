@@ -22,6 +22,7 @@
  */
 
 #include <ctype.h>
+#include <stdarg.h>
 #include <float.h>
 #include <inttypes.h>
 #include <math.h>
@@ -53,10 +54,13 @@ struct visit_ {
 // brace-block expansion visible at every call site, hence the stray
 // `if (x) SB_putchar(...)` lines with no semicolon. These are plain
 // functions: one evaluation, ordinary statement syntax.
+//
+// An append that finds no memory flags q->sb rather than aborting; the
+// sinks below turn that into resource_error(memory), re issue #801.
 
 static void emit_n(query *q, const char *src, size_t len)
 {
-	SB_strcatn(q->sb, src, len);
+	SB_try_strcatn(q->sb, src, len);
 }
 
 static void emit(query *q, const char *src)
@@ -64,24 +68,52 @@ static void emit(query *q, const char *src)
 	emit_n(q, src, strlen(src));
 }
 
-// Takes ownership of src.
-static void emit_free(query *q, char *src)
-{
-	if (!src)
-		return;
-
-	emit_n(q, src, strlen(src));
-	TPL_free(src);
-}
-
 static void emit_char(query *q, int ch)
 {
-	SB_putchar(q->sb, ch);
+	SB_try_putchar(q->sb, ch);
+}
+
+// Small fixed-width renderings, so only the append can fail.
+
+static void emit_sprintf(query *q, const char *fmt, ...)
+{
+	char tmpbuf[128];
+	va_list args;
+	va_start(args, fmt);
+	int len = vsnprintf(tmpbuf, sizeof(tmpbuf), fmt, args);
+	va_end(args);
+
+	if (len > 0)
+		emit_n(q, tmpbuf, (size_t)len < sizeof(tmpbuf) ? (size_t)len : sizeof(tmpbuf)-1);
+}
+
+// A bignum needs a buffer of its own, and converting into it allocates
+// too; either failing used to drop the number or write through a null.
+
+static bool emit_bigint(query *q, mp_int n, int radix)
+{
+	size_t len = mp_int_string_len(n, radix) - 1;
+	char *dst = TPL_malloc(len+1);
+
+	if (!dst) {
+		q->sb_buf.oom = true;
+		return false;
+	}
+
+	if (mp_int_to_string(n, radix, dst, len+1) != MP_OK) {
+		TPL_free(dst);
+		q->sb_buf.oom = true;
+		return false;
+	}
+
+	emit(q, dst);				// mp_int_string_len() is an upper bound
+	TPL_free(dst);
+	return true;
 }
 
 static void emit_unget(query *q)
 {
-	SB_ungetchar(q->sb);
+	SB_unget(q->sb);
 }
 
 // Resolve c against ctx when running, leaving both alone otherwise.
@@ -181,8 +213,9 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx)
 	}
 
 	char *tmp = TPL_malloc(SB_strlen(pr)+1+1);	// Allow for optional '.' at end, plus null
-	check_error(tmp);
+	check_error(tmp, SB_free(pr));
 	strcpy(tmp, SB_cstr(pr));
+	SB_free(pr);							// a list over SB_LEN long leaked it
 	return tmp;
 }
 
@@ -331,9 +364,11 @@ static bool has_spaces(const char *src, int srclen)
 	return false;
 }
 
-char *formatted(const char *src, int srclen, bool dq, bool json)
+// Escape src into sb. False means it ran out of memory part-way.
+
+static bool format_into(stringbuf *sb, const char *src, int srclen, bool dq, bool json)
 {
-	SB(sb);
+	char tmpbuf[16];
 
 	while (srclen > 0) {
 		int lench = len_char_utf8(src);
@@ -345,57 +380,70 @@ char *formatted(const char *src, int srclen, bool dq, bool json)
 			ptr = 0;
 
 		if (ch && ptr) {
-			SB_putchar(sb, '\\');
-			SB_putchar(sb, g_anti_escapes[ptr-g_escapes]);
+			if (!sb_try_putchar(sb, '\\')) return false;
+			if (!sb_try_putchar(sb, g_anti_escapes[ptr-g_escapes])) return false;
 		} else if (!json && !dq && (ch == '\'')) {
-			SB_putchar(sb, '\'');
-			SB_putchar(sb, ch);
+			if (!sb_try_putchar(sb, '\'')) return false;
+			if (!sb_try_putchar(sb, ch)) return false;
 		} else if (ch == (dq?'"':'\'')) {
-			SB_putchar(sb, '\\');
-			SB_putchar(sb, ch);
-		} else if (!json && (ch > 127) && (iswblank(ch) || iswspace(ch))) {
-			SB_putchar(sb, '\\');
-			SB_putchar(sb, 'x');
-			SB_sprintf(sb, "%x", ch);
-			SB_putchar(sb, '\\');
-		} else if (!json && ((ch == 0x85) || (ch == 0xA0) || (ch == 0x2007) || (ch == 0x202f))) {
-			SB_putchar(sb, '\\');
-			SB_putchar(sb, 'x');
-			SB_sprintf(sb, "%x", ch);
-			SB_putchar(sb, '\\');
-		} else if (!json && (ch < ' ')) {
-			SB_putchar(sb, '\\');
-			SB_putchar(sb, 'x');
-			SB_sprintf(sb, "%x", ch);
-			SB_putchar(sb, '\\');
+			if (!sb_try_putchar(sb, '\\')) return false;
+			if (!sb_try_putchar(sb, ch)) return false;
+		} else if ((!json && (ch > 127) && (iswblank(ch) || iswspace(ch)))
+			|| (!json && ((ch == 0x85) || (ch == 0xA0) || (ch == 0x2007) || (ch == 0x202f)))
+			|| (!json && (ch < ' '))) {
+			snprintf(tmpbuf, sizeof(tmpbuf), "\\x%x\\", ch);
+			if (!sb_try_strcat(sb, tmpbuf)) return false;
 		} else if (json && (ch < ' ')) {
-			SB_putchar(sb, '\\');
+			if (!sb_try_putchar(sb, '\\')) return false;
+
 			switch (ch) {
-			case '\b': SB_putchar(sb, 'b'); break;
-			case '\n': SB_putchar(sb, 'n'); break;
-			case '\f': SB_putchar(sb, 'f'); break;
-			case '\r': SB_putchar(sb, 'r'); break;
-			case '\t': SB_putchar(sb, 't'); break;
-			default: SB_sprintf(sb, "u%04X", ch);
+			case '\b': if (!sb_try_putchar(sb, 'b')) return false; break;
+			case '\n': if (!sb_try_putchar(sb, 'n')) return false; break;
+			case '\f': if (!sb_try_putchar(sb, 'f')) return false; break;
+			case '\r': if (!sb_try_putchar(sb, 'r')) return false; break;
+			case '\t': if (!sb_try_putchar(sb, 't')) return false; break;
+			default:
+				snprintf(tmpbuf, sizeof(tmpbuf), "u%04X", ch);
+				if (!sb_try_strcat(sb, tmpbuf)) return false;
 			}
 		} else if (((unsigned)ch > 0x10000) && json) {
 			unsigned ch1 = (ch - 0x10000) / 0x400 + 0xd800;
 			unsigned ch2 = (ch - 0x10000) % 0x400 + 0xdc00;
-			SB_putchar(sb, '\\');
-			SB_sprintf(sb, "u%04X", ch1);
-			SB_putchar(sb, '\\');
-			SB_sprintf(sb, "u%04X", ch2);
+			snprintf(tmpbuf, sizeof(tmpbuf), "\\u%04X", ch1);
+			if (!sb_try_strcat(sb, tmpbuf)) return false;
+			snprintf(tmpbuf, sizeof(tmpbuf), "\\u%04X", ch2);
+			if (!sb_try_strcat(sb, tmpbuf)) return false;
 		} else if (ch == '\\') {
-			SB_putchar(sb, '\\');
-			SB_putchar(sb, ch);
+			if (!sb_try_putchar(sb, '\\')) return false;
+			if (!sb_try_putchar(sb, ch)) return false;
 		} else {
-			SB_putchar(sb, ch);
+			if (!sb_try_putchar(sb, ch)) return false;
 		}
+	}
+
+	return true;
+}
+
+char *formatted(const char *src, int srclen, bool dq, bool json)
+{
+	SB(sb);
+
+	if (!format_into(&sb_buf, src, srclen, dq, json)) {
+		SB_free(sb);
+		return NULL;
 	}
 
 	char *dst = TPL_strdup(SB_cstr(sb));
 	SB_free(sb);
 	return dst;
+}
+
+// Escaped text straight into q->sb: the copy formatted() hands back
+// doubles the peak, and was the first allocation to fail on a long one.
+
+static void emit_formatted(query *q, const char *src, int srclen, bool dq, bool json)
+{
+	format_into(&q->sb_buf, src, srclen, dq, json);
 }
 
 static size_t sprint_int_(char *dst, size_t dstlen, pl_int n, int pbase)
@@ -619,7 +667,7 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	} else if (!running && !is_ref(c)) {
 		emit(q, C_STR(q, c));
 	} else {
-		SB_sprintf(q->sb, "_%u", (unsigned)slot_nbr);
+		emit_sprintf(q, "_%u", (unsigned)slot_nbr);
 	}
 
 #if 0
@@ -938,10 +986,10 @@ static void print_string_canonical(query *q, cell *c)
 		cell *h = PROLOG_LIST_HEAD(c);
 
 		if (is_number(h)) {
-			SB_sprintf(q->sb, "%d", (int)h->val_int);
+			emit_sprintf(q, "%d", (int)h->val_int);
 		} else if (needs_quoting(q->st.m, C_STR(q, h), C_STRLEN(q, h))) {
 			emit(q, "'");
-			emit_free(q, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
+			emit_formatted(q, C_STR(q, h), C_STRLEN(q, h), false, false);
 			emit(q, "'");
 		} else
 			emit(q, C_STR(q, h));
@@ -980,13 +1028,13 @@ static void print_string_list(query *q, cell *c, bool cons)
 		}
 
 		if (is_number(h)) {
-			SB_sprintf(q->sb, "%d", (int)h->val_int);
+			emit_sprintf(q, "%d", (int)h->val_int);
 		} else if (needs_quoting(q->st.m, C_STR(q, h), C_STRLEN(q, h)) && q->quoted) {
 			emit(q, "'");
-			emit_free(q, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
+			emit_formatted(q, C_STR(q, h), C_STRLEN(q, h), false, false);
 			emit(q, "'");
 		} else{
-			emit_free(q, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
+			emit_formatted(q, C_STR(q, h), C_STRLEN(q, h), false, false);
 		}
 
 		c = PROLOG_LIST_TAIL(c);
@@ -1173,7 +1221,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				emit(q, "|\"");
 
 				if ((tmp_len > 1) && needs_quoting(q->st.m, tmp_src, tmp_len))
-					emit_free(q, formatted(tmp_src, tmp_len, true, false));
+					emit_formatted(q, tmp_src, tmp_len, true, false);
 				else
 					emit_n(q, tmp_src, tmp_len);
 
@@ -1212,7 +1260,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 			}
 		} else if (is_string(tail) && q->double_quotes) {
 			emit(q, "|\"");
-			emit_free(q, formatted(C_STR(q, tail), C_STRLEN(q, tail), true, false));
+			emit_formatted(q, C_STR(q, tail), C_STRLEN(q, tail), true, false);
 			emit(q, "\"");
 			print_list++;
 			q->last_thing = WAS_OTHER;
@@ -1223,6 +1271,12 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				print_variable(q, tail, tail_ctx, running);
 			} else {
 				visit *me = TPL_malloc(sizeof(visit));
+
+				if (!me) {
+					q->sb_buf.oom = true;
+					break;
+				}
+
 				me->next = visited;
 				me->c = tail;
 				me->c_ctx = tail_ctx;
@@ -1348,7 +1402,7 @@ static bool print_canonical_compound(query *q, cell *c, pl_ctx c_ctx, bool runni
 		if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128))
 			len_str = q->max_depth;
 
-		emit_free(q, formatted(src, len_str, dq, q->json));
+		emit_formatted(q, src, len_str, dq, q->json);
 
 		if (is_blob(c) && q->max_depth && (len_str > q->max_depth) && (src_len > 128)) {
 			emit_unget(q);
@@ -1912,11 +1966,11 @@ static bool print_chars_quoted(query *q, cell *c, pl_ctx c_ctx, int running, uns
 			char tmpbuf[2];
 			tmpbuf[0] = h->val_uint;
 			tmpbuf[1] = 0;
-			emit_free(q, formatted(tmpbuf, 1, true, q->json));
+			emit_formatted(q, tmpbuf, 1, true, q->json);
 		} else if (is_smallint(h) && !both) {
 			emit_char(q, h->val_uint);
 		} else {
-			emit_free(q, formatted(C_STR(q, h), C_STRLEN(q, h), true, q->json));
+			emit_formatted(q, C_STR(q, h), C_STRLEN(q, h), true, q->json);
 		}
 
 		cell *tail_cell = PROLOG_LIST_TAIL(l);
@@ -2021,13 +2075,13 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 		// thread - there is nothing left to say which kind it was.
 
 		if (!t) {
-			SB_sprintf(q->sb, "'$thread'(%d)", (int)get_smallint(c));
+			emit_sprintf(q, "'$thread'(%d)", (int)get_smallint(c));
 		} else if (t->is_queue_only) {
-			SB_sprintf(q->sb, "'$queue'(%d)", (int)get_smallint(c));
+			emit_sprintf(q, "'$queue'(%d)", (int)get_smallint(c));
 		} else if (t->is_mutex_only) {
-			SB_sprintf(q->sb, "'$mutex'(%d)", (int)get_smallint(c));
+			emit_sprintf(q, "'$mutex'(%d)", (int)get_smallint(c));
 		} else {
-			SB_sprintf(q->sb, "'$thread'(%d)", (int)get_smallint(c));
+			emit_sprintf(q, "'$thread'(%d)", (int)get_smallint(c));
 		}
 
 		q->last_thing = WAS_OTHER;
@@ -2037,7 +2091,7 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 	// ALIAS
 
 	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_ALIAS)) {
-		SB_sprintf(q->sb, "'$alias'(%d)", (int)get_smallint(c));
+		emit_sprintf(q, "'$alias'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -2045,7 +2099,7 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 	// MAP
 
 	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_MAP)) {
-		SB_sprintf(q->sb, "'$map'(%d)", (int)get_smallint(c));
+		emit_sprintf(q, "'$map'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -2053,7 +2107,7 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 	// STREAM
 
 	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_STREAM)) {
-		SB_sprintf(q->sb, "'$stream'(%d)", (int)get_smallint(c));
+		emit_sprintf(q, "'$stream'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -2061,7 +2115,7 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 	// BLOB
 
 	if (is_blob(c)) {
-		SB_sprintf(q->sb, "'$blob'(%p)", c->val_ptr);
+		emit_sprintf(q, "'$blob'(%p)", c->val_ptr);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -2079,19 +2133,14 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 	// RATIONAL
 
 	if (is_rational(c)) {
-		int radix = 10;
-		size_t len = mp_int_string_len(&c->val_bigint->irat.num, radix) - 1;
-		char *dst2 = TPL_malloc(len+1);
-		CHECKED(dst2);
-		mp_int_to_string(&c->val_bigint->irat.num, radix, dst2, len+1);
-		emit(q, dst2);
-		TPL_free(dst2);
+		if (!emit_bigint(q, &c->val_bigint->irat.num, 10))
+			return false;
+
 		emit(q, " rdiv ");
-		len = mp_int_string_len(&c->val_bigint->irat.den, radix) - 1;
-		dst2 = TPL_malloc(len+1);
-		mp_int_to_string(&c->val_bigint->irat.den, radix, dst2, len+1);
-		emit(q, dst2);
-		TPL_free(dst2);
+
+		if (!emit_bigint(q, &c->val_bigint->irat.den, 10))
+			return false;
+
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -2099,13 +2148,9 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 	// BIG INTEGER
 
 	if (is_bigint(c)) {
-		int radix = 10;
-		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
-		char *dst2 = TPL_malloc(len+1);
-		CHECKED(dst2);
-		mp_int_to_string(&c->val_bigint->ival, radix, dst2, len+1);
-		emit(q, dst2);
-		TPL_free(dst2);
+		if (!emit_bigint(q, &c->val_bigint->ival, 10))
+			return false;
+
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -2113,7 +2158,7 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 	// SMALL INTEGER
 
 	if (is_smallint(c)) {
-		SB_sprintf(q->sb, "%lld", (long long)c->val_int);
+		emit_sprintf(q, "%lld", (long long)c->val_int);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -2173,7 +2218,7 @@ static bool print_term_dispatch(query *q, cell *c, pl_ctx c_ctx, int running, in
 // WAS_SPACE, the other four from WAS_OTHER. Making it uniform changes
 // output, so it stays a parameter.
 
-static void print_to_sb(query *q, cell *c, pl_ctx c_ctx, int running, bool canonical, int initial)
+static bool print_to_sb(query *q, cell *c, pl_ctx c_ctx, int running, bool canonical, int initial)
 {
 	if (canonical) {
 		q->ignore_ops = true;
@@ -2196,6 +2241,8 @@ static void print_to_sb(query *q, cell *c, pl_ctx c_ctx, int running, bool canon
 		q->ignore_ops = false;
 		q->quoted = 0;
 	}
+
+	return !SB_oom(q->sb);
 }
 
 // Hand q->sb to the caller as a fresh allocation. The spare byte is
@@ -2205,14 +2252,18 @@ static void print_to_sb(query *q, cell *c, pl_ctx c_ctx, int running, bool canon
 // one wrote through the null pointer, the other returned early and
 // leaked q->sb. Now neither happens.
 
-static char *sb_take(query *q)
+static char *sb_take(query *q, bool ok)
 {
-	char *buf = TPL_malloc(SB_strlen(q->sb)+1+1);
+	char *buf = ok ? TPL_malloc(SB_strlen(q->sb)+1+1) : NULL;
 
 	if (buf)
 		strcpy(buf, SB_cstr(q->sb));
 
 	SB_free(q->sb);
+
+	if (!buf)
+		(void)throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+
 	return buf;
 }
 
@@ -2220,8 +2271,13 @@ static char *sb_take(query *q)
 // else straight to fp; the two report a write error differently, a
 // stream being closed and named in the error term.
 
-static bool sb_flush(query *q, stream *str, FILE *fp)
+static bool sb_flush(query *q, stream *str, FILE *fp, bool ok)
 {
+	if (!ok) {
+		SB_free(q->sb);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory");
+	}
+
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
 
@@ -2264,38 +2320,38 @@ static bool sb_flush(query *q, stream *str, FILE *fp)
 
 char *print_canonical_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 {
-	print_to_sb(q, c, c_ctx, running, true, WAS_OTHER);
-	return sb_take(q);
+	bool ok = print_to_sb(q, c, c_ctx, running, true, WAS_OTHER);
+	return sb_take(q, ok);
 }
 
 bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running)
 {
-	print_to_sb(q, c, c_ctx, running, true, WAS_OTHER);
-	return sb_flush(q, str, str->fp_out);
+	bool ok = print_to_sb(q, c, c_ctx, running, true, WAS_OTHER);
+	return sb_flush(q, str, str->fp_out, ok);
 }
 
 bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 {
-	print_to_sb(q, c, c_ctx, running, true, WAS_OTHER);
-	return sb_flush(q, NULL, fp);
+	bool ok = print_to_sb(q, c, c_ctx, running, true, WAS_OTHER);
+	return sb_flush(q, NULL, fp, ok);
 }
 
 char *print_term_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 {
-	print_to_sb(q, c, c_ctx, running, false, WAS_OTHER);
-	return sb_take(q);
+	bool ok = print_to_sb(q, c, c_ctx, running, false, WAS_OTHER);
+	return sb_take(q, ok);
 }
 
 bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running)
 {
-	print_to_sb(q, c, c_ctx, running, false, WAS_SPACE);
-	return sb_flush(q, str, str->fp_out);
+	bool ok = print_to_sb(q, c, c_ctx, running, false, WAS_SPACE);
+	return sb_flush(q, str, str->fp_out, ok);
 }
 
 bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 {
-	print_to_sb(q, c, c_ctx, running, false, WAS_SPACE);
-	return sb_flush(q, NULL, fp);
+	bool ok = print_to_sb(q, c, c_ctx, running, false, WAS_SPACE);
+	return sb_flush(q, NULL, fp, ok);
 }
 
 void partial_clear_write_options(query *q)

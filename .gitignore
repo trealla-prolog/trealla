@@ -23,6 +23,8 @@ faultinject*
 util/bin2c
 samples/embed
 samples/allocator
+samples/oom
+samples/oom.tmp
 /ports/arduino-nano-esp32/build/
 /ports/arduino-nano-esp32/sdkconfig
 /ports/arduino-nano-esp32/sdkconfig.old
