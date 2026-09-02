@@ -1,0 +1,6 @@
+dcg_import ok
+dcg_call ok
+dcg_as_atom ok
+dcg_as_pi ok
+plain_import ok
+plain_as ok

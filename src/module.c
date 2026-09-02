@@ -1127,6 +1127,29 @@ static bool do_import_predicate(module *cur_m, module *m, predicate *pr, cell *a
 	return true;
 }
 
+// Import lists may write a DCG non-terminal as Name//Arity, meaning
+// Name/(Arity+2), just as module/2 export lists do.
+
+static bool get_import_pi(module *m, const cell *pi, cell *tmp)
+{
+	if (!is_compound(pi) || (get_arity(pi) != 2))
+		return false;
+
+	bool dcg = !strcmp(C_STR(m, pi), "//");
+
+	if (!dcg && strcmp(C_STR(m, pi), "/"))
+		return false;
+
+	const cell *c_name = pi + 1, *c_arity = c_name + c_name->num_cells;
+
+	if (!is_atom(c_name) || !is_smallint(c_arity))
+		return false;
+
+	*tmp = *c_name;
+	set_arity(tmp, get_smalluint(c_arity) + (dcg ? 2 : 0));
+	return true;
+}
+
 bool do_use_module_1(module *cur_m, cell *c)
 {
 	module *m;
@@ -1171,32 +1194,24 @@ bool do_use_module_2(module *cur_m, cell *c)
 			cell *lhs = head + 1;
 			cell *rhs = lhs + lhs->num_cells;
 
-			if (is_structure(lhs) && (get_arity(lhs) == 2)
-				&& (lhs->val_off == g_slash_s)
-				&& is_atom(rhs)) {
-				cell tmp = *(lhs+1);
-				set_arity(&tmp, get_smalluint(lhs+2));
+			cell tmp;
+
+			if (get_import_pi(m, lhs, &tmp) && is_atom(rhs)) {
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				tmp.val_off = rhs->val_off;
 				do_import_predicate(cur_m, m, pr, &tmp);
-			} else if (is_structure(lhs) && (get_arity(lhs) == 2)
-				&& (lhs->val_off == g_slash_s)
-				&& is_structure(lhs) && (get_arity(lhs) == get_arity(rhs))) {
-				cell tmp = *(lhs+1);
-				set_arity(&tmp, get_smalluint(lhs+2));
+			} else if (get_import_pi(m, lhs, &tmp)
+				&& is_structure(rhs) && (get_arity(rhs) == 2)) {
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				tmp.val_off = (rhs+1)->val_off;
 				do_import_predicate(cur_m, m, pr, &tmp);
 			}
 		} else {
-			cell *lhs = head;
+			cell tmp;
 
-			if (is_structure(lhs) && (get_arity(lhs) == 2)
-				&& (lhs->val_off == g_slash_s)) {
-				cell tmp = *(lhs+1);
-				set_arity(&tmp, get_smalluint(lhs+2));
+			if (get_import_pi(m, head, &tmp)) {
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				do_import_predicate(cur_m, m, pr, &pr->key);
