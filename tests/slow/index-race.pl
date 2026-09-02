@@ -42,7 +42,7 @@ collect(N, Queue, Acc, Short) :-
 	collect(N1, Queue, Acc1, Short).
 
 main :-
-	Keys = 600, Threads = 4, Passes = 1800,
+	Keys = 1000, Threads = 8, Passes = 1800,
 	seed(Keys),
 	message_queue_create(Queue, []),
 	forall(between(1, Threads, _), thread_create(worker(Queue, Passes, Keys), _, [])),
