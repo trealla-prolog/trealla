@@ -1212,7 +1212,8 @@ struct prolog_ {
 	// Tabling restraints (SWI's flag names). 0 = infinite = unset.
 
 	unsigned tbl_max_answer_size, tbl_max_subgoal_size, tbl_max_answers_for_subgoal;
-	unsigned current_input, current_output, current_error, goal_expansions;
+	unsigned current_input, current_output, current_error;
+	pl_atomic int goal_expansions;		// every thread bumps it; plain ++/-- wrapped below zero
 	int8_t halt_code, opt, limit;
 	pl_refcnt rnd_first_time;
 	bool def_quoted:1;
