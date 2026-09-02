@@ -51,6 +51,19 @@ int tpl_getline_fp(char **lineptr, size_t *n, FILE *fp)
 	return (int)pos;
 }
 
+// Only parser.c needs this here: with no sockets nothing is ever
+// non-blocking, so a plain line read is the whole of it.
+
+int tpl_getline_nb(char **lineptr, size_t *n, query *q, FILE *fp, FILE *fp_flush)
+{
+	(void) q;
+
+	if (fp_flush)
+		fflush(fp_flush);
+
+	return tpl_getline_fp(lineptr, n, fp);
+}
+
 int tpl_server(const char *hostname, unsigned port, bool is_udp, const char *keyfile, const char *certfile)
 {
 	(void)hostname; (void)port; (void)is_udp; (void)keyfile; (void)certfile;
