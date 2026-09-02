@@ -21,6 +21,19 @@ IDF_PY ?= $(IDF_PATH)/tools/idf.py
 else
 IDF_PY ?= idf.py
 endif
+RPI4_CC ?= aarch64-none-elf-gcc
+RPI4_AR ?= aarch64-none-elf-ar
+RPI4_OBJCOPY ?= aarch64-none-elf-objcopy
+RPI4_SIZE ?= aarch64-none-elf-size
+QEMU_RPI4 ?= qemu-system-aarch64
+RPI4_ELF = ports/rpi4/trealla.elf
+RPI4_IMG = ports/rpi4/kernel8.img
+RPI4_MAP = ports/rpi4/trealla.map
+RPI4_OBJ = ports/rpi4/boot.o ports/rpi4/mmu.o ports/rpi4/platform.o \
+	ports/rpi4/syscalls.o
+RPI4_CFLAGS = -mcpu=cortex-a72 -ffunction-sections -fdata-sections
+RPI4_LDFLAGS = -nostartfiles -Tports/rpi4/rpi4.ld -Wl,--gc-sections \
+	-Wl,--no-warn-rwx-segments -Wl,-Map=$(RPI4_MAP) -lm
 ESP32S3_CC ?= xtensa-esp32s3-elf-gcc
 ESP32S3_AR ?= xtensa-esp32s3-elf-ar
 PICOLIBC_SPECS ?= $(shell $(QEMU_RISCV_CC) --print-file-name=picolibc.specs 2>/dev/null)
@@ -513,6 +526,38 @@ qemu-riscv32:
 qemu-riscv32-smoke: qemu-riscv32
 	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF) $(QEMU_RISCV_SIZE)
 
+.PHONY: rpi4 rpi4-smoke
+
+# boot.S needs the same driver flags as the C files; the built-in .S rule
+# would use ASFLAGS and miss them.
+
+ports/rpi4/%.o: ports/rpi4/%.S
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+rpi4:
+	@command -v $(RPI4_CC) >/dev/null || { \
+		echo "missing $(RPI4_CC) (install an AArch64 bare-metal GCC toolchain)"; exit 1; \
+	}
+	$(MAKE) clean
+	$(MAKE) FREESTANDING=1 NOPIC=1 \
+		CC=$(RPI4_CC) AR=$(RPI4_AR) HOST_CC=$(HOST_CC) \
+		'PLATFORM_OBJ=$(RPI4_OBJ)' \
+		'TARGET_CFLAGS=$(RPI4_CFLAGS)' 'LDFLAGS=$(RPI4_LDFLAGS)' \
+		samples/freestanding
+	cp samples/freestanding $(RPI4_ELF)
+	$(RPI4_OBJCOPY) -O binary $(RPI4_ELF) $(RPI4_IMG)
+	$(RPI4_SIZE) $(RPI4_ELF)
+
+# Semihosting is a QEMU-only exit path, so the smoke image is built with it
+# and a flashable image is not.
+
+rpi4-smoke:
+	@$(QEMU_RPI4) -M help | grep -q '^raspi4b ' || { \
+		echo "$(QEMU_RPI4) has no raspi4b machine"; exit 1; \
+	}
+	$(MAKE) 'RPI4_CFLAGS=$(RPI4_CFLAGS) -DRPI4_SEMIHOSTING=1' rpi4
+	$(PYTHON) util/rpi4_smoke.py $(QEMU_RPI4) $(RPI4_ELF) $(RPI4_SIZE)
+
 .PHONY: arduino-nano-esp32 arduino-nano-esp32-lib
 
 arduino-nano-esp32-lib:
@@ -736,5 +781,6 @@ clean:
 		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
 	rm -f ports/template/*.o ports/template/*.d
+	rm -f ports/rpi4/*.o ports/rpi4/*.d $(RPI4_ELF) $(RPI4_IMG) $(RPI4_MAP)
 	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/oom.dSYM samples/freestanding.dSYM
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

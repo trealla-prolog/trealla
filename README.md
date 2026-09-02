@@ -194,6 +194,17 @@ contract, build shape and validation checklist.
 	make port-template-smoke
 	make qemu-riscv32-smoke
 
+Raspberry Pi 4
+--------------
+
+The [Pi 4 adapter](ports/rpi4/README.md) boots the BCM2711 bare metal, with no
+operating system: it parks the spare cores, drops to EL1, brings up the MMU and
+caches, and drives PL011 UART0 as the console. It needs the Arm GNU bare-metal
+toolchain for `aarch64-none-elf`.
+
+	make rpi4                 # ports/rpi4/kernel8.img, for the boot partition
+	make rpi4-smoke           # build and boot it under QEMU
+
 Arduino Nano ESP32
 ------------------
 

@@ -1,0 +1,159 @@
+#include <stddef.h>
+#include <stdint.h>
+
+#include "platform/platform.h"
+
+// The five platform services on a Raspberry Pi 4: PL011 UART0 for the
+// console, the ARM generic timer for the clock, and a parked core for halt.
+
+#define PERI_BASE 0xfe000000u
+#define GPIO_BASE (PERI_BASE + 0x200000u)
+#define UART0_BASE (PERI_BASE + 0x201000u)
+
+#define REG(addr) (*(volatile uint32_t*)(uintptr_t)(addr))
+
+#define GPFSEL1 REG(GPIO_BASE + 0x04u)
+#define GPPUPPDN0 REG(GPIO_BASE + 0xe4u)
+
+#define UART_DR REG(UART0_BASE + 0x00u)
+#define UART_FR REG(UART0_BASE + 0x18u)
+#define UART_IBRD REG(UART0_BASE + 0x24u)
+#define UART_FBRD REG(UART0_BASE + 0x28u)
+#define UART_LCRH REG(UART0_BASE + 0x2cu)
+#define UART_CR REG(UART0_BASE + 0x30u)
+#define UART_IMSC REG(UART0_BASE + 0x38u)
+#define UART_ICR REG(UART0_BASE + 0x44u)
+
+#define UART_FR_BUSY (1u << 3)
+#define UART_FR_RXFE (1u << 4)
+#define UART_FR_TXFF (1u << 5)
+
+static int uart_ready;
+
+// 115200 8N1 from the firmware's default 48 MHz UART clock: the divisor is
+// 48000000 / (16 * 115200), so 26 and 3/64. QEMU ignores the baud registers.
+
+static void uart_init(void)
+{
+	UART_CR = 0;
+
+	// GPIO14/15 to ALT0 (TXD0/RXD0), pulls disabled.
+	uint32_t function = GPFSEL1;
+	function &= ~((7u << 12) | (7u << 15));
+	function |= (4u << 12) | (4u << 15);
+	GPFSEL1 = function;
+
+	uint32_t pull = GPPUPPDN0;
+	pull &= ~((3u << 28) | (3u << 30));
+	GPPUPPDN0 = pull;
+
+	UART_ICR = 0x7ffu;
+	UART_IBRD = 26;
+	UART_FBRD = 3;
+	UART_LCRH = (3u << 5) | (1u << 4);	// 8 bits, FIFOs enabled
+	UART_IMSC = 0;
+	UART_CR = (1u << 0) | (1u << 8) | (1u << 9);
+
+	uart_ready = 1;
+}
+
+static void uart_open(void)
+{
+	if (!uart_ready)
+		uart_init();
+}
+
+static void uart_drain(void)
+{
+	while (UART_FR & UART_FR_BUSY)
+		;
+}
+
+size_t tpl_platform_console_read(void *buf, size_t len)
+{
+	uint8_t *dst = buf;
+	uart_open();
+
+	for (size_t i = 0; i < len; i++) {
+		while (UART_FR & UART_FR_RXFE)
+			;
+
+		dst[i] = (uint8_t)UART_DR;
+	}
+
+	return len;
+}
+
+// Output and error deliberately share the one UART. Bytes go out as given:
+// no NUL terminator is assumed and no newline translation is done.
+
+size_t tpl_platform_console_write(enum tpl_console_channel channel,
+	const void *buf, size_t len)
+{
+	(void)channel;
+	const uint8_t *src = buf;
+	uart_open();
+
+	for (size_t i = 0; i < len; i++) {
+		while (UART_FR & UART_FR_TXFF)
+			;
+
+		UART_DR = src[i];
+	}
+
+	return len;
+}
+
+// CNTPCT_EL0 is 64 bits wide and counts at CNTFRQ_EL0 (54 MHz on a Pi 4), so
+// there is no rollover to extend. The division is split because scaling the
+// raw count by a million would overflow after about five hours.
+
+uint64_t tpl_platform_monotonic_usec(void)
+{
+	uint64_t ticks, frequency;
+
+	__asm__ volatile("isb" ::: "memory");
+	__asm__ volatile("mrs %0, cntpct_el0" : "=r"(ticks));
+	__asm__ volatile("mrs %0, cntfrq_el0" : "=r"(frequency));
+
+	if (!frequency)
+		return 0;
+
+	return (ticks / frequency) * 1000000u
+		+ ((ticks % frequency) * 1000000u) / frequency;
+}
+
+void tpl_platform_halt(int status)
+{
+	uart_drain();
+
+#if RPI4_SEMIHOSTING
+	// Under QEMU, report the status the way the RV32 target's test
+	// finisher does. On hardware with no debugger this instruction is not
+	// serviced, so it is off unless the smoke build asks for it.
+	volatile uint64_t block[2] = {0x20026u, (uint64_t)(unsigned)status};
+	register uint64_t operation __asm__("x0") = 0x20;
+	register uint64_t argument __asm__("x1") = (uint64_t)(uintptr_t)block;
+	__asm__ volatile("hlt #0xf000"
+		:: "r"(operation), "r"(argument) : "memory");
+#else
+	(void)status;
+#endif
+
+	for (;;)
+		__asm__ volatile("wfe");
+}
+
+void tpl_platform_panic(const char *message)
+{
+	static const char prefix[] = "TREALLA PLATFORM PANIC: ";
+	const char *end = message;
+
+	while (*end)
+		end++;
+
+	tpl_platform_console_write(TPL_CONSOLE_ERROR, prefix, sizeof(prefix) - 1);
+	tpl_platform_console_write(TPL_CONSOLE_ERROR, message, (size_t)(end - message));
+	tpl_platform_console_write(TPL_CONSOLE_ERROR, "\n", 1);
+	tpl_platform_halt(1);
+}

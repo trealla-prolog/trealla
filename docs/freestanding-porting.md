@@ -112,3 +112,13 @@ The first physical-board application of this checklist is under
 `ports/arduino-nano-esp32/`. It deliberately places both Trealla's static BSS
 and owned heap in the board's directly mapped PSRAM, leaving internal SRAM for
 the ESP-IDF runtime and task stack.
+
+`ports/rpi4/` applies the same checklist to a 64-bit application processor with
+nothing underneath it. Where the two earlier targets inherit startup from
+Picolibc's crt0 and from ESP-IDF, this one has to supply it: parking the spare
+cores, dropping to EL1, enabling FP/SIMD, and turning on the MMU before any
+library code runs. That last step is a correctness requirement, not a
+performance one. Until an AArch64 target has page tables, every access is
+Device memory, where unaligned accesses fault whatever the alignment-check bit
+says. A port to a similar core should expect startup, not the platform
+contract, to be the bulk of the work.

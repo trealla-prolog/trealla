@@ -37,6 +37,29 @@
         - name: Build and boot
           run: make qemu-riscv32-smoke
 
+    freestanding-rpi4:
+      name: Freestanding Raspberry Pi 4
+      runs-on: ubuntu-24.04
+      timeout-minutes: 20
+      env:
+        ARM_TOOLCHAIN: arm-gnu-toolchain-15.2.rel1-x86_64-aarch64-none-elf
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Install QEMU
+          run: |
+            sudo apt-get update
+            sudo apt-get install qemu-system-arm
+        - name: Install AArch64 bare-metal toolchain
+          run: |
+            curl -fsSL -o toolchain.tar.xz \
+              "https://developer.arm.com/-/media/Files/downloads/gnu/15.2.rel1/binrel/$ARM_TOOLCHAIN.tar.xz"
+            tar xf toolchain.tar.xz
+            echo "$PWD/$ARM_TOOLCHAIN/bin" >> "$GITHUB_PATH"
+        - name: Build and boot
+          run: make rpi4-smoke
+
     freestanding-esp32s3:
       name: Freestanding ESP32-S3
       runs-on: ubuntu-24.04
