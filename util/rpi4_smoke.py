@@ -8,12 +8,13 @@ import sys
 MARKERS = (
     "TREALLA FREESTANDING BOOT",
     "TREALLA PROLOG OK",
+    "TREALLA GPIO OK",
     "TREALLA ALLOCATION FAILURE CONTROLLED",
     "TREALLA HEAP PEAK ",
     "TREALLA FREESTANDING COMPLETE",
 )
 
-# Measured 1,412,584 / 400,824 / 697,048 text/data/bss and a 5,795,037-byte
+# Measured 1,417,560 / 406,008 / 697,048 text/data/bss and a 5,882,624-byte
 # live-heap peak, with room to grow. The AArch64 image runs bigger than the
 # RV32 one mostly through 64-bit pointers.
 MAX_TEXT_BYTES = 1_750_000

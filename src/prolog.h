@@ -56,6 +56,8 @@ extern builtins g_iso_bifs[];
 extern builtins g_misc_bifs[];
 extern builtins g_net_bifs[];
 extern builtins g_os_bifs[];
+// Board builtins supplied by a freestanding port; empty on a hosted build.
+extern builtins g_port_bifs[];
 extern builtins g_other_bifs[];
 extern builtins g_control_bifs[];
 extern builtins g_posix_bifs[];

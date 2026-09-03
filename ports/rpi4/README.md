@@ -60,6 +60,8 @@ may place the tree inside that range.
 | `boot.S` | Parks cores 1-3, drops EL3/EL2 to EL1, enables FP/SIMD, sets the stack, zeroes BSS |
 | `mmu.c` | Identity-maps RAM as Normal write-back and the peripheral window as Device, then enables the MMU and caches |
 | `platform.c` | The five platform services: PL011 console, generic-timer clock, halt, panic |
+| `bif_gpio.c` | The GPIO builtins, supplied to the engine as `g_port_bifs` |
+| `bcm2711.h` | Register map shared by the adapter and the builtins |
 | `syscalls.c` | Newlib's bottom half — console `_read`/`_write` and a bump `_sbrk` over the linker-defined heap |
 | `rpi4.ld` | Image at 0x80000, 8 MiB stack, heap up to 0x20000000 |
 
@@ -76,6 +78,35 @@ A Pi 4 has no battery-backed clock. `_gettimeofday` therefore reports time
 since boot, taken from the same monotonic counter as the platform clock — it is
 honestly monotonic and honestly not wall time.
 
+## GPIO
+
+The port exposes the BCM2711 GPIO block to Prolog through `g_port_bifs`, the
+builtin table a freestanding port may supply (`PORT_BIFS_OBJECT`, defaulting to
+the empty `src/port_bifs_none.c`). The engine has no board knowledge: it walks
+one more table, and the Makefile decides who fills it.
+
+| Predicate | Meaning |
+| --- | --- |
+| `gpio_mode(+Pin, +Mode)` | `input`, `output`, or `alt0`-`alt5` |
+| `gpio_pull(+Pin, +Pull)` | `none`, `up`, `down` |
+| `gpio_read(+Pin, ?Level)` | reads the pin level as 0 or 1 |
+| `gpio_write(+Pin, +Level)` | drives an output to 0 or 1 |
+
+Pins are 0-57; anything else is a `domain_error(gpio_pin, N)`. GPIO14 and
+GPIO15 carry the console, so they can be read but not reconfigured -
+`gpio_mode/2` and friends raise `permission_error(modify, gpio_pin, N)` rather
+than let a typo silence the board's only output, panic path included.
+
+Two details in `bif_gpio.c` are worth knowing before editing it:
+
+- The BCM2711 pull encoding is `01` = up, `10` = down. That is the reverse of
+  the BCM2835 `GPPUD` encoding that most Pi 1-3 example code uses, and getting
+  it backwards fails silently until an input floats.
+- Output uses `GPSET`/`GPCLR`, which are write-1-to-act, so driving one pin
+  needs no read-modify-write and cannot disturb its neighbours. Function
+  select and pull are read-modify-write, which is safe here only because a
+  freestanding build has no threads and this port takes no interrupts.
+
 ## Acceptance
 
 The smoke runner requires these markers, in order, under a timeout:
@@ -83,19 +114,25 @@ The smoke runner requires these markers, in order, under a timeout:
 ```
 TREALLA FREESTANDING BOOT
 TREALLA PROLOG OK
+TREALLA GPIO OK
 TREALLA ALLOCATION FAILURE CONTROLLED
 TREALLA HEAP PEAK <bytes>
 TREALLA FREESTANDING COMPLETE
 ```
 
+`ports/rpi4/program.pl` supplies that extra marker. Its GPIO checks assert the
+argument and permission errors, which are board-independent and therefore
+QEMU-provable; the level read back from an unwired pin is only required to be
+0 or 1, because under emulation it means nothing.
+
 The first measured AArch64 baseline (Arm GNU Toolchain 15.2.rel1, newlib) is:
 
 | Metric | Baseline bytes | CI limit |
 | --- | ---: | ---: |
-| ELF text | 1,412,584 | 1,750,000 |
-| ELF data | 400,824 | 500,000 |
+| ELF text | 1,417,560 | 1,750,000 |
+| ELF data | 406,008 | 500,000 |
 | ELF bss | 697,048 | 900,000 |
-| Peak Trealla-owned heap | 5,795,037 | 7,000,000 |
+| Peak Trealla-owned heap | 5,882,624 | 7,000,000 |
 
 Text and data run larger than the RV32 baseline and BSS runs smaller, which is
 what 64-bit pointers and a different libc do to the same engine. As with the

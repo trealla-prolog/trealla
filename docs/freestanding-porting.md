@@ -55,6 +55,21 @@ heap baseline, then inject a deterministic failure before trusting the port.
 Strings returned by `pl_term_text()` and `pl_int_text()` must be released with
 `pl_free()`.
 
+## Exposing board hardware to Prolog
+
+A port that wants board services callable from Prolog supplies a builtin table
+rather than editing the engine. Define `g_port_bifs` in a port object and
+select it with `PORT_BIFS_OBJECT`; a build that does not gets the empty table
+in `src/port_bifs_none.c`. The engine walks one more table and stays free of
+board conditionals, the same way `BIF_OS_OBJECT` and `NETWORK_OBJECT` are
+chosen. `ports/rpi4/bif_gpio.c` is the worked example.
+
+One trap when writing those builtins: `throw_error()` returns **true** when a
+`catch/3` handler accepted the ball, so its result is the value the builtin
+owes the engine, not a "did the check pass" flag. A helper that reports errors
+must hand that value back to its caller unchanged; treating it as a boolean
+success silently continues past a caught error.
+
 ## Port checklist
 
 1. Choose the target ABI, startup code, memory map, stack and C runtime.

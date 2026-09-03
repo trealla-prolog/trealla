@@ -257,6 +257,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_misc.o \
 	$(BIF_NET_OBJECT) \
 	$(BIF_OS_OBJECT) \
+	$(PORT_BIFS_OBJECT) \
 	$(BIF_POSIX_OBJECT) \
 	src/bif_predicates.o \
 	src/bif_sort.o \
@@ -301,6 +302,11 @@ else
 BIF_OS_OBJECT = src/bif_os.o
 BIF_POSIX_OBJECT = src/bif_posix.o
 endif
+
+# A port that exposes board hardware to Prolog overrides this with its own
+# builtin table; every other build gets the empty one.
+
+PORT_BIFS_OBJECT ?= src/port_bifs_none.o
 
 ifdef NOTTY
 HISTORY_OBJECT = src/history_none.o
@@ -542,6 +548,8 @@ rpi4:
 	$(MAKE) FREESTANDING=1 NOPIC=1 \
 		CC=$(RPI4_CC) AR=$(RPI4_AR) HOST_CC=$(HOST_CC) \
 		'PLATFORM_OBJ=$(RPI4_OBJ)' \
+		PORT_BIFS_OBJECT=ports/rpi4/bif_gpio.o \
+		PROGRAM=ports/rpi4/program.pl \
 		'TARGET_CFLAGS=$(RPI4_CFLAGS)' 'LDFLAGS=$(RPI4_LDFLAGS)' \
 		samples/freestanding
 	cp samples/freestanding $(RPI4_ELF)

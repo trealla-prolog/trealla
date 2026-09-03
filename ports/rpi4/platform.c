@@ -3,17 +3,10 @@
 
 #include "platform/platform.h"
 
+#include "bcm2711.h"
+
 // The five platform services on a Raspberry Pi 4: PL011 UART0 for the
 // console, the ARM generic timer for the clock, and a parked core for halt.
-
-#define PERI_BASE 0xfe000000u
-#define GPIO_BASE (PERI_BASE + 0x200000u)
-#define UART0_BASE (PERI_BASE + 0x201000u)
-
-#define REG(addr) (*(volatile uint32_t*)(uintptr_t)(addr))
-
-#define GPFSEL1 REG(GPIO_BASE + 0x04u)
-#define GPPUPPDN0 REG(GPIO_BASE + 0xe4u)
 
 #define UART_DR REG(UART0_BASE + 0x00u)
 #define UART_FR REG(UART0_BASE + 0x18u)
@@ -37,15 +30,19 @@ static void uart_init(void)
 {
 	UART_CR = 0;
 
-	// GPIO14/15 to ALT0 (TXD0/RXD0), pulls disabled.
-	uint32_t function = GPFSEL1;
-	function &= ~((7u << 12) | (7u << 15));
-	function |= (4u << 12) | (4u << 15);
-	GPFSEL1 = function;
+	// GPIO14/15 to ALT0 (TXD0/RXD0), pulls disabled. Both pins live in the
+	// same select and pull register, so each is one read-modify-write.
+	uint32_t function = GPFSEL(RPI4_CONSOLE_TX);
+	function &= ~((7u << GPFSEL_SHIFT(RPI4_CONSOLE_TX))
+		| (7u << GPFSEL_SHIFT(RPI4_CONSOLE_RX)));
+	function |= (4u << GPFSEL_SHIFT(RPI4_CONSOLE_TX))
+		| (4u << GPFSEL_SHIFT(RPI4_CONSOLE_RX));
+	GPFSEL(RPI4_CONSOLE_TX) = function;
 
-	uint32_t pull = GPPUPPDN0;
-	pull &= ~((3u << 28) | (3u << 30));
-	GPPUPPDN0 = pull;
+	uint32_t pull = GPPUPPDN(RPI4_CONSOLE_TX);
+	pull &= ~((3u << GPPUPPDN_SHIFT(RPI4_CONSOLE_TX))
+		| (3u << GPPUPPDN_SHIFT(RPI4_CONSOLE_RX)));
+	GPPUPPDN(RPI4_CONSOLE_TX) = pull;
 
 	UART_ICR = 0x7ffu;
 	UART_IBRD = 26;
