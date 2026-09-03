@@ -303,6 +303,23 @@ goal_expansion(phrase(GRBody, S0), phrase(GRBody, S0, [])).
 
 (_-->_) :- throw(error(existence_error(procedure,(-->)/2),(-->)/2)).
 
-expand_term((H --> B), Out) :-
-	'$dcg_rule'((H --> B), Out), !.
+% expand_term/2 is the expansion driver, not just a grammar-rule
+% translator: the term_expansion/2 hook first, then translation of
+% whatever came back, then identity. Only the middle step used to be
+% here, so it failed on every term that was not a grammar rule and
+% never consulted the hook at all.
+
+expand_term(T, X) :-
+	user:term_expansion(T, T0),
+	!,
+	expand_term_dcg(T0, X).
+expand_term(T, X) :-
+	expand_term_dcg(T, X).
+
+% A list result has each element translated, as when consulting.
+
+expand_term_dcg(T, X) :- var(T), !, X = T.
+expand_term_dcg((H --> B), X) :- !, '$dcg_rule'((H --> B), X).
+expand_term_dcg([T|Ts], [X|Xs]) :- !, expand_term_dcg(T, X), expand_term_dcg(Ts, Xs).
+expand_term_dcg(T, T).
 

@@ -1,0 +1,7 @@
+identity ok
+rule_identity ok
+hook ok
+single_pass ok
+manual_fixpoint ok
+dcg ok
+hook_output_dcg ok
