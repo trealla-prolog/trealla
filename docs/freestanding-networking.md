@@ -1,6 +1,9 @@
 # Proposal: networking for freestanding Trealla
 
-*Status: proposal. Nothing here is implemented.*
+*Status: layer 3 exists* - `library(tftp)` is a working client and server, and
+the readings pattern below runs today on any hosted build. Layers 1 and 2, the
+driver and the stack, are still proposals: what is missing is everything below
+the socket.
 
 Give a freestanding image a small IPv4/UDP stack that is independent of any
 device, a driver underneath it, and enough of a socket surface that TFTP can be
@@ -175,7 +178,7 @@ means end of file. Lockstep request/response with timeouts and retransmission
 is comfortable ground for Prolog, and `delay_ms/1` already exists for the
 retransmit timer.
 
-Three new builtins, in the port's `g_port_bifs` table:
+Three new builtins, in a table named by the port's `g_port_bif_tables`:
 
 ```
 udp_open(+Port, -Socket)
@@ -190,6 +193,69 @@ is 512 cells for no benefit.
 freestanding build sets `NONETWORK=1` and links `network_none.c`, so anything
 added to `network.c` needs a matching stub there or the freestanding build
 breaks.
+
+## What this is actually for: readings, not files
+
+The endpoint worth aiming at is not a board that can fetch files. It is a board
+that answers questions, over a protocol every machine already speaks.
+
+A TFTP read request carries an arbitrary string. Nothing says it names a file,
+so a server can synthesise the reply - which is precisely what procfs does, and
+what Plan 9 built an operating system on. `library(tftp)`'s `tftp_serve/3`
+takes a `virtual(:Closure)` option that does this, and the namespace is just a
+predicate, so adding a reading is adding a clause:
+
+```prolog
+reading('sensors/temp0', Codes) :-
+    read_adc(0, Celsius),
+    term_codes(reading(temp0, Celsius, celsius), Codes).
+```
+
+Any client can then ask, with nothing installed:
+
+```
+$ tftp raspberrypi 69
+tftp> get sensors/temp0
+$ cat temp0
+reading(temp0,21.44,celsius).
+```
+
+One Prolog term per reading means a Prolog client gets structure back from
+`read_term/2` while `tftp` and `cat` still work for everyone else. A
+`status/index` reading that lists the others makes the namespace
+self-describing.
+
+Three properties are what make it sound, and two of them are structural rather
+than matters of discipline:
+
+- **Sampled once per transfer.** The closure is called when the request
+  arrives and those bytes serve every block and every retransmission. Nothing
+  re-samples mid-transfer, so a client that lost an ACK cannot splice two
+  readings together.
+- **Read-only.** A write to a virtual name is refused. A reading is something
+  to look at; making it settable turns this into unauthenticated control of
+  hardware.
+- **Matched before the filesystem.** Virtual names never reach the path logic,
+  so they may contain `/` and build a hierarchy with no traversal risk. The
+  order matters in the other direction too: an unrecognised hierarchical name
+  on a server that has readings answers "no such reading" rather than falling
+  through to the traversal guard and claiming "access violation", which was
+  both untruthful and a hint to anyone probing.
+
+The honest limits:
+
+- **TFTP has no authentication and no encryption.** Anyone who can send a
+  datagram can read every reading. For instrumentation on a lab network that
+  is a fair trade; it is not a control plane, and the read-only rule above is
+  what keeps the distinction from eroding.
+- **Roughly two round trips per query**, so this is polling at human or
+  second-scale rates. Not a kilohertz telemetry path.
+- **Do not stream.** TFTP ends a transfer on a short block; a continuous feed
+  fights the protocol rather than using it.
+
+The reason this section matters to the rest of the document: unlike the driver,
+all of it is testable today, hosted, with no board involved at all. It is the
+part of the plan that is already done.
 
 ## Milestones
 

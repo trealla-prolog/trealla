@@ -24,7 +24,7 @@
 :- module(tftp, [
 	tftp_get/3, tftp_get/4,
 	tftp_put/3, tftp_put/4,
-	tftp_serve/2
+	tftp_serve/2, tftp_serve/3
 	]).
 
 :- use_module(library(socket)).
@@ -176,38 +176,72 @@ split_block(Bytes, Size, Chunk, Rest) :-
 % is deliberately not attempted here.
 
 tftp_serve(Root, Port) :-
+	tftp_serve(Root, Port, []).
+
+%% tftp_serve(+Root, +Port, +Options) is det.
+%
+% virtual(:Closure) makes a name resolve to a computed value instead of a
+% file: Closure is called as call(Closure, Name, Codes), and whatever it
+% yields is served as the contents. A name it does not recognise falls
+% through to Root as usual. Virtual names are read-only, and are matched
+% before any filesystem check - so they may contain '/' and build a
+% hierarchy without ever going near a path.
+
+tftp_serve(Root, Port, Options) :-
 	udp_socket(Socket),
 	tcp_bind(Socket, Port),
-	serve_loop(Root, Socket).
+	serve_loop(Root, Options, Socket).
 
-serve_loop(Root, Socket) :-
+serve_loop(Root, Options, Socket) :-
 	udp_receive(Socket, Packet, From, [encoding(octet), as(codes)]),
 	% A bad request should cost that client its transfer, not the server.
-	catch(serve_request(Root, From, Packet), _, true),
-	serve_loop(Root, Socket).
+	catch(serve_request(Root, Options, From, Packet), _, true),
+	serve_loop(Root, Options, Socket).
 
 % Each transfer gets its own socket, so the well-known port stays free and
 % the client has a TID to address. This is the one place a server needs
 % that a client does not.
 
-serve_request(Root, Client, Packet) :-
+serve_request(Root, Options, Client, Packet) :-
 	udp_socket(Transfer),
 	tcp_bind(Transfer, _),
-	catch(dispatch(Root, Client, Packet, Transfer), E,
+	catch(dispatch(Root, Options, Client, Packet, Transfer), E,
 		(tcp_close_socket(Transfer), throw(E))),
 	tcp_close_socket(Transfer).
 
-dispatch(Root, Client, Packet, Transfer) :-
+dispatch(Root, Options, Client, Packet, Transfer) :-
 	(	request_parts(Packet, Kind, File, Mode)
 	->	(	Mode \== octet
 		->	send_error(Transfer, Client, 0, 'only octet mode is supported')
+		;	virtual_value(Options, File, Bytes)
+		->	(	Kind == rrq
+			->	send_blocks(Transfer, Client, 1, Bytes)
+			;	% A reading is something to look at, not to write to.
+				send_error(Transfer, Client, 2, 'access violation')
+			)
 		;	\+ safe_name(File)
-		->	send_error(Transfer, Client, 2, 'access violation')
+		->	% A hierarchical name on a server that has readings is far
+			% more likely to be a reading nobody defined than an attempt
+			% to escape Root, and saying so is both truthful and less
+			% informative to someone probing.
+			(	memberchk(virtual(_), Options)
+			->	send_error(Transfer, Client, 1, 'no such reading')
+			;	send_error(Transfer, Client, 2, 'access violation')
+			)
 		;	resolve(Root, File, Path),
 			transfer(Kind, Transfer, Client, Path)
 		)
 	;	send_error(Transfer, Client, 4, 'illegal TFTP operation')
 	).
+
+% Sampled once, here, and those same bytes serve every block and every
+% retransmission of the transfer. Re-reading the sensor per block would let
+% a client that lost an ACK splice two different readings together.
+
+virtual_value(Options, Name, Bytes) :-
+	memberchk(virtual(Closure), Options),
+	catch(call(Closure, Name, Bytes), _, fail),
+	is_list(Bytes).
 
 transfer(rrq, Socket, Client, Path) :-
 	(	read_file_bytes(Path, Bytes)
