@@ -1,10 +1,16 @@
-/*  Fetch a file over TFTP and report what came back.
+/*  Fetch a file over TFTP, or serve a directory, and report what happens.
 
-	Needs a TFTP server to talk to. Any will do - tftpd-hpa, dnsmasq's
-	--enable-tftp, or the one built into a router. Port 69 is privileged,
-	so a test server usually sits somewhere higher:
+	Port 69 is privileged, so a test setup usually sits somewhere higher.
+	In one terminal:
+
+		tpl -f samples/tftp_demo.pl -g "serve('/tmp/tftproot', 6969)"
+
+	and in another:
 
 		tpl -f samples/tftp_demo.pl -g "get('127.0.0.1', 6969, 'hello.txt')"
+
+	Any other TFTP implementation works just as well at either end -
+	tftpd-hpa, dnsmasq's --enable-tftp, or the one in a router.
 
 	Deliberately without initialization/1: the whole point is to name a
 	host, and auto-running a default fetch on every load would just print
@@ -17,6 +23,12 @@
 
 main :-
 	get('127.0.0.1', 69, 'hello.txt').
+
+% Serves until interrupted, one transfer at a time.
+
+serve(Root, Port) :-
+	format("serving ~w on port ~d, ^C to stop~n", [Root, Port]),
+	tftp_serve(Root, Port).
 
 get(Host, Port, File) :-
 	(	catch(tftp_get(Host, Port, File, Bytes), Error, true)
@@ -37,9 +49,15 @@ report(File, Bytes, _) :-
 % file may well not be text at all.
 
 preview(Bytes) :-
-	length(Preview, 60),
-	(	append(Preview, _, Bytes) -> true ; Preview = Bytes ),
-	maplist(printable, Preview, Safe),
+	% length/2 has to stay inside the condition: bind Prefix to 60 fresh
+	% variables first and the fallback can no longer unify it with a
+	% shorter file, so anything under 60 bytes prints nothing at all.
+	(	length(Prefix, 60),
+		append(Prefix, _, Bytes)
+	->	true
+	;	Prefix = Bytes
+	),
+	maplist(printable, Prefix, Safe),
 	atom_codes(Atom, Safe),
 	format("  ~w~n", [Atom]).
 

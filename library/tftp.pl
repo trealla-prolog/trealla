@@ -1,4 +1,4 @@
-/*  A TFTP client (RFC 1350) in Prolog, over library(socket)'s UDP.
+/*  TFTP (RFC 1350) in Prolog, client and server, over library(socket)'s UDP.
 
 	?- use_module(library(tftp)).
 	?- tftp_get('127.0.0.1', 6969, 'hello.txt', Bytes).
@@ -23,7 +23,8 @@
 
 :- module(tftp, [
 	tftp_get/3, tftp_get/4,
-	tftp_put/3, tftp_put/4
+	tftp_put/3, tftp_put/4,
+	tftp_serve/2
 	]).
 
 :- use_module(library(socket)).
@@ -163,6 +164,128 @@ split_block(Bytes, Size, Chunk, Rest) :-
 	;	Chunk = Bytes,
 		Rest = []
 	).
+
+% --- serving -----------------------------------------------------------
+%
+% tftp_serve(+Root, +Port) answers requests for files under Root until it
+% is interrupted. Client and server share everything below this point, and
+% the transfer itself is the same code read the other way round: answering
+% a read request is send_blocks/4, taking a write request is collect/7.
+%
+% One transfer at a time, sequentially. Concurrency would need threads and
+% is deliberately not attempted here.
+
+tftp_serve(Root, Port) :-
+	udp_socket(Socket),
+	tcp_bind(Socket, Port),
+	serve_loop(Root, Socket).
+
+serve_loop(Root, Socket) :-
+	udp_receive(Socket, Packet, From, [encoding(octet), as(codes)]),
+	% A bad request should cost that client its transfer, not the server.
+	catch(serve_request(Root, From, Packet), _, true),
+	serve_loop(Root, Socket).
+
+% Each transfer gets its own socket, so the well-known port stays free and
+% the client has a TID to address. This is the one place a server needs
+% that a client does not.
+
+serve_request(Root, Client, Packet) :-
+	udp_socket(Transfer),
+	tcp_bind(Transfer, _),
+	catch(dispatch(Root, Client, Packet, Transfer), E,
+		(tcp_close_socket(Transfer), throw(E))),
+	tcp_close_socket(Transfer).
+
+dispatch(Root, Client, Packet, Transfer) :-
+	(	request_parts(Packet, Kind, File, Mode)
+	->	(	Mode \== octet
+		->	send_error(Transfer, Client, 0, 'only octet mode is supported')
+		;	\+ safe_name(File)
+		->	send_error(Transfer, Client, 2, 'access violation')
+		;	resolve(Root, File, Path),
+			transfer(Kind, Transfer, Client, Path)
+		)
+	;	send_error(Transfer, Client, 4, 'illegal TFTP operation')
+	).
+
+transfer(rrq, Socket, Client, Path) :-
+	(	read_file_bytes(Path, Bytes)
+	->	send_blocks(Socket, Client, 1, Bytes)
+	;	send_error(Socket, Client, 1, 'File not found')
+	).
+transfer(wrq, Socket, Client, Path) :-
+	ack_packet(0, Ack),
+	udp_send(Socket, Ack, Client, [encoding(octet)]),
+	collect(Socket, 1, Client, Client, Ack, [], Blocks),
+	append(Blocks, Bytes),
+	(	write_file_bytes(Path, Bytes)
+	->	true
+	;	send_error(Socket, Client, 2, 'access violation')
+	).
+
+% A TFTP request carries a bare filename. Anything with a path separator,
+% or a leading dot, would let a client walk out of Root - so it does not
+% get resolved at all rather than being cleaned up and hoped about.
+
+safe_name(File) :-
+	atom_codes(File, Codes),
+	Codes \== [],
+	\+ memberchk(0'/, Codes),
+	\+ memberchk(0'\\, Codes),
+	Codes \= [0'.|_].
+
+resolve(Root, File, Path) :-
+	atom_concat(Root, '/', Prefix),
+	atom_concat(Prefix, File, Path).
+
+% Mode is case-insensitive per the RFC.
+
+request_parts([0, Op|Rest], Kind, File, Mode) :-
+	opcode(Kind, Op),
+	memberchk(Kind, [rrq, wrq]),
+	split_nul(Rest, FileCodes, Rest1),
+	split_nul(Rest1, ModeCodes, _),
+	FileCodes \== [],
+	atom_codes(File, FileCodes),
+	maplist(lowercase, ModeCodes, Lower),
+	atom_codes(Mode, Lower).
+
+split_nul(Codes, Before, After) :-
+	append(Before, [0|After], Codes), !.
+split_nul(Codes, Codes, []).
+
+lowercase(C, L) :- C >= 0'A, C =< 0'Z, !, L is C + 32.
+lowercase(C, C).
+
+send_error(Socket, To, Code, Message) :-
+	opcode(error, Op),
+	block_bytes(Code, Hi, Lo),
+	atom_codes(Message, Codes),
+	append([0, Op, Hi, Lo], Codes, Packet0),
+	append(Packet0, [0], Packet),
+	udp_send(Socket, Packet, To, [encoding(octet)]).
+
+read_file_bytes(Path, Bytes) :-
+	catch(open(Path, read, Stream, [type(binary)]), _, fail),
+	read_bytes(Stream, Bytes),
+	close(Stream).
+
+read_bytes(Stream, Bytes) :-
+	get_byte(Stream, B),
+	(	B < 0
+	->	Bytes = []
+	;	Bytes = [B|Rest],
+		read_bytes(Stream, Rest)
+	).
+
+write_file_bytes(Path, Bytes) :-
+	catch(open(Path, write, Stream, [type(binary)]), _, fail),
+	write_bytes(Bytes, Stream),
+	close(Stream).
+
+write_bytes([], _).
+write_bytes([B|Bs], Stream) :- put_byte(Stream, B), write_bytes(Bs, Stream).
 
 % --- packets -----------------------------------------------------------
 %
