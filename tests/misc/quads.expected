@@ -34,6 +34,9 @@ quads: FAILED more_3, quads.pl:240
 quads: FAILED maybe_3, quads.pl:258
    ?- X=1.
    expected: X=1,maybe
+quads: FAILED unexpected_2, quads.pl:279
+   ?- member(X,[a,b,c]).
+   expected: X=a;X=b,unexpected
 quads: MALFORMED hand_1, hand-written.pl:1
    ?- X=1.
    not an answer: 1=X
@@ -43,4 +46,4 @@ quads: MALFORMED hand_2, hand-written.pl:2
 quads: MALFORMED hand_4, hand-written.pl:4
    ?- V=f(W),W=1.
    not an answer: V=f(W)
-quads: 59 run, 44 passed, 15 failed.
+quads: 61 run, 45 passed, 16 failed.

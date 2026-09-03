@@ -588,3 +588,36 @@ issue — so tightening it broke nothing.
 Coverage: `tests/misc/quads.pl` (`maybe_1`, `maybe_2`, `maybe_4` pass;
 `maybe_3` is a deliberately-failing case, like the file's other
 negative examples) and `tests/issues/test1128.pl`.
+
+## 14. `unexpected` ends the description (issue #1141)
+
+`unexpected` names *one leaf answer* and says that answer is not the
+one the query gives *at that point* — not that the answer is bad in
+general. So a bug report can be filed as a transcript truncated at the
+moment of surprise:
+
+```prolog
+?- member(X, "abc").
+   X = a
+;  X = c, unexpected.
+```
+
+The query does answer `X = c`, but third, not second, so this holds.
+`check_solutions/7` used to keep walking after an `unexpected` leaf and
+then probe for “no further answers”, which failed here on the real
+third answer. Nothing follows an `unexpected` leaf in the description,
+so nothing about the answers after it is claimed — not even that there
+are none:
+
+```prolog
+;	Unexpected == true
+->	true					% nothing is claimed past it
+```
+
+This also removes an unsound path in `capture` mode: `expect/10` under
+`unexpected` is `\+ expect_do(...)`, so its `FullCs` came back unbound
+and was passed on as the next answer's `PrevCs`.
+
+Coverage: `tests/misc/quads.pl` (`unexpected_1` passes; `unexpected_2`
+is a deliberately-failing case, the answer at that point being the one
+described) and `tests/issues/test1141.pl`.

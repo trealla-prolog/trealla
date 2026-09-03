@@ -1,0 +1,4 @@
+quads: FAILED 3, test1141.pl:21
+   ?- member(X,[a,b,c]).
+   expected: X=a;X=b,unexpected
+quads: 3 run, 2 passed, 1 failed.

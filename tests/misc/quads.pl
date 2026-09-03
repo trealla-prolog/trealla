@@ -266,6 +266,20 @@ maybe_4 ?- freeze(_, false).
    maybe.
    true, unexpected.
 
+% 'unexpected' marks the leaf answer given at that point as not the one
+% the query has there, and the description ends: what follows it, if
+% anything, is not described (issue #1141).
+
+unexpected_1 ?- member(X, [a,b,c]).
+   X = a
+;  X = c, unexpected.
+
+% deliberately failing: X = b is the answer at that point
+
+unexpected_2 ?- member(X, [a,b,c]).
+   X = a
+;  X = b, unexpected.
+
 % An answer description must describe an answer *substitution*, so each
 % equation binds a variable and no variable is bound twice within one
 % answer (issue #1074). The parser rejects a malformed description when

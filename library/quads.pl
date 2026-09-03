@@ -84,6 +84,14 @@
       ?- X = 1.
          X = 2, unexpected.
 
+  It marks a single leaf answer as not the one given at that point,
+  and the description ends there: nothing is claimed about the
+  answers that follow, if any.
+
+      ?- member(X, [a,b,c]).
+         X = a
+      ;  X = c, unexpected.
+
   The annotation sto is recognised but such (parts of) descriptions
   are currently skipped, not interpreted.
 
@@ -445,6 +453,10 @@ write_what(bad_identifier, _, _) :-
 % fails while the bug is present and passes once it is fixed, which is
 % what lets a quad be filed verbatim as a bug report.
 
+% 'unexpected' says only that this leaf answer is not the one given
+% *here*, so the description ends there and claims nothing about what
+% follows - not even that nothing does (issue #1141).
+
 % Annotations may appear anywhere in the conjunction, most naturally
 % as a trailing conjunct, so they are removed wherever they occur.
 
@@ -547,6 +559,8 @@ check_solutions([Sol0|T], M, Q, VNs, N, Mode, PrevCs) :-
 	;	expect(Unexpected, M, Q, VNs, N, solution(Items4), Output, Mode, PrevCs, FullCs),
 		(	More == true
 		->	true					% described, then anything further
+		;	Unexpected == true
+		->	true					% nothing is claimed past it (issue #1141)
 		;	N1 is N + 1,
 			check_solutions(T, M, Q, VNs, N1, Mode, FullCs)
 		)
