@@ -13,7 +13,7 @@
 	The protocol logic here is deliberately free of anything hosted: given
 	udp_socket/1, udp_send/4 and udp_receive/4 with the same meanings, this
 	same file is what a freestanding image would run. See
-	docs/rpi4-networking-proposal.md.
+	docs/freestanding-networking.md.
 
 	Lost datagrams are retransmitted: udp_receive/4's timeout(Ms) option
 	fails rather than throwing when nothing arrives, so the retry is an

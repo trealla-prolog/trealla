@@ -1,9 +1,12 @@
-# Proposal: networking for the Raspberry Pi 4 freestanding port
+# Proposal: networking for freestanding Trealla
 
 *Status: proposal. Nothing here is implemented.*
 
-Give the bare-metal Pi 4 image an Ethernet driver, a small IPv4/UDP stack, and
-enough of a socket surface that TFTP can be written in Prolog rather than C.
+Give a freestanding image a small IPv4/UDP stack that is independent of any
+device, a driver underneath it, and enough of a socket surface that TFTP can be
+written in Prolog rather than C. The Raspberry Pi 4 is the first board and its
+GENET the first driver, but only the driver is board-specific: the stack is
+meant to serve other devices on the Pi and other boards entirely.
 
 The point is a network stack driven from Prolog on the bare metal. It is not
 the cheap way to get images onto the board - the firmware already does TFTP
@@ -110,13 +113,61 @@ than growing a hand-rolled stack into one; those are different projects.
 Either way, the structure and constants are worth reading from lwIP and uIP -
 checksum routines, ARP cache ageing, header layouts - while writing our own.
 
-### Where it should live
+### Device independence is a design constraint
 
-The driver is Pi 4-specific and belongs under `ports/rpi4/`. The stack above it
-is not: ARP and IPv4 know nothing about a board. It could reasonably live
-somewhere shared from the start, with only the driver behind a port-specific
-interface - the same split that keeps `src/bif_gpio_linux.c` out of
-`ports/rpi4/`. Worth deciding before the first line rather than after.
+The stack must not know what kind of device is underneath it. Only the driver
+is board-specific; ARP and IPv4 know nothing about a MAC. That is not a
+nice-to-have, and the shape below is a requirement on the design rather than an
+outcome to hope for:
+
+```c
+typedef struct netif_ {
+    const char *name;                      // "genet0"
+    uint8_t mac[6];
+    void *device;                          // the driver's own state
+
+    bool (*init)(struct netif_ *nif);
+    bool (*link_up)(struct netif_ *nif);
+    bool (*send)(struct netif_ *nif, const void *frame, size_t len);
+    size_t (*poll)(struct netif_ *nif, void *frame, size_t maxlen);
+} netif;
+```
+
+Five entry points, all polled, no interrupts, no callbacks upwards. A driver
+fills one of these in and the stack drives it; a second driver on the same
+board, or the same stack on an entirely different board, is another
+implementation of the same five functions.
+
+**Buffers are copied at the boundary, deliberately.** `send` takes a frame the
+stack owns and `poll` fills one the stack owns; the driver's DMA-visible rings
+stay private to the driver. A zero-copy interface would be faster and would
+also drag the cache-coherency problem out of the driver and into the stack -
+every driver would then need the stack's buffers to come from non-cacheable
+memory, and the device independence would be a fiction. At 512-byte TFTP
+blocks the copy costs nothing worth measuring. Keeping the hardest,
+most device-specific problem entirely behind the interface is the point.
+
+The layout follows from this:
+
+| Code | Home | Tied to |
+| --- | --- | --- |
+| ARP, IPv4, ICMP, UDP, the `netif` contract | `src/net/` | nothing |
+| The UDP builtins | `src/net/` | nothing |
+| GENET driver | `ports/rpi4/genet.c` | the BCM2711 |
+
+That mirrors `src/bif_gpio_linux.c` versus `ports/rpi4/bif_gpio.c`: the thing
+tied to an ABI or to nothing lives in `src/`, and only the thing tied to a
+board lives under `ports/`.
+
+### One wrinkle in the existing builtin seam
+
+`g_port_bifs` is a single table supplied by a single object, chosen with
+`PORT_BIFS_OBJECT`. A board wanting both GPIO *and* networking cannot select
+two. Either the engine should walk a NULL-terminated array of tables, or the
+port's table should be assembled from entries the net layer exports. The
+former is tidier and is a few lines in `load_builtins()` and `get_fn_ptr()`.
+Worth settling when the second table appears, which this proposal is what
+makes happen.
 
 ## Layer 3: TFTP in Prolog
 
@@ -149,6 +200,8 @@ poor.
 
 0. Debug loop first: second machine, direct cable or dumb switch, Wireshark
    running. Do not start without this.
+0b. The stack against a loopback and a canned-frame netif, hosted, in
+   `make test`. No board needed, and it stays a regression test afterwards.
 1. Driver brings the link up; PHY status polled and reported over the UART.
 2. **Transmit only.** A hardcoded broadcast ARP, in a loop, visible on the
    other machine. This one frame proves the cache attributes, descriptor
@@ -167,20 +220,32 @@ poor.
 | PHY bring-up | High - most of the schedule variance | FreeBSD driver as reference |
 | No GENET documentation | Medium | Three independent drivers to read |
 | Licence terms on the cribbed driver | Low, but blocking | Check the file header before copying |
-| **No QEMU coverage** | Medium | See below |
+| No QEMU coverage for the driver | Medium | Everything above the driver is testable hosted - see below |
 
-### This work leaves the tested envelope
+### What can and cannot be tested
 
 Everything in the Pi 4 port so far has been verifiable under QEMU's `raspi4b`
 machine, and CI boots it on every push. **QEMU does not emulate GENET** - it is
 explicitly listed among that machine's missing devices, along with PWM and the
 PCIe root port.
 
-So none of this can be smoke-tested the way the rest of the port is. It cannot
-be exercised in CI at all, and it cannot be developed without the board on the
-desk. That is a real change in the character of the work, and it is the reason
-the milestones above are structured so tightly around what can be seen on
-another machine's Wireshark.
+Device independence is what limits the damage. With the `netif` contract above,
+the stack can be driven by a netif that is not a device at all:
+
+- a **loopback netif**, which hands back whatever it is given, exercises ARP,
+  IPv4, ICMP and UDP end to end with no hardware;
+- a **canned-frame netif**, fed captured or hand-built frames, covers malformed
+  input, wrong checksums, truncated headers and the ARP cache;
+- both run in an ordinary **hosted** build, so they belong in `make test` and
+  run in CI on every platform, not just under emulation.
+
+That leaves genuinely untestable only the driver itself - the one layer where
+that is unavoidable, and the one this proposal cribs rather than invents. A
+stack written against a board-specific driver interface would have surrendered
+all of it.
+
+The upshot for the milestones below: layers 2 and 3 can be developed and
+regression-tested before the board is even on the desk.
 
 ## Vendoring hygiene
 
@@ -199,8 +264,8 @@ mechanical. The Prolog TFTP client is an evening, and is the fun part.
 ## Decisions wanted before starting
 
 1. Adapt the FreeBSD driver in place, or vendor it under its own directory?
-2. Does the IPv4/UDP stack live under `ports/rpi4/`, or somewhere shared from
-   the outset?
+2. ~~Where does the stack live?~~ Settled: `src/net/`, behind the `netif`
+   contract, with only the driver under `ports/rpi4/`.
 3. Static IP configuration only, or DHCP in scope? (DHCP is perhaps another
    150 lines and can wait.)
 4. Is leaving CI coverage behind acceptable for this subsystem?
