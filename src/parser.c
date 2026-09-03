@@ -361,7 +361,7 @@ void parser_reset(parser *p)
 	p->is_command = p->is_comment = p->is_consulting = p->is_symbol = false;
 	p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close = false;
 	p->last_neg = p->no_fp = p->reuse= p->in_body = false;
-	p->is_number_chars = false;
+	p->is_number_chars = p->expand_dcg = false;
 
 	SB_free(p->token);
 	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
@@ -2841,6 +2841,7 @@ static bool term_expansion(parser *p)
 	parser *p2 = parser_create(p->m);
 	check_error(p2);
 	p2->srcptr = src;
+	p2->expand_dcg = true;		// a --> result gets translated (issue #1142)
 	tokenize(p2, false, false);
 
 	if (p2->error) {
@@ -4760,6 +4761,32 @@ bool expand_term(parser *p, cell *c)
 		} else {
 			cell *c2 = p2->cl->cells;
 
+			// A --> among the terms the hook returned, which never
+			// met tokenize()'s translation branch (issue #1142).
+			// dcg_expand_clause() emits fresh vars named but unnumbered
+			// and zeroes num_vars, so the assign_vars() after it is not
+			// optional (see new_var() in bif_dcgs.c); the other two
+			// finish a clause built here rather than tokenized.
+
+			if (is_interned(c2) && (c2->val_off == g_dcg_s)
+				&& (get_arity(c2) == 2)) {
+				if (!dcg_expand_clause(p2)) {
+					parser_destroy(p2);
+					return false;
+				}
+
+				assign_vars(p2, 0, false);
+
+				if (p2->error) {
+					parser_destroy(p2);
+					return false;
+				}
+
+				process_clause(p2->m, p2->cl, NULL);
+				term_to_body(p2);
+				c2 = p2->cl->cells;
+			}
+
 			if (!process_term(p2, c2)) {
 				parser_destroy(p2);
 				return false;
@@ -4865,26 +4892,27 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				// S0/S threading is silently lost. Letting assign_vars()
 				// see them is what registers the names.
 
-				if (p->is_consulting && !p->skip && !p->internal
+				if ((p->is_consulting || p->expand_dcg) && !p->skip && !p->internal
 					&& is_interned(p->cl->cells)
 					&& (p->cl->cells->val_off == g_dcg_s)
 					&& (get_arity(p->cl->cells) == 2)) {
-					// The old FIXME here read "need to term_expand &
-					// may be a list?". The list half is done: a user
-					// term_expansion/2 returning a list is handled by
-					// expand_term() below, and the original term is
-					// replaced rather than also asserted.
+					// expand_dcg is the re-parse of a term_expansion/2
+					// result (issue #1142). A --> the hook emitted has
+					// already sailed past this branch as whatever the
+					// hook was given, so it is translated on the way
+					// back in - still ahead of assign_vars(), the order
+					// dcg_expand_clause() requires. We used to assert
+					// it raw as a fact for '-->'/2.
 					//
-					// What remains is that a --> term never reaches a
-					// user term_expansion/2 hook, because translation
-					// happens here and term_expansion() runs later.
-					// Swapping the order is not a small change:
-					// term_expansion() produces a fully processed
-					// clause via its own print-and-reparse, so it
-					// cannot simply move ahead of assign_vars(), and
-					// translation cannot move after it without losing
-					// the variable registration that goal_expansion
-					// depends on (see §10 of docs/native-dcg-design.md).
+					// Still true, and the reason the hook cannot simply
+					// move ahead of translation: term_expansion()
+					// produces a fully processed clause via its own
+					// print-and-reparse, so it cannot move ahead of
+					// assign_vars(), and translation cannot move after
+					// it without losing the variable registration that
+					// goal_expansion depends on (see §10 of
+					// docs/native-dcg-design.md). So a --> term written
+					// in the source still never reaches the hook.
 					//
 					// Note also that tabled DCG rules work *because*
 					// the rename in library/tabling.pl's

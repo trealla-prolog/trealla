@@ -1,0 +1,8 @@
+scalar ok
+list_recursive ok
+list_reject ok
+list_fact ok
+list_rule ok
+goal_expansion ok
+handwritten ok
+no_dcg_fact ok
