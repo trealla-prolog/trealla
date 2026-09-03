@@ -310,6 +310,19 @@ endif
 
 # A port that exposes board hardware to Prolog overrides this with its own
 # builtin table; every other build gets the empty one.
+#
+# LINUX_GPIO=1 fills it on a hosted build with the GPIO character-device
+# builtins, giving the same gpio_* and delay_ms predicates as the Raspberry
+# Pi 4 freestanding port so the same Prolog runs on both. Opt-in, because a
+# build that never touches a pin should not carry them. Not Pi-specific: it
+# wraps the kernel ABI, so it serves any Linux board with a gpiochip.
+
+ifdef LINUX_GPIO
+ifneq ($(UNAME_S),Linux)
+$(error LINUX_GPIO=1 needs Linux and its GPIO character device)
+endif
+PORT_BIFS_OBJECT = src/bif_gpio_linux.o
+endif
 
 PORT_BIFS_OBJECT ?= src/port_bifs_none.o
 

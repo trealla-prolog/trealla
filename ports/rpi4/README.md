@@ -131,6 +131,10 @@ application has no way to pace itself. It spins rather than idling: with no
 scheduler and no interrupts, the core has nothing else to do. Measured under
 QEMU at 1.51 s for `delay_ms(1500)` against a 0.33 s no-delay control.
 
+A hosted Linux build offers the same predicates over the GPIO character
+device (`make LINUX_GPIO=1`), so the same Prolog runs either way - see
+[docs/gpio.md](../../docs/gpio.md) for where the two differ.
+
 `ports/rpi4/blink.pl` is the worked example, and the one to reach for with a
 board on the bench:
 

@@ -2492,6 +2492,21 @@ An example freestanding image for a Raspberry Pi 4:
 ```
 
 
+GPIO
+====
+
+Hosted Linux builds can drive GPIO pins through the character device:
+
+```
+	✗ make LINUX_GPIO=1
+	✗ tpl -g "gpio_chip(N,L,C), write(L), nl, halt"
+	pinctrl-bcm2711
+```
+
+The predicates match the Raspberry Pi 4 freestanding port's, so the same Prolog
+runs bare metal or hosted. See the [GPIO notes](docs/gpio.md).
+
+
 Profile
 =======
 
