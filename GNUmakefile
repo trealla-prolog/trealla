@@ -380,6 +380,7 @@ LIBOBJECTS +=  \
 	library/reif.o \
 	library/si.o \
 	library/tabling.o \
+	library/tftp.o \
 	library/sqlite3.o \
 	library/socket.o \
 	library/sockets.o \

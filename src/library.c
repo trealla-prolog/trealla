@@ -3,6 +3,8 @@
 #ifdef EMBED
 extern unsigned char library_socket_pl[];
 extern unsigned int library_socket_pl_len;
+extern unsigned char library_tftp_pl[];
+extern unsigned int library_tftp_pl_len;
 extern unsigned char library_tabling_pl[];
 extern unsigned int library_tabling_pl_len;
 extern unsigned char library_builtins_pl[];
@@ -110,6 +112,7 @@ extern unsigned int main_pl_len;
 
 library g_libs[] = {
 	 {"socket", library_socket_pl, &library_socket_pl_len},
+	 {"tftp", library_tftp_pl, &library_tftp_pl_len},
 	 {"tabling", library_tabling_pl, &library_tabling_pl_len},
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
 	 {"aggregate", library_aggregate_pl, &library_aggregate_pl_len},

@@ -29,8 +29,10 @@ they differ only in the interface they present. Use whichever suits.
 
   * `udp_receive/4` and `udp_send/4` carry text as UTF-8, so a byte over
     127 goes out as more than one byte. Pass `encoding(octet)` for a
-    binary protocol: the datagram is then a list of raw byte values in
-    both directions. `encoding(iso_latin_1)` is rejected rather than
+    binary protocol. Under it `udp_send/4` takes a list of byte values,
+    but `udp_receive/4` still honours `as/1`, which defaults to `string` -
+    so a binary protocol wants `[encoding(octet), as(codes)]` to get the
+    bytes back as a list. `encoding(iso_latin_1)` is rejected rather than
     quietly approximated.
 
   * `udp_receive/4` with `as(term)` interns the functor and atom names of
@@ -324,7 +326,14 @@ unix_domain_socket(Socket) :- socket_create(Socket, [domain(unix)]).
 % asymmetry, not ours.
 %
 % Options: as(atom|codes|string|chars|term), default string;
-% max_message_size(+Bytes), default 4096; encoding(octet|utf8|text).
+% max_message_size(+Bytes), default 4096; encoding(octet|utf8|text);
+% timeout(+Milliseconds).
+%
+% Without timeout/1 the receive blocks indefinitely, as before. With it,
+% udp_receive/4 FAILS if nothing arrives in time - note fails, not throws,
+% so that a retry is an if-then-else. timeout(0) polls and returns at once,
+% which is the non-blocking case; nothing about the socket's own flags is
+% changed either way, so other operations on the stream are unaffected.
 
 udp_receive(Socket, Data, From, Options) :-
 	must_be(list, Options),
@@ -332,7 +341,13 @@ udp_receive(Socket, Data, From, Options) :-
 	'$udp_enc'(Options, Enc, udp_receive/4),
 	'$udp_stream'(Socket, Stream, udp_receive/4),
 	'$udp_bifopts'(Options, Enc, BifOpts),
-	'$sock_call'('$udp_recv'(Stream, Raw, Host, Port, BifOpts), udp_receive/4),
+	% A timeout is an outcome, not a fault: it fails rather than throwing,
+	% so a retransmit loop is an if-then-else and not a catch/3.
+	catch('$udp_recv'(Stream, Raw, Host, Port, BifOpts), E, true),
+	(	var(E) -> true
+	;	E = error(socket_error(timeout, _), _) -> fail
+	;	'$sock_rethrow'(E, udp_receive/4)
+	),
 	'$udp_data'(Enc, Raw, As, Data),
 	'$normalise_peer'(Host, Ip),
 	From = Ip:Port.
@@ -367,8 +382,13 @@ udp_send(Socket, Data, To, Options) :-
 
 '$udp_bifopts'(Options, Enc, BifOpts) :-
 	(  memberchk(max_message_size(N), Options)
-	-> Rest = [max_message_size(N)]
-	;  Rest = []
+	-> Rest0 = [max_message_size(N)]
+	;  Rest0 = []
+	),
+	(  memberchk(timeout(T), Options)
+	-> must_be(integer, T),
+	   Rest = [timeout(T)|Rest0]
+	;  Rest = Rest0
 	),
 	(  Enc == octet
 	-> BifOpts = [encoding(octet)|Rest]

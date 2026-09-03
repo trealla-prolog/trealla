@@ -559,6 +559,7 @@ static bool bif_sys_udp_recv_5(query *q)
 	stream *str = &q->pl->streams[n];
 	size_t maxlen = 4096;
 	bool octet = false;
+	int timeout_ms = -1;			// no timeout(_): block as before
 
 	PROLOG_LIST_HANDLER(p4);
 
@@ -583,9 +584,33 @@ static bool bif_sys_udp_recv_5(query *q)
 				octet = true;
 		}
 
+		if (is_compound(c) && (get_arity(c) == 1)
+			&& !CMP_STRING_TO_CSTR(q, c, "timeout")) {
+			cell *arg = deref(q, c+1, c_ctx);
+
+			if (is_smallint(arg) && (get_smallint(arg) >= 0))
+				timeout_ms = (int)get_smallint(arg);
+		}
+
 		p4 = PROLOG_LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
+	}
+
+	// timeout(0) polls and returns at once, which is the non-blocking case;
+	// a positive value sleeps in the kernel until then. Timing out is
+	// reported as socket_error(timeout), which library(socket) turns into a
+	// clean failure rather than an exception.
+
+	if (timeout_ms >= 0) {
+		int ready = tpl_udp_wait(str, timeout_ms);
+
+		if (!ready)
+			return throw_error(q, pstr, pstr_ctx, "socket_error", "timeout");
+
+		if (ready < 0)
+			return throw_error(q, pstr, pstr_ctx, "socket_error",
+				tpl_socket_errname(errno));
 	}
 
 	char *buf = TPL_malloc(maxlen);

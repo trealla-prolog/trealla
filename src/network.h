@@ -20,6 +20,7 @@ extern int tpl_getc(stream *str);
 extern size_t tpl_write(const void *ptr, size_t nbytes, stream *str);
 extern int tpl_close(stream *str);
 
+extern int tpl_udp_wait(stream *str, int timeout_ms);
 extern ssize_t tpl_udp_recv(stream *str, void *buf, size_t buflen, char *host, size_t hostlen, int *port);
 extern ssize_t tpl_udp_send(stream *str, const void *buf, size_t len, const char *host, int port);
 extern const char *tpl_socket_errname(int err);

@@ -950,6 +950,54 @@ ssize_t tpl_udp_recv(stream *str, void *buf, size_t buflen, char *host, size_t h
 #endif
 }
 
+// Wait until a datagram is readable, so a receive can give up instead of
+// blocking forever. poll() rather than select(): same idea, but with no
+// FD_SETSIZE ceiling to fall off when a process holds many streams. The
+// socket's own flags are left alone - making the descriptor non-blocking
+// would change every other operation on the stream too, and this has to
+// serve callers that still want a blocking read.
+//
+// timeout_ms of 0 polls and returns at once, which is the non-blocking
+// case. Returns 1 readable, 0 timed out, -1 error.
+
+int tpl_udp_wait(stream *str, int timeout_ms)
+{
+#if !defined(_WIN32) && !defined(__wasi__)
+	int fd = fileno(str->fp_in);
+	uint64_t deadline = monotonic_time_in_usec() + (uint64_t)timeout_ms * 1000;
+
+	for (;;) {
+		struct pollfd pfd;
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+		int rc = poll(&pfd, 1, timeout_ms);
+
+		if (rc > 0)
+			return 1;
+
+		if (!rc)
+			return 0;
+
+		if (errno != EINTR)
+			return -1;
+
+		// A signal is not a timeout. poll() does not report how much of
+		// the interval was left, so take it from the clock; the deadline
+		// is what the caller asked for, not one full interval per signal.
+		uint64_t now = monotonic_time_in_usec();
+
+		if (now >= deadline)
+			return 0;
+
+		timeout_ms = (int)((deadline - now) / 1000);
+	}
+#else
+	(void)str; (void)timeout_ms;
+	return -1;
+#endif
+}
+
 // Addressed datagram write. Resolves per call rather than caching: a UDP
 // socket may send to many peers, so there is no one address to cache.
 

@@ -219,6 +219,12 @@ int tpl_close(stream *str)
 	return ok;
 }
 
+int tpl_udp_wait(stream *str, int timeout_ms)
+{
+	(void)str; (void)timeout_ms;
+	return unavailable();
+}
+
 ssize_t tpl_udp_recv(stream *str, void *buf, size_t buflen, char *host, size_t hostlen, int *port)
 {
 	(void)str; (void)buf; (void)buflen; (void)host; (void)hostlen; (void)port;
