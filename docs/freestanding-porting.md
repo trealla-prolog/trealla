@@ -112,6 +112,11 @@ make FREESTANDING=1 NOPIC=1 \
 Applications can load additional flash or serial-delivered source with
 `pl_consult_text()`; no temporary filesystem is involved.
 
+`PROGRAM` says what to embed; `FREESTANDING_MAIN` says what runs it.
+`samples/freestanding.c` is the acceptance harness and drives fixed queries,
+while `samples/freestanding_app.c` simply consults the program and lets its
+`initialization/1` goal run, which is what an application image wants.
+
 ## Acceptance test
 
 The reference smoke application demonstrates the minimum useful test: boot,

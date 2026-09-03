@@ -32,6 +32,10 @@ RPI4_MAP = ports/rpi4/trealla.map
 RPI4_OBJ = ports/rpi4/boot.o ports/rpi4/mmu.o ports/rpi4/platform.o \
 	ports/rpi4/syscalls.o
 RPI4_CFLAGS = -mcpu=cortex-a72 -ffunction-sections -fdata-sections
+# What the image boots: the acceptance harness and its smoke program by
+# default, overridden by `make rpi4-app main=<program.pl>`.
+RPI4_PROGRAM ?= ports/rpi4/program.pl
+RPI4_APP ?= samples/freestanding.c
 RPI4_LDFLAGS = -nostartfiles -Tports/rpi4/rpi4.ld -Wl,--gc-sections \
 	-Wl,--no-warn-rwx-segments -Wl,-Map=$(RPI4_MAP) -lm
 ESP32S3_CC ?= xtensa-esp32s3-elf-gcc
@@ -161,6 +165,7 @@ ifdef FREESTANDING
 CFLAGS += -DTPL_FREESTANDING=1 -DUSE_MMAP=0
 override EMBED_LIBS := $(FREESTANDING_BASE_LIBS) $(filter-out $(FREESTANDING_BASE_LIBS),$(EMBED_LIBS))
 PROGRAM ?= samples/freestanding.pl
+FREESTANDING_MAIN ?= samples/freestanding.c
 PLATFORM_OBJ ?= src/platform/hosted.o
 NOFFI = 1
 NOSSL = 1
@@ -489,7 +494,7 @@ samples/allocator: samples/allocator.c $(LIBTREALLA)
 samples/oom: samples/oom.c $(LIBTREALLA)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBTREALLA) $(OPT) $(LDFLAGS)
 
-samples/freestanding: samples/freestanding.c program.o $(LIBTREALLA) $(PLATFORM_OBJ)
+samples/freestanding: $(FREESTANDING_MAIN) program.o $(LIBTREALLA) $(PLATFORM_OBJ)
 	$(CC) $(CFLAGS) -o $@ $< program.o $(LIBTREALLA) $(PLATFORM_OBJ) $(OPT) $(LDFLAGS)
 
 .PHONY: freestanding freestanding-smoke port-template-smoke
@@ -532,7 +537,7 @@ qemu-riscv32:
 qemu-riscv32-smoke: qemu-riscv32
 	$(PYTHON) util/qemu_smoke.py $(QEMU_RISCV) $(QEMU_RISCV_ELF) $(QEMU_RISCV_SIZE)
 
-.PHONY: rpi4 rpi4-smoke
+.PHONY: rpi4 rpi4-app rpi4-smoke
 
 # boot.S needs the same driver flags as the C files; the built-in .S rule
 # would use ASFLAGS and miss them.
@@ -549,7 +554,7 @@ rpi4:
 		CC=$(RPI4_CC) AR=$(RPI4_AR) HOST_CC=$(HOST_CC) \
 		'PLATFORM_OBJ=$(RPI4_OBJ)' \
 		PORT_BIFS_OBJECT=ports/rpi4/bif_gpio.o \
-		PROGRAM=ports/rpi4/program.pl \
+		'PROGRAM=$(RPI4_PROGRAM)' 'FREESTANDING_MAIN=$(RPI4_APP)' \
 		'TARGET_CFLAGS=$(RPI4_CFLAGS)' 'LDFLAGS=$(RPI4_LDFLAGS)' \
 		samples/freestanding
 	cp samples/freestanding $(RPI4_ELF)
@@ -558,6 +563,16 @@ rpi4:
 
 # Semihosting is a QEMU-only exit path, so the smoke image is built with it
 # and a flashable image is not.
+
+# The bare-metal equivalent of `make compile main=...`: build a kernel image
+# that boots straight into one Prolog program.
+
+rpi4-app:
+	@test -n "$(main)" || { \
+		echo "usage: make rpi4-app main=<program.pl>"; exit 1; \
+	}
+	@test -f "$(main)" || { echo "no such program: $(main)"; exit 1; }
+	$(MAKE) 'RPI4_PROGRAM=$(main)' 'RPI4_APP=samples/freestanding_app.c' rpi4
 
 rpi4-smoke:
 	@$(QEMU_RPI4) -M help | grep -q '^raspi4b ' || { \

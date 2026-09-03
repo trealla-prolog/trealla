@@ -2,12 +2,14 @@
 
 #include "prolog.h"
 #include "query.h"
+#include "platform/platform.h"
 
 #include "bcm2711.h"
 
-// GPIO builtins for the Raspberry Pi 4, supplied to the engine through the
-// g_port_bifs table. Board knowledge stays here: src/ has no idea a GPIO pin
-// exists, and a hosted build links the empty table in src/port_bifs_none.c.
+// The Raspberry Pi 4's builtin table, supplied to the engine as g_port_bifs:
+// the GPIO block, plus the timing primitive an application needs to pace
+// itself. Board knowledge stays here - src/ has no idea a GPIO pin exists,
+// and a hosted build links the empty table in src/port_bifs_none.c.
 
 typedef struct {
 	const char *name;
@@ -192,11 +194,45 @@ static bool bif_gpio_write_2(query *q)
 	return true;
 }
 
+// A freestanding build has no sleep/1: g_os_bifs is empty in
+// src/bif_os_none.c, so nothing in the engine can pace an application. This
+// spins on the platform's monotonic clock rather than idling, because with no
+// scheduler and no interrupts there is nothing else for the core to do.
+//
+// Called straight from the builtin, so throw_error's result is returned as-is
+// - it is the value the engine expects, not a success flag.
+
+static bool bif_delay_ms_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+
+	if (is_bigint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error",
+			"small_integer_range");
+
+	pl_int requested = get_smallint(p1);
+
+	if (requested < 0)
+		return throw_error(q, p1, p1_ctx, "domain_error",
+			"not_less_than_zero");
+
+	uint64_t started = tpl_platform_monotonic_usec();
+	uint64_t wanted = (uint64_t)requested * 1000u;
+
+	while ((tpl_platform_monotonic_usec() - started) < wanted) {
+		if (q->halt || q->pl->halt)
+			break;
+	}
+
+	return true;
+}
+
 builtins g_port_bifs[] =
 {
 	{"gpio_mode", 2, bif_gpio_mode_2, "+integer,+atom", false, false, BLAH},
 	{"gpio_pull", 2, bif_gpio_pull_2, "+integer,+atom", false, false, BLAH},
 	{"gpio_read", 2, bif_gpio_read_2, "+integer,?integer", false, false, BLAH},
 	{"gpio_write", 2, bif_gpio_write_2, "+integer,+integer", false, false, BLAH},
+	{"delay_ms", 1, bif_delay_ms_1, "+integer", false, false, BLAH},
 	{0}
 };
