@@ -1,11 +1,11 @@
 #include "prolog.h"
 #include "query.h"
 
-// Default (empty) port builtin table. A freestanding port that exposes board
-// hardware to Prolog replaces this object through PORT_BIFS_OBJECT and defines
-// its own g_port_bifs, the way BIF_OS_OBJECT and NETWORK_OBJECT are selected.
+// The default: no extra builtin tables at all. A port or optional subsystem
+// replaces this object through PORT_BIFS_OBJECT and supplies its own array,
+// the way BIF_OS_OBJECT and NETWORK_OBJECT are selected.
 
-builtins g_port_bifs[] =
+builtins *g_port_bif_tables[] =
 {
-	{0}
+	NULL
 };

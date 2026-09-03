@@ -6,9 +6,9 @@
 
 #include "bcm2711.h"
 
-// The Raspberry Pi 4's builtin table, supplied to the engine as g_port_bifs:
-// the GPIO block, plus the timing primitive an application needs to pace
-// itself. Board knowledge stays here - src/ has no idea a GPIO pin exists,
+// One of the Raspberry Pi 4's builtin tables - the GPIO block, plus the
+// timing primitive an application needs to pace itself. ports/rpi4/port_bifs.c
+// is what hands it, and any later ones, to the engine. Board knowledge stays here - src/ has no idea a GPIO pin exists,
 // and a hosted build links the empty table in src/port_bifs_none.c.
 
 typedef struct {
@@ -227,7 +227,7 @@ static bool bif_delay_ms_1(query *q)
 	return true;
 }
 
-builtins g_port_bifs[] =
+builtins g_gpio_bifs[] =
 {
 	{"gpio_mode", 2, bif_gpio_mode_2, "+integer,+atom", false, false, BLAH},
 	{"gpio_pull", 2, bif_gpio_pull_2, "+integer,+atom", false, false, BLAH},

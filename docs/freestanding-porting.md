@@ -57,12 +57,18 @@ Strings returned by `pl_term_text()` and `pl_int_text()` must be released with
 
 ## Exposing board hardware to Prolog
 
-A port that wants board services callable from Prolog supplies a builtin table
-rather than editing the engine. Define `g_port_bifs` in a port object and
-select it with `PORT_BIFS_OBJECT`; a build that does not gets the empty table
-in `src/port_bifs_none.c`. The engine walks one more table and stays free of
-board conditionals, the same way `BIF_OS_OBJECT` and `NETWORK_OBJECT` are
-chosen. `ports/rpi4/bif_gpio.c` is the worked example.
+A port that wants board services callable from Prolog supplies builtin tables
+rather than editing the engine. Define one or more tables in port objects, and
+exactly one `g_port_bif_tables` - a NULL-terminated array naming them - then
+select those objects with `PORT_BIFS_OBJECT`, which takes a list. A build that
+selects nothing gets the empty array in `src/port_bifs_none.c`. The engine
+walks whatever the array holds and stays free of board conditionals, the same
+way `BIF_OS_OBJECT` and `NETWORK_OBJECT` are chosen.
+
+It is an array rather than a single table so that a board can expose more than
+one subsystem - GPIO and networking, say - without either of them having to
+know about the other. `ports/rpi4/bif_gpio.c` and `ports/rpi4/port_bifs.c` are
+the worked example: the table, and the manifest that offers it.
 
 One trap when writing those builtins: `throw_error()` returns **true** when a
 `catch/3` handler accepted the ball, so its result is the value the builtin

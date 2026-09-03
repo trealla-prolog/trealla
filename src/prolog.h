@@ -56,8 +56,10 @@ extern builtins g_iso_bifs[];
 extern builtins g_misc_bifs[];
 extern builtins g_net_bifs[];
 extern builtins g_os_bifs[];
-// Board builtins supplied by a freestanding port; empty on a hosted build.
-extern builtins g_port_bifs[];
+// Builtin tables supplied by a port or an optional subsystem, as a
+// NULL-terminated array so a build can have more than one - a board with
+// both GPIO and networking, say. Empty unless something selects otherwise.
+extern builtins *g_port_bif_tables[];
 extern builtins g_other_bifs[];
 extern builtins g_control_bifs[];
 extern builtins g_posix_bifs[];

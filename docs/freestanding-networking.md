@@ -159,15 +159,13 @@ That mirrors `src/bif_gpio_linux.c` versus `ports/rpi4/bif_gpio.c`: the thing
 tied to an ABI or to nothing lives in `src/`, and only the thing tied to a
 board lives under `ports/`.
 
-### One wrinkle in the existing builtin seam
+### The builtin seam is ready for this
 
-`g_port_bifs` is a single table supplied by a single object, chosen with
-`PORT_BIFS_OBJECT`. A board wanting both GPIO *and* networking cannot select
-two. Either the engine should walk a NULL-terminated array of tables, or the
-port's table should be assembled from entries the net layer exports. The
-former is tidier and is a few lines in `load_builtins()` and `get_fn_ptr()`.
-Worth settling when the second table appears, which this proposal is what
-makes happen.
+`g_port_bif_tables` is a NULL-terminated array of tables rather than one
+table, precisely so a board can expose GPIO and networking at once without
+either knowing about the other. A port lists what it offers in its own
+manifest - `ports/rpi4/port_bifs.c` - so adding the UDP builtins is a line
+there and a new table, with no change to the GPIO file or to `src/`.
 
 ## Layer 3: TFTP in Prolog
 

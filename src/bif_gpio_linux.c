@@ -469,7 +469,7 @@ static bool bif_gpio_chip_3(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 }
 
-builtins g_port_bifs[] =
+static builtins g_gpio_linux_bifs[] =
 {
 	{"gpio_mode", 2, bif_gpio_mode_2, "+integer,+atom", false, false, BLAH},
 	{"gpio_pull", 2, bif_gpio_pull_2, "+integer,+atom", false, false, BLAH},
@@ -478,4 +478,10 @@ builtins g_port_bifs[] =
 	{"delay_ms", 1, bif_delay_ms_1, "+integer", false, false, BLAH},
 	{"gpio_chip", 3, bif_gpio_chip_3, "?atom,?atom,?integer", false, false, BLAH},
 	{0}
+};
+
+builtins *g_port_bif_tables[] =
+{
+	g_gpio_linux_bifs,
+	NULL
 };

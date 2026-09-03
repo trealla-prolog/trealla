@@ -17,10 +17,11 @@ expose the same predicates, so the same Prolog runs on either.
 
 ## How they are selected
 
-Neither is in a default build. Both fill `g_port_bifs`, the builtin table the
-engine walks in addition to its own, chosen through `PORT_BIFS_OBJECT`; a build
-that selects neither links the empty table in `src/port_bifs_none.c` and has no
-GPIO predicates at all.
+Neither is in a default build. Both are offered through `g_port_bif_tables`,
+the NULL-terminated array of extra builtin tables the engine walks alongside
+its own, chosen with `PORT_BIFS_OBJECT`; a build that selects neither links the
+empty array in `src/port_bifs_none.c` and has no GPIO predicates at all. The
+array exists so one board can expose several subsystems at once.
 
 ```
 make rpi4          # bare metal: ports/rpi4/bif_gpio.o, BCM2711 registers

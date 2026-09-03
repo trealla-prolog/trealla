@@ -634,9 +634,11 @@ builtins *get_fn_ptr(void *fn)
 			return ptr;
 	}
 
-	for (builtins *ptr = g_port_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
+	for (builtins **tab = g_port_bif_tables; *tab; tab++) {
+		for (builtins *ptr = *tab; ptr->name; ptr++) {
+			if (ptr->fn == fn)
+				return ptr;
+		}
 	}
 
 	for (builtins *ptr = g_other_bifs; ptr->name; ptr++) {
@@ -800,10 +802,12 @@ void load_builtins(prolog *pl)
 		sl_app(pl->help, ptr->name, ptr);
 	}
 
-	for (const builtins *ptr = g_port_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
+	for (builtins **tab = g_port_bif_tables; *tab; tab++) {
+		for (const builtins *ptr = *tab; ptr->name; ptr++) {
+			sl_app(pl->biftab, ptr->name, ptr);
+			if (ptr->name[0] == '$') continue;
+			sl_app(pl->help, ptr->name, ptr);
+		}
 	}
 
 	for (const builtins *ptr = g_net_bifs; ptr->name; ptr++) {

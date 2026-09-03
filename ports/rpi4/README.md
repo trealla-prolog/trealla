@@ -91,7 +91,8 @@ may place the tree inside that range.
 | `boot.S` | Parks cores 1-3, drops EL3/EL2 to EL1, enables FP/SIMD, sets the stack, zeroes BSS |
 | `mmu.c` | Identity-maps RAM as Normal write-back and the peripheral window as Device, then enables the MMU and caches |
 | `platform.c` | The five platform services: PL011 console, generic-timer clock, halt, panic |
-| `bif_gpio.c` | The board builtins - GPIO and `delay_ms/1` - supplied as `g_port_bifs` |
+| `bif_gpio.c` | The board builtins - GPIO and `delay_ms/1` |
+| `port_bifs.c` | The manifest: which tables this port hands the engine |
 | `bcm2711.h` | Register map shared by the adapter and the builtins |
 | `syscalls.c` | Newlib's bottom half — console `_read`/`_write` and a bump `_sbrk` over the linker-defined heap |
 | `rpi4.ld` | Image at 0x80000, 8 MiB stack, heap up to 0x20000000 |
@@ -112,8 +113,9 @@ honestly monotonic and honestly not wall time.
 ## Board builtins
 
 The port exposes the BCM2711 GPIO block and a timing primitive to Prolog
-through `g_port_bifs`, the builtin table a freestanding port may supply
-(`PORT_BIFS_OBJECT`, defaulting to the empty `src/port_bifs_none.c`). The
+through `g_port_bif_tables`, the array of builtin tables a freestanding port
+may supply (`PORT_BIFS_OBJECT`, defaulting to the empty
+`src/port_bifs_none.c`). The
 engine has no board knowledge: it walks one more table, and the Makefile
 decides who fills it.
 
