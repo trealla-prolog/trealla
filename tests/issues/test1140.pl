@@ -8,6 +8,9 @@
 % case from #1099 already did); read_term honoured error_type already,
 % number_chars/2 and number_codes/2 hardcoded syntax_error.
 %
+% Which limit is breached depends on the sign, the same way min_integer
+% and max_integer differ, so a negative literal gives min_float.
+%
 % https://github.com/trealla-prolog/trealla/issues/1140
 
 :- initialization(main).
@@ -30,6 +33,15 @@ main :-
 	t(atom_number, atom_number('9.9e999', _)),
 	r(read_term,   '9.9e999'),
 	r(read_nested, 'f(9.9e999)'),
+	r(read_neg,    '-9.9e999'),
+
+	% 6.3.1.2 allows layout between the sign and the number token, so
+	% '- 9.9e999' is a negative constant, not -(9.9e999). The plus is
+	% not a sign though, so there the constant stays positive.
+
+	r(read_spaced_neg, '- 9.9e999'),
+	r(read_pos_sign,   '+9.9e999'),
+	r(read_spaced_pos, '+ 9.9e999'),
 
 	% Neighbouring cases that must keep their current answers.
 

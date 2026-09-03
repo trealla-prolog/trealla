@@ -3927,7 +3927,9 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	// An overflowing float is syntactically fine, it just exceeds an
 	// implementation defined limit, so 8.12.2 f applies and not
-	// 8.16.7.3 e (issue #1140).
+	// 8.16.7.3 e (issue #1140). Which limit depends on the sign, as
+	// with min_integer/max_integer: strtod only ever sees the digits
+	// here, the sign is carried in neg.
 
 	if (p->flags.json && s && ((*s == 'e') || (*s == 'E')) && isdigit((unsigned char)s[1])) {
 		p->v.tag = TAG_FLOAT;
@@ -3938,7 +3940,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: float overflow, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			p->error_desc = "max_float";
+			p->error_desc = neg ? "min_float" : "max_float";
 			p->error_type = "representation_error";
 			p->error = true;
 			return false;
@@ -3962,7 +3964,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: float overflow, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			p->error_desc = "max_float";
+			p->error_desc = neg ? "min_float" : "max_float";
 			p->error_type = "representation_error";
 			p->error = true;
 			return false;

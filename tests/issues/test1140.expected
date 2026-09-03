@@ -1,9 +1,13 @@
 chars_pos: error(representation_error(max_float),number_chars/2)
-chars_neg: error(representation_error(max_float),number_chars/2)
+chars_neg: error(representation_error(min_float),number_chars/2)
 codes_pos: error(representation_error(max_float),number_codes/2)
 atom_number: error(representation_error(max_float),number_codes/2)
 read_term: error(representation_error(max_float),read_term_from_atom/3)
 read_nested: error(representation_error(max_float),read_term_from_atom/3)
+read_neg: error(representation_error(min_float),read_term_from_atom/3)
+read_spaced_neg: error(representation_error(min_float),read_term_from_atom/3)
+read_pos_sign: error(representation_error(max_float),read_term_from_atom/3)
+read_spaced_pos: error(representation_error(max_float),read_term_from_atom/3)
 underflow: 0.0
 underflow: no error
 in_range: 1500.0
