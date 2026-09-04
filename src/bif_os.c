@@ -970,8 +970,14 @@ static bool bif_process_create_3(query *q)
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
 #endif
 			} else if (!CMP_STRING_TO_CSTR(q, c, "cwd")) {
-#if (defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26)))
-				return throw_error(q, c, c_ctx, "system_error", "posix_spawnattr_setflags");
+				// 2.29, not the 2.26 the 'detached' case above wants:
+				// POSIX_SPAWN_SETSID arrived in glibc 2.26 but
+				// posix_spawn_file_actions_addchdir_np only in 2.29. Sharing
+				// the 2.26 test let 2.26-2.28 fall through to a call that is
+				// not declared and does not link - Raspberry Pi OS Buster
+				// (glibc 2.28) is one such.
+#if (defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 29)))
+				return throw_error(q, c, c_ctx, "system_error", "posix_spawn_file_actions_addchdir");
 #endif
 				const char *cwd = C_STR(q, name);
 #if defined(__OpenBSD__)
