@@ -202,56 +202,40 @@ inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 
 // The caller has already resolved c_ctx and the slot for c. This is used by
 // DEREF_VAR(), which needs the initial slot for cycle bookkeeping as well.
+// make_indirect() is only ever handed a compound, but a stale indirect can
+// land on a cell the heap has since reused as a variable. Out of line: it
+// never happens while the heap is sound, and inlining it here cost the
+// deref hot path its inlining everywhere else.
+
+cell *deref_stale_indirect(query *q, cell *c, pl_ctx c_ctx);
+
+__attribute__((always_inline))
 inline static cell *deref_from_slot(query *q, cell *c, pl_ctx c_ctx, slot *e)
 {
 	const frame *f;
-	unsigned hops = 0;
 
-	for (;;) {
-		while (is_var(&e->c)) {
-			c_ctx = e->c.val_ctx;
-			c = &e->c;
-
-			if (is_ref(c))
-				c_ctx = c->val_ctx;
-
-			f = GET_FRAME(c_ctx);
-			slot *e2 = get_slot(q, f, c->var_num);
-
-			if (e == e2)
-				break;
-
-			e = e2;
-		}
-
-		if (!is_indirect(&e->c))
-			break;
-
-		if (!is_var(e->c.val_ptr)) {
-			q->latest_ctx = e->c.val_ctx;
-			return e->c.val_ptr;
-		}
-
-		// make_indirect() is only ever handed a compound, but a stale
-		// indirect can land on a cell the heap has since reused as a
-		// variable. Keep dereferencing: returning that cell paired with
-		// the indirect's context would have set_var() bind the slot the
-		// context names rather than the one the variable does.
-
+	while (is_var(&e->c)) {
 		c_ctx = e->c.val_ctx;
-		c = e->c.val_ptr;
+		c = &e->c;
 
 		if (is_ref(c))
 			c_ctx = c->val_ctx;
 
-		slot *e2 = get_slot(q, GET_FRAME(c_ctx), c->var_num);
+		f = GET_FRAME(c_ctx);
+		slot *e2 = get_slot(q, f, c->var_num);
 
-		if ((e2 == e) || (++hops > 64)) {
-			q->latest_ctx = c_ctx;
-			return c;
-		}
+		if (e == e2)
+			break;
 
 		e = e2;
+	}
+
+	if (is_indirect(&e->c)) {
+		if (is_var(e->c.val_ptr))
+			return deref_stale_indirect(q, e->c.val_ptr, e->c.val_ctx);
+
+		q->latest_ctx = e->c.val_ctx;
+		return e->c.val_ptr;
 	}
 
 	q->latest_ctx = c_ctx;
@@ -262,21 +246,20 @@ inline static cell *deref_from_slot(query *q, cell *c, pl_ctx c_ctx, slot *e)
 	return &e->c;
 }
 
+__attribute__((always_inline))
 inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
 {
 	if (!is_var(c)) {
-		if (!is_indirect(c)) {
-			q->latest_ctx = c_ctx;
-			return c;
-		}
+		if (is_indirect(c)) {
+			if (is_var(c->val_ptr))
+				return deref_stale_indirect(q, c->val_ptr, c->val_ctx);
 
-		if (!is_var(c->val_ptr)) {
 			q->latest_ctx = c->val_ctx;
 			return c->val_ptr;
 		}
 
-		c_ctx = c->val_ctx;
-		c = c->val_ptr;
+		q->latest_ctx = c_ctx;
+		return c;
 	}
 
 	if (is_ref(c))
