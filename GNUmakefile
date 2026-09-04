@@ -729,7 +729,19 @@ raylib:
 	$(PYTHON) util/gen_raylib.py --verify
 	$(PYTHON) util/gen_raylib.py --in-place
 
-test:
+# The IPv4/UDP stack is device-agnostic, so it is tested against a netif that
+# is not a device: no board, no emulator, just `make test` on any platform.
+# It is not linked into tpl - nothing calls it yet - so this builds it alone.
+
+tests/net/net_test: tests/net/net_test.c src/net/net.c src/net/net.h src/net/netif.h
+	$(CC) $(CFLAGS) -Isrc/net -o $@ tests/net/net_test.c src/net/net.c $(OPT)
+
+.PHONY: net-test
+
+net-test: tests/net/net_test
+	./tests/net/net_test
+
+test: net-test
 	@if test -x samples/allocator; then ./samples/allocator; fi
 	@if test -x samples/oom; then ./samples/oom; fi
 	./tests/run.sh
@@ -831,6 +843,7 @@ clean:
 		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
 	rm -f ports/template/*.o ports/template/*.d
+	rm -f tests/net/net_test tests/net/*.o tests/net/*.d src/net/*.o src/net/*.d
 	rm -f ports/rpi4/*.o ports/rpi4/*.d $(RPI4_ELF) $(RPI4_IMG) $(RPI4_MAP)
 	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/oom.dSYM samples/freestanding.dSYM
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

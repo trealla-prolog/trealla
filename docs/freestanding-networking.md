@@ -1,9 +1,10 @@
 # Proposal: networking for freestanding Trealla
 
-*Status: layer 3 exists* - `library(tftp)` is a working client and server, and
-the readings pattern below runs today on any hosted build. Layers 1 and 2, the
-driver and the stack, are still proposals: what is missing is everything below
-the socket.
+*Status: layers 2 and 3 exist.* `library(tftp)` is a working client and server
+and the readings pattern below runs on any hosted build; the `netif` contract
+and the IPv4/UDP stack are in `src/net/`, tested against a netif that is not a
+device, in `make test`. Layer 1, the GENET driver, is still a proposal - and it
+is now the only part that a board is needed to test.
 
 Give a freestanding image a small IPv4/UDP stack that is independent of any
 device, a driver underneath it, and enough of a socket surface that TFTP can be
@@ -264,8 +265,8 @@ poor.
 
 0. Debug loop first: second machine, direct cable or dumb switch, Wireshark
    running. Do not start without this.
-0b. The stack against a loopback and a canned-frame netif, hosted, in
-   `make test`. No board needed, and it stays a regression test afterwards.
+0b. ~~The stack against a canned-frame netif, hosted, in `make test`.~~ Done:
+   `tests/net/net_test.c`, 59 checks, run by `make net-test`.
 1. Driver brings the link up; PHY status polled and reported over the UART.
 2. **Transmit only.** A hardcoded broadcast ARP, in a loop, visible on the
    other machine. This one frame proves the cache attributes, descriptor
