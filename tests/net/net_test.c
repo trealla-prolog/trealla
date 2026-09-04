@@ -394,6 +394,10 @@ int main(void)
 	test_malformed();
 	test_routing();
 
-	printf("net: %d checks, %d failures\n", checks, failures);
+	// Silent when everything passes: the recipe line showing the binary run
+	// is the report. Anything printed here is a problem.
+	if (failures)
+		printf("net: %d of %d checks failed\n", failures, checks);
+
 	return failures ? 1 : 0;
 }
