@@ -188,7 +188,7 @@ The first measured AArch64 baseline (Arm GNU Toolchain 15.2.rel1, newlib) is:
 | --- | ---: | ---: |
 | ELF text | 1,417,560 | 1,750,000 |
 | ELF data | 406,008 | 500,000 |
-| ELF bss | 697,048 | 900,000 |
+| ELF bss | 17,112 | 900,000 |
 | Peak Trealla-owned heap | 5,882,624 | 7,000,000 |
 
 Text and data run larger than the RV32 baseline and BSS runs smaller, which is

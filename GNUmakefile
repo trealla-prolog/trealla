@@ -260,7 +260,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_control.o \
 	src/bif_csv.o \
 	src/bif_database.o \
-	src/bif_ffi.o \
+	$(BIF_FFI_OBJECT) \
 	src/bif_format.o \
 	src/bif_functions.o \
 	src/bif_misc.o \
@@ -302,6 +302,15 @@ NETWORK_OBJECT = src/network_none.o
 else
 BIF_NET_OBJECT = src/bif_net.o
 NETWORK_OBJECT = src/network.o
+endif
+
+# Without FFI the real table is 1000 reserved slots of 680 bytes that
+# nothing can ever fill - 680KB of BSS. The stub is one empty entry.
+
+ifdef NOFFI
+BIF_FFI_OBJECT = src/bif_ffi_none.o
+else
+BIF_FFI_OBJECT = src/bif_ffi.o
 endif
 
 ifdef FREESTANDING
