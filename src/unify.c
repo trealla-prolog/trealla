@@ -257,6 +257,20 @@ static bool set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 			q->no_recov = true;
 			q->total_no_recovs++;
 		}
+
+		// Binding a heap compound into an older frame means those cells
+		// must outlive this frame, so its heap region cannot be
+		// recovered on return. The test above asks where the value's
+		// variables live, not where its cells were allocated, and feeds
+		// the frame push_frame() is about to make - not this one, which
+		// is the one resume_frame() reclaims.
+
+		else if ((c_ctx < q->st.cur_ctx) && !is_ground(v)) {
+			frame *fc = GET_CURR_FRAME();
+			fc->no_recov = true;
+			q->no_recov = true;
+			q->total_no_recovs++;
+		}
 	} else {
 		e->c = *v;
 		share_cell(v);
