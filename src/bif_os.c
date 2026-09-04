@@ -976,18 +976,25 @@ static bool bif_process_create_3(query *q)
 				// the 2.26 test let 2.26-2.28 fall through to a call that is
 				// not declared and does not link - Raspberry Pi OS Buster
 				// (glibc 2.28) is one such.
-#if (defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 29)))
+				//
+				// The unsupported cases exclude the CALL, not merely
+				// return before reaching it. An #if around the return
+				// leaves the call compiled, and while the compiler drops it
+				// as unreachable - at -O0 as well as -O3, so the link is
+				// fine either way - it parses it first, and warns on every
+				// build.
+#if (defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 29))) \
+	|| defined(__OpenBSD__)
 				return throw_error(q, c, c_ctx, "system_error", "posix_spawn_file_actions_addchdir");
-#endif
+#else
 				const char *cwd = C_STR(q, name);
-#if defined(__OpenBSD__)
-				return throw_error(q, c, c_ctx, "system_error", "posix_spawn_file_actions_addchdir");
-#elif !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__NetBSD__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__) && !defined(__NetBSD__)
 				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
 #elif defined(__APPLE__) && defined(__x86_64__)
 				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
 #else
 				posix_spawn_file_actions_addchdir(&file_actions, cwd);
+#endif
 #endif
 			} else if (!CMP_STRING_TO_CSTR(q, c, "env") && is_list_or_nil(name)) {
 				PROLOG_LIST_HANDLER(name);
