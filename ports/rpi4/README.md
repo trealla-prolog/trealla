@@ -186,10 +186,17 @@ The first measured AArch64 baseline (Arm GNU Toolchain 15.2.rel1, newlib) is:
 
 | Metric | Baseline bytes | CI limit |
 | --- | ---: | ---: |
-| ELF text | 1,417,560 | 1,750,000 |
-| ELF data | 406,008 | 500,000 |
-| ELF bss | 17,112 | 900,000 |
-| Peak Trealla-owned heap | 5,882,624 | 7,000,000 |
+| ELF text | 1,488,120 | 1,750,000 |
+| ELF data | 101,496 | 500,000 |
+| ELF bss | 13,016 | 900,000 |
+| Peak Trealla-owned heap | 5,802,432 | 7,000,000 |
+
+Data and bss are far below their limits because two changes removed what a
+build without FFI was carrying for it: `src/bif_ffi_none.c` stopped reserving
+`g_ffi_bifs[MAX_FFI]` (679KB of bss), and the FFI argument arrays left
+`struct builtins_` where `USE_FFI` is off, taking the builtin tables from
+341KB to 52KB. The limits are left where they were rather than tightened onto
+the new figures - that is a judgement about how much headroom to keep.
 
 Text and data run larger than the RV32 baseline and BSS runs smaller, which is
 what 64-bit pointers and a different libc do to the same engine. As with the

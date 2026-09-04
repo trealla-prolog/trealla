@@ -14,11 +14,11 @@ MARKERS = (
     "TREALLA FREESTANDING COMPLETE",
 )
 
-# Measured 1,418,104 / 406,712 / 17,112 text/data/bss and a 5,882,688-byte
-# live-heap peak, with room to grow. The bss figure fell from 697,048 when
-# a build without FFI stopped reserving g_ffi_bifs[MAX_FFI]; the limit is
-# left where it was rather than tightened onto the new number. The AArch64 image runs bigger than the
-# RV32 one mostly through 64-bit pointers.
+# Measured 1,488,120 / 101,496 / 13,016 text/data/bss and a 5,802,432-byte
+# live-heap peak. Data and bss fell sharply once a build without FFI stopped
+# carrying FFI's baggage - the reserved g_ffi_bifs table, then the argument
+# arrays inside every builtins entry. Limits kept as they were, so they still
+# catch a material regression without being re-tuned on every improvement.
 MAX_TEXT_BYTES = 1_750_000
 MAX_DATA_BYTES = 500_000
 MAX_BSS_BYTES = 900_000

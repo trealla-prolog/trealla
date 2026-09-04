@@ -522,7 +522,14 @@ struct predicate_ {
 	uint64_t last_modified;
 };
 
+// The tail of a builtins initialiser. Shorter without FFI, because the
+// argument-type arrays and libffi handles are not in the struct at all then.
+
+#if USE_FFI
 #define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+#else
+#define BLAH false, false, NULL, NULL, NULL, NULL
+#endif
 
 #define MAX_FFI_ARGS 64
 
@@ -535,22 +542,35 @@ struct builtins_ {
 	bool evaluable;
 	bool ffi;
 	bool via_directive;
+
+	// FFI argument metadata, and only that. At MAX_FFI_ARGS of 64 these two
+	// arrays are 576 bytes - 85% of the whole struct - carried by every
+	// builtin in every table whether or not the build has any FFI. Leaving
+	// them out where USE_FFI is off takes about 290KB off a freestanding
+	// image without removing a single predicate. Nothing outside
+	// src/bif_ffi.c reads them.
+
+#if USE_FFI
 	uint8_t types[MAX_FFI_ARGS];
 	const char *names[MAX_FFI_ARGS];
 	uint8_t ret_type;
 	void *ffi_ret_type;
 	const char *ret_name;
+#endif
+
 	module *m;
 	char *desc;
 	char *help2;
 	char *help_alt;
 
+#if USE_FFI
 	// Pre-compiled libffi call interface, built once at registration.
 	// void* so this header doesn't have to drag in ffi.h. NULL means
 	// the signature can't be pre-compiled (it returns a struct) and
 	// the cif is built per call as before.
 
 	void *cif;
+#endif
 };
 
 typedef struct {

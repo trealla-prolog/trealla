@@ -337,6 +337,20 @@ endif
 PORT_BIFS_OBJECT = src/bif_gpio_linux.o
 endif
 
+# NETSTACK=1 puts the udp_* builtins over src/net's own IPv4/UDP stack in a
+# hosted build, with an AF_PACKET netif standing in for a driver. That is how
+# the freestanding networking path is exercised without a board: the same
+# builtins a port would expose, over the same stack, against a real peer.
+
+ifdef NETSTACK
+ifneq ($(UNAME_S),Linux)
+$(error NETSTACK=1 needs Linux and AF_PACKET)
+endif
+PORT_BIFS_OBJECT = src/net/bif_net_stack.o src/net/net.o \
+	src/net/netif_afpacket.o src/net/port_bifs_netstack.o
+CFLAGS += -Isrc/net
+endif
+
 PORT_BIFS_OBJECT ?= src/port_bifs_none.o
 
 ifdef NOTTY
@@ -736,10 +750,20 @@ raylib:
 tests/net/net_test: tests/net/net_test.c src/net/net.c src/net/net.h src/net/netif.h
 	$(CC) $(CFLAGS) -Isrc/net -o $@ tests/net/net_test.c src/net/net.c $(OPT)
 
-.PHONY: net-test
+.PHONY: net-test net-interop
 
 net-test: tests/net/net_test
 	./tests/net/net_test
+
+# The interoperability half: the same stack behind a netif backed by a real
+# AF_PACKET socket, with Linux on the other end of a veth pair. Kept out of
+# `make test` because it needs root and Linux; net-test needs neither.
+
+tests/net/net_interop: tests/net/netif_afpacket.c src/net/net.c src/net/netif_afpacket.c src/net/net.h src/net/netif.h
+	$(CC) $(CFLAGS) -Isrc/net -o $@ tests/net/netif_afpacket.c src/net/net.c src/net/netif_afpacket.c $(OPT)
+
+net-interop: tests/net/net_interop
+	./tests/net/interop.sh
 
 test: net-test
 	@if test -x samples/allocator; then ./samples/allocator; fi
@@ -843,7 +867,7 @@ clean:
 		samples/*.xwam util/bin2c util/embed_registry util/bin2c.aarch64.elf util/bin2c.com.dbg
 	rm -f ports/qemu-riscv32/*.o ports/qemu-riscv32/*.d $(QEMU_RISCV_ELF)
 	rm -f ports/template/*.o ports/template/*.d
-	rm -f tests/net/net_test tests/net/*.o tests/net/*.d src/net/*.o src/net/*.d
+	rm -f tests/net/net_test tests/net/net_interop tests/net/*.o tests/net/*.d src/net/*.o src/net/*.d
 	rm -f ports/rpi4/*.o ports/rpi4/*.d $(RPI4_ELF) $(RPI4_IMG) $(RPI4_MAP)
 	rm -rf samples/embed.dSYM samples/allocator.dSYM samples/oom.dSYM samples/freestanding.dSYM
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po

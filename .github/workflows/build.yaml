@@ -21,6 +21,12 @@
           run: make freestanding
         - name: Run port template smoke test
           run: make port-template-smoke
+        - name: IPv4/UDP stack, self-consistency
+          run: make net-test
+        - name: IPv4/UDP stack, interoperability with the Linux stack
+          run: |
+            make tests/net/net_interop
+            sudo ./tests/net/interop.sh
 
     freestanding-qemu:
       name: Freestanding QEMU RV32

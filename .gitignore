@@ -26,6 +26,7 @@ samples/allocator
 samples/oom
 samples/oom.tmp
 tests/net/net_test
+tests/net/net_interop
 /ports/arduino-nano-esp32/build/
 /ports/arduino-nano-esp32/sdkconfig
 /ports/arduino-nano-esp32/sdkconfig.old
