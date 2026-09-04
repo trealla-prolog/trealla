@@ -70,7 +70,6 @@ GIT_VERSION := $(TARBALL_VERSION)
 endif
 endif
 GIT_VERSION := "$(GIT_VERSION)"
-COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
 CFLAGS = -MMD -MP -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-DDEFAULT_LIBRARY_PATH='"$(LIBDIR)/library"' \
@@ -226,16 +225,21 @@ endif
 ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread
-# -latomic only works for gcc, and is not shipped with every system gcc.
-# Link the static archive directly (rather than -latomic) so we don't
-# depend on libatomic.so being on the runtime linker's search path -
-# on illumos-family systems (Solaris, OpenIndiana, Tribblix) gcc's own
-# libatomic.so isn't always registered with the system dynamic linker.
-ifeq ($(COMPILER_IS_GCC),gcc)
-GCC_LIBATOMIC := $(shell $(CC) -print-file-name=libatomic.a)
-ifneq ($(wildcard $(GCC_LIBATOMIC)),)
-LDFLAGS += $(GCC_LIBATOMIC)
-endif
+# 64-bit atomics are not inlined everywhere: 32-bit ARM emits calls to
+# __atomic_fetch_add_8 and friends, which live in libatomic. Link the static
+# archive directly (rather than -latomic) so we don't depend on libatomic.so
+# being on the runtime linker's search path - on illumos-family systems
+# (Solaris, OpenIndiana, Tribblix) gcc's own libatomic.so isn't always
+# registered with the system dynamic linker.
+#
+# Ask the compiler instead of sniffing its --version banner. That check
+# wanted the word "gcc" and Debian's default cc - which IS gcc - announces
+# itself as "cc (Debian ...)", so it failed on exactly the platform that
+# needs the library. A compiler without libatomic returns the name unchanged
+# and the wildcard finds nothing, which is the right answer for clang too.
+LIBATOMIC := $(shell $(CC) -print-file-name=libatomic.a 2>/dev/null)
+ifneq ($(wildcard $(LIBATOMIC)),)
+LDFLAGS += $(LIBATOMIC)
 endif
 endif
 
