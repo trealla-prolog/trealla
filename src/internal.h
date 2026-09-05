@@ -621,6 +621,7 @@ struct frame_ {
 	pl_ctx prev;
 	pl_ctx idx;
 	bool no_recov:1;
+	bool heap_pinned:1;
 };
 
 #define FRAME_PAGE_SHIFT 7

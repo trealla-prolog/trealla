@@ -956,6 +956,7 @@ static void push_frame(query *q)
 
 	f_new->op = 0;
 	f_new->no_recov = q->no_recov;
+	f_new->heap_pinned = false;
 	f_new->chgen = ++q->chgen;
 	f_new->hp = q->st.hp;
 	f_new->hp_num = q->st.hp_num;
@@ -982,6 +983,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 	frame *f_cur = GET_CURR_FRAME();
 	f_cur->initial_slots = f_cur->actual_slots = num_vars;
 	f_cur->no_recov = false;
+	f_cur->heap_pinned = false;
 
 	for (pl_idx i = 0; i < num_vars; i++) {
 		const slot *from = get_slot(q, f_new, i);
@@ -1062,7 +1064,18 @@ static void commit_frame(query *q, bool head_has_vars)
 	}
 #endif
 
+	// A frame whose heap another frame now points into cannot be
+	// reused: reuse_frame() winds hp back to this frame's own base and
+	// trims, which would take those cells with it. q->no_recov cannot
+	// carry that on its own - the next unify() clears it, and head
+	// unification of this very call is one - so set_var() pins the
+	// frame and the pin is what is read here. f->no_recov is not, it
+	// being set by every if-then-else, \+, ignore/1 and \= as well
+	// (docs/tco-then-branch-report.md, 3), which would cost those
+	// their TCO.
+
 	if (!q->no_recov
+		&& !f->heap_pinned
 		&& last_match
 		&& (q->st.fp == (q->st.cur_ctx + 1))
 		) {

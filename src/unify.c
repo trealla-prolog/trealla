@@ -264,10 +264,18 @@ static bool set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 		// variables live, not where its cells were allocated, and feeds
 		// the frame push_frame() is about to make - not this one, which
 		// is the one resume_frame() reclaims.
+		//
+		// Both can hold at once: a body goal binding an older frame's
+		// variable to a compound of this clause satisfies the test
+		// above as well, and q->no_recov alone does not survive to the
+		// call that would reuse this frame - the next unify() clears
+		// it, head unification of that very call included. So this is
+		// its own test, not an alternative to the one above.
 
-		else if ((c_ctx < q->st.cur_ctx) && !is_ground(v)) {
+		if ((c_ctx < q->st.cur_ctx) && !is_ground(v)) {
 			frame *fc = GET_CURR_FRAME();
 			fc->no_recov = true;
+			fc->heap_pinned = true;
 			q->no_recov = true;
 			q->total_no_recovs++;
 		}
