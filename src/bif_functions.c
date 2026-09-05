@@ -1023,8 +1023,11 @@ static bool bif_iso_float_integer_part_1(query *q)
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
+	// Not a cast to pl_int: that is undefined once the value is outside
+	// int64, and every float at or above 2^53 already is a whole number.
+
 	if (is_float(&p1)) {
-		q->accum.val_float = (pl_int)p1.val_float;
+		q->accum.val_float = trunc(p1.val_float);
 		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.cur_ctx, "instantiation_error", "not_sufficiently_instantiated");
@@ -1044,10 +1047,13 @@ static bool bif_iso_float_fractional_part_1(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
 	if (is_float(&p1)) {
-		q->accum.val_float = p1.val_float - (pl_int)p1.val_float;
+		q->accum.val_float = p1.val_float - trunc(p1.val_float);
 
-		if (isinf(q->accum.val_float))
-			return throw_error(q, &q->accum, q->st.cur_ctx, "evaluation_error", "float_overflow");
+		// Finite in, finite out - only a non-finite argument, which
+		// arithmetic here cannot produce, leaves anything to catch.
+
+		if (isnan(q->accum.val_float))
+			return throw_error(q, &p1, q->st.cur_ctx, "evaluation_error", "undefined");
 
 		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
