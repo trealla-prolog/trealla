@@ -28,6 +28,17 @@
 #define GPPUPPDN(pin) REG(GPIO_BASE + 0xe4u + ((pin) / 16u) * 4u)
 #define GPPUPPDN_SHIFT(pin) (((pin) % 16u) * 2u)
 
+// A 2MiB window of Normal Non-Cacheable memory, immediately below the heap
+// ceiling, for anything a device does DMA into or out of. ports/rpi4/mmu.c
+// maps it; rpi4.ld stops the heap short of it so the two never overlap.
+//
+// GENET keeps its descriptors in its own register window, so only packet
+// buffers need to live here - which is a good deal less than a DMA engine
+// usually demands.
+
+#define RPI4_DMA_BASE 0x1fe00000ull
+#define RPI4_DMA_SIZE (2ull << 20)
+
 #define RPI4_NUM_GPIO 58u
 
 // GPIO14/15 carry the PL011 console. Reconfiguring them silences the only

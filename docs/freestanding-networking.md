@@ -1,6 +1,6 @@
 # Proposal: networking for freestanding Trealla
 
-*Status: layers 2 and 3 exist.* `library(tftp)` is a working client and server
+*Status: all three layers exist; only the driver is untested.* `library(tftp)` is a working client and server
 and the readings pattern below runs on any hosted build; the `netif` contract
 and the IPv4/UDP stack are in `src/net/`, tested against a netif that is not a
 device, in `make test`. Layer 1, the GENET driver, is still a proposal - and it

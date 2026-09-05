@@ -61,6 +61,13 @@ from_el2:
 	eret
 
 at_el1:
+	// Vectors first, so that a fault from here on says so instead of
+	// jumping into whatever VBAR_EL1 happened to contain at reset.
+	adrp	x0, vectors
+	add	x0, x0, :lo12:vectors
+	msr	vbar_el1, x0
+	isb
+
 	// Prolog arithmetic is full of doubles, so FP/SIMD has to be enabled
 	// before any engine code runs or the first float traps.
 	mov	x0, #(3 << 20)			// CPACR_EL1.FPEN
@@ -86,6 +93,11 @@ zero_bss:
 
 enter_c:
 	bl	rpi4_mmu_init
+
+	// Devices, once memory behaves. Does nothing unless the image was
+	// built with something to bring up.
+	bl	rpi4_board_init
+
 	bl	main
 
 	// main() returns only when the embedding sample gives up early.
@@ -95,3 +107,27 @@ enter_c:
 hang:
 	wfe
 	b	hang
+
+// The AArch64 vector table: sixteen entries of 128 bytes, four groups of
+// four. Every one lands in the same place - this port has no interrupts to
+// service, so anything arriving here is a fault to be reported, not handled.
+
+.align 11
+vectors:
+	.set entry_num, 0
+.rept 16
+	.align 7
+	mov	x3, #entry_num
+	b	fault_entry
+	.set entry_num, entry_num + 1
+.endr
+
+fault_entry:
+	mrs	x0, esr_el1
+	mrs	x1, far_el1
+	mrs	x2, elr_el1
+	bl	rpi4_fault
+
+hang_fault:
+	wfe
+	b	hang_fault

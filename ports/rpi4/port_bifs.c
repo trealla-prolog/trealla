@@ -7,8 +7,15 @@
 
 extern builtins g_gpio_bifs[];
 
+#if RPI4_NET
+extern builtins g_netstack_bifs[];
+#endif
+
 builtins *g_port_bif_tables[] =
 {
 	g_gpio_bifs,
+#if RPI4_NET
+	g_netstack_bifs,
+#endif
 	NULL
 };

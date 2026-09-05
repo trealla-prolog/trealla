@@ -7,7 +7,9 @@
 ENTRY(_start)
 
 __stack_size = 8M;
-__heap_end = 0x20000000;
+/* Stops short of 0x20000000: the last 2MiB is the non-cacheable DMA window
+ * mmu.c maps for devices. Keep this in step with RPI4_DMA_BASE. */
+__heap_end = 0x1fe00000;
 
 SECTIONS
 {

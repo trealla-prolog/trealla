@@ -94,6 +94,9 @@ may place the tree inside that range.
 | `bif_gpio.c` | The board builtins - GPIO and `delay_ms/1` |
 | `port_bifs.c` | The manifest: which tables this port hands the engine |
 | `bcm2711.h` | Register map shared by the adapter and the builtins |
+| `fault.c` | Reports an exception - class, ESR, FAR, ELR - and halts |
+| `board.c` | Device bring-up between the MMU and `main` |
+| `genet.c` | GENET Ethernet driver, as a `netif` (opt-in, see below) |
 | `syscalls.c` | Newlib's bottom half — console `_read`/`_write` and a bump `_sbrk` over the linker-defined heap |
 | `rpi4.ld` | Image at 0x80000, 8 MiB stack, heap up to 0x20000000 |
 
@@ -163,6 +166,50 @@ Two details in `bif_gpio.c` are worth knowing before editing it:
   needs no read-modify-write and cannot disturb its neighbours. Function
   select and pull are read-modify-write, which is safe here only because a
   freestanding build has no threads and this port takes no interrupts.
+
+## Networking
+
+The BCM2711's Gigabit Ethernet is driven by `genet.c`, which presents the
+`netif` contract that `src/net`'s IPv4/UDP stack sits on. It is **opt-in**:
+
+```
+make rpi4 RPI4_NET=1
+```
+
+The default image contains no GENET code at all, and deliberately so.
+**QEMU's raspi4b has no GENET**, and the driver's first register write aborts
+there:
+
+```
+TREALLA EXCEPTION entry=0x4 esr=0x96000010 (data abort) far=0x00000000fd580008
+```
+
+Since QEMU is what CI boots, the acceptance image must not contain the driver.
+That also means the driver is the one part of this port with no automated test
+whatsoever - it can only be exercised on a board.
+
+Addressing is compile-time, there being no DHCP: `RPI4_IP`, `RPI4_NETMASK`,
+`RPI4_GATEWAY` and `RPI4_MAC` override the defaults (192.168.50.2/24 via
+.50.1, and a locally administered MAC). The board's real address lives in OTP
+and is read over the VideoCore mailbox, which this port does not do yet.
+
+Packet buffers come from the non-cacheable window `mmu.c` maps at
+`RPI4_DMA_BASE`; the descriptors need no such care because GENET keeps them in
+its own register window rather than in memory.
+
+## Faults
+
+`fault.c` and the vector table in `boot.S` turn a fault into a message:
+
+```
+TREALLA EXCEPTION entry=<vector> esr=<ESR_EL1> (data abort) far=<address> elr=<pc>
+```
+
+Before that existed, `VBAR_EL1` was never set, so any fault - a stray pointer,
+an alignment error, a device that is not fitted - jumped to an undefined
+vector and the board simply stopped, with no output and no clue. On hardware
+with no debugger attached that is the difference between a five-minute fix and
+an afternoon.
 
 ## Acceptance
 

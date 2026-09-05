@@ -30,8 +30,18 @@ RPI4_ELF = ports/rpi4/trealla.elf
 RPI4_IMG = ports/rpi4/kernel8.img
 RPI4_MAP = ports/rpi4/trealla.map
 RPI4_OBJ = ports/rpi4/boot.o ports/rpi4/mmu.o ports/rpi4/platform.o \
-	ports/rpi4/syscalls.o
-RPI4_CFLAGS = -mcpu=cortex-a72 -ffunction-sections -fdata-sections
+	ports/rpi4/syscalls.o ports/rpi4/fault.o ports/rpi4/board.o
+# Networking is opt-in for this port: `make rpi4 RPI4_NET=1`. The default
+# image has no GENET code at all, because QEMU - which is what CI boots - has
+# no GENET to talk to.
+
+ifdef RPI4_NET
+RPI4_OBJ += ports/rpi4/genet.o
+RPI4_NET_OBJ = src/net/net.o src/net/bif_net_stack.o
+RPI4_NET_CFLAGS = -DRPI4_NET=1
+endif
+RPI4_CFLAGS = -mcpu=cortex-a72 -ffunction-sections -fdata-sections \
+	-Isrc/net -Iports/rpi4 $(RPI4_NET_CFLAGS)
 # What the image boots: the acceptance harness and its smoke program by
 # default, overridden by `make rpi4-app main=<program.pl>`.
 RPI4_PROGRAM ?= ports/rpi4/program.pl
@@ -594,7 +604,7 @@ rpi4:
 	$(MAKE) FREESTANDING=1 NOPIC=1 \
 		CC=$(RPI4_CC) AR=$(RPI4_AR) HOST_CC=$(HOST_CC) \
 		'PLATFORM_OBJ=$(RPI4_OBJ)' \
-		'PORT_BIFS_OBJECT=ports/rpi4/bif_gpio.o ports/rpi4/port_bifs.o' \
+		'PORT_BIFS_OBJECT=ports/rpi4/bif_gpio.o ports/rpi4/port_bifs.o $(RPI4_NET_OBJ)' \
 		'PROGRAM=$(RPI4_PROGRAM)' 'FREESTANDING_MAIN=$(RPI4_APP)' \
 		'TARGET_CFLAGS=$(RPI4_CFLAGS)' 'LDFLAGS=$(RPI4_LDFLAGS)' \
 		samples/freestanding
